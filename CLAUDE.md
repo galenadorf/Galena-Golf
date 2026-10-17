@@ -74,6 +74,10 @@ Launch and spin (2026-10-17): launch raised 1.2 deg for Dr-4H, 1.1 for 5i, 0.6 f
 
 The deer are gone: `makeTurkey(L, tom)` / `turkeyParts` (near `makeRabbit`, ~line 4477) put a tom and two hens across the fairways, three rabbits as before. Same behaviour as the deer did (cross the line of play, stop to peck, run when the ball comes near, can be hit: "Clipped a turkey!" with a synthesised gobble, `SFX.gobble`, played from `lifeHitNote`). Low-poly box-and-sphere models, bob and peck animation by head pivot; tune sizes in `turkeyParts`, speeds in `e.update`, count in `buildLife`.
 
+## Strike sound (2026-10-17)
+
+`HIT_PITCH` (.88), `HIT_VOL` (.76) and `HIT_LP` (2400 Hz) above `SFX` soften the recorded club-on-ball sample (pitched down, high end rolled off, quieter), full shots, mishits and putts alike. Tune them there.
+
 ## To do before publishing
 
 - [x] **Score posting** now points at `GH_REPO = 'galenadorf/Galena-Golf'` (line ~6887). `GH_POST_KEY` is now emptied (it was the original author's token), so players get a pre-filled issue page; to post silently, add your own fine-grained token (Issues read/write on that repo only).

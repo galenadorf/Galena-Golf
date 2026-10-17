@@ -5398,11 +5398,13 @@ function musicTick() {
   while (MUS.next < a.currentTime + .7) { musStep(a, MUS.step, MUS.next); MUS.next += MUS_E; MUS.step++; }
 }
 setInterval(musicTick, 200);
+const HIT_PITCH = .88, HIT_VOL = .76, HIT_LP = 2400; // the strike sound: playback rate, level and low-pass cutoff (Hz) multipliers
 const SFX = {
   hit(q, putt) {
     const ct = CLUBS[G.club] ? CLUBS[G.club].type : 'iron', r = (Math.random() - .5) * .06;
     if (SND.hit) { // the recorded strike: pitch follows the club, a mishit is duller, a putt is a soft tap
-      if (putt) play('hit', 1.12 + r, .32, 3000); else if (q < 1) play('hit', .84 + r, .8, 2600); else play('hit', (ct === 'wood' ? .93 : ct === 'wedge' ? 1.08 : 1) + r, .95); return;
+      // softened: pitched down, with the harsh top rolled off (HIT_LP) and a lower level (HIT_VOL)
+      if (putt) play('hit', (1.12 + r) * HIT_PITCH, .27 * HIT_VOL, HIT_LP + 200); else if (q < 1) play('hit', (.84 + r) * HIT_PITCH, .8 * HIT_VOL, HIT_LP - 400); else play('hit', ((ct === 'wood' ? .93 : ct === 'wedge' ? 1.08 : 1) + r) * HIT_PITCH, .95 * HIT_VOL, HIT_LP); return;
     }
     if (putt) { tone(1100, .07, 'sine', .22); tone(2200, .04, 'triangle', .06); return; } tone(q < 1 ? 1500 : 650, .14, 'triangle', .3, q < 1 ? 950 : 280); noiseBurst(.07, .35, q < 1 ? 3800 : 1100, 1); },
   whoosh(d) { noiseBurst(Math.max(.14, d), .16, 800, .5); },
