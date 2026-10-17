@@ -29,7 +29,7 @@ jobs:
             };
             const m = /```json\s*([\s\S]*?)```/.exec(issue.body || '');
             let r; try { r = JSON.parse(m[1]); } catch (e) { return finish(false, 'No valid score JSON found in this issue.'); }
-            const COURSES = { gccb: 72 };
+            const COURSES = { woodbine: 72 };
             const int = v => Number.isInteger(v);
             if (!r || typeof r !== 'object' || !(r.course in COURSES)) return finish(false, 'Unknown course.');
             if (typeof r.name !== 'string' || !/^[\p{L}\p{N} ._'-]{1,14}$/u.test(r.name.trim())) return finish(false, 'Invalid name.');
