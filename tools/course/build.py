@@ -289,6 +289,9 @@ def main():
     creek = creek_pieces()
     fp = os.path.join(OUT, 'fescue.json')
     fescue = [shape(g) for g in json.load(open(fp))] if os.path.exists(fp) else []
+    bp = os.path.join(OUT, 'boundary.json')  # the hand-painted boundary (boundary.py) replaces the OSM outline as the out-of-bounds line
+    bound = shape(json.load(open(bp))) if os.path.exists(bp) else Polygon(course.exterior)
+    fescue = [g for f in fescue for g in getattr(f.intersection(bound), 'geoms', [f.intersection(bound)]) if g.geom_type == 'Polygon' and not g.is_empty]
     rd = dict(
         name=NAME, origin=list(ORIGIN), dem=dem, holes=holes,
         feat=dict(fair=enc_polys(fair), green=enc_polys([f['poly'] for f in F['green']]), tee=enc_polys([f['poly'] for f in F['tee']]),
@@ -297,7 +300,7 @@ def main():
         trees=b64i16(tq) if tq else '', ntrees=len(trees),
         forest=enc_polys(clip([f['poly'] for f in F['wood']])) if F['wood'] else enc_polys([]),
         orchard=enc_polys([]),
-        boundary=enc_polys([Polygon(course.exterior)]),
+        boundary=enc_polys([bound]),
         buildings=enc_polys(clip([f['poly'] for f in F['building']])),
         # the lidar trees cover the whole detail area: OSM woods only count beyond it
         cover=enc_polys([area] if trees else []),
