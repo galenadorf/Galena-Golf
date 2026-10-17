@@ -65,6 +65,10 @@ Do edits with small Python scripts that assert each `old` string matches exactly
 
 "Dramatic bounce" (Settings, `settings.drama`, on by default; `drama()` and `HOP_K` near `saveSettings`): the ball sits on the ground at any drawn scale (centre lifted by `VIS_R * scale`), hops after the first landing are drawn 2.2x as high (`hopY`; physics untouched), a flat roll-out trail (`W.trail`) and a landing ring (`W.landRing`), a puff on every bounce, a lower chase camera after landing (`camFollowTargets`, `R.pk`), a short slow-motion over the first landing of hard-hit shots (`updateFlight`, `rate`), and the drawn ball shrinks from 7x to 4x while it rolls (`BALL_CAP`). Tune `HOP_K`, the 7/4 caps and the 7 m / 1.7 m camera numbers by feel on a phone.
 
+## Club carries (2026-10-17)
+
+`CLUBS` (~line 538) `carry` is in metres (a full swing, flat, calm). Set 2026-10-17 from yards: Dr 250, 3W 230, 5W 220, 4H 205, 5i 185, 6i 175, 7i 165, 8i 155, 9i 145, PW 135, GW 125, SW 115, LW 100 yd (carry = yd / 1.09361). The game solves each club's ball speed from it at startup. `smash` only sets the clubhead speed shown (clubhead = ball speed / smash; the ball speed itself is solved from the carry), so it was divided by 1.0405 for every club to put the driver at 110 mph and the 7 iron at 89 mph without changing any carry.
+
 ## To do before publishing
 
 - [x] **Score posting** now points at `GH_REPO = 'galenadorf/Galena-Golf'` (line ~6887). `GH_POST_KEY` is now emptied (it was the original author's token), so players get a pre-filled issue page; to post silently, add your own fine-grained token (Issues read/write on that repo only).

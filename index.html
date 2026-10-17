@@ -536,19 +536,19 @@ function drawWeather(r) { let u = r(); for (const w of WEATHERS) { if ((u -= w.p
 
 // 14 clubs — the legal maximum. carry = target carry (m) for a full, pure, 3:1 swing with a downswing under 0.35 s.
 const CLUBS = [
-  { id: 'Dr', name: 'Driver', type: 'wood', loft: 10.5, launch: 12.0, spin: 2600, carry: 276, smash: 1.50, gear: 1.0 },
-  { id: '3W', name: '3 Wood', type: 'wood', loft: 15, launch: 11.4, spin: 3600, carry: 243, smash: 1.46, gear: 1.0 },
-  { id: '5W', name: '5 Wood', type: 'wood', loft: 18, launch: 12.4, spin: 4300, carry: 226, smash: 1.44, gear: .95 },
-  { id: '4H', name: '4 Hybrid', type: 'hybrid', loft: 22, launch: 13.2, spin: 4800, carry: 210, smash: 1.42, gear: .9 },
-  { id: '5i', name: '5 Iron', type: 'iron', loft: 25, launch: 13.9, spin: 5400, carry: 196, smash: 1.38, gear: .8 },
-  { id: '6i', name: '6 Iron', type: 'iron', loft: 28, launch: 15.3, spin: 6100, carry: 183, smash: 1.36, gear: .78 },
-  { id: '7i', name: '7 Iron', type: 'iron', loft: 32, launch: 17.0, spin: 6900, carry: 170, smash: 1.34, gear: .76 },
-  { id: '8i', name: '8 Iron', type: 'iron', loft: 36, launch: 19.0, spin: 7800, carry: 157, smash: 1.32, gear: .74 },
-  { id: '9i', name: '9 Iron', type: 'iron', loft: 41, launch: 21.6, spin: 8600, carry: 144, smash: 1.29, gear: .72 },
-  { id: 'PW', name: 'Pitching wedge', type: 'wedge', loft: 46, launch: 24.5, spin: 9300, carry: 131, smash: 1.26, gear: .66 },
-  { id: 'GW', name: 'Gap wedge', type: 'wedge', loft: 51, launch: 27.5, spin: 9800, carry: 116, smash: 1.23, gear: .62 },
-  { id: 'SW', name: 'Sand wedge', type: 'wedge', loft: 56, launch: 30.5, spin: 10200, carry: 101, smash: 1.20, gear: .6 },
-  { id: 'LW', name: 'Lob wedge', type: 'wedge', loft: 60, launch: 33.5, spin: 10600, carry: 85, smash: 1.17, gear: .58 },
+  { id: 'Dr', name: 'Driver', type: 'wood', loft: 10.5, launch: 12.0, spin: 2600, carry: 228.6, smash: 1.442, gear: 1.0 },
+  { id: '3W', name: '3 Wood', type: 'wood', loft: 15, launch: 11.4, spin: 3600, carry: 210.3, smash: 1.403, gear: 1.0 },
+  { id: '5W', name: '5 Wood', type: 'wood', loft: 18, launch: 12.4, spin: 4300, carry: 201.2, smash: 1.384, gear: .95 },
+  { id: '4H', name: '4 Hybrid', type: 'hybrid', loft: 22, launch: 13.2, spin: 4800, carry: 187.5, smash: 1.365, gear: .9 },
+  { id: '5i', name: '5 Iron', type: 'iron', loft: 25, launch: 13.9, spin: 5400, carry: 169.2, smash: 1.326, gear: .8 },
+  { id: '6i', name: '6 Iron', type: 'iron', loft: 28, launch: 15.3, spin: 6100, carry: 160.0, smash: 1.307, gear: .78 },
+  { id: '7i', name: '7 Iron', type: 'iron', loft: 32, launch: 17.0, spin: 6900, carry: 150.9, smash: 1.288, gear: .76 },
+  { id: '8i', name: '8 Iron', type: 'iron', loft: 36, launch: 19.0, spin: 7800, carry: 141.7, smash: 1.269, gear: .74 },
+  { id: '9i', name: '9 Iron', type: 'iron', loft: 41, launch: 21.6, spin: 8600, carry: 132.6, smash: 1.240, gear: .72 },
+  { id: 'PW', name: 'Pitching wedge', type: 'wedge', loft: 46, launch: 24.5, spin: 9300, carry: 123.4, smash: 1.211, gear: .66 },
+  { id: 'GW', name: 'Gap wedge', type: 'wedge', loft: 51, launch: 27.5, spin: 9800, carry: 114.3, smash: 1.182, gear: .62 },
+  { id: 'SW', name: 'Sand wedge', type: 'wedge', loft: 56, launch: 30.5, spin: 10200, carry: 105.2, smash: 1.153, gear: .6 },
+  { id: 'LW', name: 'Lob wedge', type: 'wedge', loft: 60, launch: 33.5, spin: 10600, carry: 91.4, smash: 1.124, gear: .58 },
   { id: 'Pt', name: 'Putter', type: 'putter', loft: 3, launch: 1, spin: 0, carry: 0, smash: 1.0, gear: 0 },
 ];
 const PUTTER = CLUBS.length - 1;
