@@ -68,6 +68,11 @@ Do edits with small Python scripts that assert each `old` string matches exactly
 ## Club carries (2026-10-17)
 
 `CLUBS` (~line 538) `carry` is in metres (a full swing, flat, calm). Set 2026-10-17 from yards: Dr 250, 3W 230, 5W 220, 4H 205, 5i 185, 6i 175, 7i 165, 8i 155, 9i 145, PW 135, GW 125, SW 115, LW 100 yd (carry = yd / 1.09361). The game solves each club's ball speed from it at startup. `smash` only sets the clubhead speed shown (clubhead = ball speed / smash; the ball speed itself is solved from the carry), so it was divided by 1.0405 for every club to put the driver at 110 mph and the 7 iron at 89 mph without changing any carry.
+Launch and spin (2026-10-17): launch raised 1.2 deg for Dr-4H, 1.1 for 5i, 0.6 for 6i, 0.3 for 7i (Dr 13.2, 3W 12.6, 5W 13.6, 4H 14.4, 5i 15.0, 6i 15.9, 7i 17.3); spin cut 12 % on GW/SW/LW and 11 % on PW (PW 8300, GW 8600, SW 9000, LW 9300), a little less on 8i/9i. `smash` was then re-solved per club (ball speed / the previous clubhead speed) so every clubhead speed stayed the same; a lower wedge spin needs less ball speed, so wedge smash is now 1.09-1.17 (display only).
+
+## Wildlife (2026-10-17)
+
+The deer are gone: `makeTurkey(L, tom)` / `turkeyParts` (near `makeRabbit`, ~line 4477) put a tom and two hens across the fairways, three rabbits as before. Same behaviour as the deer did (cross the line of play, stop to peck, run when the ball comes near, can be hit: "Clipped a turkey!" with a synthesised gobble, `SFX.gobble`, played from `lifeHitNote`). Low-poly box-and-sphere models, bob and peck animation by head pivot; tune sizes in `turkeyParts`, speeds in `e.update`, count in `buildLife`.
 
 ## To do before publishing
 

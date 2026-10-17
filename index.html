@@ -536,19 +536,19 @@ function drawWeather(r) { let u = r(); for (const w of WEATHERS) { if ((u -= w.p
 
 // 14 clubs — the legal maximum. carry = target carry (m) for a full, pure, 3:1 swing with a downswing under 0.35 s.
 const CLUBS = [
-  { id: 'Dr', name: 'Driver', type: 'wood', loft: 10.5, launch: 12.0, spin: 2600, carry: 228.6, smash: 1.442, gear: 1.0 },
-  { id: '3W', name: '3 Wood', type: 'wood', loft: 15, launch: 11.4, spin: 3600, carry: 210.3, smash: 1.403, gear: 1.0 },
-  { id: '5W', name: '5 Wood', type: 'wood', loft: 18, launch: 12.4, spin: 4300, carry: 201.2, smash: 1.384, gear: .95 },
-  { id: '4H', name: '4 Hybrid', type: 'hybrid', loft: 22, launch: 13.2, spin: 4800, carry: 187.5, smash: 1.365, gear: .9 },
-  { id: '5i', name: '5 Iron', type: 'iron', loft: 25, launch: 13.9, spin: 5400, carry: 169.2, smash: 1.326, gear: .8 },
-  { id: '6i', name: '6 Iron', type: 'iron', loft: 28, launch: 15.3, spin: 6100, carry: 160.0, smash: 1.307, gear: .78 },
-  { id: '7i', name: '7 Iron', type: 'iron', loft: 32, launch: 17.0, spin: 6900, carry: 150.9, smash: 1.288, gear: .76 },
-  { id: '8i', name: '8 Iron', type: 'iron', loft: 36, launch: 19.0, spin: 7800, carry: 141.7, smash: 1.269, gear: .74 },
-  { id: '9i', name: '9 Iron', type: 'iron', loft: 41, launch: 21.6, spin: 8600, carry: 132.6, smash: 1.240, gear: .72 },
-  { id: 'PW', name: 'Pitching wedge', type: 'wedge', loft: 46, launch: 24.5, spin: 9300, carry: 123.4, smash: 1.211, gear: .66 },
-  { id: 'GW', name: 'Gap wedge', type: 'wedge', loft: 51, launch: 27.5, spin: 9800, carry: 114.3, smash: 1.182, gear: .62 },
-  { id: 'SW', name: 'Sand wedge', type: 'wedge', loft: 56, launch: 30.5, spin: 10200, carry: 105.2, smash: 1.153, gear: .6 },
-  { id: 'LW', name: 'Lob wedge', type: 'wedge', loft: 60, launch: 33.5, spin: 10600, carry: 91.4, smash: 1.124, gear: .58 },
+  { id: 'Dr', name: 'Driver', type: 'wood', loft: 10.5, launch: 13.2, spin: 2600, carry: 228.6, smash: 1.430, gear: 1.0 },
+  { id: '3W', name: '3 Wood', type: 'wood', loft: 15, launch: 12.6, spin: 3600, carry: 210.3, smash: 1.392, gear: 1.0 },
+  { id: '5W', name: '5 Wood', type: 'wood', loft: 18, launch: 13.6, spin: 4300, carry: 201.2, smash: 1.377, gear: .95 },
+  { id: '4H', name: '4 Hybrid', type: 'hybrid', loft: 22, launch: 14.4, spin: 4800, carry: 187.5, smash: 1.359, gear: .9 },
+  { id: '5i', name: '5 Iron', type: 'iron', loft: 25, launch: 15.0, spin: 5400, carry: 169.2, smash: 1.321, gear: .8 },
+  { id: '6i', name: '6 Iron', type: 'iron', loft: 28, launch: 15.9, spin: 6100, carry: 160.0, smash: 1.306, gear: .78 },
+  { id: '7i', name: '7 Iron', type: 'iron', loft: 32, launch: 17.3, spin: 6900, carry: 150.9, smash: 1.289, gear: .76 },
+  { id: '8i', name: '8 Iron', type: 'iron', loft: 36, launch: 19.0, spin: 7700, carry: 141.7, smash: 1.265, gear: .74 },
+  { id: '9i', name: '9 Iron', type: 'iron', loft: 41, launch: 21.6, spin: 8200, carry: 132.6, smash: 1.223, gear: .72 },
+  { id: 'PW', name: 'Pitching wedge', type: 'wedge', loft: 46, launch: 24.5, spin: 8300, carry: 123.4, smash: 1.170, gear: .66 },
+  { id: 'GW', name: 'Gap wedge', type: 'wedge', loft: 51, launch: 27.5, spin: 8600, carry: 114.3, smash: 1.136, gear: .62 },
+  { id: 'SW', name: 'Sand wedge', type: 'wedge', loft: 56, launch: 30.5, spin: 9000, carry: 105.2, smash: 1.111, gear: .6 },
+  { id: 'LW', name: 'Lob wedge', type: 'wedge', loft: 60, launch: 33.5, spin: 9300, carry: 91.4, smash: 1.085, gear: .58 },
   { id: 'Pt', name: 'Putter', type: 'putter', loft: 3, launch: 1, spin: 0, carry: 0, smash: 1.0, gear: 0 },
 ];
 const PUTTER = CLUBS.length - 1;
@@ -4318,7 +4318,7 @@ function updateFountains(t) {
   for (const f of W.fountains || []) { const k = 1 + Math.sin(t * 7.3) * .04 + Math.sin(t * 3.1) * .03; f.col.scale.set(k, 1 + Math.sin(t * 5.2) * .05, k); f.crown.scale.set(k, .6 * k, k); f.ring.rotation.z = t * .4; f.skirt.scale.set(1 + Math.sin(t * 4) * .03, 1, 1 + Math.cos(t * 4.4) * .03); }
 }
 
-/* ---------- life on the course: long grass and wildflowers, deer and rabbits, birds that land, walk and flock, a low flyby plane, a landing paraglider ---------- */
+/* ---------- life on the course: long grass and wildflowers, wild turkeys and rabbits, birds that land, walk and flock, a low flyby plane, a landing paraglider ---------- */
 const LIFE_T = { value: 0 };
 const _lm = new THREE.Matrix4(), _lm2 = new THREE.Matrix4(), _ld = new THREE.Object3D(), _lc = new THREE.Color(), _le = new THREE.Euler();
 // vertex-coloured lambert; the instanced grass sways in the wind
@@ -4473,44 +4473,53 @@ function threatened(L, x, z, rFly, rRest) {
 }
 const lifeTreeBlocked = (L, x, z) => !!(L.C.treeHit && L.C.treeHit(x, groundY(x, z) + .7, z, false) >= 0);
 
-/* --- ground animals: deer cross the fairway, rabbits hop about; both bolt from the ball --- */
-function deerParts(stag) {
-  const brown = 0x9b6a3c, dark = 0x5e3d22, belly = 0xe0cfae, white = 0xf6f1e6;
-  const body = mergeParts([lbx(.5, .52, 1.2, 0, 1.02, 0, brown), lbx(.4, .22, .9, 0, .8, 0, belly), lbx(.18, .2, .18, 0, 1.0, -.66, white), lbx(.2, .5, .28, 0, 1.22, .62, brown, .55, 0, 0)]);
-  const hp = [lbx(.2, .2, .4, 0, .3, .25, dark), lbx(.1, .1, .12, 0, .26, .5, 0x201810), lbx(.05, .14, .09, -.1, .46, .08, brown, 0, 0, -.35), lbx(.05, .14, .09, .1, .46, .08, brown, 0, 0, .35)];
-  if (stag) for (const s of [-1, 1]) hp.push(lbx(.03, .42, .03, .08 * s, .62, .12, 0xd8c9a8, -.25, 0, -.35 * s), lbx(.03, .26, .03, .15 * s, .8, .2, 0xd8c9a8, -.5, 0, -.2 * s), lbx(.03, .2, .03, .13 * s, .72, .05, 0xd8c9a8, .2, 0, -.5 * s));
-  const head = mergeParts(hp), leg = mergeParts([lbx(.1, .76, .1, 0, -.38, 0, brown), lbx(.11, .1, .11, 0, -.77, 0, 0x2a1d12)]);
-  return { body, head, leg };
+/* --- ground animals: wild turkeys cross the fairway, rabbits hop about; both bolt from the ball --- */
+function turkeyParts(tom) {
+  const body0 = tom ? 0x3d2a1b : 0x5a4330, wing = tom ? 0x2c1e14 : 0x45331f, tip = tom ? 0xb98a52 : 0x8a6c47, skin = tom ? 0x7d9bc4 : 0x9fa7b0, leg = 0xb98f87;
+  // body (+z is forward, y up): breast, back, folded wings, the tail (a fan on the tom) and the beard
+  const bp = [lsp(.27, .24, .4, 0, .47, 0, body0, 8), lsp(.22, .19, .24, 0, .42, .22, tom ? 0x4a3322 : 0x6a523c, 7), lbx(.04, .22, .5, -.23, .49, -.02, wing, 0, 0, -.12), lbx(.04, .22, .5, .23, .49, -.02, wing, 0, 0, .12), lbx(.04, .05, .46, -.24, .43, -.04, tip), lbx(.04, .05, .46, .24, .43, -.04, tip)];
+  if (tom) { for (let k = -3; k <= 3; k++) bp.push(lbx(.1, .55, .02, k * .11, .8 - Math.abs(k) * .04, -.5, k % 2 ? 0x6a4a2c : 0x4a3220, -.35, k * -.16, k * .24)); bp.push(lbx(.56, .06, .02, 0, .58, -.52, 0xd9c9a6, -.35), lbx(.03, .22, .03, 0, .4, .38, 0x1c1410, .35)); }
+  else for (const k of [-1, 0, 1]) bp.push(lbx(.1, .04, .42, k * .07, .52, -.5, k ? 0x6a5236 : 0x543f2b, .35, k * .25, 0));
+  const body = mergeParts(bp);
+  // neck and head hang from a pivot at the base of the neck (the head group), so it can bob and peck
+  const hp = [lbx(.1, .3, .1, 0, .15, .05, skin, .35), lsp(.075, .07, .1, 0, .32, .13, skin, 7), lbx(.03, .03, .08, 0, .3, .23, 0xd8c9a0), lbx(.035, .11, .04, 0, .24, .15, 0xc8302a)];
+  if (tom) hp.push(lsp(.035, .05, .035, 0, .4, .12, 0xc8302a), lbx(.05, .09, .09, 0, .06, .09, 0x1e1e22, .35));
+  const head = mergeParts(hp), lg = mergeParts([lbx(.05, .3, .05, 0, -.15, 0, leg), lbx(.04, .03, .13, 0, -.31, .05, leg), lbx(.04, .03, .11, .05, -.31, .04, leg, 0, -.5, 0), lbx(.04, .03, .11, -.05, -.31, .04, leg, 0, .5, 0)]);
+  return { body, head, leg: lg };
 }
-function makeDeer(L, stag) {
-  const P = deerParts(stag), mat = LIFE_MAT(), g = new THREE.Group(), body = lmesh(P.body, mat), head = new THREE.Group(), hm = lmesh(P.head, mat);
-  head.position.set(0, 1.28, .72); head.add(hm); hm.position.set(0, -.3, -.1);
-  const legs = [[-.17, .5], [.17, .5], [-.17, -.5], [.17, -.5]].map(p => { const lg = new THREE.Group(); lg.position.set(p[0], .76, p[1]); lg.add(lmesh(P.leg, mat)); g.add(lg); return lg; });
+function makeTurkey(L, tom) {
+  const P = turkeyParts(tom), mat = LIFE_MAT(), g = new THREE.Group(), body = lmesh(P.body, mat), head = new THREE.Group(), hm = lmesh(P.head, mat);
+  head.position.set(0, .52, .3); head.add(hm);
+  const legs = [[-.1, .02], [.1, .02]].map(p => { const lg = new THREE.Group(); lg.position.set(p[0], .34, p[1]); lg.add(lmesh(P.leg, mat)); g.add(lg); return lg; });
   g.add(body); g.add(head); g.visible = false; L.grp.add(g);
-  const e = { kind: 'deer', mat, g, head, legs, st: 'gone', x: 0, z: 0, yaw: 0, spd: 0, ph: Math.random() * 6, tmr: 0, wp: null, ex: 0, ez: 0, respawn: 4 + Math.random() * 20, hitT: 0, scale: stag ? 1.1 : 1, r: .9, h: 1.7 };
-  e.spawn = () => { const c = crossingPoints(L, 8); if (!c) { e.respawn = 6; return; } e.x = c.a[0]; e.z = c.a[1]; e.wp = c.b; e.st = 'walk'; e.spd = 0; e.tmr = 3 + Math.random() * 6; e.yaw = Math.atan2(c.b[0] - c.a[0], c.b[1] - c.a[1]); g.visible = true; };
-  e.flee = (fx, fz) => { if (e.st === 'flee' || e.st === 'gone') return; e.st = 'flee'; e.tmr = 5 + Math.random() * 2; const a = Math.atan2(e.x - fx, e.z - fz) + (Math.random() - .5) * .7; e.yaw = a; e.wp = [e.x + Math.sin(a) * 90, e.z + Math.cos(a) * 90]; };
-  e.hit = (x, y, z) => { if (e.st === 'gone') return null; const gy = groundY(e.x, e.z), dx = x - e.x, dz = z - e.z; if (y < gy - .1 || y > gy + e.h) return null; const d = Math.hypot(dx, dz); if (d > e.r * e.scale) return null; const l = d || 1; return { nx: dx / l, ny: .35, nz: dz / l }; };
+  const e = { kind: 'turkey', mat, g, head, legs, st: 'gone', x: 0, z: 0, yaw: 0, spd: 0, ph: Math.random() * 6, tmr: 0, wp: null, ex: 0, ez: 0, respawn: 4 + Math.random() * 20, hitT: 0, scale: tom ? 1.2 : 1, r: .5, h: 1.1 };
+  e.spawn = () => { const c = crossingPoints(L, 8); if (!c) { e.respawn = 6; return; } e.x = c.a[0]; e.z = c.a[1]; e.wp = c.b; e.st = 'walk'; e.spd = 0; e.tmr = 2 + Math.random() * 5; e.yaw = Math.atan2(c.b[0] - c.a[0], c.b[1] - c.a[1]); g.visible = true; };
+  e.flee = (fx, fz) => { if (e.st === 'flee' || e.st === 'gone') return; e.st = 'flee'; e.tmr = 4 + Math.random() * 2; const a = Math.atan2(e.x - fx, e.z - fz) + (Math.random() - .5) * .8; e.yaw = a; e.wp = [e.x + Math.sin(a) * 80, e.z + Math.cos(a) * 80]; };
+  e.hit = (x, y, z) => { if (e.st === 'gone') return null; const gy = groundY(e.x, e.z), dx = x - e.x, dz = z - e.z; if (y < gy - .1 || y > gy + e.h * e.scale) return null; const d = Math.hypot(dx, dz); if (d > e.r * e.scale) return null; const l = d || 1; return { nx: dx / l, ny: .35, nz: dz / l }; };
   e.onHit = () => { e.flee(L.T.x, L.T.z); e.hitT = .5; };
   e.update = dt => {
     if (e.st === 'gone') { e.respawn -= dt; if (e.respawn <= 0) e.spawn(); return; }
-    const near = threatened(L, e.x, e.z, 38, 14); if (near && e.st !== 'flee') e.flee(L.T.x, L.T.z);
+    const near = threatened(L, e.x, e.z, 30, 12); if (near && e.st !== 'flee') e.flee(L.T.x, L.T.z);
     let sp = 0;
-    if (e.st === 'walk') { if (e.tmr > 0) { e.tmr -= dt; e.graze = true; sp = 0; } else { e.graze = false; sp = 1.3; if (Math.random() < dt * .08) e.tmr = 3 + Math.random() * 5; } }
-    else if (e.st === 'flee') { e.tmr -= dt; sp = 8.8; e.graze = false; if (e.tmr <= 0 && Math.hypot(L.T.x - e.x, L.T.z - e.z) > 60) { e.st = 'walk'; e.tmr = 0; } }
+    if (e.st === 'walk') { if (e.tmr > 0) { e.tmr -= dt; e.graze = true; sp = 0; } else { e.graze = false; sp = 1.1; if (Math.random() < dt * .18) e.tmr = 1.5 + Math.random() * 4; } } // stops to peck at the ground
+    else if (e.st === 'flee') { e.tmr -= dt; sp = 6.8; e.graze = false; if (e.tmr <= 0 && Math.hypot(L.T.x - e.x, L.T.z - e.z) > 50) { e.st = 'walk'; e.tmr = 0; } }
     if (sp > 0 && e.wp) {
-      const want = Math.atan2(e.wp[0] - e.x, e.wp[1] - e.z); let da = want - e.yaw; da = Math.atan2(Math.sin(da), Math.cos(da)); e.yaw += clamp(da, -dt * 3, dt * 3);
+      const want = Math.atan2(e.wp[0] - e.x, e.wp[1] - e.z); let da = want - e.yaw; da = Math.atan2(Math.sin(da), Math.cos(da)); e.yaw += clamp(da, -dt * 4, dt * 4);
       let nx = e.x + Math.sin(e.yaw) * sp * dt, nz = e.z + Math.cos(e.yaw) * sp * dt;
       if (!lifeWalkable(L, nx, nz)) { e.yaw += (Math.random() < .5 ? 1 : -1) * .9; nx = e.x; nz = e.z; if (e.st === 'walk') e.tmr = Math.max(e.tmr, .5); }
       e.x = nx; e.z = nz;
       if (Math.hypot(e.wp[0] - e.x, e.wp[1] - e.z) < 3 || !C_in(L, e.x, e.z)) { e.st = 'gone'; e.g.visible = false; e.respawn = 14 + Math.random() * 40; return; }
     }
-    e.spd = lerp(e.spd, sp, Math.min(1, dt * 5)); e.ph += dt * e.spd * (e.st === 'flee' ? 1.5 : 3.2);
-    const y = groundY(e.x, e.z), bound = e.st === 'flee' ? Math.abs(Math.sin(e.ph * .9)) * .18 : 0;
-    e.g.position.set(e.x, y + bound, e.z); e.g.rotation.y = e.yaw; e.g.scale.setScalar(e.scale);
-    const amp = Math.min(1, e.spd / 1.3) * (e.st === 'flee' ? .9 : .5);
-    e.legs[0].rotation.x = Math.sin(e.ph) * amp; e.legs[3].rotation.x = Math.sin(e.ph) * amp; e.legs[1].rotation.x = -Math.sin(e.ph) * amp; e.legs[2].rotation.x = -Math.sin(e.ph) * amp;
-    e.head.rotation.x = e.graze ? .95 + Math.sin(e.ph * .4 + L.t * 1.3) * .05 : e.st === 'flee' ? -.1 : Math.sin(L.t * .8 + e.ph * .2) * .06;
+    e.spd = lerp(e.spd, sp, Math.min(1, dt * 6)); e.ph += dt * e.spd * (e.st === 'flee' ? 2.6 : 5);
+    const y = groundY(e.x, e.z), run = e.st === 'flee';
+    e.g.position.set(e.x, y + (run ? Math.abs(Math.sin(e.ph)) * .06 : 0), e.z); e.g.rotation.y = e.yaw; e.g.scale.setScalar(e.scale);
+    const amp = Math.min(1, e.spd / 1.1) * (run ? .9 : .55);
+    e.legs[0].rotation.x = Math.sin(e.ph) * amp; e.legs[1].rotation.x = -Math.sin(e.ph) * amp;
+    // the head bobs forward and back as it walks, pecks at the ground when stopped, and is held out and low when running
+    const bob = Math.min(1, e.spd / 1.1) * Math.sin(e.ph * 2) * .06;
+    e.head.position.z = .3 + bob + (run ? .08 : 0);
+    e.head.rotation.x = e.graze ? 1.05 + Math.max(0, Math.sin(L.t * 3.1 + e.ph)) * .45 : run ? .35 : Math.sin(L.t * .9 + e.ph * .3) * .05;
+    e.g.rotation.x = run ? .12 : 0;
     if (e.hitT > 0) { e.hitT -= dt; e.g.rotation.z = Math.sin(e.hitT * 30) * .25 * e.hitT; } else e.g.rotation.z = 0;
   };
   return e;
@@ -4784,7 +4793,7 @@ function buildLife(C, grp) {
   W.life = L; W.birds = null;
   try {
     initGround(L, grp);
-    L.ents.push(makeDeer(L, true), makeDeer(L, false), makeRabbit(L), makeRabbit(L), makeRabbit(L));
+    L.ents.push(makeTurkey(L, true), makeTurkey(L, false), makeTurkey(L, false), makeRabbit(L), makeRabbit(L), makeRabbit(L));
     initBirds(L, grp);
     L.plane = makePlane(L); L.glider = makeGlider(L); L.ents.push(L.plane, L.glider);
   } catch (e) { console.error('life', e); W.life = null; }
@@ -4808,7 +4817,7 @@ function updateLife(dt, now) {
   for (const e of L.ents) { if (e.update) e.update(dt); if (e.mat) lifeFade(e, dt); }
   const B = L.B; for (const bd of B.list) birdUpdate(L, bd, dt); updateFlocks(L, dt); drawBirds(L, dt);
   // animals bolt when the ball lands among them
-  if (G.state === 'flight' || G.state === 'settle') for (const e of L.ents) if (e.flee) { const d = Math.hypot(e.x - T.x, e.z - T.z); if (T.fly ? d < (e.kind === 'deer' ? 38 : 26) : d < (e.kind === 'deer' ? 22 : 12)) e.flee(T.x, T.z); }
+  if (G.state === 'flight' || G.state === 'settle') for (const e of L.ents) if (e.flee) { const d = Math.hypot(e.x - T.x, e.z - T.z); if (T.fly ? d < (e.kind === 'turkey' ? 32 : 26) : d < (e.kind === 'turkey' ? 16 : 12)) e.flee(T.x, T.z); }
 }
 // swept test of the ball's move p0 -> p1 against everything that can be hit; returns { n, e }
 function lifeCollide(x0, y0, z0, x1, y1, z1) {
@@ -4843,9 +4852,9 @@ function deflectShot(sh, tt, hit) {
 }
 function lifeHitNote(hit) {
   const e = hit.e, bd = hit.h.bird, k = bd ? 'bird' : e ? e.kind : '';
-  const txt = { deer: 'Off a deer!', rabbit: 'Clipped a rabbit!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!' }[k];
+  const txt = { turkey: 'Clipped a turkey!', rabbit: 'Clipped a rabbit!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!' }[k];
   if (txt) readoutNote(txt, 'bad');
-  try { if (k === 'plane' || k === 'glider') SFX.trunk(); else SFX.leaves(); } catch (er) { }
+  try { if (k === 'plane' || k === 'glider') SFX.trunk(); else if (k === 'turkey') SFX.gobble(); else SFX.leaves(); } catch (er) { }
   if (bd) { bd.st = 'hit'; bd.t = 0; const n = hit.h; bd.hitV = [-n.nx * 3 + (Math.random() - .5) * 2, 3, -n.nz * 3 + (Math.random() - .5) * 2]; bd.flock = bd.flock; }
   else if (e && e.onHit) e.onHit();
 }
@@ -5403,6 +5412,23 @@ const SFX = {
   tree() { noiseBurst(.28, .22, 2600, .4); tone(320, .06, 'square', .06); },
   trunk() { tone(190, .09, 'triangle', .2, 120); noiseBurst(.05, .18, 900, 1.2); },
   leaves() { noiseBurst(.22, .14, 3200, .4); },
+  // a turkey's "gobble-gobble", synthesised: two phrases, each a quick trill of short, nasal, warbling sawtooth chirps that
+  // swells and falls away, the second a little lower and shorter, with a gap between
+  gobble() {
+    if (!settings.sound) return; const a = audio(); if (!a) return; const t0 = a.currentTime + .02;
+    const bp = a.createBiquadFilter(), out = a.createGain(); bp.type = 'bandpass'; bp.frequency.value = 1100; bp.Q.value = 1.6; out.gain.value = .5; bp.connect(out).connect(a.destination);
+    const jit = (Math.random() - .5) * 40;
+    [{ at: 0, n: 7, f: 760 + jit, drop: 26, v: 1 }, { at: .47, n: 6, f: 680 + jit, drop: 24, v: .85 }].forEach(ph => {
+      for (let k = 0; k < ph.n; k++) {
+        const t = t0 + ph.at + k * .052, f = ph.f - k * ph.drop, swell = Math.sin(Math.PI * (k + .8) / (ph.n + .6)), o = a.createOscillator(), g = a.createGain(), lfo = a.createOscillator(), lg = a.createGain();
+        o.type = 'sawtooth'; o.frequency.setValueAtTime(f * .84, t); o.frequency.exponentialRampToValueAtTime(f * 1.22, t + .022); o.frequency.exponentialRampToValueAtTime(f * .9, t + .05);
+        lfo.frequency.value = 55; lg.gain.value = f * .045; lfo.connect(lg).connect(o.frequency); // a fast wobble on the pitch
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.55 * ph.v * (.35 + .65 * swell), t + .008); g.gain.exponentialRampToValueAtTime(.001, t + .055);
+        o.connect(g).connect(bp); o.start(t); o.stop(t + .07); lfo.start(t); lfo.stop(t + .07);
+      }
+      noiseBurst(.34, .035 * ph.v, 2600, 1.2, ph.at);
+    });
+  },
   // a bright, fairy-like glissando: a rising major-pentatonic run of bell tones, each with a quiet octave shimmer, ending on a held sparkle
   rainbow() {
     const n = [1319, 1568, 1760, 2093, 2349, 2637, 3136, 3520, 4186];
