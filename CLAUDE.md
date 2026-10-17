@@ -61,6 +61,10 @@ Do edits with small Python scripts that assert each `old` string matches exactly
 5. **Renamed to "Galena!!! Golf"**: `<title>`, the apple web-app title (`Galena!!!`), the title-screen `<h1>Galena<span>!!!</span><br>Golf</h1>`, the logo's alt text, the share-link title, the score-post issue text, and the manifest's `name`/`short_name`.
 6. Verified with `node --check` and a search for leftover references only. Since then: headless-Chromium tested on 2026-10-16 (title screen, fonts, three.js, starting a round, online and with the server stopped), and the live site works on the user's phone. A full round with score posting hasn't been tested yet.
 
+## Ball flight visibility (2026-10-17)
+
+"Dramatic bounce" (Settings, `settings.drama`, on by default; `drama()` and `HOP_K` near `saveSettings`): the ball sits on the ground at any drawn scale (centre lifted by `VIS_R * scale`), hops after the first landing are drawn 2.2x as high (`hopY`; physics untouched), a flat roll-out trail (`W.trail`) and a landing ring (`W.landRing`), a puff on every bounce, a lower chase camera after landing (`camFollowTargets`, `R.pk`), a short slow-motion over the first landing of hard-hit shots (`updateFlight`, `rate`), and the drawn ball shrinks from 7x to 4x while it rolls (`BALL_CAP`). Tune `HOP_K`, the 7/4 caps and the 7 m / 1.7 m camera numbers by feel on a phone.
+
 ## To do before publishing
 
 - [x] **Score posting** now points at `GH_REPO = 'galenadorf/Galena-Golf'` (line ~6887). `GH_POST_KEY` is now emptied (it was the original author's token), so players get a pre-filled issue page; to post silently, add your own fine-grained token (Issues read/write on that repo only).
@@ -117,10 +121,11 @@ Python venv at `~/.venvs/galena` (numpy, scipy, rasterio, pyproj, shapely, pillo
 
 ### Open items for the course
 - [ ] **User to review the fairway overlay** (`tools/course/out/aerial_fair.jpg`). Known: hole 5 takes in some mown ground by the back tees; par 3s have no fairway (mown rough plus the automatic first cut).
-- [ ] **Cart paths** are only fragments (pale-pixel detection); the parking lot shows up as path. Improve (ridge filter on the aerial) or drop.
-- [ ] **The creek** (along 10/17 and the clubhouse) isn't in OSM; trace it from the DEM channel if wanted.
+- [x] **Cart paths** removed from the whole course (2026-10-17): `build.py` sets `paths = []`, so `RD_WOODBINE` has none. `trace.py` still writes `out/paths.json` but nothing reads it.
+- [x] **The creek** (2026-10-17): `tools/course/creek.py` traces the DEM channel (past the clubhouse and behind 16's green) to `out/creek.json`; `build.py` cuts it into 14 m ribbons (`feat.creek`, 4 m wide) that the engine digs as creek pieces and treats as water (penalty). Run `creek.py` before `build.py`. The four OSM ponds were already in. Headless-checked: holes 9, 10, 12, 13, 16, 17, 18 get creek pieces.
 - [ ] Tree species is a guess (crown shape plus NIR): 505 broadleaf, 281 conifer, 38 shrubs.
-- [ ] Look: the native tall grass shows as the normal deep rough. Try `dry: true` in `RDS.woodbine` (the links palette) or a tan tint.
+- [x] **Fescue** (2026-10-17): the deep rough (clumpy tall grass, `S.DEEP`) is now exactly the areas painted on `tools/course/out/fescue_base.png` → `out/fescue_mask.png` (pure magenta). Pipeline: `fescue_base.py` (makes the base map; only needed once), `fescue.py` (mask → `out/fescue.json`, 14.2 ha, 88 areas), then `build.py` (`feat.fescue`) and `install.py`. Engine: `hasFescue` in `makeRealCourse` sets `deepF` from the polygons (plus 0.9 m of edge noise); a course without `feat.fescue` keeps the old distance rule. Fairway, first cut, greens, tees, bunkers and water still take precedence, so a 2.8 m first cut remains along fairway edges. Outside the course boundary stays deep as before.
+- [x] Fescue colour (2026-10-17): tan/amber. `RDS.woodbine.fescue = true` switches the deep rough to `FESCUE_HSL` (ground; terrain shader `cDeep` and the hole-map colour) and `FESCUE_COLS` (blades and tufts), near `GRASS_COLS`. Tune those two by eye; the shader darkens colours a lot, so `FESCUE_HSL` has to be light (`[.125, .44, .68]` renders as tan). Try `dry: true` in `RDS.woodbine` (the links palette) or a tan tint.
 - [ ] Playtest a full round on a phone, and post a score.
 
 ## Adding another course (general)

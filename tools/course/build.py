@@ -15,7 +15,7 @@ import numpy as np
 import rasterio
 from scipy import ndimage as ndi
 from shapely.geometry import LineString, Point, Polygon, box, shape
-from shapely.ops import unary_union
+from shapely.ops import substring, unary_union
 
 import card
 import osm
@@ -251,10 +251,25 @@ def build_holes(F, demZ1):
     return out
 
 
+def creek_pieces(hw=2.0, step=14.0):
+    """creek.py's centre line as short ribbons (the game sets each piece's water level from its own banks, so the creek steps down)."""
+    p = os.path.join(OUT, 'creek.json')
+    if not os.path.exists(p):
+        return []
+    out = []
+    for g in json.load(open(p)):
+        L = shape(g)
+        n = max(1, int(round(L.length / step)))
+        for i in range(n):
+            a, b = L.length * i / n, min(L.length, L.length * (i + 1) / n + .3)
+            out.append(substring(L, a, b).buffer(hw, cap_style=2))
+    return out
+
+
 def main():
     F = osm.load()
     fair = [shape(g) for g in json.load(open(os.path.join(OUT, 'fairways.json')))]
-    paths = [shape(g) for g in json.load(open(os.path.join(OUT, 'paths.json')))] if os.path.exists(os.path.join(OUT, 'paths.json')) else []
+    paths = []  # cart paths removed on purpose (trace.py's paths.json was only fragments)
     course = F['course'][0]['poly']
     dem, demZ = build_dem()
     d1, tr1 = read(cache('dem1m.tif'))
@@ -271,10 +286,13 @@ def main():
     for t in trees:  # e, n, crown diameter (dm), kind * 1000 + height (dm)
         tq += [int(round(t['e'] * 10)), int(round(t['n'] * 10)), int(round(t['d'] * 10)), t['kind'] * 1000 + min(999, int(round(t['h'] * 10)))]
     water = [w['poly'] for w in F['water']]
+    creek = creek_pieces()
+    fp = os.path.join(OUT, 'fescue.json')
+    fescue = [shape(g) for g in json.load(open(fp))] if os.path.exists(fp) else []
     rd = dict(
         name=NAME, origin=list(ORIGIN), dem=dem, holes=holes,
         feat=dict(fair=enc_polys(fair), green=enc_polys([f['poly'] for f in F['green']]), tee=enc_polys([f['poly'] for f in F['tee']]),
-                  sand=enc_polys([f['poly'] for f in F['bunker']]), water=enc_polys(water), path=enc_polys(paths),
+                  sand=enc_polys([f['poly'] for f in F['bunker']]), water=enc_polys(water), path=enc_polys(paths), creek=enc_polys(creek), fescue=enc_polys(fescue),
                   range=enc_polys([f['poly'] for f in F['driving_range']])),
         trees=b64i16(tq) if tq else '', ntrees=len(trees),
         forest=enc_polys(clip([f['poly'] for f in F['wood']])) if F['wood'] else enc_polys([]),
