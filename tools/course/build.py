@@ -268,7 +268,8 @@ def creek_pieces(hw=2.0, step=14.0):
 
 def main():
     F = osm.load()
-    fair = [shape(g) for g in json.load(open(os.path.join(OUT, 'fairways.json')))]
+    fp0 = os.path.join(OUT, 'fairways_painted.json')  # hand-corrected fairways (fairways.py) win over trace.py's
+    fair = [shape(g) for g in json.load(open(fp0 if os.path.exists(fp0) else os.path.join(OUT, 'fairways.json')))]
     paths = []  # cart paths removed on purpose (trace.py's paths.json was only fragments)
     course = F['course'][0]['poly']
     dem, demZ = build_dem()
