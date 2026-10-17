@@ -5400,7 +5400,13 @@ function musicTick() {
 setInterval(musicTick, 200);
 const HIT_PITCH = .88, HIT_VOL = .76, HIT_LP = 2400; // the strike sound: playback rate, level and low-pass cutoff (Hz) multipliers
 const SFX = {
-  hit(q, putt) {
+  // a putt: a soft, short "tap" (synthesised: a quick low thud and a faint click), a little firmer for a harder stroke
+  tap(speed) {
+    const k = clamp(.55 + (speed || 3) / 9, .55, 1), r = 1 + (Math.random() - .5) * .08;
+    tone(430 * r, .05, 'sine', .11 * k, 250 * r); tone(1250 * r, .022, 'triangle', .022 * k); noiseBurst(.02, .06 * k, 2200, 1.4);
+  },
+  hit(q, putt, speed) {
+    if (putt) { SFX.tap(speed); return; }
     const ct = CLUBS[G.club] ? CLUBS[G.club].type : 'iron', r = (Math.random() - .5) * .06;
     if (SND.hit) { // the recorded strike: pitch follows the club, a mishit is duller, a putt is a soft tap
       // softened: pitched down, with the harsh top rolled off (HIT_LP) and a lower level (HIT_VOL)
@@ -5840,7 +5846,7 @@ function impact(tImp) {
   SW.pathDeg = pathAngle(); SW.pathAt = performance.now();
   const L = computeLaunch(G.club, { p: Math.min(SW.pMax, 1.05), Tb, Td, range: G.puttRange, pathDeg: SW.pathDeg }, st, G.surf, G.yaw, settings.hand, G.teed, Math.random());
   L.Tb = Tb; L.Td = Td; L.loose = st.loose; SW.last = L;
-  SFX.hit(L.qualityLevel, L.putt); buzz(L.qualityLevel < 1 ? 12 : 30);
+  SFX.hit(L.qualityLevel, L.putt, L.ballSpeed); buzz(L.qualityLevel < 1 ? 12 : 30);
   G.strokes++;
   if (L.putt && (G.surf === S.GREEN || G.surf === S.FRINGE)) G.putts[G.hole]++;
   G.prev = { x: G.ball.x, z: G.ball.z, teed: G.teed };

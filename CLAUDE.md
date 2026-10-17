@@ -78,6 +78,8 @@ The deer are gone: `makeTurkey(L, tom)` / `turkeyParts` (near `makeRabbit`, ~lin
 
 `HIT_PITCH` (.88), `HIT_VOL` (.76) and `HIT_LP` (2400 Hz) above `SFX` soften the recorded club-on-ball sample (pitched down, high end rolled off, quieter), full shots, mishits and putts alike. Tune them there.
 
+Putts do not use that sample: `SFX.tap(speed)` (synthesised: a short low thud, a faint click and a noise tick, level .55-1 by stroke speed) is played from `SFX.hit` when `putt` is true.
+
 ## To do before publishing
 
 - [x] **Score posting** now points at `GH_REPO = 'galenadorf/Galena-Golf'` (line ~6887). `GH_POST_KEY` is now emptied (it was the original author's token), so players get a pre-filled issue page; to post silently, add your own fine-grained token (Issues read/write on that repo only).
