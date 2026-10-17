@@ -1,171 +1,81 @@
-# Galena!!! Golf
+# CLAUDE.md
 
-A mobile, browser-based 3D golf game (installable PWA), forked from **SweetSpot** (https://github.com/nephlonor/SweetSpot) and being customised into **Galena!!! Golf**.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Offline rule:** all solo play must work fully offline, with no CDN or other third-party dependency. Every file the game needs lives in this repo, and `sw.js` caches it. Only **live multiplayer** (public MQTT brokers) and the **world leaderboard** (GitHub API and `raw.githubusercontent.com`) need a connection; they must fail quietly when offline. Don't add new external scripts, fonts or assets: download them into `vendor/` or `fonts/` (with their licence) and add them to `CORE` in `sw.js`.
+**Galena!!! Golf**: a mobile, browser-based 3D golf game (installable PWA), forked from SweetSpot (https://github.com/nephlonor/SweetSpot). It has exactly one course, **Woodbine Bend Golf Course** (Stockton IL), built from public geodata. Repo: https://github.com/galenadorf/Galena-Golf, branch `main`, live at https://galenadorf.github.io/Galena-Golf/.
 
-**Goal:** a rebrand plus gameplay changes, with **exactly one course: Woodbine Bend Golf Course** (`woodbine`, Stockton IL). It replaced the placeholder Golf & Country Club Basel (`gccb`), which is now removed. The UI shows **yards** (feet on and around the green, mph for wind and ball speed); the engine works in metres.
+## Ground rules
 
-## Project layout
+- **Offline rule.** Solo play must work fully offline with no CDN or third-party dependency. Everything the game needs lives in the repo and `sw.js` caches it. Only live multiplayer (public MQTT brokers) and the world leaderboard (GitHub API, `raw.githubusercontent.com`) may use the network, and they must fail quietly offline. Never add an external script, font or asset: download it into `vendor/` or `fonts/` with its licence and add it to `CORE` in `sw.js`. Sounds are synthesised or embedded as base64.
+- **Units.** The UI shows yards (feet on and around the green, mph for wind and ball speed). The engine works in metres. `CLUBS[].carry` is in metres.
+- **Git.** Commit and push only when the user asks. `git add -A` skips `tools/course/out/` (ignored), so add paths explicitly and check `git status` after a commit. One commit usually covers `index.html` plus the tools, because they can't be split.
+- **The painted masks are not in git.** `tools/course/out/` and `.cache/` are git-ignored, so the user's hand-painted masks (`*_mask.png`, `signs.txt`) and every generated JSON live only on this machine. The game does not need them to run (their results are embedded in `index.html`), but they are the source of truth for the course data. Never delete `out/`; tell the user if you change how they are used.
 
-- `index.html` — **the entire game**: HTML, CSS and JS in one file (~5,900 lines, ~0.9 MB). There's no build step for the game.
-- `vendor/` — three.js r128 (`three.r128.min.js`, the global build) and mqtt.js 5.10.1 (loaded only when multiplayer starts), byte-identical to the npm builds, with their MIT licences.
-- `fonts/` — Oswald (variable) and Barlow 500/600/700 as `.woff2`, all subsets Google Fonts serves, plus `fonts.css` and the OFL licences.
-- `sw.js` — service worker for offline play: precaches `CORE` (page, icons, vendor, fonts), network-first for the page (falls back to the cache after 4 s), cache-first for everything else; it doesn't touch other origins or `version.txt`. Its cache is `galena-<BUILD>`, so each deploy replaces it. Registered at the end of `index.html`; needs https or localhost.
-- `manifest.webmanifest`, `icon*.png`, `icon.svg`, `apple-touch-icon.png` — PWA metadata and icons (the icons are still SweetSpot's artwork).
-- `leaderboard/woodbine.json` — the world leaderboard (empty).
-- `tools/course/` — the Python pipeline that builds the course data (see *Rebuilding the course data* below). Its `.cache/` (downloads) and `out/` (results, preview images) are git-ignored.
-- `.github/workflows/pages.yml` — deploys to GitHub Pages: copies the files (including `sw.js`, `vendor/` and `fonts/`), replaces `__BUILD__` with the commit SHA in `index.html` and `sw.js` and writes `version.txt` (the game reloads itself when that file changes).
-- `.github/workflows/leaderboard.yml` — players post scores as GitHub issues titled `[score] ...` with a JSON body. The workflow validates them, appends them to `leaderboard/<course>.json` and closes the issue. Its `COURSES` map holds course key → par.
-- `_original/` — an untouched copy of the files as forked (index.html, manifest, leaderboard, .github). It's for reference only and isn't deployed.
-- Git repo: https://github.com/galenadorf/Galena-Golf (branch `main`). `_original/` is git-ignored.
+## Working with index.html
 
-### Working with index.html
+`index.html` is the whole game: HTML, CSS and JS in one file (about 5,900 lines, 0.9 MB), no build step. Three lines are huge embedded data; never print them whole, use `cut -c1-200`: `RD_WOODBINE` (course data, ~295 KB) and `GREEN_ALTI_WOODBINE` are **written by `tools/course/install.py`, never edit by hand**; `SND_B64` (base64 MP3) and `CLUB_SPR` (base64 WebP) are static.
 
-Several lines are huge embedded data. Don't print them whole; cut them with `cut -c1-200`.
-- line ~1804 `RD_WOODBINE` (~290 KB of course data; written by `tools/course/install.py`, never edit by hand)
-- line ~2000 `GREEN_ALTI_WOODBINE` (green elevation grids; also written by `install.py`)
-- line ~4886 `SND_B64` (sound effects as base64 MP3)
-- line ~6294 `CLUB_SPR` (club-head sprites as base64 WebP)
+- Edit with small Python scripts that assert each `old` string matches exactly once. Line numbers drift constantly: find things with `grep -n` on the function or constant name. Code is organised under `/* ===== NAME ===== */` banners: UTIL, PHYSICS, REAL COURSE, WORLD (three.js), GAME, UI, STATS + RECORDS, PLAYER + LEADERBOARD, INPUT + LOOP.
+- Python offsets are code points but JS/node offsets are UTF-16, and the file contains non-BMP characters. Never apply node-computed offsets from Python; do the splice in node or work by string match.
+- **Check JS** after every edit: write the text between the last `<script>` and its `</script>` to a scratch file (`s[s.rfind('<script>')+8 : s.find('</script>', s.rfind('<script>'))]` in Python) and run `node --check` on it. For unused or undefined names, run ESLint (`no-undef`, `no-unused-vars`) on that same file from a scratch folder.
+- **Browser testing (WSL, no system browser).** In a scratch folder: `npm i playwright@1.48.2 && npx playwright install chromium`; Chromium lacks `libnss3`, `libnspr4`, `libasound2t64` and there is no sudo, so `apt-get download` them, `dpkg-deb -x <deb> <dir>`, and run node with `LD_LIBRARY_PATH=<dir>/usr/lib/x86_64-linux-gnu`. Serve the repo with `python3 -m http.server` and launch with `--use-gl=swiftshader --enable-unsafe-swiftshader --no-sandbox`. Fill `#nameIn`, click `#btnPlay`, then drive the game through globals (`startHole(i)`, `G`, `W`, `impact()`, `simulateShot()`; overriding `updateCamera = () => {...}` gives a fixed camera for screenshots). Swiftshader is slow, so game time runs well under real time. There is no test suite; "tested" means all 18 holes load with every tee and cup in bounds, a shot plays, and the page logs no errors (MQTT WebSocket errors are expected offline).
+- `.github/workflows/pages.yml` deploys on push to `main`: copies `index.html manifest.webmanifest sw.js *.png icon.svg vendor fonts`, replaces `__BUILD__` with the commit SHA in `index.html` and `sw.js`, writes `version.txt` (the running game reloads itself when it changes). `sw.js` is network-first for the page (cache after 4 s), cache-first otherwise, cache name `galena-<BUILD>`; it needs https or localhost.
+- `.github/workflows/leaderboard.yml`: players post scores as issues titled `[score] ...` with a JSON body; the workflow validates, appends to `leaderboard/<course>.json` and closes the issue. Its `COURSES` map is course key to par (`woodbine: 72`). Score posting points at `GH_REPO`; `GH_POST_KEY` is empty, so players get a pre-filled issue page. `_original/` (git-ignored) is an untouched copy of the fork, for reference.
 
-Do edits with small Python scripts that assert each `old` string matches exactly once. Check the JS afterwards by extracting the last inline `<script>` and running `node --check`.
+## Architecture
 
-**Browser testing on this machine (WSL):** there's no system browser, and Playwright's Chromium is missing `libnss3`, `libnspr4` and `libasound2t64` (installing them needs sudo). Workaround without sudo: `npm i playwright@1.48.2 && npx playwright install chromium` in a scratch folder, then `apt-get download libnss3 libnspr4 libasound2t64`, extract each with `dpkg-deb -x <deb> <dir>`, and run node with `LD_LIBRARY_PATH=<dir>/usr/lib/x86_64-linux-gnu`. Serve the folder with `python3 -m http.server` on localhost; launch Chromium with `--use-gl=swiftshader --enable-unsafe-swiftshader`. A player name must be filled in (`#nameIn`) before `#btnPlay` starts a round.
+**Data to game.** `tools/course/` (Python) turns public geodata into one data object, `RD_WOODBINE`, that `install.py` splices into `index.html`. At run time: `setCourse` (`COURSES`, `RDS`, `WOODBINE_DEFS`) selects it; `realPrep` decodes the course-wide data once (`GC`); `makeRealCourse(idx, pin)` builds one hole as a lattice of fields (fairway, green, tee, sand, water, creek, fescue distance fields) plus the ground height, dug greens, ponds, bunkers and creek pieces, and returns the `C` object the whole game uses (`C.surf`, `C.h`, `C.wl`, `C.cup`, `C.treeHit`); `buildRealHole` makes the three.js scene (terrain shader, trees, buildings, props, wildlife). Surface class is decided in `surfInfo` in a fixed precedence (water, sand, green, fringe, tee, path, fairway, first cut, deep, rough); the tall fescue is the only `DEEP`. Everything outside the hand-painted boundary is out of bounds.
 
-### Code map (line numbers approximate; each section starts with a `/* ===== NAME ===== */` banner)
+**Ball flight.** `simulateShot(C, o)` is a fixed-step simulation (drag, lift and spin fitted to TrackMan data; surface bounce, roll, trees, buildings, cup). `calibrateClubs()` solves each club's ball speed at start-up so a full swing on flat ground carries exactly `CLUBS[].carry`; `launch` and `spin` shape the flight and roll, `smash` only sets the displayed clubhead speed. `impact()` turns the swing (`SW`: tempo, strike dot) into a launch, runs the simulation, and `updateFlight(dt)` plays the recorded frames back with the camera (`camFollowTargets`), trail, particles and slow-motion. The "Dramatic bounce" setting (`drama()`, `HOP_K`, `BALL_CAP`) only changes how the flight is drawn, never the physics.
 
-| Lines | Section |
-|---|---|
-| 14–~340 | CSS. Theme variables on `:root`: greens `--g1..g3`, `--yel`, fonts Oswald and Barlow |
-| ~340–425 | HTML: HUD, title screen (h1 at ~373), menus and sheets; help/credits text |
-| 425 | UTIL (noise, maths); unit helpers `toYd`, `toFt`, `toMph`, `fmtDistShort`, `holeYd` (~468) |
-| 470 | PHYSICS: ball flight fitted to TrackMan data; `SURF` surfaces (482), `WEATHERS` (499), **`CLUBS` table (526)** |
-| ~1000 | hole-geometry helpers (`mkPoly`, `polyQ`, `polyAt`), decoders, the `RD_WOODBINE` data line |
-| 1044 | REAL COURSE: `realPrep()` (course-wide data), `makeRealCourse` (one hole), `buildRealHole`, trees, decor. `RD_CUR` is the data set in use |
-| ~2200 | `WOODBINE_DEFS`, `RDS` (data set per course, 2205), `COURSES` (2215), `setCourse()` (2222) |
-| 2238 | WORLD (three.js): terrain shaders, tilt-shift, rain, particles, hole props and detail, wildlife (turkeys), plane, paraglider |
-| 3413 | GAME: settings, `LB_EPOCH` (3418), audio, live multiplayer over MQTT, synthesised music; state `G`, swing `SW`, saving the round in progress, swing input, flight playback, camera |
-| 4720 | UI: tempo panel, strike dial, HUD, sheets, hole map |
-| 5383 | STATS + RECORDS |
-| 5480 | PLAYER + LEADERBOARD (local board and GitHub board; `GH_REPO` at 5487) |
-| 5651 | INPUT + LOOP |
+**Round state.** `G` holds the round (scores, putts, `G.pins`, weather); `saveRound` persists it per course; each round draws a random pin (front, back, left, right) per hole.
 
-The Legacy course (the original 18 made-up holes, `makeCourse` and the builders only it used, about 106 KB) was removed on 2026-10-17; it is in git history before that commit.
+**Tunables worth knowing:** `CLUBS` (carry in metres, launch, spin, smash), `WOBBLE` (strike-dot wobble), `HIT_PITCH`/`HIT_VOL`/`HIT_LP` (strike sound), `HOP_K`, `FESCUE_HSL`/`FESCUE_COLS`, `SFX.gobble`/`SFX.tap` (synthesised), turkey count in `buildLife`.
 
-## Done so far (session of 2026-10-16)
+**Switched off but kept.** Engine features from the removed Augusta and Alsace courses stay for reuse: swirling wind, pine straw, azaleas, stone bridges, loblolly pines, the `lush`/`dry` palettes, tiered greens, and the synthesised music engine (`musicWanted` needs `COURSE.music`, which nothing sets). The Legacy course (original 18 made-up holes) was removed; it is in git history before 2026-10-17.
 
-1. **Removed the Augusta National and Alsace courses**, the two largest: their data blobs (`RD_AUGUSTA`, `RD_ALSACE`), hole definitions, `RDS`/`COURSES` entries, picker buttons, credits text, leaderboard files, and their entries in the workflow's `COURSES`. The file went from 2.4 MB to 0.9 MB.
-2. **Course pickers hidden**: both rows (`#segCourse` on the title screen, `#segCourseM` in Settings) have the `hidden` attribute while there's only one course. Each holds a `woodbine` button.
-3. **Music is now a per-course flag**: `musicWanted()` checks `COURSE.music`. No course has it set, so the Music menu row (`#musRow`) stays hidden; `setCourse()` toggles it. Augusta's synthesised guitar-and-piano engine is still in the code.
-4. **Engine features kept but switched off** (they were driven by the removed courses and could be reused): swirling wind (`def.swirl`, `swirlWind`, `buildSwirlFx`), the `RDC.lush` / `RDC.dry` palettes, pine straw, stone bridges and loblolly pines. Comments still mention Augusta and Alsace to explain where these came from, and so do some hole descriptions in the disabled Legacy course.
-5. **Renamed to "Galena!!! Golf"**: `<title>`, the apple web-app title (`Galena!!!`), the title-screen `<h1>Galena<span>!!!</span><br>Golf</h1>`, the logo's alt text, the share-link title, the score-post issue text, and the manifest's `name`/`short_name`.
-6. Verified with `node --check` and a search for leftover references only. Since then: headless-Chromium tested on 2026-10-16 (title screen, fonts, three.js, starting a round, online and with the server stopped), and the live site works on the user's phone. A full round with score posting hasn't been tested yet.
+## Course data pipeline (`tools/course/`)
 
-## Ball flight visibility (2026-10-17)
+Python venv `~/.venvs/galena` (numpy, scipy, rasterio, pyproj, shapely, pillow, laspy[lazrs], scikit-image, requests, pyflakes). Run from `tools/course/`; `pyflakes *.py` must stay clean. Frame: local transverse Mercator in metres around `ORIGIN` (`common.py`); the scorecard is in `card.py`.
 
-"Dramatic bounce" (Settings, `settings.drama`, on by default; `drama()` and `HOP_K` near `saveSettings`): the ball sits on the ground at any drawn scale (centre lifted by `VIS_R * scale`), hops after the first landing are drawn 2.2x as high (`hopY`; physics untouched), a flat roll-out trail (`W.trail`) and a landing ring (`W.landRing`), a puff on every bounce, a lower chase camera after landing (`camFollowTargets`, `R.pk`), a short slow-motion over the first landing of hard-hit shots (`updateFlight`, `rate`), and the drawn ball shrinks from 7x to 4x while it rolls (`BALL_CAP`). Tune `HOP_K`, the 7/4 caps and the 7 m / 1.7 m camera numbers by feel on a phone.
+1. Geodata (re-run only if needed): `fetch.py` (OSM via Overpass with a `User-Agent`, NAIP aerial 0.5 m, USGS 1 m DEM), `lidar.py` (canopy model from the 2019 lidar), `trace.py` (first-pass fairways; still the base map for fairway painting), `trees.py` (lidar trees), `creek.py` (creek centre line from the DEM channel).
+2. Painted layers: the user paints a copy of a generated map and saves a PNG (solid colours, hard edges, never resized or cropped); a reader script turns it into polygons. All maps share the pixel grid of `fescue_base.json` except trees and creek, which have their own frame JSON.
 
-## Club carries (2026-10-17)
+| Layer | Make the map | User saves | Reader (output in `out/`) | Colour |
+|---|---|---|---|---|
+| fescue (deep rough) | `fescue_base.py` | `fescue_mask.png` | `fescue.py` → `fescue.json` | magenta `#FF00FF` |
+| course boundary (OB) | `fescue_base.png` | `course_boundary.png` | `boundary.py` → `boundary.json` | cyan `#00FFFF` |
+| fairways | `fairway_edit.py` | `fairway_mask.png` | `fairways.py` → `fairways_painted.json` | green `#00FF00` |
+| bunkers | `bunkers_edit.py` | `bunkers_mask.png` | `bunkers_paint.py` → `bunkers_painted.json` | orange `#FF8000` |
+| trees | `trees_edit.py` | `trees_mask.png` | `trees_paint.py` → `trees_painted.json` | orange broadleaf, blue `#0080FF` conifer, magenta shrub |
+| creek | `creek_edit.py` | `creek_mask.png` | `creek_paint.py` → `creek_painted.json` | blue `#0000FF` |
+| site props | `site_edit.py` | `site_mask.png` + `signs.txt` | `site_paint.py` → `site_props.json` | cyan washroom, blue door strip, orange porta-potty, yellow sign |
+| tee boxes (shelved) | `tee_boxes_edit.py` | `tee_boxes_mask.png` | `tee_boxes_paint.py` → `tees_painted.json`, `tee_starts.json` | magenta boxes, yellow start dots |
 
-`CLUBS` (~line 538) `carry` is in metres (a full swing, flat, calm). Set 2026-10-17 from yards: Dr 250, 3W 230, 5W 220, 4H 205, 5i 185, 6i 175, 7i 165, 8i 155, 9i 145, PW 135, GW 125, SW 115, LW 100 yd (carry = yd / 1.09361). The game solves each club's ball speed from it at startup. `smash` only sets the clubhead speed shown (clubhead = ball speed / smash; the ball speed itself is solved from the carry), so it was divided by 1.0405 for every club to put the driver at 110 mph and the 7 iron at 89 mph without changing any carry.
-Launch and spin (2026-10-17): launch raised 1.2 deg for Dr-4H, 1.1 for 5i, 0.6 for 6i, 0.3 for 7i (Dr 13.2, 3W 12.6, 5W 13.6, 4H 14.4, 5i 15.0, 6i 15.9, 7i 17.3); spin cut 12 % on GW/SW/LW and 11 % on PW (PW 8300, GW 8600, SW 9000, LW 9300), a little less on 8i/9i. `smash` was then re-solved per club (ball speed / the previous clubhead speed) so every clubhead speed stayed the same; a lower wedge spin needs less ball speed, so wedge smash is now 1.09-1.17 (display only).
+   `bunkers_auto.py` found six bunkers OSM lacks (`bunkers_auto.json`); `bunkers_painted.json` replaces OSM and auto bunkers when present. Signs: `signs.txt` lines like `7: LINE ONE | LINE TWO`; a yellow dot whose nearest hole has no line is not built.
+3. `build.py` encodes everything into `out/rd_woodbine.js`; it prefers painted files over generated ones, clips fescue to the boundary, links each hole's fairway to its green by convex hull (`link_fairways`, so no gap of rough), and snaps the four tee sets (gold, black, silver, bronze) to the tee boxes at their card yardages. Cart paths are deliberately dropped.
+4. `install.py` writes the data into `index.html`. Then `node --check` and a headless run.
 
-## Wildlife (2026-10-17)
+To change a layer: repaint the mask, run its reader, then `build.py` and `install.py`.
 
-The deer are gone: `makeTurkey(L, tom)` / `turkeyParts` (~line 4477) put a tom and four hens across the fairways (no rabbits). Same behaviour as the deer did (cross the line of play, stop to peck, run when the ball comes near, can be hit: "Clipped a turkey!" with a synthesised gobble, `SFX.gobble`, played from `lifeHitNote`). Low-poly box-and-sphere models, bob and peck animation by head pivot; tune sizes in `turkeyParts`, speeds in `e.update`, count in `buildLife`.
+## Woodbine Bend reference
 
-## Strike sound (2026-10-17)
-
-`HIT_PITCH` (.88), `HIT_VOL` (.76) and `HIT_LP` (2400 Hz) above `SFX` soften the recorded club-on-ball sample (pitched down, high end rolled off, quieter), full shots, mishits and putts alike. Tune them there.
-
-Putts do not use that sample: `SFX.tap(speed)` (synthesised: a short low thud, a faint click and a noise tick, level .55-1 by stroke speed) is played from `SFX.hit` when `putt` is true.
-
-## Tees and pins (2026-10-17)
-
-- **Tee map edit**: `tools/course/tee_boxes_edit.py` makes `out/tee_boxes_edit.png` (aerial, the 54 OSM tee boxes solid magenta #FF00FF, rings for where the gold, black, silver and bronze sets play from now); the user's edited `out/tee_boxes_mask.png` goes through `tee_boxes_paint.py` → `out/tees_painted.json` (replaces the OSM boxes in `build.py`) and `out/tee_starts.json` (optional solid yellow #FFFF00 dots = exact played-tee start for the hole whose line passes nearest). Each tee set still plays from the point of the nearest box at its card yardage (`snap_to_tee`).
-- **Pins**: four pin spots per green (front, back, left, right as seen on the way in, ~0.45 R from the centre, pulled to the lowest-slope spot at least 3.5 m inside the edge; `makeRealCourse`, ~line 2339). `G.pins` is drawn at random (0-3) for every hole at the start of each round; a saved round keeps its pins; practice rotates to a different one each time. The 18 OSM pin points are not used.
-
-## Dead-code cleanup, site props and the creek map (2026-10-17)
-
-- **Cleanup**: removed the never-used code, the intro-video leftovers, and the whole Legacy course (`makeCourse`, `HOLE_BASE`, the 17 `H_*` holes, the legacy-only builders; ~106 KB). `COURSES` now holds only `woodbine`; a saved round from the old Legacy key opens on Woodbine through `setCourse`. `index.html` went from 998 KB to ~915 KB. Python: unused imports and variables removed (pyflakes is clean).
-- **Site props** (washroom, porta-potty, signpost): `site_edit.py` makes `out/site_edit.png` (aerial, grid, tee boxes, buildings, a colour key). The user paints a copy as `out/site_mask.png`: cyan #00FFFF washroom footprint, blue #0000FF optional door-side strip, orange #FF8000 porta-potty blob, yellow #FFFF00 signpost dot. `site_paint.py` writes `out/site_props.json` (rows `[kind, e, n, facing deg, w, d, text]`; sign text from `out/signs.txt`, lines like `7: TEXT | SECOND LINE`, else HOLE n / PAR p / yards), `build.py` embeds it as `RD_WOODBINE.props`. Engine: `realProps`, `realSiteMeshes`, `realSiteColliders`, `signTexture`, `labelTexture` (before `realBuildingMeshes`); washroom and porta-potty are ball colliders ('Off the washroom!'), signs are not.
-- **Placed so far (2026-10-17)**: one washroom (e 276, n 480, near the 16th tee), one porta-potty (e -310, n -62, near the 2nd/7th tees) and one sign by the 7th tee ('Andy Lewis - Hole in One / 10/10/2026', from `out/signs.txt` line `7:`). The creek was checked by the user and stays as it is.
-- **Creek map**: `creek_edit.py` makes `out/creek_edit.png` (corridor e -460..600, n -700..160, current creek solid blue #0000FF, ponds outlined cyan); the corrected copy `out/creek_mask.png` goes through `creek_paint.py` → `out/creek_painted.json` (the painted water cut into ~14 m pieces), which `build.py` prefers over `creek.py`'s centre line.
-
-## To do before publishing
-
-- [x] **Score posting** now points at `GH_REPO = 'galenadorf/Galena-Golf'` (line ~6887). `GH_POST_KEY` is now emptied (it was the original author's token), so players get a pre-filled issue page; to post silently, add your own fine-grained token (Issues read/write on that repo only).
-- [x] **Video removed**: the intro layer (`#vidIntro`) and the help-sheet video are gone from the HTML, and `pages.yml` now copies `*.png icon.svg` only. Dead CSS and the null-guarded `initIntroVideo()` remain. To bring a video back, add `swing-explainer.mp4` and `swing-poster.jpg` and restore the copy step.
-- [x] **Multiplayer prefix** changed to `galena/v1/` in `mpT` and the subscribe string.
-- [x] the leaderboard reset (now `leaderboard/woodbine.json`) and `LB_EPOCH` bumped to `2026-10-16-galena`. Syntax-checked with `node --check` (node v22) on 2026-10-16: OK.
-- [ ] New icons (`icon.svg`, PNGs, `apple-touch-icon.png`) and a theme colour if wanted (`manifest.webmanifest` and `<meta name="theme-color">`).
-- [ ] Optional: the `ssg-` localStorage keys are harmless and can stay.
-- [x] Git repo set up and Pages enabled; live at https://galenadorf.github.io/Galena-Golf/ (first deploy 2026-10-16).
-
-## The course: Woodbine Bend Golf Course
-
-Decided with the user on 2026-10-16:
-- **Course:** Woodbine Bend Golf Course, 3500 E Center Rd, Stockton, IL 61085 (near Elizabeth, IL; Jo Daviess County). Display name **"Woodbine Bend Golf Course"**. Lohmann/Benkusky design, ~2002, public, links-style: open, rolling farmland with native tall grass, mounds ("moguls"), a creek, 2 ponds and 31 bunkers. Par 72 (36/36).
-- **Default tees: Gold** (6,223 yd). The other three tee sets (Black, Silver, Bronze) are only shown as markers.
-- **Units: yards** everywhere in the UI. Internal maths stays in metres.
-- **Fairways: traced from the USDA NAIP aerial** (2023, 30 cm), because OSM has none; show the user an overlay to check.
-- **Scorecard (official card, woodbinebend.com/scorecard, 2024):**
+Woodbine Bend Golf Course, 3500 E Center Rd, Stockton IL (Jo Daviess County): Lohmann/Benkusky links-style course (~2002), par 72, open rolling farmland with native fescue, mounds, a creek, two ponds, 31 OSM bunkers. Default tees: **Gold** (6,223 yd); Black, Silver and Bronze are only markers. Holes 2 and 7 have alternate tee lengths.
 
 | Hole | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | Par | 4 | 3 | 4 | 5 | 4 | 4 | 3 | 4 | 5 | 4 | 3 | 4 | 4 | 4 | 3 | 5 | 4 | 5 |
 | Hcp | 8 | 16 | 18 | 6 | 12 | 2 | 14 | 4 | 10 | 13 | 17 | 5 | 1 | 15 | 7 | 3 | 11 | 9 |
-| Black 71.8/124 | 394 | 151/159 | 325 | 524 | 359 | 422 | 200 | 405 | 486 | 343 | 172 | 389 | 406 | 321 | 201 | 535 | 420 | 478 |
 | Gold 70.3/121 | 370 | 133/143 | 306 | 514 | 343 | 412 | 157/154 | 384 | 467 | 329 | 148 | 372 | 392 | 319 | 182 | 513 | 398 | 474 |
-| Silver 69.3/118 | 347 | 124/133 | 295 | 488 | 330 | 402 | 147/142 | 370 | 454 | 319 | 131 | 359 | 386 | 304 | 168 | 498 | 326 | 451 |
-| Bronze 70.4/116 | 303 | 105/115 | 272 | 410 | 314 | 340 | 113 | 331 | 396 | 299 | 104 | 302 | 340 | 294 | 134 | 420 | 292 | 413 |
 
-Totals: Black 6,539 · Gold 6,223 · Silver 5,908 · Bronze 5,192. Holes 2 and 7 have two alternate tee lengths.
+Gold total 6,223; Black 6,539; Silver 5,908; Bronze 5,192 (full card in `tools/course/card.py`, from woodbinebend.com/scorecard, 2024). Sources: OpenStreetMap (ODbL; way 295902659 is the course), USGS 3DEP 1 m DEM (`IL_8County_PlusChampaign_2019_B19`), USGS lidar `IL_8County_PlusChampaign_B2_2019` (the 2025 `IL_22County_D25` set is not reachable from this machine), USDA NAIP via Microsoft Planetary Computer (`il_m_4209047_ne_15_030_20230710_20230929`, July 2023).
 
-**Data sources (all public domain or ODbL):**
-- OpenStreetMap (way 295902659 is the course): all 18 hole lines with par/handicap (matching the card), 18 greens, 54 tees, 31 bunkers, 18 pins, ponds, the creek, buildings. **No fairways, no cart paths.** Overpass needs a `User-Agent` header or it answers 406.
-- USGS 3DEP 1 m DEM, project `IL_8County_PlusChampaign_2019_B19` (tiles x73y469, x73y470, 16 x24y470).
-- USGS lidar point cloud `IL_22County_D25` (2025), for trees and mounds.
-- USDA NAIP via Microsoft Planetary Computer STAC: `il_m_4209047_ne_15_030_20230710_20230929` (30 cm, July 2023).
+## Open items
 
-### Status (2026-10-16)
+- New icons (`icon.svg`, PNGs, `apple-touch-icon.png`; still SweetSpot artwork) and a theme colour in `manifest.webmanifest` and `<meta name="theme-color">`.
+- Play a full round on a phone and post a score (score posting is untested end to end).
+- Tree species (broadleaf, conifer, shrub) is a guess from crown shape and near-infrared.
 
-**Playable and installed**, GCCB removed. Headless-tested: all 18 holes build without errors, each starts on a tee with the cup on the green, hole cards show the Gold yardages, the HUD shows yd/ft/mph. Not yet played on a phone.
-- In `index.html`: `RD_WOODBINE`, `GREEN_ALTI_WOODBINE`, `WOODBINE_DEFS`, `RDS.woodbine` (z0 200, class map `gr` 2 km square around the origin), `COURSES.woodbine`; default course `woodbine` everywhere `gccb` used to be. Tee markers use per-course colours (`RD_WOODBINE.mkc`: gold, black, silver, bronze). Hole names "Hole N"; hole notes generated (elevation in ft, water side, bunkers, mounds).
-- GCCB-only code removed: its data, hole list, hand-tuned trees, benches, weather station, the hole-14 lost-ball rule. Generic engine features stay (tiered greens via `RDS[key].tiers`, tree tweaks, benches list).
-- Leaderboard: `leaderboard/woodbine.json`, workflow `COURSES = { woodbine: 72 }`.
+## Adding another course
 
-### Rebuilding the course data
-
-Python venv at `~/.venvs/galena` (numpy, scipy, rasterio, pyproj, shapely, pillow, laspy[lazrs], scikit-image, scikit-learn, requests). Run in `tools/course/`, in order; each step caches its downloads in `.cache/`:
-1. `fetch.py` — OSM (Overpass), NAIP aerial (Planetary Computer, signed URLs), USGS 1 m DEM (TNM, read as COGs).
-2. `lidar.py` — canopy height `.cache/chm.tif` from the 2019 lidar on the public AWS bucket (Entwine, only the octree nodes over the course, ~66 MB). The 2025 lidar exists but `rockyweb.usgs.gov` doesn't answer from this machine.
-3. `trace.py` — fairways (per-hole random walker on the aerial, seeded along OSM hole lines; par 3s get none) and rough cart paths → `out/fairways.json`, `out/paths.json`.
-4. `trees.py` — single trees from the canopy model → `out/trees.json`.
-5. `build.py` — everything encoded as `out/rd_woodbine.js` (dem 15 m, relief 2 m, polygons, trees, holes with tee sets snapped to the OSM tee boxes at the card yardages).
-6. `install.py` — replaces the two data lines in `index.html`. Then `node --check` and a headless run.
-- `preview.py [fair]` draws the aerial and a hillshade with everything on top (`out/aerial_*.jpg`, `out/relief_*.jpg`). `card.py` holds the scorecard, `common.py` the frame (local transverse Mercator around `ORIGIN`) and areas.
-
-### Open items for the course
-- [x] **Fairways** (2026-10-17): hand-corrected, replacing trace.py's. `fairway_edit.py` makes `out/fairway_edit.png` (aerial plus the traced fairways in solid #00FF00); the user's edited copy (`fairway_mask.png`, pure #00FF00 only) goes through `fairways.py` → `out/fairways_painted.json` (21 areas, 8.4 ha; the traced ones were 13.3 ha), and `build.py` prefers it over `fairways.json`. Then `install.py`. Par 3s have small painted fairway areas. The ~3 m automatic first cut around them is unchanged.
-- [x] **Cart paths** removed from the whole course (2026-10-17): `build.py` sets `paths = []`, so `RD_WOODBINE` has none. `trace.py` still writes `out/paths.json` but nothing reads it.
-- [x] **The creek** (2026-10-17): `tools/course/creek.py` traces the DEM channel (past the clubhouse and behind 16's green) to `out/creek.json`; `build.py` cuts it into 14 m ribbons (`feat.creek`, 4 m wide) that the engine digs as creek pieces and treats as water (penalty). Run `creek.py` before `build.py`. The four OSM ponds were already in. Headless-checked: holes 9, 10, 12, 13, 16, 17, 18 get creek pieces.
-- [x] **Course boundary / out of bounds** (2026-10-17): hand-painted, not OSM. `out/course_boundary.png` (solid cyan over `fescue_base.png`, same pixels) → `boundary.py` → `out/boundary.json` (first 48.8 ha, repainted 2026-10-17 to 53.3 ha; OSM's outline was 54.0; its NW edge runs along the course side of the diagonal highway, which is outside it and is not drawn in the game) → `build.py` (`boundary`, and the fescue is clipped to it) → `install.py`. Anything outside it is OB. Headless-checked: every tee and cup is inside it. Per-hole build time did not change measurably (about 1.6 s for all 18 holes either way), so the boundary was not the performance problem.
-- [x] **Bunkers** (2026-10-17): `tools/course/bunkers_auto.py` finds sand on the aerial (bright, warm, non-green, solid blobs, at least 25 m2) that OSM lacks: 6 added (n 460 in a row of three, one by 12's green area at e -90 n 376, one at e -174 n 124, one at e 237 n -77), `out/bunkers_auto.json`, merged by `build.py`. Everything else it found was gravel, parking, soil heaps or dry patches. Greens, tees, fairways and fescue untouched.
-- [x] **Bunker refinement** (2026-10-17): the user's `bunkers_mask.png` gave 38 bunkers, 4,047 m2 (the 37 before were 3,371 m2), installed: one new bunker at e -131 n 302, 13 enlarged by 25-70 %. Method: `bunkers_edit.py` makes `out/bunkers_edit.png` (aerial, all 37 current bunkers filled solid orange #FF8000); the user's edited copy `out/bunkers_mask.png` (pure orange only) goes through `bunkers_paint.py` → `out/bunkers_painted.json`, which `build.py` uses instead of the OSM and automatic bunkers.
-- [x] **Fairway to green** (2026-10-17): `link_fairways` in `build.py` joins the last 18 m of each hole's painted fairway to its green by their convex hull (1 m into the green, not over it), so no pocket of rough or first cut sits between them; 18 holes linked (200-400 m2 added each). The painted `fairways_painted.json` is untouched. Bunkers re-read after the user's second pass: 37, 4,132 m2.
-- [x] **Trees** (2026-10-17): the user painted `trees_edit.png` (kept as `trees_mask.png`); `trees_paint.py` made 144 trees (18 broadleaf, 32 conifer, 94 shrubs; magenta #FF00FF = shrub) in `out/trees_painted.json`, merged by `build.py`. Method: the lidar detection already catches nearly every tree on the course itself; the thin spots are outside the boundary (creek scrub south, hedgerows). To add trees: `trees_edit.py` makes `out/trees_edit.png` (whole detail area, lidar trees outlined), the user paints `out/trees_mask.png` (solid orange #FF8000 broadleaf, solid blue #0080FF conifer; a small dot = one tree, a patch = a grove at ~6 m spacing), `trees_paint.py` writes `out/trees_painted.json`, `build.py` adds them to the lidar trees.
-- [ ] Tree species is a guess (crown shape plus NIR): 505 broadleaf, 281 conifer, 38 shrubs.
-- [x] **Fescue** (2026-10-17): the deep rough (clumpy tall grass, `S.DEEP`) is now exactly the areas painted on `tools/course/out/fescue_base.png` → `out/fescue_mask.png` (pure magenta). Pipeline: `fescue_base.py` (makes the base map; only needed once), `fescue.py` (mask → `out/fescue.json`, 14.2 ha, 88 areas), then `build.py` (`feat.fescue`) and `install.py`. Engine: `hasFescue` in `makeRealCourse` sets `deepF` from the polygons (plus 0.9 m of edge noise); a course without `feat.fescue` keeps the old distance rule. Fairway, first cut, greens, tees, bunkers and water still take precedence, so a 2.8 m first cut remains along fairway edges. Outside the course boundary stays deep as before.
-- [x] Fescue colour (2026-10-17): tan/amber. `RDS.woodbine.fescue = true` switches the deep rough to `FESCUE_HSL` (ground; terrain shader `cDeep` and the hole-map colour) and `FESCUE_COLS` (blades and tufts), near `GRASS_COLS`. Tune those two by eye; the shader darkens colours a lot, so `FESCUE_HSL` has to be light (`[.155, .36, .64]` renders as a greenish tan; `.125, .44, .68` was too brown). On a fescue course the tall grass blades (`groundJob`) are drawn only in the fescue, and land outside the course boundary that is not painted is normal rough, not deep (it used to be deep, which put fescue clumps in unpainted ground). Pond-edge reeds (`decor`, ~line 2810) still stand in regular rough by design. The far class map (beyond the hole window) follows the same rule: outside-boundary and wooded cells are `cOut` (= `cRough` on a fescue course) in `farColor` and `farSurf`; only the painted fescue class draws and plays as deep. Try `dry: true` in `RDS.woodbine` (the links palette) or a tan tint.
-- [ ] Playtest a full round on a phone, and post a score.
-
-## Adding another course (general)
-
-A real course is a `RD_<NAME>` data object (holes with par, hcp, len, yd, lens, tee, green, line, mk, desc; feature polygons, trees, a coarse DEM plus optional relief; see `tools/course/build.py` for the encoding). The pipeline in `tools/course/` is written for Woodbine Bend but adapts by changing `common.py` (origin, areas) and `card.py`. It also needs:
-1. an entry in `RDS` (data, alti, z0, grid, tweaks, optional `lush`/`dry`),
-2. a `<NAME>_DEFS` hole list,
-3. an entry in `COURSES` (`key`, `name`, `short`, `defs`, `best`, `board`, `coll`, and optionally `music: true`),
-4. its key and par in the leaderboard workflow, and a `leaderboard/<key>.json`.
-
-Then show the course pickers again (remove `hidden` from `.courseRow` and the Settings row) and update the credits text at ~427.
+A course is an `RD_<NAME>` object (hole lines, par, hcp, tee sets, feature polygons, trees, coarse DEM plus relief; encoding in `tools/course/build.py`). Adapt `common.py` (origin, areas) and `card.py`, then add: an `RDS` entry (data, alti, z0, grid, tweaks, optional `lush`/`dry`/`fescue`), a `<NAME>_DEFS` hole list, a `COURSES` entry (`key`, `name`, `short`, `defs`, `best`, `board`, `coll`, optional `music`), its key and par in the leaderboard workflow plus `leaderboard/<key>.json`. Show the hidden course pickers again (`#segCourse` on the title screen, `#segCourseM` in Settings: remove `hidden`) and update the credits text.

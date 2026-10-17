@@ -411,7 +411,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 <div class="sheet" id="helpSheet"><div class="grab"></div><div class="sht">How to swing</div><div class="help">
   <div><b>Aim</b>Drag across the course, or open the map and tap a target. The white ring is where a pure, full swing lands with no wind.</div>
   <div><b>Tempo · left thumb</b>Touch anywhere on the left and slide down for the backswing. The scale shows the carry for your club. Slide back up past where you started to strike. The upstroke must take under 0.35 s for full power; every 0.2 s slower takes a further 20 % off the ball speed. Keep the upstroke straight: the sideways drift of your thumb on the way up (traced in yellow on the tempo scale, fading after the strike) sets the starting line, so drifting right sends the ball right of your aim line and drifting left sends it left. Backswing three times as long as the downswing gives the full smash factor; anywhere from 2:1 to 4:1 still strikes well. Putts want 2:1.</div>
-  <div><b>Strike · right thumb</b>Hold your thumb on the dial: the ball sits up-left of your thumb so it never hides, and where it lies on the club face is where the club will hit it. It wobbles, wilder the faster you swing. Keep it on the sweet spot. With no thumb on the dial the ball slips loose round the edge of the face and the strike is always a mishit. Toe hooks, heel slices. High on the face spins less and flies further, low spins more.</div>
+  <div><b>Strike · right thumb</b>Hold your thumb on the dial: the ball sits up-left of your thumb so it never hides, and where it lies on the club face is where the club will hit it. It wobbles, wilder the faster you swing. Keep it on the sweet spot. With no thumb on the dial the ball slips loose around the edge of the face and the strike is always a mishit. Toe hooks, heel slices. High on the face spins less and flies further, low spins more.</div>
   <div><b>Flagstick</b>The flag stays in for every shot but a putt. A firm ball running at the stick can't hop the hole: square on it drops in, a glancing hit ricochets away. Only a ball right on the edge of the cup can lip in or out.</div>
   <div><b>Rules</b>Water costs a penalty stroke and a drop. White stakes are out of bounds: one stroke and replay. Max score is par + 5.</div>
   <div><b>Keyboard</b>Hold Space to swing back, release, press again to strike. Rest the mouse low on the right side to hold and steer the dot. Arrows aim and change clubs.</div>
@@ -917,9 +917,9 @@ function computeLaunch(ci, sw, st, surf, yaw, hand, teed, lieRoll) {
   }
   // descriptors
   const hs = h * 1; // toe positive
-  out.loc = (Math.abs(h) < .12 ? 'Centre' : (hs > 0 ? 'Toe' : 'Heel')) + (v > .3 ? ' · high' : v < -.3 ? ' · low' : '');
+  out.loc = (Math.abs(h) < .12 ? 'Center' : (hs > 0 ? 'Toe' : 'Heel')) + (v > .3 ? ' · high' : v < -.3 ? ' · low' : '');
   out.quality = out.extra ? ({ shank: 'Shank!', toe: 'Off the toe', sky: 'Skied', top: 'Topped' })[out.extra]
-    : off < .12 ? 'Pure' : off < .3 ? 'Solid' : off < .6 ? 'Off-centre' : 'Mishit';
+    : off < .12 ? 'Pure' : off < .3 ? 'Solid' : off < .6 ? 'Off-center' : 'Mishit';
   out.qualityLevel = out.extra ? 3 : off < .12 ? 0 : off < .3 ? 1 : off < .6 ? 2 : 3;
   if (c.type !== 'putter') {
     const tt = out.tilt * hand; // positive = fade for this golfer
@@ -5295,7 +5295,7 @@ function syncMenu() {
 // practice: one hole at a time, nothing scored. Picking a hole ends the round in progress.
 function startPractice(i) {
   const inRound = !G.practice && (G.scores.some(v => v != null) || G.strokes > 0) && G.state !== 'title';
-  if (inRound && !confirm('End the current round and practise hole ' + (i + 1) + '?')) return;
+  if (inRound && !confirm('End the current round and practice hole ' + (i + 1) + '?')) return;
   G.practice = true; G.submitted = true; clearRound();
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   if (!G.pins) G.pins = HOLE_DEFS.map(() => Math.floor(Math.random() * 4));
