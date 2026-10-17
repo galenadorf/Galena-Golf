@@ -220,6 +220,13 @@ def describe(h, demZ1, greens_near, F, fair):
 
 def build_holes(F, demZ1):
     tees = [t['poly'] for t in F['tee']]
+    sp = os.path.join(OUT, 'tee_starts.json')  # yellow dots painted on the tee map: where a hole's played tee should be
+    starts = {}
+    for e, n in json.load(open(sp)) if os.path.exists(sp) else []:
+        q = Point(e, n)
+        h = min(F['hole'], key=lambda hh: hh['line'].distance(q))
+        if h['line'].distance(q) < 80:
+            starts[h['ref'] - 1] = (e, n)
     out = []
     for hh in F['hole']:
         i = hh['ref'] - 1
@@ -236,6 +243,8 @@ def build_holes(F, demZ1):
             yd = card.TEES[k][2][i]
             p, ok = snap_to_tee(point_at_remaining(L, yd * YD), tees)
             pos[k] = (round(p.x, 2), round(p.y, 2))
+        if i in starts:
+            pos['gold'] = starts[i]
         tee = pos['gold']
         # the line of play starts at the played (gold) tee
         s = L.project(Point(tee))
@@ -249,6 +258,29 @@ def build_holes(F, demZ1):
         h['_green_poly'] = g
         out.append(h)
     return out
+
+
+def link_fairways(fair, F, reach=18.0):
+    """Make each hole's fairway run right into its green, with no pocket of rough or first cut between them: the last stretch
+    of the fairway (the part within `reach` m of the green) and the green are joined by their convex hull, and that is added to
+    the fairway. Bunkers, water and the green itself still take precedence in the game. Returns the new fairways and a report."""
+    fair = [f for f in fair]
+    report = []
+    for hh in F['hole']:
+        L = hh['line']
+        g = min(F['green'], key=lambda q: q['poly'].distance(Point(L.coords[-1])))['poly']
+        idx = [k for k, f in enumerate(fair) if f.distance(L) < 12 and f.distance(g) < 15]  # (a fairway further off is not this hole's approach)
+        for k in idx:
+            f = fair[k]
+            gap = f.distance(g)
+            near = f.intersection(g.buffer(gap + reach))
+            if near.is_empty:
+                near = f
+            bridge = unary_union([near, g.buffer(.8)]).convex_hull.difference(g.buffer(-1))  # runs 1 m into the green, not over it
+            fair[k] = unary_union([f, bridge]).buffer(.6).buffer(-.6)
+            report.append((hh['ref'], round(gap, 1), round(fair[k].area - f.area)))
+    merged = unary_union(fair)
+    return [p for p in getattr(merged, 'geoms', [merged])], report
 
 
 def creek_pieces(hw=2.0, step=14.0):
@@ -274,8 +306,13 @@ def main():
     bpn = os.path.join(OUT, 'bunkers_painted.json')  # hand-refined bunkers (bunkers_paint.py) replace the OSM and automatic ones
     if os.path.exists(bpn):
         F['bunker'] = [dict(poly=shape(g), tags={'painted': 'yes'}) for g in json.load(open(bpn))]
+    tpn = os.path.join(OUT, 'tees_painted.json')  # hand-edited tee boxes (tee_boxes_paint.py) replace the OSM ones
+    if os.path.exists(tpn):
+        F['tee'] = [dict(poly=shape(g), tags={'painted': 'yes'}) for g in json.load(open(tpn))]
     fp0 = os.path.join(OUT, 'fairways_painted.json')  # hand-corrected fairways (fairways.py) win over trace.py's
     fair = [shape(g) for g in json.load(open(fp0 if os.path.exists(fp0) else os.path.join(OUT, 'fairways.json')))]
+    fair, rep = link_fairways(fair, F)
+    print('fairway -> green links (hole, gap m, area added m2):', rep)
     paths = []  # cart paths removed on purpose (trace.py's paths.json was only fragments)
     course = F['course'][0]['poly']
     dem, demZ = build_dem()
