@@ -4894,7 +4894,7 @@ function mergeStatic(grp) {
 }
 
 /* ================= GAME ================= */
-const WOBBLE = .6; // strike wobble, fixed at the old "Calm" level
+const WOBBLE = .45; // strike wobble (the old "Calm" level was .6; cut by 25 % so the dot on the club face moves less quickly)
 const settings = { hand: 1, sound: true, coached: false, aimed: false, drama: true };
 try { const s = JSON.parse(localStorage.getItem('ssg-settings') || 'null'); if (s) Object.assign(settings, s); } catch (e) { }
 // Leaderboard reset: when LB_EPOCH changes, every device clears its own rounds, best scores and stats once (the name and settings stay).
