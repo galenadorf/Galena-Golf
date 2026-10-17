@@ -1,6 +1,7 @@
 """A map to add missing trees on: the whole 1.4 km detail area from the aerial, with the 824 lidar trees outlined thin
 (yellow broadleaf, cyan conifer, orange shrub), the course boundary in white, hole numbers and a 100-yard grid.
-Paint solid ORANGE (#FF8000) over broadleaf trees or groves that are missing and solid BLUE (#0080FF) over conifers,
+Paint solid ORANGE (#FF8000) over broadleaf trees or groves that are missing, solid BLUE (#0080FF) over conifers and solid
+MAGENTA (#FF00FF) over shrubs and scrub,
 save as out/trees_mask.png (same pixels); trees_paint.py turns the paint into trees (a small dot is one tree sized to the
 dot, a bigger patch is filled with trees about 6 m apart). Writes out/trees_edit.png and out/trees_edit.json."""
 import json

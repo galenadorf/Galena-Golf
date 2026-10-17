@@ -271,6 +271,9 @@ def main():
     ba = os.path.join(OUT, 'bunkers_auto.json')  # bunkers the aerial shows but OSM lacks (bunkers_auto.py)
     if os.path.exists(ba):
         F['bunker'] += [dict(poly=shape(g), tags={'auto': 'yes'}) for g in json.load(open(ba))]
+    bpn = os.path.join(OUT, 'bunkers_painted.json')  # hand-refined bunkers (bunkers_paint.py) replace the OSM and automatic ones
+    if os.path.exists(bpn):
+        F['bunker'] = [dict(poly=shape(g), tags={'painted': 'yes'}) for g in json.load(open(bpn))]
     fp0 = os.path.join(OUT, 'fairways_painted.json')  # hand-corrected fairways (fairways.py) win over trace.py's
     fair = [shape(g) for g in json.load(open(fp0 if os.path.exists(fp0) else os.path.join(OUT, 'fairways.json')))]
     paths = []  # cart paths removed on purpose (trace.py's paths.json was only fragments)
