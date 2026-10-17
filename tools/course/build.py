@@ -268,6 +268,9 @@ def creek_pieces(hw=2.0, step=14.0):
 
 def main():
     F = osm.load()
+    ba = os.path.join(OUT, 'bunkers_auto.json')  # bunkers the aerial shows but OSM lacks (bunkers_auto.py)
+    if os.path.exists(ba):
+        F['bunker'] += [dict(poly=shape(g), tags={'auto': 'yes'}) for g in json.load(open(ba))]
     fp0 = os.path.join(OUT, 'fairways_painted.json')  # hand-corrected fairways (fairways.py) win over trace.py's
     fair = [shape(g) for g in json.load(open(fp0 if os.path.exists(fp0) else os.path.join(OUT, 'fairways.json')))]
     paths = []  # cart paths removed on purpose (trace.py's paths.json was only fragments)
@@ -283,6 +286,9 @@ def main():
     clip = lambda ps: [p.intersection(area) for p in ps if p.intersects(area)]
     trees_path = os.path.join(OUT, 'trees.json')
     trees = json.load(open(trees_path)) if os.path.exists(trees_path) else []
+    tp = os.path.join(OUT, 'trees_painted.json')  # trees added by hand-painting (trees_paint.py) on top of the lidar ones
+    if os.path.exists(tp):
+        trees += json.load(open(tp))
     tq = []
     for t in trees:  # e, n, crown diameter (dm), kind * 1000 + height (dm)
         tq += [int(round(t['e'] * 10)), int(round(t['n'] * 10)), int(round(t['d'] * 10)), t['kind'] * 1000 + min(999, int(round(t['h'] * 10)))]
