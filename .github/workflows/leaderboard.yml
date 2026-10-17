@@ -1,0 +1,52 @@
+name: Leaderboard
+# A player posts a round by opening a pre-filled issue from the game ("[score] NAME +3 (75) Course"). This workflow validates the
+# JSON in the issue body (treated purely as data, never run as code), adds it to leaderboard/<course>.json and closes the issue.
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: write
+  issues: write
+concurrency:
+  group: leaderboard
+  cancel-in-progress: false
+jobs:
+  record:
+    if: startsWith(github.event.issue.title, '[score]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs'), crypto = require('crypto');
+            const issue = context.payload.issue;
+            const finish = async (ok, msg) => {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: issue.number, body: (ok ? '✅ ' : '❌ ') + msg });
+              await github.rest.issues.update({ ...context.repo, issue_number: issue.number, state: 'closed', state_reason: ok ? 'completed' : 'not_planned' });
+            };
+            const m = /```json\s*([\s\S]*?)```/.exec(issue.body || '');
+            let r; try { r = JSON.parse(m[1]); } catch (e) { return finish(false, 'No valid score JSON found in this issue.'); }
+            const COURSES = { gccb: 72 };
+            const int = v => Number.isInteger(v);
+            if (!r || typeof r !== 'object' || !(r.course in COURSES)) return finish(false, 'Unknown course.');
+            if (typeof r.name !== 'string' || !/^[\p{L}\p{N} ._'-]{1,14}$/u.test(r.name.trim())) return finish(false, 'Invalid name.');
+            if (r.holes !== 18 || !int(r.strokes) || r.strokes < 18 || r.strokes > 200 || !int(r.toPar) || r.toPar !== r.strokes - COURSES[r.course]) return finish(false, 'The score does not add up.');
+            if (!int(r.at) || r.at > Date.now() + 10 * 60e3 || r.at < Date.now() - 3 * 864e5) return finish(false, 'The round is too old (or from the future).');
+            const file = `leaderboard/${r.course}.json`; let rows = [];
+            try { rows = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { rows = []; }
+            const name = r.name.trim(), by = crypto.createHash('sha1').update(String(typeof r.dev === 'string' && r.dev.length >= 6 && r.dev.length <= 40 ? r.dev : issue.user.login).toLowerCase()).digest('hex').slice(0, 8);
+            if (rows.some(x => x.name === name && x.at === r.at)) return finish(true, 'This round is already on the board.');
+            if (rows.some(x => (x.name.toLowerCase() === name.toLowerCase() || x.by === by) && x.strokes === r.strokes)) return finish(true, 'This score is already on the board for this player.'); // one player, one entry per score per course
+            if (rows.filter(x => x.by === by && x.at > Date.now() - 864e5).length >= 6) return finish(false, 'Too many rounds posted today from this device.');
+            if (rows.filter(x => x.at > Date.now() - 36e5).length >= 120) return finish(false, 'The board is busy; try again later.');
+            rows.push({ name, strokes: r.strokes, toPar: r.toPar, holes: 18, at: r.at, by });
+            rows.sort((a, b) => a.toPar - b.toPar || a.strokes - b.strokes || a.at - b.at); rows = rows.slice(0, 500);
+            fs.writeFileSync(file, JSON.stringify(rows) + '\n');
+            const rank = rows.findIndex(x => x.name === name && x.at === r.at) + 1;
+            await exec.exec('git', ['config', 'user.name', 'github-actions[bot]']); await exec.exec('git', ['config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com']);
+            await exec.exec('git', ['add', file]); await exec.exec('git', ['commit', '-m', `Leaderboard: ${name} ${r.toPar >= 0 ? '+' : ''}${r.toPar} on ${r.course}`]);
+            for (let k = 0; k < 4; k++) { try { await exec.exec('git', ['push', 'origin', 'HEAD:main']); break; } catch (e) { await exec.exec('git', ['pull', '--rebase', 'origin', 'main']); } }
+            await finish(true, `Posted. You are #${rank} of ${rows.length} on the ${r.course} board.`);
