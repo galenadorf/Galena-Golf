@@ -61,7 +61,7 @@ Do edits with small Python scripts that assert each `old` string matches exactly
 - [x] `leaderboard/gccb.json` reset to `[]` and `LB_EPOCH` bumped to `2026-10-16-galena`. Syntax-checked with `node --check` (node v22) on 2026-10-16: OK.
 - [ ] New icons (`icon.svg`, PNGs, `apple-touch-icon.png`) and a theme colour if wanted (`manifest.webmanifest` and `<meta name="theme-color">`).
 - [ ] Optional: the `ssg-` localStorage keys are harmless and can stay.
-- [ ] Set up git and a GitHub repo, and enable Pages (source: GitHub Actions).
+- [x] Git repo set up and Pages enabled; live at https://galenadorf.github.io/Galena-Golf/ (first deploy 2026-10-16).
 
 ## Adding the new course (later)
 
