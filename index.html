@@ -2114,7 +2114,7 @@ function makeRealCourse(idx, pin) {
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
     const k = j * w + i, X = x0 + i * res, Z = z0 + j * res;
     // positive: deep rough. A course with a painted fescue map (feat.fescue) has deep rough there and nowhere else; otherwise it is whatever lies well away from play
-    deepF[k] = !inB[k] ? SD_R : hasFescue ? clamp(-F.fescue[k] + .9 * (vnoise(X * .4, Z * .4, seed + 7) - .5), -SD_R, SD_R) : clamp(Math.sqrt(dP[k]) * res - (22 + 6 * vnoise(X * .03, Z * .03, seed + 5)), -SD_R, SD_R);
+    deepF[k] = hasFescue ? clamp(-F.fescue[k] + .9 * (vnoise(X * .4, Z * .4, seed + 7) - .5), -SD_R, SD_R) : !inB[k] ? SD_R : clamp(Math.sqrt(dP[k]) * res - (22 + 6 * vnoise(X * .03, Z * .03, seed + 5)), -SD_R, SD_R);
   }
   C.deepF = deepF;
   // ground: terrain model, then greens and tees built as platforms, ponds dug, bunkers cut
@@ -4386,7 +4386,7 @@ function initGround(L, grp) {
   L.st = { gM: new Float32Array(NG * 16), gC: new Float32Array(NG * 3), sM: new Float32Array(NF * 16), hC: new Float32Array(NF * 3) };
 }
 // fescue (a course with feat.fescue, where the deep rough is the painted fescue): tan and amber, the ground colour and the blades and tufts standing on it
-const FESCUE_HSL = [.125, .44, .68], FESCUE_COLS = [0xcaa65c, 0xd6b46c, 0xbf9b50, 0xdfc079, 0xb88f45, 0xc9a85a, 0xd2a95c, 0xa89a52, 0xe0c27c];
+const FESCUE_HSL = [.155, .36, .64], FESCUE_COLS = [0xb9a95c, 0xc4b46a, 0xaa9c52, 0xcdbd78, 0x9d9448, 0xbcad5e, 0xc0ad5e, 0x969048, 0xd0c07c];
 const GRASS_COLS_DRY = [0xa4b848, 0xb2c04c, 0x98ae40, 0xbfc858, 0x8aa844, 0xcad266, 0xa6b84c, 0xb8c254, 0xd2d46e];
 const GRASS_COLS = [0x5f9a36, 0x72ad3f, 0x4f8a30, 0x84b447, 0x6aa33a, 0x8db84e, 0x5a9440, 0x9aaa45, 0xb7b565];
 const FLOWER_COLS = [0xffffff, 0xffffff, 0xfff3a6, 0xffd23f, 0xff9fb8, 0xd9b8ff, 0xffffff, 0xff7a3d, 0xb9d7ff];
@@ -4403,7 +4403,7 @@ function* groundJob(L, fx, fz) {
       const x = (gi + hash2(gi, gj, 41 + ring.tag * 7)) * cell, z = (gj + hash2(gi, gj, 43 + ring.tag * 7)) * cell, dx = x - fx, dz = z - fz, d2 = dx * dx + dz * dz;
       if (d2 > R1 * R1 || d2 < ring.r0 * ring.r0) continue;
       const h1 = hash2(gi, gj, 47 + ring.tag); if (h1 > .93) continue;
-      const sf = C.surf(x, z), deep = sf === S.DEEP; if (!deep && sf !== S.ROUGH) continue;
+      const sf = C.surf(x, z), deep = sf === S.DEEP; if (!deep && (sf !== S.ROUGH || (RDC.fescue && C.real))) continue; // (fescue courses: tall grass only in the fescue)
       if (!C.inBounds(x, z)) continue;
       const bd = Math.hypot(x - bx0, z - bz0); if (bd < .8 && !flying) continue; // keep the ball in the clear
       // low grass right at the ball and along the view from the camera to it, so the lie and the line stay readable
