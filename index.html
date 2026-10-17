@@ -9,8 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head><body>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Layout: full-bleed course under frosted "liquid glass" HUD. Hole card top-centre between the map button and the
    player button (name + total), wind and pin either side. Thumbs own the bottom: tempo panel left, strike dial right. */
@@ -429,7 +428,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 </div></div>
 <div id="recCard"></div>
 <div id="confetti"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="vendor/three.r128.min.js"></script>
 <script>
 'use strict';
 /* ================= UTIL ================= */
@@ -4974,7 +4973,7 @@ const mpCol = id => { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(
 function mpLib() {
   if (window.mqtt) return Promise.resolve(window.mqtt);
   if (MP.lib) return MP.lib;
-  return MP.lib = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.10.1/mqtt.min.js'; sc.onload = () => window.mqtt ? ok(window.mqtt) : no(); sc.onerror = () => { MP.lib = null; no(); }; document.head.appendChild(sc); });
+  return MP.lib = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'vendor/mqtt.5.10.1.min.js'; sc.onload = () => window.mqtt ? ok(window.mqtt) : no(); sc.onerror = () => { MP.lib = null; no(); }; document.head.appendChild(sc); });
 }
 function mpJoin(code) {
   code = mpClean(code); if (code.length < 3) return false;
@@ -7330,6 +7329,8 @@ function checkUpdate() {
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
 window.addEventListener('load', () => { checkUpdate(); });
+// Offline play: sw.js keeps every file solo play needs (see the comment there). Needs https or localhost.
+if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { }); });
 window.addEventListener('load', () => {
   const h = window.claude && window.claude.hot;
   if (h && h.ready) h.ready(boot); else boot(h && h.data ? h.data : {});
