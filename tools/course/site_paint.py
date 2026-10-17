@@ -6,8 +6,8 @@ in the course data and the game draws the buildings and signs.
 Sign text: out/signs.txt, one line per hole number, '|' for a line break:
     7: WATCH FOR GOLFERS | ON THE 8TH TEE
     1: PLEASE REPAIR DIVOTS
-A sign whose nearest hole has no line there says 'HOLE n / PAR p . yards' (the gold tee). Rerun site_paint.py, build.py,
-install.py after repainting or editing signs.txt."""
+Only holes with a line in signs.txt get their sign: a yellow dot whose nearest hole has no line is left out (and listed when this
+runs). Rerun site_paint.py, build.py, install.py after repainting or editing signs.txt."""
 import json
 import math
 import os
@@ -19,7 +19,6 @@ from rasterio.transform import Affine
 from scipy import ndimage as ndi
 from shapely.geometry import Point, shape
 
-import card
 import osm
 from common import OUT
 
@@ -74,14 +73,19 @@ def main():
         t = nearest_tee(p.centroid)
         out.append(['potty', round(p.centroid.x, 1), round(p.centroid.y, 1), round(deg(t.x - p.centroid.x, t.y - p.centroid.y)), POTTY, POTTY, ''])
     holes = F['hole']
+    skipped = []
     for p in blobs(a, COLS['sign'], fr, tr, 1.0):
         q = p.centroid
         h = min(holes, key=lambda hh: Point(hh['line'].coords[0]).distance(q))
         t = nearest_tee(q)
-        i = h['ref'] - 1
-        text = custom.get(h['ref']) or f"HOLE {h['ref']}\nPAR {card.PAR[i]} · {card.TEES['gold'][2][i]} YD"
+        text = custom.get(h['ref'])
+        if not text:  # no message for this hole: no sign
+            skipped.append((h['ref'], round(q.x), round(q.y)))
+            continue
         out.append(['sign', round(q.x, 1), round(q.y, 1), round(deg(t.x - q.x, t.y - q.y)), 1.5, .1, text])
     json.dump(out, open(os.path.join(OUT, 'site_props.json'), 'w'))
+    for ref, e, n in skipped:
+        print(f'  sign dot near hole {ref} (e {e}, n {n}) skipped: no line for hole {ref} in signs.txt')
     k = {x: sum(1 for r in out if r[0] == x) for x in ('wash', 'potty', 'sign')}
     print(len(out), 'props:', k)
     for r in out:

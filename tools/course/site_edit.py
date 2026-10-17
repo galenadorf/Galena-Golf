@@ -8,8 +8,8 @@ Paint SOLID colours on a copy, saved as out/site_mask.png (hard edges, no anti-a
   ORANGE  #FF8000  a porta-potty: a small solid blob (3-4 px square is enough; it is always drawn 1.25 m square). Its door faces
                    the nearest tee box.
   YELLOW  #FFFF00  a signpost: one small solid dot, 3-4 px, in the ground at the spot. The board faces the nearest tee box. Its
-                   message comes from out/signs.txt (see site_paint.py), or by default 'HOLE n / PAR p . yards' for the hole
-                   whose tee is nearest.
+                   message comes from out/signs.txt (see site_paint.py); a dot whose nearest hole has no line there
+                   is not shown.
 Writes out/site_edit.png."""
 import json
 import os
