@@ -19,7 +19,7 @@ import rasterio
 from PIL import Image
 from scipy import ndimage as ndi
 from skimage.segmentation import random_walker
-from shapely.geometry import mapping, shape, Polygon, MultiPolygon
+from shapely.geometry import mapping, shape
 from shapely.ops import unary_union
 from rasterio import features as rfeat
 
@@ -75,7 +75,6 @@ def main(thr=0.0):
 
     # training samples
     mid = []
-    far = []
     for h in F['hole']:
         L = h['line']
         if h['par'] > 3:

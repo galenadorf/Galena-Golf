@@ -232,7 +232,6 @@ def build_holes(F, demZ1):
         i = hh['ref'] - 1
         L = hh['line']
         g = min(F['green'], key=lambda q: q['poly'].distance(Point(L.coords[-1])))['poly']
-        pin = min(F['pin'], key=lambda q: q['pt'].distance(Point(L.coords[-1])))['pt']
         gc = g.centroid
         # the line ends at the green centre
         c = list(L.coords)
@@ -285,6 +284,9 @@ def link_fairways(fair, F, reach=18.0):
 
 def creek_pieces(hw=2.0, step=14.0):
     """creek.py's centre line as short ribbons (the game sets each piece's water level from its own banks, so the creek steps down)."""
+    pp = os.path.join(OUT, 'creek_painted.json')  # the hand-corrected creek (creek_paint.py), already in pieces
+    if os.path.exists(pp):
+        return [shape(g) for g in json.load(open(pp))]
     p = os.path.join(OUT, 'creek.json')
     if not os.path.exists(p):
         return []
@@ -353,6 +355,7 @@ def main():
         cover=enc_polys([area] if trees else []),
         streams=enc_lines([f['line'] for f in F['stream']]),
         relief=relief,
+        props=json.load(open(os.path.join(OUT, 'site_props.json'))) if os.path.exists(os.path.join(OUT, 'site_props.json')) else [],  # washrooms, porta-potties and signposts painted on the aerial (site_paint.py)
         # tee marker colours: w is the tee played (gold), y/b/r the other sets (black, silver, bronze)
         mkc=dict(w=0xd9b23a, y=0x26282b, b=0xc9ced3, r=0xb07045),
     )

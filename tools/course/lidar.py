@@ -6,7 +6,6 @@ course are fetched (cached in .cache/ept/).
 
   .cache/chm.tif   1 m canopy height (m above the DEM) over the detail area, local frame; 0 where there's no vegetation
 """
-import io
 import os
 from concurrent.futures import ThreadPoolExecutor
 

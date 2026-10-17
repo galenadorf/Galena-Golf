@@ -12,7 +12,6 @@ from rasterio import features
 from rasterio.transform import Affine
 from scipy import ndimage as ndi
 from shapely.geometry import Point, shape
-from shapely.strtree import STRtree
 
 from common import OUT
 

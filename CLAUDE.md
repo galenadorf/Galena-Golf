@@ -8,7 +8,7 @@ A mobile, browser-based 3D golf game (installable PWA), forked from **SweetSpot*
 
 ## Project layout
 
-- `index.html` — **the entire game**: HTML, CSS and JS in one file (~7,320 lines, ~1 MB). There's no build step for the game.
+- `index.html` — **the entire game**: HTML, CSS and JS in one file (~5,900 lines, ~0.9 MB). There's no build step for the game.
 - `vendor/` — three.js r128 (`three.r128.min.js`, the global build) and mqtt.js 5.10.1 (loaded only when multiplayer starts), byte-identical to the npm builds, with their MIT licences.
 - `fonts/` — Oswald (variable) and Barlow 500/600/700 as `.woff2`, all subsets Google Fonts serves, plus `fonts.css` and the OFL licences.
 - `sw.js` — service worker for offline play: precaches `CORE` (page, icons, vendor, fonts), network-first for the page (falls back to the cache after 4 s), cache-first for everything else; it doesn't touch other origins or `version.txt`. Its cache is `galena-<BUILD>`, so each deploy replaces it. Registered at the end of `index.html`; needs https or localhost.
@@ -36,21 +36,21 @@ Do edits with small Python scripts that assert each `old` string matches exactly
 
 | Lines | Section |
 |---|---|
-| 14–353 | CSS. Theme variables on `:root` (line 17): greens `--g1..g3`, `--yel`, fonts Oswald and Barlow |
-| 354–433 | HTML: HUD, title screen (h1 at 383), menus and sheets; help/credits text at ~427 |
-| 434 | UTIL (noise, maths); unit helpers `toYd`, `toFt`, `toMph`, `fmtM`, `fmtDistShort`, `holeYd` (~473) |
-| 481 | PHYSICS: ball flight fitted to TrackMan data; `SURF` surfaces (493), `WEATHERS` (510), **`CLUBS` table (537)** |
-| 1012 | COURSE: the procedural "Legacy" course (switched off via `LEGACY_ON = false`) and the terrain builder |
-| 1807 | REAL COURSE: decoders, `realPrep()` (course-wide data), `makeRealCourse` (one hole), `buildRealHole`, trees, decor. `RD_CUR` is the data set in use |
-| ~2983 | `WOODBINE_DEFS`, `RDS` (data set per course, ~2985), `COURSES` (~2995), `setCourse()` (~3004) |
-| 3020 | WORLD (three.js): terrain shaders, tilt-shift, rain, particles |
-| 4012 | PROPS & DETAIL: walls, buildings, shrubs, wildlife, plane, paraglider |
-| 4872 | GAME: settings, `LB_EPOCH` (4877), audio, live multiplayer over MQTT (~4945), synthesised music |
-| ~5410 | state `G`, swing `SW`, saving the round in progress (`ssg-round-<course>`), swing input, flight playback, camera |
-| 6120 | UI: tempo panel, strike dial, HUD, sheets, hole map |
-| 6783 | STATS + RECORDS |
-| 6880 | PLAYER + LEADERBOARD (local board and GitHub board; `GH_REPO` at 6887) |
-| 7052 | INPUT + LOOP |
+| 14–~340 | CSS. Theme variables on `:root`: greens `--g1..g3`, `--yel`, fonts Oswald and Barlow |
+| ~340–425 | HTML: HUD, title screen (h1 at ~373), menus and sheets; help/credits text |
+| 425 | UTIL (noise, maths); unit helpers `toYd`, `toFt`, `toMph`, `fmtDistShort`, `holeYd` (~468) |
+| 470 | PHYSICS: ball flight fitted to TrackMan data; `SURF` surfaces (482), `WEATHERS` (499), **`CLUBS` table (526)** |
+| ~1000 | hole-geometry helpers (`mkPoly`, `polyQ`, `polyAt`), decoders, the `RD_WOODBINE` data line |
+| 1044 | REAL COURSE: `realPrep()` (course-wide data), `makeRealCourse` (one hole), `buildRealHole`, trees, decor. `RD_CUR` is the data set in use |
+| ~2200 | `WOODBINE_DEFS`, `RDS` (data set per course, 2205), `COURSES` (2215), `setCourse()` (2222) |
+| 2238 | WORLD (three.js): terrain shaders, tilt-shift, rain, particles, hole props and detail, wildlife (turkeys), plane, paraglider |
+| 3413 | GAME: settings, `LB_EPOCH` (3418), audio, live multiplayer over MQTT, synthesised music; state `G`, swing `SW`, saving the round in progress, swing input, flight playback, camera |
+| 4720 | UI: tempo panel, strike dial, HUD, sheets, hole map |
+| 5383 | STATS + RECORDS |
+| 5480 | PLAYER + LEADERBOARD (local board and GitHub board; `GH_REPO` at 5487) |
+| 5651 | INPUT + LOOP |
+
+The Legacy course (the original 18 made-up holes, `makeCourse` and the builders only it used, about 106 KB) was removed on 2026-10-17; it is in git history before that commit.
 
 ## Done so far (session of 2026-10-16)
 
@@ -72,7 +72,7 @@ Launch and spin (2026-10-17): launch raised 1.2 deg for Dr-4H, 1.1 for 5i, 0.6 f
 
 ## Wildlife (2026-10-17)
 
-The deer are gone: `makeTurkey(L, tom)` / `turkeyParts` (near `makeRabbit`, ~line 4477) put a tom and two hens across the fairways, three rabbits as before. Same behaviour as the deer did (cross the line of play, stop to peck, run when the ball comes near, can be hit: "Clipped a turkey!" with a synthesised gobble, `SFX.gobble`, played from `lifeHitNote`). Low-poly box-and-sphere models, bob and peck animation by head pivot; tune sizes in `turkeyParts`, speeds in `e.update`, count in `buildLife`.
+The deer are gone: `makeTurkey(L, tom)` / `turkeyParts` (~line 4477) put a tom and four hens across the fairways (no rabbits). Same behaviour as the deer did (cross the line of play, stop to peck, run when the ball comes near, can be hit: "Clipped a turkey!" with a synthesised gobble, `SFX.gobble`, played from `lifeHitNote`). Low-poly box-and-sphere models, bob and peck animation by head pivot; tune sizes in `turkeyParts`, speeds in `e.update`, count in `buildLife`.
 
 ## Strike sound (2026-10-17)
 
@@ -84,6 +84,13 @@ Putts do not use that sample: `SFX.tap(speed)` (synthesised: a short low thud, a
 
 - **Tee map edit**: `tools/course/tee_boxes_edit.py` makes `out/tee_boxes_edit.png` (aerial, the 54 OSM tee boxes solid magenta #FF00FF, rings for where the gold, black, silver and bronze sets play from now); the user's edited `out/tee_boxes_mask.png` goes through `tee_boxes_paint.py` → `out/tees_painted.json` (replaces the OSM boxes in `build.py`) and `out/tee_starts.json` (optional solid yellow #FFFF00 dots = exact played-tee start for the hole whose line passes nearest). Each tee set still plays from the point of the nearest box at its card yardage (`snap_to_tee`).
 - **Pins**: four pin spots per green (front, back, left, right as seen on the way in, ~0.45 R from the centre, pulled to the lowest-slope spot at least 3.5 m inside the edge; `makeRealCourse`, ~line 2339). `G.pins` is drawn at random (0-3) for every hole at the start of each round; a saved round keeps its pins; practice rotates to a different one each time. The 18 OSM pin points are not used.
+
+## Dead-code cleanup, site props and the creek map (2026-10-17)
+
+- **Cleanup**: removed the never-used code, the intro-video leftovers, and the whole Legacy course (`makeCourse`, `HOLE_BASE`, the 17 `H_*` holes, the legacy-only builders; ~106 KB). `COURSES` now holds only `woodbine`; a saved round from the old Legacy key opens on Woodbine through `setCourse`. `index.html` went from 998 KB to ~915 KB. Python: unused imports and variables removed (pyflakes is clean).
+- **Site props** (washroom, porta-potty, signpost): `site_edit.py` makes `out/site_edit.png` (aerial, grid, tee boxes, buildings, a colour key). The user paints a copy as `out/site_mask.png`: cyan #00FFFF washroom footprint, blue #0000FF optional door-side strip, orange #FF8000 porta-potty blob, yellow #FFFF00 signpost dot. `site_paint.py` writes `out/site_props.json` (rows `[kind, e, n, facing deg, w, d, text]`; sign text from `out/signs.txt`, lines like `7: TEXT | SECOND LINE`, else HOLE n / PAR p / yards), `build.py` embeds it as `RD_WOODBINE.props`. Engine: `realProps`, `realSiteMeshes`, `realSiteColliders`, `signTexture`, `labelTexture` (before `realBuildingMeshes`); washroom and porta-potty are ball colliders ('Off the washroom!'), signs are not.
+- **Placed so far (2026-10-17)**: one washroom (e 276, n 480, near the 16th tee), one porta-potty (e -310, n -62, near the 2nd/7th tees) and one sign by the 7th tee ('Andy Lewis - Hole in One / 10/10/2026', from `out/signs.txt` line `7:`). The creek was checked by the user and stays as it is.
+- **Creek map**: `creek_edit.py` makes `out/creek_edit.png` (corridor e -460..600, n -700..160, current creek solid blue #0000FF, ponds outlined cyan); the corrected copy `out/creek_mask.png` goes through `creek_paint.py` → `out/creek_painted.json` (the painted water cut into ~14 m pieces), which `build.py` prefers over `creek.py`'s centre line.
 
 ## To do before publishing
 
