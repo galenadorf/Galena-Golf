@@ -2279,7 +2279,9 @@ function makeRealCourse(idx, pin) {
   };
   const farSurf = (X, Z) => {
     const i = Math.floor((enuE(X, Z) - GR.e0) / GR.res), j = Math.floor((enuN(X, Z) - GR.n0) / GR.res);
-    return i < 0 || j < 0 || i >= GR.W || j >= GR.H ? S.DEEP : GCL_S[GC.cls[j * GR.W + i]];
+    if (i < 0 || j < 0 || i >= GR.W || j >= GR.H) return S.DEEP;
+    const c = GC.cls[j * GR.W + i];
+    return RDC.fescue && (c === GCL.OUT || c === GCL.WOOD) ? S.ROUGH : GCL_S[c]; // a fescue course: deep rough only in the fescue
   };
   const info = { surf: 0, stripe: 0, fwAlong: 0, water: -1, waste: false };
   C.info = info;
@@ -3386,7 +3388,7 @@ function buildHole(C) {
 const TERRAIN_GLSL = `
 uniform sampler2D tFA, tFB, tFC, tFar; uniform vec2 fO, fN; uniform float fInv, fR, wLo, wHi, seaLv, hasCoast, isLinks, isRocky, hasFar, isStraw;
 uniform vec4 farA, farB, cupP;
-uniform vec3 cStraw, cRough, cDeep, cFirst, cFairA, cFairB, cGreenA, cGreenB, cFringe, cSand, cWaste, cTee, cPath, cBeach, cPond, cRock, cBed1, cBed2, cDune, cGranite;
+uniform vec3 cStraw, cRough, cDeep, cOut, cFirst, cFairA, cFairB, cGreenA, cGreenB, cFringe, cSand, cWaste, cTee, cPath, cBeach, cPond, cRock, cBed1, cBed2, cDune, cGranite;
 varying vec3 vWPos; varying vec3 vWN;
 float dcF(float v) { return (v * 2. - 1.) * fR; }
 float ins(float d) { float w = max(fwidth(d), 1e-3) * .75; return 1. - smoothstep(-w, w, d); }
@@ -3396,8 +3398,8 @@ vec3 farColor() {
   vec2 en = vec2(farA.x * vWPos.x + farA.y * vWPos.z, farA.z * vWPos.x + farA.w * vWPos.z) + farB.xy;
   float c = texture2D(tFar, en / farB.zw).r * 255.;
   vec3 col = cRough;
-  if (c < .5) col = cDeep * 1.02; else if (c < 1.5) col = cRough; else if (c < 2.5) col = cFairA; else if (c < 3.5) col = cGreenA;
-  else if (c < 4.5) col = cTee; else if (c < 5.5) col = cSand; else if (c < 6.5) col = cPond; else if (c < 7.5) col = cPath; else if (c < 8.5) col = isStraw > .5 ? cStraw : cDeep * .86; else col = cFirst;
+  if (c < .5) col = cOut * 1.02; else if (c < 1.5) col = cRough; else if (c < 2.5) col = cFairA; else if (c < 3.5) col = cGreenA;
+  else if (c < 4.5) col = cTee; else if (c < 5.5) col = cSand; else if (c < 6.5) col = cPond; else if (c < 7.5) col = cPath; else if (c < 8.5) col = isStraw > .5 ? cStraw : cOut * .86; else if (c < 9.5) col = cFirst; else col = cDeep;
   return col;
 }
 vec3 surfaceColor() {
@@ -3487,9 +3489,11 @@ function terrainMatFrom(o) {
     cRock: { value: v3(hslToRgb(.085, .16, .68)) }, cGranite: { value: v3(hslToRgb(.08, .07, .6)) }, cBed1: { value: v3(hslToRgb(.13, .35, .7)) }, cBed2: { value: v3(hslToRgb(.5, .3, .5)) }, cDune: { value: v3(hslToRgb(.115, .36, .74)) },
     isStraw: { value: o.straw ? 1 : 0 }, cStraw: { value: v3(hslToRgb(.068, .52, .43)) } // Augusta's pine straw, rust-brown under the pines
   };
+  U.cOut = { value: o.fescue ? U.cRough.value : U.cDeep.value }; // beyond the course and in woods: with a fescue map that is plain rough, the deep colour is only for the fescue
   const mat = new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0x000000, shininess: 1 });
   mat.extensions = { derivatives: true };
-  mat.customProgramCacheKey = () => 'terrain-fields-4';
+  mat.customProgramCacheKey = () => 'terrain-fields-5';
+
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWN;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = position; vWN = normal;');
