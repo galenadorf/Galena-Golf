@@ -1,0 +1,69 @@
+ON-COURSE OBJECTS: what a player can see in Galena!!! Golf right now
+=====================================================================
+Current state only. Keep this file in step with index.html (see CLAUDE.md).
+Frequencies come from the code (buildLife / updateLife in index.html), not from watching a full round.
+
+ANIMALS
+-------
+Wild turkeys (5 per hole: one tom with a fanned tail, four hens)
+  - First appear 4-24 s after arriving on a hole.
+  - Each walks across the line of play, stopping to peck, leaves the far side, and returns 14-54 s later.
+  - Expect one or two on nearly every hole.
+  - They bolt (run for 4-6 s) if the ball lands within ~16 m or flies within ~32 m.
+  - Can be hit: "Clipped a turkey!", gobble sound, the ball ricochets.
+
+Small birds (6 per hole, always present: 4 pigeons, 2 crows)
+  - 2-3 stand on the ground pecking and walking; the rest sit in treetops near the hole.
+  - They take off now and then, or when you get close.
+  - Can be hit: "Birdie... literally!"
+
+Gulls circling (4 per hole, always present)
+  - Wheel high over the hole the whole time.
+
+Bird flocks (2, high up, crossing the sky)
+  - 11 gulls: first pass ~6-20 s into a hole.
+  - 8 sparrows: first pass ~28-42 s into a hole.
+  - Each returns 25-75 s after it passes, from a new direction. Most holes show at least one if you wait.
+
+AIRCRAFT
+--------
+Small plane (white and red prop plane, low flyby)
+  - Only appears right after a tee shot; sometimes crosses straight through the ball's path.
+  - Each round is dealt 0, 1 or 2 planes (2/7 none, 3/7 one, 2/7 two; ~1.1 average), spread over the holes left.
+  - Can be hit: "Hit the plane!"
+
+Paraglider (red, white and yellow canopy, pilot hanging below)
+  - Fades in, glides down ~36 s, lands on the fairway into the wind; the pilot stands there briefly.
+  - Per hole: 60% chance one is scheduled 10-65 s after arriving, 40% none at first.
+  - After one leaves, the next is due 100-220 s later. Rarer than the turkeys.
+  - Canopy and pilot can be hit: "Hit the paraglider!"
+
+SKY AND WEATHER
+---------------
+  - Clouds drift across the sky and thicken as the weather changes.
+  - Weather spells last 6-9 holes: clear, damp, rain, damp, fine. Rain has falling drops and darker sky.
+  - Rainbow: a faint one when rain is easing off and it is not too cloudy; plays a short jingle.
+  - Wind: the flag flutters and a wind arrow shows on screen.
+
+GROUND-LEVEL SCENERY
+--------------------
+  - Grass blades and tufts around the camera; tan and amber fescue in the deep rough.
+  - Wildflowers: small daisies in drifts (white, yellow, pink, lilac, orange, pale blue).
+  - Tall reeds round ponds, the creek and ditches.
+  - Trees from the lidar data (broadleaf, conifer, shrub); they block the ball.
+
+MAN-MADE OBJECTS
+----------------
+  - Flagstick, flag and cup on every green.
+  - Tee markers in four colours, and a tee sign beside the white tee.
+  - White boundary stakes (out of bounds); red stakes round the ponds (penalty areas).
+  - Distance posts at 200, 150 and 100 m.
+  - Timber fairway bridges over the creek.
+  - Double washroom near hole 18 (MEN and WOMEN doors).
+  - Two blue porta-potties (the ball can hit them).
+  - Hole 7 sign ("Andy Lewis / Hole in One / 10/10/2026"), with its own fly-over intro.
+
+NOT IN THE GAME
+---------------
+  - No deer, squirrels, rabbits, butterflies or fish. (The stats screen only jokes "fed the fish" for balls in the water.)
+  - Benches, huts, golf carts, fountains and similar props exist in the engine from the removed courses but Woodbine does not use them.

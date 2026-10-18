@@ -473,6 +473,7 @@ const KAERO = 0.5 * AIR_RHO * Math.PI * BALL_R * BALL_R / BALL_M;
 const RPM = TAU / 60;
 const CD0 = 0.22, CD1 = 0.30, CL0 = 0.12, CL1 = 0.6, CLMAX = 0.42, SPIN_TAU = 25; // fitted to TrackMan tour averages
 const VIS_R = 0.11;      // drawn ball radius: oversized (~4x) so strikes read clearly
+const BALL_DRAW = .85;   // the ball is drawn at 85% of its size (the physics radius VIS_R is unchanged)
 const CUP_VIS_R = 0.28;   // cup radius: 2.5 ball radii, the real proportion (108 mm hole, 42.7 mm ball)
 const CUP_RIM = CUP_VIS_R,
   PIN_HIT = .035 + VIS_R * .95; // stick radius + ball radius
@@ -3729,7 +3730,7 @@ function mpUpdate(dt) {
       const q = C.loc(pr.x, pr.z); X = q[0]; Z = -q[1]; Y = groundY(X, Z) + VIS_R; o.tr.geometry.setDrawRange(0, 0);
     }
     o.ball.visible = true; o.ball.position.set(X, Y, Z);
-    const d = W.cam.position.distanceTo(o.ball.position); o.ball.scale.setScalar(clamp(.02 * d / VIS_R, 1, 7));
+    const d = W.cam.position.distanceTo(o.ball.position); o.ball.scale.setScalar(clamp(.02 * d / VIS_R, 1, 7) * BALL_DRAW);
     _mpv.set(X, Y + .6, Z).project(W.cam);
     const vis = _mpv.z < 1 && Math.abs(_mpv.x) < 1.1 && Math.abs(_mpv.y) < 1.1 && !sheetOpen();
     o.tag.style.opacity = vis ? 1 : 0;
@@ -4724,7 +4725,7 @@ function camStep(posT, lookT, wf, dt) { // the two filters in series; wf = 1 in 
 }
 // a hole with a sign opens with a fly-over of it instead: in from the side, a slow push-in until the board fills the screen, a few seconds
 // to read it, then a rise and pull-back to the address view on the tee. Returns false when the hole has no sign.
-const SIGN_T = [4.5, 4.5, 6, 4.5]; // seconds: fly in, push in, hold to read, pull back to the tee
+const SIGN_T = [4.5, 4, 2, 4.5]; // seconds: fly in, push in, hold to read, pull back to the tee
 function signIntroCam(C, outP, outL) {
   if (C._sign === undefined) C._sign = realProps(C).find(b => b.k === 'sign' && b.text && b.hole === G.hole + 1) || null;
   const b = C._sign; if (!b) return false;
@@ -5945,7 +5946,7 @@ function frame(now) {
   if (C && G.state !== 'flight' && G.state !== 'holed' && G.state !== 'spec') W.ball.position.set(G.ball.x, restY + VIS_R * W.ball.scale.x + (G.teed ? .06 : 0), G.ball.z);
   if (C) { W.peg.visible = G.teed && G.state !== 'flight' && G.state !== 'holed' && G.state !== 'spec'; if (W.peg.visible) W.peg.position.set(G.ball.x, restY + .04, G.ball.z); }
   const capT = drama() && G.state === 'flight' && G.ballRoll ? 4 : 7; BALL_CAP += (capT - BALL_CAP) * (1 - Math.exp(-dt * 5)); // while it rolls out the ball is drawn smaller, so the run is not hidden under it
-  const bd = W.cam.position.distanceTo(W.ball.position), bs = clamp(.02 * bd / VIS_R, 1, BALL_CAP); W.ball.scale.setScalar(bs); W.ball.material.bumpScale = BALL_BUMP * VIS_R * bs;
+  const bd = W.cam.position.distanceTo(W.ball.position), bs = clamp(.02 * bd / VIS_R, 1, BALL_CAP) * BALL_DRAW; W.ball.scale.setScalar(bs); W.ball.material.bumpScale = BALL_BUMP * VIS_R * bs;
   if (C) {
     const gy = Math.max(groundY(W.ball.position.x, W.ball.position.z), C.wl(W.ball.position.x, W.ball.position.z)), hh = W.ball.position.y - gy - VIS_R * bs;
     W.blob.position.set(W.ball.position.x, gy + .03, W.ball.position.z); W.blob.scale.setScalar(VIS_R * 3.2 * bs * (1 + hh * .02));
