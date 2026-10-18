@@ -88,7 +88,7 @@ def main():
             q = Point(*spos[str(h['ref'])])
             if str(h['ref']) in tmarks:
                 t = Point(*tmarks[str(h['ref'])]['mid'])
-        out.append(['sign', round(q.x, 1), round(q.y, 1), round(deg(t.x - q.x, t.y - q.y)), 1.5, .1, text])
+        out.append(['sign', round(q.x, 1), round(q.y, 1), round(deg(t.x - q.x, t.y - q.y)), 1.5, .1, text, h['ref']])   # the 8th value is the hole it belongs to (the fly-over reads the sign)
     json.dump(out, open(os.path.join(OUT, 'site_props.json'), 'w'))
     for ref, e, n in skipped:
         print(f'  sign dot near hole {ref} (e {e}, n {n}) skipped: no line for hole {ref} in signs.txt')
