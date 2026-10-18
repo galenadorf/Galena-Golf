@@ -25,7 +25,6 @@ from common import OUT
 COLS = {'wash': (0, 255, 255), 'door': (0, 0, 255), 'potty': (255, 128, 0), 'sign': (255, 255, 0)}
 LEGEND = (60, 60, 60 + 470, 60 + 34 * 4 + 16)   # the colour key printed on the map is ignored
 POTTY = 1.25
-SIGN_NUDGE = {7: 3 * 0.9144}   # hole number -> metres to move the sign toward the tee it faces, so it reads better from the tee
 
 
 def blobs(a, rgb, fr, tr, min_area):
@@ -55,6 +54,8 @@ def main():
     for ln in open(sp).read().splitlines() if os.path.exists(sp) else []:
         if ':' in ln and ln.split(':', 1)[0].strip().isdigit():
             custom[int(ln.split(':', 1)[0])] = ln.split(':', 1)[1].strip().replace('|', '\n').replace(' \n', '\n').replace('\n ', '\n')
+    rd_ = lambda n: json.load(open(os.path.join(OUT, n))) if os.path.exists(os.path.join(OUT, n)) else {}
+    spos, tmarks = rd_('sign_pos.json'), rd_('tee_marks.json')
     out = []
     doors = blobs(a, COLS['door'], fr, tr, 1.0)
     for p in blobs(a, COLS['wash'], fr, tr, 6.0):
@@ -83,10 +84,11 @@ def main():
         if not text:  # no message for this hole: no sign
             skipped.append((h['ref'], round(q.x), round(q.y)))
             continue
-        d = math.hypot(t.x - q.x, t.y - q.y)
-        k = min(SIGN_NUDGE.get(h['ref'], 0), d) / d if d else 0
-        sx, sy = q.x + (t.x - q.x) * k, q.y + (t.y - q.y) * k
-        out.append(['sign', round(sx, 1), round(sy, 1), round(deg(t.x - q.x, t.y - q.y)), 1.5, .1, text])
+        if str(h['ref']) in spos:   # placed on a hole close-up (hole_zoom_paint.py): that spot, facing the played tee
+            q = Point(*spos[str(h['ref'])])
+            if str(h['ref']) in tmarks:
+                t = Point(*tmarks[str(h['ref'])]['mid'])
+        out.append(['sign', round(q.x, 1), round(q.y, 1), round(deg(t.x - q.x, t.y - q.y)), 1.5, .1, text])
     json.dump(out, open(os.path.join(OUT, 'site_props.json'), 'w'))
     for ref, e, n in skipped:
         print(f'  sign dot near hole {ref} (e {e}, n {n}) skipped: no line for hole {ref} in signs.txt')

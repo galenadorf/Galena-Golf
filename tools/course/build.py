@@ -227,6 +227,10 @@ def build_holes(F, demZ1):
         h = min(F['hole'], key=lambda hh: hh['line'].distance(q))
         if h['line'].distance(q) < 80:
             starts[h['ref'] - 1] = (e, n)
+    tm = os.path.join(OUT, 'tee_marks.json')  # the red marker line painted on a hole close-up (hole_zoom_paint.py): the played tee and its marker gap
+    marks = json.load(open(tm)) if os.path.exists(tm) else {}
+    for r, m in marks.items():
+        starts[int(r) - 1] = tuple(m['mid'])
     out = []
     for hh in F['hole']:
         i = hh['ref'] - 1
@@ -253,6 +257,8 @@ def build_holes(F, demZ1):
                  lens=[round(card.TEES[k][2][i] * YD, 1) for k in ('gold', 'black', 'silver', 'bronze')],
                  tee=list(tee), green=[round(gc.x, 2), round(gc.y, 2)], line=[list(p) for p in line],
                  mk={'w': list(pos['gold']), 'y': list(pos['black']), 'b': list(pos['silver']), 'r': list(pos['bronze'])})
+        if str(hh['ref']) in marks:
+            h['mkw'] = marks[str(hh['ref'])]['half']
         h['desc'] = describe(dict(tee=tee, green=(gc.x, gc.y), L=LineString(line), par=h['par']), demZ1, None, F, None)
         h['_green_poly'] = g
         out.append(h)
