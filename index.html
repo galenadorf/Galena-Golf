@@ -5566,7 +5566,7 @@ const GH_REPO = 'galenadorf/Galena-Golf';
 // Posting without a GitHub account: the game files the round as an issue with a "post only" token (a fine-grained personal access token
 // limited to Issues: read & write on this one repository), stored here reversed and in pieces. It can do nothing else, the workflow
 // validates every score, and the token can be rotated at any time. Left empty, the game falls back to the pre-filled issue page.
-const GH_POST_KEY = []; // e.g. the base64 of the token, reversed, in a few strings
+const GH_POST_KEY = ['klHRjJzeko0QkxMTlNUVlA4VDBwU2to', 'BGV0hoM21kVDNNbHFmQ1pUUnJvVnZtW', 'sbk1OVFREV0VNX20ycHRSU0Y1SHh3Tz', 'Z2l0aHViX3BhdF8xMUNSNjVHQ1kwN2h']; // the base64 of the token, in pieces, last piece first
 const ghKey = () => { try { return GH_POST_KEY.length ? atob(GH_POST_KEY.slice().reverse().join('')) : ''; } catch (e) { return ''; } };
 function deviceId() { try { let d = localStorage.getItem('ssg-dev'); if (!d) { d = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('ssg-dev', d); } return d; } catch (e) { return 'x'; } }
 function roundPayload(r) { return { v: 1, course: COURSES[r.course] ? r.course : COURSE.key, name: r.name, strokes: r.strokes, toPar: r.toPar, holes: r.holes || HOLE_DEFS.length, at: r.at, dev: deviceId() }; }
