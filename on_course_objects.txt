@@ -65,7 +65,7 @@ GROUND-LEVEL SCENERY
 MAN-MADE OBJECTS
 ----------------
   - Flagstick, flag and cup on every green.
-  - Tee markers in four colours, and a tee sign beside the white tee.
+  - Tee markers in four colours.
   - White boundary stakes (out of bounds); red stakes round the ponds (penalty areas).
   - Distance posts at 200, 150 and 100 m.
   - Timber fairway bridges over the creek.
@@ -75,6 +75,7 @@ MAN-MADE OBJECTS
 
 NOT IN THE GAME
 ---------------
+  - The hole-info tee signs (Nr., par, yards) are switched off (code kept; set TEE_SIGNS_ON = true in index.html). Only signs listed in signs.txt are shown.
   - The paraglider is switched off (code kept; set PARAGLIDER_ON = true in index.html to bring it back).
   - No deer, squirrels, rabbits, butterflies or fish (the gopher is the only burrowing animal). (The stats screen only jokes "fed the fish" for balls in the water.)
   - Benches, huts, golf carts, fountains and similar props exist in the engine from the removed courses but Woodbine does not use them.
