@@ -3273,7 +3273,8 @@ function drawBirds(L, dt) {
   for (const m of [B.body, B.wl, B.wr]) { m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; }
 }
 
-/* --- a small plane doing a low flyby --- */
+/* --- a small plane doing a low flyby, towing a banner --- */
+const PLANE_BANNER = 'Galena!!!';
 function makePlane(L) {
   const white = 0xf4f4f0, red = 0xc8352b, grey = 0x8f9aa3;
   const hull = mergeParts([
@@ -3287,8 +3288,21 @@ function makePlane(L) {
   ]);
   const g = new THREE.Group(), mat = LIFE_MAT(); g.add(lmesh(hull, mat));
   const prop = lmesh(mergeParts([lbx(.14, 2.4, .08, 0, 0, 0, [.15, .15, .15]), lbx(2.4, .14, .08, 0, 0, 0, [.15, .15, .15]), lsp(.16, .16, .22, 0, 0, .12, red)]), mat); prop.position.set(0, 0, 3.4); g.add(prop);
+  // the tow banner: a rope from the tail and a cloth that ripples, readable from both sides
+  g.add(lmesh(mergeParts([lbx(.04, .04, 8.4, 0, -.15, -9.9, grey)]), mat));
+  const bcv = document.createElement('canvas'); bcv.width = 1024; bcv.height = 280; const bg = bcv.getContext('2d');
+  bg.fillStyle = '#f7f1dd'; bg.fillRect(0, 0, 1024, 280); bg.strokeStyle = '#c8352b'; bg.lineWidth = 14; bg.strokeRect(10, 10, 1004, 260);
+  bg.fillStyle = '#c8352b'; bg.textAlign = 'center'; bg.textBaseline = 'middle'; let bpx = 150; const bface = f => `700 ${f}px Oswald, "Arial Narrow", Impact, sans-serif`;
+  bg.font = bface(bpx); while (bg.measureText(PLANE_BANNER).width > 900 && bpx > 30) { bpx -= 4; bg.font = bface(bpx); } bg.fillText(PLANE_BANNER, 512, 148);
+  const btex = new THREE.CanvasTexture(bcv); btex.anisotropy = 4; const bmat = new THREE.MeshBasicMaterial({ map: btex, side: THREE.DoubleSide, transparent: true });
+  const BL = 10, BH = 2.8, BZ = -14.1, banners = [];
+  for (const flip of [false, true]) { // the second cloth is the same message mirrored along its length, so the text reads correctly from the other side
+    const bgeo = new THREE.PlaneGeometry(BL, BH, 20, 2).rotateY(Math.PI / 2), uv = bgeo.attributes.uv, pa = bgeo.attributes.position;
+    for (let i = 0; i < uv.count; i++) { const u = (pa.getZ(i) / BL + .5); uv.setX(i, flip ? u : 1 - u); } // plane after rotateY: z runs along the length
+    const m = new THREE.Mesh(bgeo, bmat); m.frustumCulled = false; m.position.set(flip ? -.01 : .01, -.35, BZ - BL / 2); g.add(m); banners.push({ geo: bgeo, base: pa.array.slice() });
+  }
   g.visible = false; L.grp.add(g);
-  const e = { kind: 'plane', mat, g, prop, st: 'wait', tmr: 1e9, x: 0, y: 0, z: 0, yaw: 0, a: [0, 0], b: [0, 0], alt: 40, spd: 52, t: 0, T: 10, r: 1, shake: 0, played: false };
+  const e = { kind: 'plane', mat, lmat: bmat, banners, g, prop, st: 'wait', tmr: 1e9, x: 0, y: 0, z: 0, yaw: 0, a: [0, 0], b: [0, 0], alt: 40, spd: 52, t: 0, T: 10, r: 1, shake: 0, played: false };
   e.hit = (x, y, z) => {
     if (e.st !== 'fly') return null; const dx = x - e.x, dy = y - e.y, dz = z - e.z, cs = Math.cos(e.yaw), sn = Math.sin(e.yaw), lx = dx * cs - dz * sn, lz = dx * sn + dz * cs;
     const inBody = Math.abs(lx) < .75 && Math.abs(dy) < .8 && lz > -4.4 && lz < 3.6, inWing = Math.abs(lx) < 5.6 && Math.abs(dy - .72) < .25 && Math.abs(lz - .25) < .85, inTail = Math.abs(lx) < 1.8 && Math.abs(dy - .2) < .25 && Math.abs(lz + 5.5) < .6;
@@ -3312,6 +3326,11 @@ function makePlane(L) {
     e.x = lerp(e.a[0], e.b[0], u); e.z = lerp(e.a[1], e.b[1], u); e.y = groundY(e.x, e.z) + e.alt + Math.sin(e.t * .8) * 1.2;
     if (!e.played) { const cam = W.cam.position, d = Math.hypot(cam.x - e.x, cam.z - e.z); if (d < 260) { e.played = true; try { SFX.plane(); } catch (er) { } } }
     e.shake = Math.max(0, e.shake - dt); e.prop.rotation.z += dt * 70;
+    for (const b of e.banners) { // ripple: small near the rope, growing toward the free end
+      const pa = b.geo.attributes.position, o = b.base;
+      for (let i = 0; i < pa.count; i++) { const z = o[i * 3 + 2], k = (.5 - z / 10) * 1; pa.setX(i, o[i * 3] + Math.sin(e.t * 7 + z * .9) * .45 * k); pa.setY(i, o[i * 3 + 1] + Math.sin(e.t * 5 + z * .6) * .12 * k); }
+      pa.needsUpdate = true;
+    }
     e.g.position.set(e.x, e.y, e.z); e.g.rotation.set(Math.sin(e.shake * 22) * .25 * e.shake, e.yaw, Math.sin(e.t * .6) * .1 + Math.sin(e.shake * 17) * .3 * e.shake, 'YXZ');
   };
   return e;

@@ -28,6 +28,8 @@ Bird flocks (2, high up, crossing the sky)
 AIRCRAFT
 --------
 Small plane (white and red prop plane, low flyby)
+  - Tows a rippling banner, ~10 m long on a rope behind the tail, reading "Galena!!!" from both sides (text is PLANE_BANNER in index.html).
+  - The ball passes through the banner and rope; only the plane itself can be hit.
   - Only appears right after a tee shot; sometimes crosses straight through the ball's path.
   - Each round is dealt 0, 1 or 2 planes (2/7 none, 3/7 one, 2/7 two; ~1.1 average), spread over the holes left.
   - Can be hit: "Hit the plane!"
