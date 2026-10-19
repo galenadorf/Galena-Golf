@@ -111,6 +111,9 @@ input{-webkit-user-select:text;user-select:text;touch-action:manipulation}
 #strikeCv{width:100%;aspect-ratio:1/1;display:block;position:relative}
 body.swing #topbar{opacity:0}
 body.flight #tempo,body.flight #strike{opacity:.4;transition:opacity .4s}
+/* reverse controls: the tempo panel (swing thumb) on the right, the strike dial (contact thumb) on the left */
+body.rev #tempo{left:auto;right:calc(var(--sr) + 10px)}
+body.rev #strike{right:auto;left:calc(var(--sl) + 38px)}
 #skipBtn{position:absolute;z-index:6;transform:translate(-50%,6px) scale(.9);opacity:0;pointer-events:none;transition:opacity .25s,transform .3s var(--spring);padding:7px 16px 8px;border-radius:18px;color:#fff;font:600 15px Oswald,"Arial Narrow",sans-serif;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:5px;cursor:pointer}
 #skipBtn.on{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1)}
 #skipBtn svg{width:15px;height:15px}
@@ -333,6 +336,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
   #readout{top:calc(var(--st) + 76px)}
   #tempo{height:calc(100% - var(--st) - var(--sb) - 110px);max-height:340px;width:134px}
   #strike{width:min(220px,28vw);right:calc(var(--sr) + 60px);bottom:calc(var(--sb) + 30px)}
+  body.rev #strike{right:auto;left:calc(var(--sl) + 60px)}
   .icard{max-width:600px}
   #title{flex-direction:row;align-items:flex-end;gap:20px}
   .logoCard{align-self:flex-start}
@@ -396,6 +400,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
   <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
   <div class="mlist setBlock">
     <div class="mrow">Name<input id="mName" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="done"></div>
+    <div class="mrow">Reverse controls<div class="seg" id="segRev"><button data-v="1">Yes</button><button data-v="0">No</button></div></div>
     <div class="mrow">Golfer<div class="seg" id="segHand"><button data-v="1">Righty</button><button data-v="-1">Lefty</button></div></div>
     <div class="mrow">Sound<div class="seg" id="segSnd"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
     <div class="mrow">Dramatic bounce<div class="seg" id="segDrama"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
@@ -3454,6 +3459,34 @@ function makeGopher(L) {
   };
   return e;
 }
+/* --- a hot air balloon drifting across the sky with the wind (red, white and orange; the ball cannot hit it). As rare as the paraglider --- */
+function makeBalloon(L) {
+  const mat = LIFE_MAT(), g = new THREE.Group(), R = 9, cols = [0xd23a2f, 0xf7f3ea, 0xf08a24], N = 12, parts = [];
+  for (let i = 0; i < N; i++) { // the gores: a stripe of the sphere above, a stripe of the tapering skirt below, in red, white and orange
+    const c = cols[i % 3], a0 = i / N * TAU, da = TAU / N + .01;
+    parts.push({ g: new THREE.SphereGeometry(1, 3, 12, a0, da, 0, Math.PI * .72), c, m: new THREE.Matrix4().makeScale(R, R * 1.12, R).setPosition(0, R * 1.12, 0) });
+    parts.push({ g: new THREE.CylinderGeometry(R * Math.sin(Math.PI * .72) * .99, R * .34, R * .62, 3, 1, true, a0, da), c, m: new THREE.Matrix4().setPosition(0, R * 1.12 + R * 1.12 * Math.cos(Math.PI * .72) - R * .31, 0) });
+  }
+  parts.push(lbx(1.9, 1.15, 1.9, 0, -.2, 0, 0x7a5532), lbx(2.1, .12, 2.1, 0, .4, 0, 0x5c3f25)); // the basket
+  for (const [sx, sz] of [[-.8, -.8], [.8, -.8], [-.8, .8], [.8, .8]]) parts.push(lbx(.06, 2.4, .06, sx * .8, 1.7, sz * .8, 0x3a2e24, sz * .12, 0, -sx * .12)); // ropes up to the skirt
+  parts.push({ g: new THREE.ConeGeometry(.35, 1, 6), c: 0xffd23f, m: new THREE.Matrix4().setPosition(0, 3.9, 0) }); // the burner flame
+  const body = lmesh(mergeParts(parts), mat); g.add(body); g.visible = false; L.grp.add(g);
+  const e = { kind: 'balloon', mat, g, body, st: 'wait', tmr: Math.random() < .6 ? 10 + Math.random() * 55 : 1e9, x: 0, y: 0, z: 0, a: [0, 0], b: [0, 0], alt: 45, t: 0, T: 100, yaw: Math.random() * TAU };
+  e.start = () => {
+    const I = L.C.inner, cx = (I.minX + I.maxX) / 2, cz = (I.minZ + I.maxZ) / 2, w = G.wind || [0, 0], wl = Math.hypot(w[0], w[1]);
+    const ang = wl > 1 ? Math.atan2(w[1], w[0]) : Math.random() * TAU, dx = Math.cos(ang), dz = Math.sin(ang), off = (Math.random() - .5) * 140, sp = 4 + Math.random() * 2.5; // it drifts downwind
+    e.a = [cx - dx * 260 - dz * off, cz - dz * 260 + dx * off]; e.b = [cx + dx * 260 - dz * off, cz + dz * 260 + dx * off];
+    e.alt = 38 + Math.random() * 22; e.t = 0; e.T = 520 / sp; e.st = 'fly'; e.g.visible = true;
+  };
+  e.update = dt => {
+    if (e.st === 'wait') { e.tmr -= dt; if (e.tmr <= 0 && G.state !== 'title') e.start(); return; }
+    e.t += dt; const u = e.t / e.T; if (u >= 1) { e.st = 'wait'; e.g.visible = false; e.tmr = 100 + Math.random() * 120; return; }
+    e.x = lerp(e.a[0], e.b[0], u); e.z = lerp(e.a[1], e.b[1], u); e.y = L.cbase + e.alt + Math.sin(e.t * .25) * 3;
+    e.g.position.set(e.x, e.y, e.z); e.g.rotation.set(Math.sin(e.t * .5) * .03, e.yaw + e.t * .03, Math.sin(e.t * .37) * .04, 'YXZ');
+  };
+  return e;
+}
+const PARAGLIDER_ON = false; // switched off but kept: set true to bring the paraglider back
 function buildLife(C, grp) {
   const L = { C, grp, t: 0, R: mulberry32((Math.random() * 1e9) | 0), ents: [], T: { x: 0, y: 0, z: 0, fly: false }, last: { x: 0, z: 0 }, ballMovingAway: false };
   W.life = L; W.birds = null;
@@ -3461,7 +3494,8 @@ function buildLife(C, grp) {
     initGround(L, grp);
     L.ents.push(makeTurkey(L, true), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false)); // a tom and four hens, each on its own random timer
     initBirds(L, grp);
-    L.plane = makePlane(L); L.glider = makeGlider(L); L.gopher = makeGopher(L); L.ents.push(L.plane, L.glider, L.gopher);
+    L.plane = makePlane(L); L.gopher = makeGopher(L); L.balloon = makeBalloon(L); L.ents.push(L.plane, L.gopher, L.balloon);
+    if (PARAGLIDER_ON) { L.glider = makeGlider(L); L.ents.push(L.glider); }
   } catch (e) { console.error('life', e); W.life = null; }
 }
 // animals, the plane and the paraglider fade in when they appear and out when they leave
@@ -3561,7 +3595,7 @@ function mergeStatic(grp) {
 
 /* ================= GAME ================= */
 const WOBBLE = .48; // strike wobble (the old "Calm" level was .6; cut by 20 % so the dot on the club face moves less quickly)
-const settings = { hand: 1, sound: true, coached: false, aimed: false, drama: true };
+const settings = { hand: 1, sound: true, coached: false, aimed: false, drama: true, reverse: false };
 try { const s = JSON.parse(localStorage.getItem('ssg-settings') || 'null'); if (s) Object.assign(settings, s); } catch (e) { }
 // Leaderboard reset: when LB_EPOCH changes, every device clears its own rounds, best scores and stats once (the name and settings stay).
 const LB_EPOCH = '2026-10-16-galena';
@@ -5380,7 +5414,11 @@ function changeClub(d) {
   if (W.flag) { W.flag.visible = W.pole.visible = !isPutt(); }
   const el = $('clubName'); el.style.transform = `translateX(${d * 8}px)`; setTimeout(() => el.style.transform = '', 120);
 }
+function applyReverse() { document.body.classList.toggle('rev', !!settings.reverse); } // which side the swing thumb is on
+const swingSide = x => (x < window.innerWidth / 2) !== !!settings.reverse; // true when x is on the tempo (swing) thumb's side
 function syncMenu() {
+  applyReverse();
+  document.querySelectorAll('#segRev button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.reverse ? 1 : 0)));
   const mn = $('mName'); if (mn && document.activeElement !== mn) mn.value = settings.name || '';
   document.querySelectorAll('#segHand button').forEach(b => b.classList.toggle('sel', +b.dataset.v === settings.hand));
   document.querySelectorAll('#segSnd button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.sound ? 1 : 0)));
@@ -5830,6 +5868,7 @@ function openBoard() { Board.view = COURSE.key; loadWorld(); fillBoard($('boardB
 
 /* ================= INPUT + LOOP ================= */
 function initInput() {
+  applyReverse();
   const aim = { id: null, x: 0 };
   const zoneY = () => VH() * (VH() > window.innerWidth ? .42 : .34);
   // the right thumb only works from the top of the strike dial down: anything above it aims
@@ -5840,7 +5879,7 @@ function initInput() {
     if (!canSwing()) return;
     audio();
     const x = e.clientX, y = e.clientY;
-    const left = x < window.innerWidth / 2;
+    const left = swingSide(x); // the swing (tempo) thumb's side
     if (left ? y > zoneY() : y > strikeTop()) {
       if (left) {
         if (SW.id == null && (SW.phase === 'idle' || SW.phase === 'done')) { SW.id = e.pointerId; swingBegin(x, y, e.timeStamp); }
@@ -5855,7 +5894,7 @@ function initInput() {
   document.addEventListener('pointermove', e => {
     // desktop: the mouse resting low on the right half holds the strike dot like a thumb (not while it drags the swing or the aim)
     if (e.pointerType === 'mouse') {
-      SW.mouseR = SW.sid == null && e.pointerId !== SW.id && e.pointerId !== aim.id && e.clientX > window.innerWidth / 2 && e.clientY > strikeTop();
+      SW.mouseR = SW.sid == null && e.pointerId !== SW.id && e.pointerId !== aim.id && !swingSide(e.clientX) && e.clientY > strikeTop();
       if (SW.mouseR) { SW.tx = e.clientX; SW.ty = e.clientY; SW.thumb = true; }
     }
     if (e.pointerId === SW.id) { swingMove(e.clientY, e.timeStamp, e.clientX); e.preventDefault(); return; }
@@ -5908,7 +5947,7 @@ function initInput() {
     if (!cs || cs.id !== e.pointerId) return;
     if (cs.swing) return;   // the swing now owns this pointer (document-level handlers)
     const dx = e.clientX - cs.x0, dy = e.clientY - cs.y0;
-    if (dy > mm() && dy > Math.abs(dx) * .8 && cs.x0 < window.innerWidth / 2 && cs.y0 > zoneY() && canSwing() && SW.id == null && (SW.phase === 'idle' || SW.phase === 'done')) {
+    if (dy > mm() && dy > Math.abs(dx) * .8 && swingSide(cs.x0) && cs.y0 > zoneY() && canSwing() && SW.id == null && (SW.phase === 'idle' || SW.phase === 'done')) {
       audio(); cs.swing = true; cs.moved = true; SW.id = e.pointerId; swingBegin(cs.x0, cs.y0, cs.t0); swingMove(e.clientY, e.timeStamp, e.clientX); return;
     }
     if (steps && Math.abs(dx) > 24) { changeClub(dx < 0 ? 1 : -1); cs.x0 = e.clientX; cs.moved = true; }
@@ -5962,6 +6001,7 @@ function initInput() {
     audio(); SFX.blip(); $('title').classList.remove('on'); startRound();
   };
   $('mBoard').onclick = () => { closeSheets(true); openBoard(); };
+  document.querySelectorAll('#segRev button').forEach(b => b.onclick = () => { settings.reverse = +b.dataset.v === 1; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segHand button').forEach(b => b.onclick = () => { settings.hand = +b.dataset.v; saveSettings(); syncMenu(); if (G.C) { G.carryKey = ''; updateAim(true); } });
   document.querySelectorAll('#segSnd button').forEach(b => b.onclick = () => { settings.sound = b.dataset.v === '1'; saveSettings(); syncMenu(); musicTick(); });
   document.querySelectorAll('#segDrama button').forEach(b => b.onclick = () => { settings.drama = b.dataset.v === '1'; saveSettings(); syncMenu(); });
