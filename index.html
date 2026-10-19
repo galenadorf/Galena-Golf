@@ -2526,9 +2526,9 @@ function updateRain(now, dt) {
 const _rv = new THREE.Vector2(), _rv2 = new THREE.Vector3();
 function initThree() {
   const cv = document.getElementById('gl');
-  const ren = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
-  ren.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  ren.shadowMap.enabled = true; ren.shadowMap.type = THREE.PCFSoftShadowMap;
+  const ren = new THREE.WebGLRenderer({ canvas: cv, antialias: !window.WebGL2RenderingContext, powerPreference: 'default' }); // (the scene is drawn into a 4x multisampled target, so the screen buffer needs no antialiasing of its own)
+  ren.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5)); // battery: 1.5x is plenty on a phone
+  ren.shadowMap.enabled = true; ren.shadowMap.type = THREE.PCFSoftShadowMap; ren.shadowMap.autoUpdate = false; ren.shadowMap.needsUpdate = true; // the shadow map is redrawn only when needed (see frame)
   const scene = new THREE.Scene();
   const fogC = 0xf3d9b4; scene.background = new THREE.Color(fogC); scene.fog = new THREE.Fog(fogC, 330, 1400);
   const cam = new THREE.PerspectiveCamera(55, 1, .25, 3200);
@@ -4932,7 +4932,7 @@ function enterAddress() {
 }
 
 /* ================= UI ================= */
-const UI = { dpr: 1, trackPx: 220, face: null, tc: null, sc: null, tw: 0, th: 0, sw: 0, readT: 0 };
+const UI = { touchT: 0, hudT: 0, dpr: 1, trackPx: 220, face: null, tc: null, sc: null, tw: 0, th: 0, sw: 0, readT: 0 };
 const HAND = new Path2D('M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z');
 const FONT = (w, s) => `${w} ${s}px Oswald, "Arial Narrow", sans-serif`;
 function sizeCanvases() {
@@ -5869,6 +5869,7 @@ function openBoard() { Board.view = COURSE.key; loadWorld(); fillBoard($('boardB
 /* ================= INPUT + LOOP ================= */
 function initInput() {
   applyReverse();
+  ['pointerdown', 'pointermove', 'keydown'].forEach(ev => document.addEventListener(ev, () => { UI.touchT = performance.now(); }, { passive: true, capture: true })); // any input: full frame rate for a moment
   const aim = { id: null, x: 0 };
   const zoneY = () => VH() * (VH() > window.innerWidth ? .42 : .34);
   // the right thumb only works from the top of the strike dial down: anything above it aims
@@ -6037,8 +6038,18 @@ function initInput() {
 }
 
 let lastT = performance.now();
+// battery: the scene is redrawn at 30 fps on the title screen and while standing over the ball with nothing moving; everything else (the flyover, a swing,
+// the ball in flight, the camera settling, any touch in the last 0.7 s) runs at the screen's full rate
+function frameGap(now) {
+  if (G.state === 'title') return 1000 / 30;
+  if (G.state !== 'address') return 0;
+  if (SW.phase !== 'idle' || SW.id != null || SW.sid != null || SW.thumb || SW.mouseR || now - UI.touchT < 700) return 0;
+  const R = G.rig; if (R && (R.pv.length() > .03 || R.lv.length() > .03)) return 0;
+  return 1000 / 30;
+}
 function frame(now) {
   requestAnimationFrame(frame);
+  if (now - lastT < frameGap(now) - 4) return;
   const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
   if (G.state === 'intro') G.introT += dt;
   if (G.state === 'flight') { updateFlight(dt); if ((G.savedT = (G.savedT || 0) + dt) > 1.5) { G.savedT = 0; saveRound(); } } // the round, with how far the ball has flown
@@ -6072,6 +6083,10 @@ function frame(now) {
     if (sc.right !== ext) { sc.left = -ext; sc.right = ext; sc.top = ext; sc.bottom = -ext; sc.far = ext > 100 ? 900 : 420; sc.updateProjectionMatrix(); }
   }
   if (C) { const t = G.camLook; W.sun.position.set(t.x + SUN_OFF[0], t.y + SUN_OFF[1], t.z + SUN_OFF[2]); W.sun.target.position.copy(t); }
+  { // the shadow map is redrawn when its view has moved, or every 0.1 s to catch animals and the flag; not every frame
+    const T = W.shT || (W.shT = { p: new THREE.Vector3(1e9, 0, 0), t: 0, e: 0 }), ex = W.sun.shadow.camera.right;
+    if (G.camLook.distanceToSquared(T.p) > .04 || T.e !== ex || now - T.t > 100) { T.p.copy(G.camLook); T.e = ex; T.t = now; W.ren.shadowMap.needsUpdate = true; }
+  }
   const tt = now / 1000;
   if (W.ring.visible) { const k = 1 + Math.sin(tt * 3) * .05; W.ringPulse.scale.set(k, k, 1); }
   if (W.flag && C) { const pa = W.flag.geometry.attributes.position, b = W.flagBase, ws = Math.hypot(G.wind[0], G.wind[1]); for (let i = 0; i < pa.count; i++) { const x0 = b[i * 3]; pa.array[i * 3 + 2] = Math.sin(x0 * 5 - tt * (3 + ws)) * .08 * x0; } pa.needsUpdate = true; W.flag.rotation.y = Math.atan2(-G.wind[1], G.wind[0]); }
@@ -6081,7 +6096,13 @@ function frame(now) {
   updateSkipBtn();
   const hudOff = G.state === 'title' || G.state === 'intro';
   $('hud').classList.toggle('off', hudOff);
-  if (!hudOff) { if (G.state === 'spec') mpDrawRemote(now); else { drawTempo(now); drawStrike(now); drawFx(now); } } else if (UI.fxc) UI.fxc.clearRect(0, 0, UI.fxc.canvas.width, UI.fxc.canvas.height);
+  if (!hudOff) {
+    if (G.state === 'spec') mpDrawRemote(now);
+    else { // the three HUD canvases: every frame while a thumb is down or a swing is on, otherwise 15 fps standing over the ball and 10 fps while the ball is away (dimmed)
+      const busy = SW.phase === 'ready' || SW.phase === 'back' || SW.phase === 'down' || SW.id != null || SW.sid != null || SW.thumb || SW.mouseR || now - UI.touchT < 700;
+      if (busy || now - UI.hudT >= (G.state === 'address' ? 62 : 96)) { UI.hudT = now; drawTempo(now); drawStrike(now); drawFx(now); }
+    }
+  } else if (UI.fxc) UI.fxc.clearRect(0, 0, UI.fxc.canvas.width, UI.fxc.canvas.height);
   renderTiltShift(dt);
 }
 // the first hole of the course in play behind the title screen
