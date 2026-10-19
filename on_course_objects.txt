@@ -38,6 +38,14 @@ Paraglider (red, white and yellow canopy, pilot hanging below)
   - After one leaves, the next is due 100-220 s later. Rarer than the turkeys.
   - Canopy and pilot can be hit: "Hit the paraglider!"
 
+Gopher (Caddyshack-style: brown, buck teeth, pops out of a dirt mound with a dark hole)
+  - Appears on the fairway or rough, 25-170 m from the ball, and pops up ~1 s after its mound fades in.
+  - Stays up 9-14 s, turning its head and watching the golfer, then ducks back down.
+  - Same rarity as the paraglider: per hole, 60% chance one is scheduled 10-65 s after arriving, 40% none at first;
+    after one leaves, the next is due 100-220 s later.
+  - Ducks instantly if the ball lands close by (within ~12 m, or flies within ~26 m).
+  - Can be hit while up: "A menace to the golfing industry...", with a squeak.
+
 SKY AND WEATHER
 ---------------
   - Clouds drift across the sky and thicken as the weather changes.
@@ -65,5 +73,5 @@ MAN-MADE OBJECTS
 
 NOT IN THE GAME
 ---------------
-  - No deer, squirrels, rabbits, butterflies or fish. (The stats screen only jokes "fed the fish" for balls in the water.)
+  - No deer, squirrels, rabbits, butterflies or fish (the gopher is the only burrowing animal). (The stats screen only jokes "fed the fish" for balls in the water.)
   - Benches, huts, golf carts, fountains and similar props exist in the engine from the removed courses but Woodbine does not use them.

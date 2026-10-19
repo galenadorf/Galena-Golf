@@ -3385,6 +3385,56 @@ function makeGlider(L) {
 }
 
 /* --- the whole show --- */
+/* --- a gopher (Caddyshack): pops out of a hole on the fairway, looks round at the golfer and ducks back down. As rare as the paraglider --- */
+function makeGopher(L) {
+  const brown = 0x8a6238, cream = 0xc9a672, dark = 0x6e4c2b;
+  const mat = LIFE_MAT(), g = new THREE.Group();
+  g.add(lmesh(mergeParts([lsp(.82, .15, .82, 0, -.02, 0, 0x7d5c3b, 8), lsp(.44, .05, .44, 0, .12, 0, 0x1d140d, 8)]), mat)); // the mound and the hole
+  const pop = new THREE.Group(); pop.scale.setScalar(1.25); g.add(pop);
+  pop.add(lmesh(mergeParts([
+    lsp(.2, .32, .18, 0, .3, 0, brown, 8), lsp(.14, .22, .1, 0, .28, .09, cream, 8),
+    lsp(.04, .1, .04, -.19, .3, .1, dark, 6), lsp(.04, .1, .04, .19, .3, .1, dark, 6), // the paws
+    lsp(.05, .035, .05, -.17, .2, .17, cream, 6), lsp(.05, .035, .05, .17, .2, .17, cream, 6)
+  ]), mat));
+  const head = new THREE.Group(); head.position.set(0, .66, .02); pop.add(head);
+  head.add(lmesh(mergeParts([
+    lsp(.15, .14, .16, 0, 0, 0, brown, 8), lsp(.085, .07, .1, 0, -.03, .14, cream, 8), lsp(.028, .024, .022, 0, 0, .235, 0x2a1a14, 5),
+    lbx(.034, .055, .012, -.019, -.1, .215, 0xfdfbf0), lbx(.034, .055, .012, .019, -.1, .215, 0xfdfbf0), // the buck teeth
+    lsp(.02, .02, .02, -.07, .045, .13, 0x111111, 5), lsp(.02, .02, .02, .07, .045, .13, 0x111111, 5),
+    lsp(.042, .05, .022, -.115, .12, -.01, dark, 6), lsp(.042, .05, .022, .115, .12, -.01, dark, 6)
+  ]), mat));
+  g.visible = false; L.grp.add(g);
+  const e = { kind: 'gopher', mat, g, pop, head, st: 'wait', tmr: Math.random() < .6 ? 10 + Math.random() * 55 : 1e9, x: 0, y: 0, z: 0, yaw: 0, tl: 0, T: 10, dd: .5, up: 0, r: .38 };
+  const gy = () => groundY(e.x, e.z);
+  e.hit = (x, y, z) => { // the ball clips the gopher while it is up
+    if (e.st !== 'up' || e.up < .3) return null; const g0 = gy(), dx = x - e.x, dz = z - e.z, d = Math.hypot(dx, dz);
+    if (d > e.r || y < g0 - .05 || y > g0 + e.up * 1.2) return null; const l = d || 1; return { nx: dx / l, ny: .4, nz: dz / l };
+  };
+  e.duck = (fast) => { if (e.st !== 'up') return; const dd = fast ? .3 : .5; if (e.tl < e.T - dd) { e.dd = dd; e.T = e.tl + dd; } };
+  e.onHit = () => e.duck(true);
+  e.flee = () => e.duck(true); // the ball lands close by: down it goes
+  e.start = () => {
+    const f0 = L.C.center.L; let tx = 0, tz = 0, ok = false;
+    for (let k = 0; k < 24 && !ok; k++) {
+      const f = fairHalfWidth(L.C, f0 * (.3 + L.R() * .5)), off = (L.R() - .5) * 2 * (f.hw + 6);
+      tx = f.p[0] + f.nx * off; tz = f.p[1] + f.nz * off; const d = Math.hypot(tx - L.T.x, tz - L.T.z);
+      ok = d > 25 && d < 170 && lifeWalkable(L, tx, tz) && lifeWalkable(L, tx + 1.5, tz) && lifeWalkable(L, tx - 1.5, tz) && lifeWalkable(L, tx, tz + 1.5) && lifeWalkable(L, tx, tz - 1.5);
+    }
+    if (!ok) { e.tmr = 10; return; }
+    e.x = tx; e.z = tz; e.tl = 0; e.T = 9 + Math.random() * 5; e.dd = .5; e.up = 0; e.yaw = Math.atan2(W.cam.position.x - tx, W.cam.position.z - tz); e.st = 'up';
+  };
+  e.update = dt => {
+    if (e.st === 'wait') { e.tmr -= dt; if (e.tmr <= 0 && G.state !== 'title') e.start(); return; }
+    e.tl += dt; const tl = e.tl;
+    if (tl >= e.T) { e.st = 'wait'; e.g.visible = false; e.tmr = 100 + Math.random() * 120; return; }
+    e.up = smooth(.7, 1.2, tl) * (1 - smooth(e.T - e.dd, e.T, tl)); // pops up once the hole has faded in, ducks down at the end
+    const want = Math.atan2(W.cam.position.x - e.x, W.cam.position.z - e.z); let da = want - e.yaw; da = Math.atan2(Math.sin(da), Math.cos(da)); e.yaw += clamp(da, -dt * .8, dt * .8); // it watches the golfer
+    e.g.position.set(e.x, gy(), e.z); e.g.rotation.set(0, e.yaw, 0);
+    e.pop.position.y = -.9 + .9 * e.up; e.pop.scale.set(1.25, 1.25 * (1 + Math.sin(tl * 6) * .015), 1.25);
+    e.head.rotation.set(Math.sin(tl * 2.3) * .12, Math.sin(tl * 1.1) * .8 * e.up, Math.sin(tl * 1.7) * .08);
+  };
+  return e;
+}
 function buildLife(C, grp) {
   const L = { C, grp, t: 0, R: mulberry32((Math.random() * 1e9) | 0), ents: [], T: { x: 0, y: 0, z: 0, fly: false }, last: { x: 0, z: 0 }, ballMovingAway: false };
   W.life = L; W.birds = null;
@@ -3392,7 +3442,7 @@ function buildLife(C, grp) {
     initGround(L, grp);
     L.ents.push(makeTurkey(L, true), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false)); // a tom and four hens, each on its own random timer
     initBirds(L, grp);
-    L.plane = makePlane(L); L.glider = makeGlider(L); L.ents.push(L.plane, L.glider);
+    L.plane = makePlane(L); L.glider = makeGlider(L); L.gopher = makeGopher(L); L.ents.push(L.plane, L.glider, L.gopher);
   } catch (e) { console.error('life', e); W.life = null; }
 }
 // animals, the plane and the paraglider fade in when they appear and out when they leave
@@ -3449,9 +3499,9 @@ function deflectShot(sh, tt, hit) {
 }
 function lifeHitNote(hit) {
   const e = hit.e, bd = hit.h.bird, k = bd ? 'bird' : e ? e.kind : '';
-  const txt = { turkey: 'Clipped a turkey!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!' }[k];
+  const txt = { turkey: 'Clipped a turkey!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!', gopher: 'A menace to the golfing industry...' }[k];
   if (txt) readoutNote(txt, 'bad');
-  try { if (k === 'plane' || k === 'glider') SFX.trunk(); else if (k === 'turkey') SFX.gobble(); else SFX.leaves(); } catch (er) { }
+  try { if (k === 'plane' || k === 'glider') SFX.trunk(); else if (k === 'turkey') SFX.gobble(); else if (k === 'gopher') SFX.squeak(); else SFX.leaves(); } catch (er) { }
   if (bd) { bd.st = 'hit'; bd.t = 0; const n = hit.h; bd.hitV = [-n.nx * 3 + (Math.random() - .5) * 2, 3, -n.nz * 3 + (Math.random() - .5) * 2]; }
   else if (e && e.onHit) e.onHit();
 }
@@ -4034,6 +4084,7 @@ const SFX = {
       noiseBurst(.34, .035 * ph.v, 2600, 1.2, ph.at);
     });
   },
+  squeak() { tone(1500, .07, 'square', .05, 2100, 0); tone(2300, .1, 'square', .05, 1700, .08); },
   // a bright, fairy-like glissando: a rising major-pentatonic run of bell tones, each with a quiet octave shimmer, ending on a held sparkle
   rainbow() {
     const n = [1319, 1568, 1760, 2093, 2349, 2637, 3136, 3520, 4186];
