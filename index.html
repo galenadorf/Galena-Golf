@@ -3877,7 +3877,12 @@ function loadSounds(a) {
       a.decodeAudioData(u.buffer, b => { SND[k] = b; }, () => { });
     } catch (e) { }
   }
+  // the recorded strikes and the cup (sounds/*.mp3, cached by sw.js); the embedded ones above stay as the fallback
+  for (const k of SND_FILES) {
+    try { fetch('sounds/' + k + '.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(buf => { if (buf) a.decodeAudioData(buf, b => { SND['s_' + k] = b; }, () => { }); }).catch(() => { }); } catch (e) { }
+  }
 }
+const SND_FILES = ['driver', 'wood', 'iron', 'wedge', 'putter', 'cup'];
 function play(name, rate, vol, lp, delay) {
   if (!settings.sound || !SND[name]) return false; const a = audio(); if (!a) return false;
   const s = a.createBufferSource(); s.buffer = SND[name]; s.playbackRate.value = rate || 1; const g = a.createGain(); g.gain.value = vol == null ? 1 : vol; let n = s;
@@ -4362,18 +4367,21 @@ const SFX = {
   // a putt: a soft, short "tap" (synthesised: a quick low thud and a faint click), a little firmer for a harder stroke
   tap(speed) {
     const k = clamp(.55 + (speed || 3) / 9, .55, 1), r = 1 + (Math.random() - .5) * .08;
+    if (play('s_putter', r, .85 * k)) return; // the recorded putt (sounds/putter.mp3); the synthesised tap below is the fallback
     tone(430 * r, .05, 'sine', .11 * k, 250 * r); tone(1250 * r, .022, 'triangle', .022 * k); noiseBurst(.02, .06 * k, 2200, 1.4);
   },
   hit(q, putt, speed) {
     if (putt) { SFX.tap(speed); return; }
     const ct = CLUBS[G.club] ? CLUBS[G.club].type : 'iron', r = (Math.random() - .5) * .06;
+    const fk = G.club === 0 ? 'driver' : ct === 'wood' ? 'wood' : ct === 'wedge' ? 'wedge' : 'iron', fv = { driver: .85, wood: .8, iron: .75, wedge: .7 }[fk]; // the recorded strike of this club type (hybrids use the irons)
+    if (SND['s_' + fk]) { if (q < 1) play('s_' + fk, .9 + r, fv * .8, 3200); else play('s_' + fk, 1 + r, fv); return; } // a mishit is duller and softer
     if (SND.hit) { // the recorded strike: pitch follows the club, a mishit is duller, a putt is a soft tap
       // softened: pitched down, with the harsh top rolled off (HIT_LP) and a lower level (HIT_VOL)
       if (putt) play('hit', (1.12 + r) * HIT_PITCH, .27 * HIT_VOL, HIT_LP + 200); else if (q < 1) play('hit', (.84 + r) * HIT_PITCH, .8 * HIT_VOL, HIT_LP - 400); else play('hit', ((ct === 'wood' ? .93 : ct === 'wedge' ? 1.08 : 1) + r) * HIT_PITCH, .95 * HIT_VOL, HIT_LP); return;
     }
     if (putt) { tone(1100, .07, 'sine', .22); tone(2200, .04, 'triangle', .06); return; } tone(q < 1 ? 1500 : 650, .14, 'triangle', .3, q < 1 ? 950 : 280); noiseBurst(.07, .35, q < 1 ? 3800 : 1100, 1); },
   land(s) { noiseBurst(.07, clamp(s / 30, .03, .25), 320, .7); },
-  cup() { if (play('cup', 1, .95)) return; [0, .07, .12].forEach((d, i) => tone(1500 - i * 220, .045, 'square', .05, null, d)); tone(230, .28, 'sine', .3, 130, .17); },
+  cup() { if (play('s_cup', 1, .9) || play('cup', 1, .95)) return; [0, .07, .12].forEach((d, i) => tone(1500 - i * 220, .045, 'square', .05, null, d)); tone(230, .28, 'sine', .3, 130, .17); },
   splash() { noiseBurst(.55, .3, 650, .5); },
   // a truck's air horn, synthesised: two blasts (short, long), each a pair of detuned sawtooth notes a major third apart; k = loudness 0..1
   honk(k) {
