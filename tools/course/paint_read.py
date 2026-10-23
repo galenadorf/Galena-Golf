@@ -2,8 +2,10 @@
   MAGENTA blobs  tee boxes -> out/tees_painted.json (polygons, local metres; build.py uses them instead of the OSM boxes). Every tee box
                  has to be painted; `python paint_read.py --keep` keeps a current box with no magenta within 6 m instead.
   YELLOW dots    the played (gold) tee of the hole whose line passes nearest -> out/tee_starts.json ([e, n] points)
-  PURPLE (+ BLUE) the big entrance sign (it faces the course unless a blue strip says otherwise) -> out/entrance.json (one 'entry' row: e, n, direction it faces in degrees (east = 0,
+  PURPLE (+ BLUE) the big entrance sign (it faces the course unless a blue strip says otherwise) -> out/paint_props.json (an 'entry' row: e, n, direction it faces in degrees (east = 0,
                  counter-clockwise), width m, depth m); site_paint.py adds it to the site props
+ORANGE blobs  a shed (the pump-house): a plain building with no doors, sized and turned like the painted rectangle; an 'shed' row in
+                 out/paint_props.json. (Only solid rectangles count: the orange Route 20 line and label on the map are ignored.)
 Rerun this, site_paint.py, build.py, install.py after repainting."""
 import json
 import math
@@ -60,11 +62,26 @@ def main():
         h = min(F['hole'], key=lambda hh: hh['line'].distance(shape({'type': 'Point', 'coordinates': p})))
         print('  start dot', p, '-> hole', h['ref'])
     # the entrance sign
+    rows = []
+    lab, n = ndi.label(mask(a, (255, 128, 0)))
+    for i in range(1, n + 1):   # sheds
+        ys, xs = np.nonzero(lab == i)
+        if not 3 <= len(ys) / ppm ** 2 <= 200 or max(np.ptp(xs), np.ptp(ys)) / ppm > 30:
+            continue
+        r = MultiPoint(loc(ys, xs)).minimum_rotated_rectangle
+        c = list(r.exterior.coords)[:4]
+        e1 = (c[1][0] - c[0][0], c[1][1] - c[0][1]); e2 = (c[2][0] - c[1][0], c[2][1] - c[1][1])
+        L1, L2 = math.hypot(*e1), math.hypot(*e2)
+        long_, w, dep = (e1, L1, L2) if L1 >= L2 else (e2, L2, L1)
+        if len(ys) / ppm ** 2 < .8 * w * dep or dep < 2.5:   # solid rectangles only (the orange letters of the map's labels are not)
+            continue
+        rows.append(['shed', round(r.centroid.x, 1), round(r.centroid.y, 1), round(math.degrees(math.atan2(long_[0], -long_[1])) % 360), round(w, 1), round(dep, 1), ''])
+        print('shed', rows[-1])
+    out = os.path.join(OUT, 'paint_props.json')
     lab, n = ndi.label(mask(a, (128, 0, 255)))
     if not n:
         print('no purple rectangle: no entrance sign')
-        if os.path.exists(os.path.join(OUT, 'entrance.json')):
-            os.remove(os.path.join(OUT, 'entrance.json'))
+        json.dump(rows, open(out, 'w'))
         return
     sizes = ndi.sum(lab > 0, lab, range(1, n + 1))
     ys, xs = np.nonzero(lab == 1 + int(np.argmax(sizes)))
@@ -90,7 +107,7 @@ def main():
         tgt = course.centroid if course.contains(cen) else nearest_points(course, cen)[0]
     sgn = 1 if ((tgt.x - cen.x) * nx + (tgt.y - cen.y) * ny) >= 0 else -1
     row = ['entry', round(cen.x, 1), round(cen.y, 1), round(math.degrees(math.atan2(sgn * ny, sgn * nx)) % 360), round(float(np.clip(w, 4, 14)), 1), round(float(np.clip(dep, 1.5, 6)), 1), '']
-    json.dump([row], open(os.path.join(OUT, 'entrance.json'), 'w'))
+    json.dump([row] + rows, open(out, 'w'))
     print('entrance sign', row, '(facing the', 'blue strip)' if strips else 'course)')
 
 

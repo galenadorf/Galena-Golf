@@ -7,6 +7,7 @@ e0, n1, ppm, w, h). Paint SOLID colours on a copy, saved as out/paint_mask.png (
                    nearest to it gets that start.
   PURPLE  #8000FF  the big Woodbine Bend entrance sign: ONE filled rectangle (any rotation) for the sign and its flower bed. Its long
                    side is the board's width (drawn about 7 m wide, so a bed 8-9 m by 2-3 m suits), the short side the bed's depth.
+  ORANGE  #FF8000  a shed (the pump house): fill its footprint as one solid rectangle (any rotation); drawn as a plain building, no doors.
   BLUE    #0000FF  (optional) a thin strip, 4+ px, just outside the long side of the purple rectangle that the lettering faces (the lettering
                    side). With no strip the sign faces INWARD, toward the nearest part of the course.
 Everything else on the map (grid, outlines, rings, labels, the key in the top-left corner) is only a guide and is ignored."""
@@ -26,7 +27,7 @@ YD = .9144
 
 BOX = (-450, -540, 450, 600)   # local metres: west, south, east, north (the course, and US 20 along its north and west side)
 PPM = 4                    # pixels per metre
-KEY_BOX = (60, 60, 60 + 760, 60 + 40 * 4 + 20)   # the key printed on the map is ignored by paint_read.py
+KEY_BOX = (60, 60, 60 + 760, 60 + 40 * 5 + 20)   # the key printed on the map is ignored by paint_read.py
 
 
 def main():
@@ -62,9 +63,9 @@ def main():
     for g in json.load(open(os.path.join(OUT, 'fairways_painted.json'))):
         outline(shape(g), (60, 230, 60, 255), 1)
     hw, _ = build.highway()
-    d.line([px(*q) for q in hw.coords], fill=(255, 140, 40, 200), width=3)
+    d.line([px(*q) for q in hw.coords], fill=(60, 200, 255, 200), width=3)
     x, y = px(*hw.interpolate(hw.project(shape({'type': 'Point', 'coordinates': (200, 541)}))).coords[0])
-    d.text((x, y - 40), 'ROUTE 20 (US 20)', fill=(255, 140, 40, 255), font=f1, stroke_width=3, stroke_fill=(0, 0, 0, 255))
+    d.text((x, y - 40), 'ROUTE 20 (US 20)', fill=(60, 200, 255, 255), font=f1, stroke_width=3, stroke_fill=(0, 0, 0, 255))
     js = open(os.path.join(OUT, 'rd_woodbine.js')).read()
     rd = json.loads(js[js.index('{'):js.rindex('};\nconst GREEN_ALTI') + 1])
     cols = {'w': (217, 178, 58, 255), 'y': (20, 20, 20, 255), 'b': (235, 240, 245, 255), 'r': (176, 112, 69, 255)}
@@ -78,7 +79,7 @@ def main():
         d.text((x - 30, y - 30), str(h['ref']), fill=(160, 0, 0, 255), font=f2, anchor='mm')
     d.rectangle(KEY_BOX, fill=(0, 0, 0, 190))
     for i, (col, t) in enumerate([((255, 0, 255), 'MAGENTA: fill each tee box'), ((255, 255, 0), 'YELLOW dot: the played (gold) tee'),
-                                  ((128, 0, 255), 'PURPLE rectangle: the entrance sign + bed'), ((0, 0, 255), 'BLUE strip: the lettering side')]):
+                                  ((128, 0, 255), 'PURPLE rectangle: the entrance sign + bed'), ((0, 0, 255), 'BLUE strip: the lettering side'), ((255, 128, 0), 'ORANGE rectangle: the shed')]):
         y = 76 + 40 * i
         d.rectangle([76, y, 116, y + 28], fill=col + (255,))
         d.text((132, y + 14), t, fill=(255, 255, 255, 255), font=f1, anchor='lm')

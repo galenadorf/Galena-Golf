@@ -3,7 +3,7 @@ cyan = double washroom, blue = its door side (optional), orange = porta-potty, y
 (rows [kind, e, n, front-facing direction in degrees (east = 0, counter-clockwise), width m, depth m, text]); build.py puts it
 in the course data and the game draws the buildings and signs.
 
-The big entrance sign ('entry' rows) is painted on the combined map (paint_edit.py, paint_read.py) and added here from out/entrance.json.
+The big entrance sign ('entry') and the sheds ('shed') are painted on the combined map (paint_edit.py, paint_read.py) and added here from out/paint_props.json.
 
 Sign text: out/signs.txt, one line per hole number, '|' for a line break:
     7: WATCH FOR GOLFERS | ON THE 8TH TEE
@@ -91,13 +91,13 @@ def main():
             if str(h['ref']) in tmarks:
                 t = Point(*tmarks[str(h['ref'])]['mid'])
         out.append(['sign', round(q.x, 1), round(q.y, 1), round(deg(t.x - q.x, t.y - q.y)), 1.5, .1, text, h['ref']])   # the 8th value is the hole it belongs to (the fly-over reads the sign)
-    ep = os.path.join(OUT, 'entrance.json')   # the big entrance sign painted on its own close-up (entrance_paint.py)
+    ep = os.path.join(OUT, 'paint_props.json')   # the entrance sign and the shed painted on the combined map (paint_read.py)
     if os.path.exists(ep):
         out += json.load(open(ep))
     json.dump(out, open(os.path.join(OUT, 'site_props.json'), 'w'))
     for ref, e, n in skipped:
         print(f'  sign dot near hole {ref} (e {e}, n {n}) skipped: no line for hole {ref} in signs.txt')
-    k = {x: sum(1 for r in out if r[0] == x) for x in ('wash', 'potty', 'sign', 'entry')}
+    k = {x: sum(1 for r in out if r[0] == x) for x in ('wash', 'potty', 'sign', 'entry', 'shed')}
     print(len(out), 'props:', k)
     for r in out:
         print('  ', r[0], 'e', r[1], 'n', r[2], 'faces', r[3], 'deg', ('size %.1f x %.1f' % (r[4], r[5])) if r[0] == 'wash' else '', repr(r[6]) if r[6] else '')
