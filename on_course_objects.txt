@@ -85,7 +85,7 @@ MAN-MADE OBJECTS
   - Double washroom near hole 18 (MEN and WOMEN doors).
   - Two blue porta-potties (the ball can hit them).
   - The big Woodbine Bend entrance sign (green board on posts, a golf ball on a red tee at each end, stone-edged flower bed) beside Route 20 on the west side of the course, facing in toward the course. Painted with paint_edit.py / paint_read.py; only seen from the holes nearest it.
-  - The pump house: a small plain shed (cream block walls, grey roof, no doors) by the 8th tee, painted with paint_edit.py / paint_read.py; solid, so a ball hits it.
+  - The pump house: a small plain metal building (corrugated grey siding and roof, no doors) by the 8th tee, painted with paint_edit.py / paint_read.py; solid, so a ball hits it.
   - Hole 7 sign ("Andy Lewis / Hole in One / 9/10/2026", text from signs.txt), with its own fly-over intro.
 
 NOT IN THE GAME
