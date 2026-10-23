@@ -21,11 +21,12 @@ from shapely.geometry import MultiPoint, mapping, shape
 from shapely.ops import nearest_points
 
 import osm
-from common import OUT
+from common import OUT, smooth_polys
 from paint_edit import KEY_BOX
 
 MIN_TEE = 3.0     # m2: smaller magenta specks are paint noise
 KEEP_NEAR = 6.0   # m: a current tee box this close to painted magenta is replaced by it
+SMOOTH = 2.5      # px of Gaussian blur before a tee box's outline is traced (1 px = 0.25 m), as for the bunkers, fairways and fescue
 
 
 def mask(a, rgb, closing=2):
@@ -42,16 +43,18 @@ def main():
     loc = lambda ys, xs: [(fr['e0'] + x / ppm, fr['n1'] - y / ppm) for y, x in zip(ys, xs)]
     F = osm.load()
 
-    def polys(rgb, min_area, fill):
+    def polys(rgb, min_area, fill, smooth=False):
         m = mask(a, rgb)
         if fill:
             m = ndi.binary_fill_holes(m)
         lab, n = ndi.label(m)
         sizes = ndi.sum(m, lab, range(1, n + 1))
         m = np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s / ppm ** 2 >= min_area])
+        if smooth:
+            return smooth_polys(m, dict(e0=fr['e0'], n1=fr['n1'], res=1 / ppm), SMOOTH, .46, min_area, .05)
         return [shape(g).buffer(0) for g, v in features.shapes(m.astype(np.uint8), mask=m, transform=tr) if v]
 
-    boxes = [p.simplify(.1) for p in polys((255, 0, 255), MIN_TEE, True)]
+    boxes = polys((255, 0, 255), MIN_TEE, True, True)
     assert boxes, 'no magenta tee boxes found'
     keep = [t['poly'] for t in F['tee'] if '--keep' in sys.argv and not any(p.distance(t['poly']) < KEEP_NEAR for p in boxes)]
     json.dump([mapping(p) for p in keep + boxes], open(os.path.join(OUT, 'tees_painted.json'), 'w'))
