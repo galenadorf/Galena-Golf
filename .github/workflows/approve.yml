@@ -33,9 +33,10 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const num = parseInt(process.env.ISSUE, 10), to = String(process.env.TO).trim();
+            const num = parseInt(String(process.env.ISSUE).replace(/\D/g, ''), 10), to = /^new$/i.test(String(process.env.TO).trim()) ? 'new' : String(process.env.TO).trim().toUpperCase();
+            core.notice(`Approving issue ${num} as ${to}`);
             const fail = m => { core.setFailed(m); };
-            const issue = (await github.rest.issues.get({ ...context.repo, issue_number: num })).data;
+            let issue; try { issue = (await github.rest.issues.get({ ...context.repo, issue_number: num })).data; } catch (e) { return fail(`Could not read issue "${process.env.ISSUE}": enter just its number, like 27 (${e.message}).`); }
             if (!issue.title.startsWith('[register]') || issue.pull_request) return fail('That is not a [register] issue.');
             const m = /```json\s*([\s\S]*?)```/.exec(issue.body || '');
             let q; try { q = JSON.parse(m[1]); } catch (e) { return fail('No request JSON in that issue.'); }
