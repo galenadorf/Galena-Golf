@@ -6179,10 +6179,18 @@ function pidUi() {
     : 'A Player ID needs a secure page with storage this browser allows.';
   rq.hidden = isReg() || !PID.key;
 }
-async function pidCopy() {
-  await pidInit(); if (!PID.key) return; const code = pidRequest();
-  try { await navigator.clipboard.writeText(code); readout('<div class="r1 good">ID request copied</div><div class="r3"><span>Send it to the course admin</span></div>', 4); }
-  catch (e) { prompt('Copy this ID request and send it to the course admin', code); }
+// the copy must start inside the tap (iOS refuses a clipboard write after an await), so the key is made earlier (pidSync runs at start); the answer shows on the button,
+// because the readout is hidden behind the Settings sheet. If the browser refuses both clipboard routes the code is shown in a box to select and copy by hand.
+function pidCopy() {
+  const btn = $('pidReq'), say = t => { btn.textContent = t; setTimeout(() => { btn.textContent = 'Copy ID request'; }, 2500); };
+  if (!PID.key) { pidInit().then(() => { pidUi(); say(PID.key ? 'Tap again' : 'Not available'); }); return; }
+  const code = pidRequest(), done = () => say('Copied \u2713'), manual = () => {
+    let ta = $('pidCode'); if (!ta) { ta = document.createElement('textarea'); ta.id = 'pidCode'; ta.readOnly = true; ta.rows = 4; ta.style.cssText = 'width:100%;margin-top:6px;font:12px monospace;word-break:break-all;border-radius:8px;padding:6px'; ta.onfocus = () => ta.select(); $('pidInfo').appendChild(ta); }
+    ta.value = code; ta.focus(); ta.select(); say('Select and copy below');
+  };
+  const legacy = () => { try { const ta = document.createElement('textarea'); ta.value = code; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, code.length); const ok = document.execCommand('copy'); ta.remove(); return ok; } catch (e) { return false; } };
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(code).then(done, () => legacy() ? done() : manual()); return; } } catch (e) { }
+  legacy() ? done() : manual();
 }
 // the signed envelope the workflow checks: msg is the exact JSON text that was signed
 async function signRound(r) {
