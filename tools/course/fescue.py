@@ -6,15 +6,15 @@ import os
 
 import numpy as np
 from PIL import Image
-from rasterio import features
-from rasterio.transform import Affine
 from scipy import ndimage as ndi
-from shapely.geometry import mapping, shape
-from shapely.ops import unary_union
+from shapely.geometry import mapping
 
-from common import OUT
+from common import OUT, smooth_polys
 
 MIN_AREA = 40.0  # m2: smaller specks and holes are paint noise
+SMOOTH = 2.0  # px of Gaussian blur before the outline is traced (1 px = 0.5 m)
+LEVEL = 0.5
+TOL = 0.3
 
 
 def main():
@@ -33,10 +33,7 @@ def main():
     for i, s in enumerate(sizes):
         if s * px < MIN_AREA and not (inv == i + 1)[0, :].any() and not (inv == i + 1)[-1, :].any():
             m |= inv == i + 1
-    tr = Affine(fr['res'], 0, fr['e0'], 0, -fr['res'], fr['n1'])
-    polys = [shape(g).buffer(0) for g, v in features.shapes(m.astype(np.uint8), mask=m, transform=tr) if v]
-    polys = [p.simplify(.6) for p in unary_union(polys).geoms] if len(polys) > 1 else [p.simplify(.6) for p in polys]
-    polys = [p for p in polys if p.area >= MIN_AREA]
+    polys = smooth_polys(m, fr, SMOOTH, LEVEL, MIN_AREA, TOL)
     json.dump([mapping(p) for p in polys], open(os.path.join(OUT, 'fescue.json'), 'w'))
     print(len(polys), 'areas,', round(sum(p.area for p in polys) / 10000, 1), 'ha,', sum(len(p.exterior.coords) for p in polys), 'vertices')
 

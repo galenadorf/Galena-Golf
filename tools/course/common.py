@@ -42,3 +42,29 @@ def bbox_lonlat(area, pad=0):
 
 def cache(*parts):
     return os.path.join(CACHE, *parts)
+
+
+def smooth_polys(m, fr, smooth, level, min_area, tol, pad=4):
+    """Polygons (local metres) from a boolean mask on the base-map grid `fr`. The painted edges are pixel staircases, so each outline is
+    the sub-pixel contour of the mask blurred by `smooth` px, traced at `level` (.5 keeps straight edges where they are; a little less
+    keeps the area). An outline inside another one is a hole (or an island in a hole). `tol` m simplifies the result."""
+    import numpy as np
+    from shapely.geometry import Polygon
+    from skimage import measure
+    from scipy.ndimage import gaussian_filter
+    mf = gaussian_filter(np.pad(m, pad).astype(float), smooth)
+    res = fr['res']
+    rings = []
+    for c in measure.find_contours(mf, level):
+        pts = [(fr['e0'] + (x - pad + .5) * res, fr['n1'] - (y - pad + .5) * res) for y, x in c]
+        if len(pts) >= 4:
+            rings.append(Polygon(pts).buffer(0))
+    polys = []
+    for r in sorted(rings, key=lambda q: -q.area):
+        for i, q in enumerate(polys):
+            if q.contains(r.representative_point()):
+                polys[i] = q.symmetric_difference(r)
+                break
+        else:
+            polys.append(r)
+    return [q.simplify(tol) for q in polys if q.area >= min_area]

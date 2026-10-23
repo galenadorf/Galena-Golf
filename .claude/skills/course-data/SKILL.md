@@ -26,6 +26,8 @@ Python venv `~/.venvs/galena` (numpy, scipy, rasterio, pyproj, shapely, pillow, 
 3. `build.py` encodes everything into `out/rd_woodbine.js`; it prefers painted files over generated ones, clips fescue to the boundary, links each hole's fairway to its green by convex hull (`link_fairways`, so no gap of rough), and snaps the four tee sets (gold, black, silver, bronze) to the tee boxes at their card yardages. Cart paths are deliberately dropped.
 4. `install.py` writes the data into `index.html`. Then `node --check` and a headless run.
 
+The outlines are smoothed so painted pixel staircases do not show: `bunkers_paint.py`, `fairways.py` and `fescue.py` trace the sub-pixel contour of the blurred mask (`smooth_polys` in `common.py`; blur `SMOOTH` px, `TOL` m simplification, area kept within about 1%), and `build.py` rounds the OSM green outlines (`round_green`, Chaikin corner cutting). Tee boxes are not smoothed. The raw pre-smoothing JSON is kept beside each (`*_raw_backup.json`).
+
 To change a layer: repaint the mask, run its reader, then `build.py` and `install.py`.
 
 The highway (US 20, `highway` and `hwSlow` in the data) is not painted: `build.py highway()` reads it from `.cache/osm.json` (clipped to the 2 m class grid, west to east; `hwSlow` is the distance along it where the limit drops to 35 mph). It reads the raw file because `osm.load` loses ways that Overpass lists twice (the second copy has no tags), which includes both US 20 ways.

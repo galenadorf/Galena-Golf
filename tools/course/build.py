@@ -352,8 +352,25 @@ def highway(area=(-1250, -720, 1250, 720)):
     return clipped.simplify(.4), round(slow - cut)
 
 
+def round_green(p, iters=3):
+    """A green's OSM outline has corners every 2-3 m; Chaikin corner cutting (each corner replaced by two points a quarter of the way along
+    its edges) gives smooth curves that stay within the original outline and lose only a few percent of its area."""
+    pts = list(p.exterior.coords)[:-1]
+    for _ in range(iters):
+        q = []
+        for i, (x0, y0) in enumerate(pts):
+            x1, y1 = pts[(i + 1) % len(pts)]
+            q += [(.75 * x0 + .25 * x1, .75 * y0 + .25 * y1), (.25 * x0 + .75 * x1, .25 * y0 + .75 * y1)]
+        pts = q
+    return Polygon(pts).simplify(.04)
+
+
 def main():
     F = osm.load()
+    for g in F['green']:
+        a0 = g['poly'].area
+        g['poly'] = round_green(g['poly'])
+        assert abs(g['poly'].area / a0 - 1) < .06 and g['poly'].is_valid
     ba = os.path.join(OUT, 'bunkers_auto.json')  # bunkers the aerial shows but OSM lacks (bunkers_auto.py)
     if os.path.exists(ba):
         F['bunker'] += [dict(poly=shape(g), tags={'auto': 'yes'}) for g in json.load(open(ba))]
