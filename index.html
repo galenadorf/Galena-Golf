@@ -3587,7 +3587,7 @@ function makeBalloon(L) {
   };
   return e;
 }
-/* --- traffic on the highway: an 18-wheeler (red cab, white trailer) and two cars (a blue-grey 2016 Subaru Legacy), each driving the whole visible stretch of US 20 in a random direction, on the right, at the limit (55 mph, 35 mph in town) --- */
+/* --- traffic on the highway: an 18-wheeler (red cab, white trailer) and cars (two blue-grey 2016 Subaru Legacies, two green 2002 Hyundai Santa Fes), each driving the whole visible stretch of US 20 in a random direction, on the right, at the limit (55 mph, 35 mph in town) --- */
 const HW_FAST = 55 * .44704, HW_TOWN = 35 * .44704, HW_LANE = 1.85;
 const lcy = (r, h, x, y, z, c, axis) => { const m = new THREE.Matrix4(); if (axis === 'x') m.makeRotationZ(Math.PI / 2); else if (axis === 'z') m.makeRotationX(Math.PI / 2); m.setPosition(x, y, z); return { g: new THREE.CylinderGeometry(r, r, h, 10), c, m }; };
 // models face +z, origin on the ground under the middle of the car / under the truck's first drive axle / under the trailer's kingpin
@@ -3604,6 +3604,23 @@ function carGeo() {
     lbx(.1, .1, .22, -.95, 1.0, .42, body), lbx(.1, .1, .22, .95, 1.0, .42, body)               // mirrors
   ];
   for (const sx of [-1, 1]) for (const z of [-1.38, 1.38]) { P.push(lcy(.34, .24, sx * .83, .34, z, tire, 'x'), lcy(.2, .26, sx * .83, .34, z, hub, 'x')); }
+  return mergeParts(P);
+}
+// a 2002 Hyundai Santa Fe: a short, tall five-door wagon in dark green, high on its wheels
+function santaFeGeo() {
+  const body = 0x41594a, glass = 0x1c2630, dark = 0x24272c, tire = 0x16161a, hub = 0xaeb4bb, P = [
+    lbx(1.7, .1, 4.3, 0, .4, 0, 0x15161a), lbx(1.82, .55, 4.45, 0, .7, 0, body),                // the underbody and the lower body
+    lbx(1.74, .12, 1.2, 0, 1.02, 1.5, body),                                                    // the bonnet
+    lbx(1.64, .66, 2.55, 0, 1.3, -.5, body), lbx(1.56, .06, 2.45, 0, 1.66, -.5, body),          // the tall cabin and its roof
+    lbx(1.68, .42, 2.3, 0, 1.32, -.5, glass), lbx(1.7, .5, .1, 0, 1.3, -.2, body),              // the side windows and the B pillar
+    lbx(1.56, .7, .04, 0, 1.34, .78, glass, -.9), lbx(1.56, .62, .04, 0, 1.34, -1.8, glass, .2), // windscreen and the nearly upright tailgate glass
+    lbx(.06, .05, 2.3, -.7, 1.71, -.5, dark), lbx(.06, .05, 2.3, .7, 1.71, -.5, dark),          // roof rails
+    lbx(.5, .16, .08, -.62, .86, 2.22, 0xfff6d8), lbx(.5, .16, .08, .62, .86, 2.22, 0xfff6d8),  // headlights
+    lbx(.3, .4, .08, -.82, .84, -2.22, 0xc4202a), lbx(.3, .4, .08, .82, .84, -2.22, 0xc4202a),  // tall tail lights
+    lbx(.9, .18, .06, 0, .76, 2.23, dark), lbx(1.8, .22, .1, 0, .5, 2.2, dark), lbx(1.8, .22, .1, 0, .5, -2.2, dark), // grille and bumpers
+    lbx(.1, .1, .22, -.95, 1.12, .6, body), lbx(.1, .1, .22, .95, 1.12, .6, body)               // mirrors
+  ];
+  for (const sx of [-1, 1]) for (const z of [-1.31, 1.31]) { P.push(lcy(.37, .24, sx * .83, .37, z, tire, 'x'), lcy(.22, .26, sx * .83, .37, z, hub, 'x')); }
   return mergeParts(P);
 }
 function truckGeos() {
@@ -3687,7 +3704,7 @@ function buildLife(C, grp) {
     L.ents.push(makeTurkey(L, true), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false)); // a tom and four hens, each on its own random timer
     initBirds(L, grp);
     L.plane = makePlane(L); L.gopher = makeGopher(L); L.balloon = makeBalloon(L); L.ents.push(L.plane, L.gopher, L.balloon);
-    if (GC.hw) { const cg = carGeo(); L.traffic = [makeVehicle(L, 'car', cg, [2, 8], [6, 19]), makeVehicle(L, 'car', cg, [10, 16], [6, 19]), makeVehicle(L, 'truck', truckGeos(), [8, 25], [20, 40])]; L.ents.push(...L.traffic); } else L.traffic = [];
+    if (GC.hw) { const cg = carGeo(), sg = santaFeGeo(); L.traffic = [makeVehicle(L, 'car', cg, [2, 8], [6, 19]), makeVehicle(L, 'car', cg, [10, 16], [6, 19]), makeVehicle(L, 'car', sg, [4, 10], [6, 19]), makeVehicle(L, 'car', sg, [12, 16], [6, 19]), makeVehicle(L, 'truck', truckGeos(), [8, 25], [20, 40])]; L.ents.push(...L.traffic); } else L.traffic = [];
     if (PARAGLIDER_ON) { L.glider = makeGlider(L); L.ents.push(L.glider); }
   } catch (e) { console.error('life', e); W.life = null; }
 }

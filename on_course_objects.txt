@@ -56,8 +56,10 @@ US 20 (two lanes, double yellow centre line, white edge lines, gravel shoulders;
   - Semi-rare "honk honk" (two air-horn blasts): about one trip in three has one, somewhere along the road, and it plays only if
     the truck is within ~650 m of the camera (louder when closer).
 Car (blue-grey sedan, a 2016 Subaru Legacy)
-  - Two cars: the first sets off 2-10 s after arriving, the second 10-26 s; each starts again 6-25 s after a trip ends.
+  - Two Subarus: the first sets off 2-10 s after arriving, the second 10-26 s; each starts again 6-25 s after a trip ends.
     Drives at 95-105% of the limit.
+Car (dark green SUV, a 2002 Hyundai Santa Fe)
+  - Two of them, same timing and speed as the Subarus: first sets off 4-14 s after arriving, second 12-28 s.
 
 SKY AND WEATHER
 ---------------
