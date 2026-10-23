@@ -32,7 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Round state.** `G` holds the round (scores, putts, `G.pins`, weather); `saveRound` persists it per course; each round draws a random pin (front, back, left, right) per hole.
 
-**Tunables worth knowing:** `HW_FAST`/`HW_TOWN`/`HW_LANE` and the `makeVehicle` timers in `buildLife` (highway traffic; the road is `buildRealRoad`, data `GC.hw`), `CURVE_K`/`ZOOM_AT`/`ZOOM_MIN`/`ZOOM_MAX` (tempo bar: thumb travel to power; `curMap()`, `settings.zoom`), `CLUBS` (carry in metres, launch, spin, smash), `WOBBLE` (strike-dot wobble), `HIT_PITCH`/`HIT_VOL`/`HIT_LP` (strike sound), `HOP_K`, `FESCUE_HSL`/`FESCUE_COLS`, `SFX.gobble`/`SFX.tap` (synthesised), turkey count in `buildLife`.
+**Tunables worth knowing:** `HW_FAST`/`HW_TOWN`/`HW_LANE` and the `makeVehicle` timers in `buildLife` (highway traffic; the road is `buildRealRoad`, data `GC.hw`), `HOLE_SONGS` (a hole's background song: file, volume, seconds after the fly-over; `songArm`/`songTick`), `CURVE_K`/`ZOOM_AT`/`ZOOM_MIN`/`ZOOM_MAX` (tempo bar: thumb travel to power; `curMap()`, `settings.zoom`), `CLUBS` (carry in metres, launch, spin, smash), `WOBBLE` (strike-dot wobble), `HIT_PITCH`/`HIT_VOL`/`HIT_LP` (strike sound), `HOP_K`, `FESCUE_HSL`/`FESCUE_COLS`, `SFX.gobble`/`SFX.tap` (synthesised), turkey count in `buildLife`.
 
 **Switched off but kept.** Engine features from the removed Augusta and Alsace courses stay for reuse: swirling wind, pine straw, azaleas, stone bridges, loblolly pines, the `lush`/`dry` palettes, tiered greens, and the synthesised music engine (`musicWanted` needs `COURSE.music`, which nothing sets). The Legacy course (original 18 made-up holes) was removed; it is in git history before 2026-10-17.
 

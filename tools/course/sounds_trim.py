@@ -3,6 +3,8 @@ peak-normalised to -3 dBFS; the game sets each one's level). Needs PyAV (pip ins
 above -48 dB of its peak; end: where the 5 ms envelope has dropped 60 dB below the peak, plus a short fade.
   out/sounds/Driver.m4a -> sounds/driver.mp3    3-wood.m4a -> wood.mp3    Irons.m4a -> iron.mp3 (Iron.m4a is a duplicate)
   Wedges.m4a -> wedge.mp3    Putter.m4a -> putter.mp3    Ball_in_hole.m4a -> cup.mp3
+Music: out/sounds/Hole_7_background_music.m4a -> sounds/hole7.mp3, mono at 80 kbps, the silence before and after cut (the last second
+holds the song's closing hit), a short fade at the end, peak at -1.5 dBFS; the game plays it at 60 % (HOLE_SONGS in index.html).
 Rerun after replacing a recording; commit sounds/ (the game loads it, sw.js caches it)."""
 import os
 import sys
@@ -36,16 +38,33 @@ def trim(x):
     return y / np.abs(y).max() * 10 ** (-3 / 20), a / SR, b / SR
 
 
-def write(y, path):
+def trim_music(x, lead=.05, tail=.4):
+    env = np.sqrt(np.convolve(x ** 2, np.ones(2205) / 2205, 'same'))   # 46 ms rms
+    on = np.nonzero(env > env.max() * 10 ** (-45 / 20))[0]
+    a = max(0, int(on[0]) - int(lead * SR)); b = min(len(x), int(on[-1]) + int(tail * SR))
+    y = x[a:b].copy(); f = int(.3 * SR); y[-f:] *= np.linspace(1, 0, f) ** 2
+    return y / np.abs(y).max() * 10 ** (-1.5 / 20), a / SR, b / SR
+
+
+def write(y, path, kbps=96):
     c = av.open(path, 'w', format='mp3')
-    s = c.add_stream('libmp3lame', rate=SR); s.layout = 'mono'; s.bit_rate = 96000
+    s = c.add_stream('libmp3lame', rate=SR); s.layout = 'mono'; s.bit_rate = kbps * 1000
     fr = av.AudioFrame.from_ndarray(y.astype(np.float32)[None, :], format='fltp', layout='mono'); fr.sample_rate = SR
     for p in s.encode(fr): c.mux(p)
     for p in s.encode(None): c.mux(p)
     c.close()
 
 
+def music():
+    p = os.path.join(OUT, 'sounds', 'Hole_7_background_music.m4a')
+    if os.path.exists(p):
+        y, a, b = trim_music(load(p))
+        write(y, os.path.join(DEST, 'hole7.mp3'), 80)
+        print(f'Hole_7_background_music -> sounds/hole7.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / SR:.1f} s, {os.path.getsize(os.path.join(DEST, "hole7.mp3")) / 1048576:.2f} MB)')
+
+
 def main():
+    music()
     os.makedirs(DEST, exist_ok=True)
     for src, dst in MAP.items():
         p = os.path.join(OUT, 'sounds', src + '.m4a')

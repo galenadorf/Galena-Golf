@@ -3906,7 +3906,7 @@ function wakeAudio(fromTouch) {
   try { const b = a.createBuffer(1, 1, 22050), s = a.createBufferSource(); s.buffer = b; s.connect(a.destination); s.start(0); } catch (e) { }
   if (fromTouch) setTimeout(() => { if (AC === a && a.state !== 'running') { try { a.close(); } catch (e) { } AC = null; const n = audio(); if (n) { try { const b = n.createBuffer(1, 1, 22050), s = n.createBufferSource(); s.buffer = b; s.connect(n.destination); s.start(0); } catch (e) { } } } }, 250);
 }
-['pointerdown', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => wakeAudio(true), true));
+['pointerdown', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => { wakeAudio(true); songTick(performance.now(), true); }, true));
 // iOS can bring a context back reporting 'running' while it is silent (after another app or a call had the audio), and that state is not
 // reliable, so the context is dropped whenever the page is hidden; the next touch on return builds a fresh one (the decoded samples are reused)
 function dropAudio() { const a = AC; AC = null; if (a) { try { a.onstatechange = null; a.close(); } catch (e) { } } }
@@ -3927,6 +3927,59 @@ function noiseBurst(d, vol, freq, q, delay) {
   for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
   const s = a.createBufferSource(); s.buffer = buf; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq || 1200; f.Q.value = q || .8;
   const g = a.createGain(); g.gain.value = vol || .2; s.connect(f).connect(g).connect(a.destination); s.start(t);
+}
+// ---- background songs: a hole can have its own song (sounds/*.mp3, made by tools/course/sounds_trim.py) ----
+// It starts `delay` seconds after the fly-over ends (the tap on Play Hole), loops, plays at `vol` (0-1), and fades out when the next hole
+// starts or the round ends. The file is fetched into a blob (works offline through sw.js and avoids range requests, which Safari
+// refuses from a service worker) and played through the Web Audio graph, because iOS ignores an audio element's own volume.
+const HOLE_SONGS = { 6: { src: 'sounds/hole7.mp3', vol: .6, delay: 3 } }; // hole index (6 = hole 7)
+const SONG = { hole: -1, el: null, ctx: null, gain: null, blob: null, fetching: false, srcSet: false, unlocked: false, armed: false, armAt: 0, on: false, chk: 0, pos: 0, tok: 0 };
+const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+function songEl(a) {
+  if (SONG.el && SONG.ctx === a) return SONG.el;
+  try {
+    if (SONG.el) { SONG.el.pause(); SONG.el.removeAttribute('src'); }
+    const el = new Audio(), g = a.createGain(); el.preload = 'auto'; el.loop = true; g.gain.value = 0;
+    a.createMediaElementSource(el).connect(g).connect(a.destination);
+    Object.assign(SONG, { el, ctx: a, gain: g, srcSet: false, unlocked: false });
+  } catch (e) { SONG.el = null; }
+  return SONG.el;
+}
+function songHole(i) { // a hole is starting
+  songStop(false); SONG.hole = -1;
+  const d = HOLE_SONGS[i]; if (!d) return;
+  SONG.hole = i; SONG.pos = 0;
+  if (!SONG.blob && !SONG.fetching) { SONG.fetching = true; fetch(d.src).then(r => r.ok ? r.blob() : null).then(b => { SONG.fetching = false; if (b) SONG.blob = URL.createObjectURL(b); }).catch(() => { SONG.fetching = false; }); }
+}
+function songArm() { // the fly-over is over (called from the tap on Play Hole)
+  const d = HOLE_SONGS[G.hole]; if (!d || SONG.hole !== G.hole || !settings.sound) return;
+  SONG.armed = true; SONG.armAt = performance.now() + d.delay * 1000;
+  const a = audio(), el = a && songEl(a);
+  if (el && !SONG.unlocked) { SONG.unlocked = true; el.src = SILENT_WAV; const p = el.play(); if (p && p.then) p.then(() => { if (!SONG.srcSet) el.pause(); }).catch(() => { SONG.unlocked = false; }); } // a silent play inside the tap lets iOS start it later
+}
+function songPlay(d) {
+  const a = audio(); if (!a || a.state !== 'running') return; const el = songEl(a); if (!el) return;
+  if (SONG.srcSet) { try { if (Math.abs(el.currentTime - SONG.pos) > 1) el.currentTime = SONG.pos; } catch (e) { } } // a replay starts from the top
+  if (!SONG.srcSet) { SONG.srcSet = true; el.src = SONG.blob; el.addEventListener('loadedmetadata', () => { try { if (SONG.pos) el.currentTime = SONG.pos; } catch (e) { } }, { once: true }); }
+  const g = SONG.gain.gain, t = a.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(d.vol, t + 2.5); SONG.tok++; SONG.on = true;
+  const p = el.play(); if (p && p.catch) p.catch(() => { SONG.on = false; SONG.armAt = performance.now() + 1500; });
+}
+function songPause(fade) { // keeps the place in the song
+  if (!SONG.on || !SONG.el) { SONG.on = false; return; }
+  SONG.on = false; const el = SONG.el, tok = ++SONG.tok;
+  try { SONG.pos = el.currentTime; } catch (e) { }
+  if (fade && SONG.ctx && SONG.ctx.state === 'running') { const g = SONG.gain.gain, t = SONG.ctx.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(0, t + 1.2); setTimeout(() => { if (SONG.tok === tok) el.pause(); }, 1300); }
+  else el.pause();
+}
+function songStop(now) { // the song is over for this hole: fade out (or cut) and go back to the start
+  SONG.armed = false; songPause(!now); SONG.pos = 0;
+}
+function songTick(now, force) {
+  if (!SONG.armed && !SONG.on) return; if (!force && now - SONG.chk < 250) return; SONG.chk = now;
+  const d = HOLE_SONGS[SONG.hole];
+  if (!d || G.state === 'title' || G.hole !== SONG.hole) { songStop(true); return; }
+  const want = SONG.armed && settings.sound && !document.hidden;
+  if (want && !SONG.on && now >= SONG.armAt && SONG.blob) songPlay(d); else if (!want && SONG.on) songPause(false);
 }
 /* ---------- live multiplayer: rooms ---------- */
 // Players in the same room (a short code; a link with ?room=CODE joins it) share, through a public MQTT broker over secure websockets:
@@ -4552,7 +4605,7 @@ function startHole(i) {
   if (MP.spec) { const sp = MP.spec; MP.spec = null; MP.follow = null; document.body.classList.remove('spec'); mpWorld(sp.course); } // a new hole ends following (back on my own course)
   closeSheets(); $('done').classList.remove('on'); $('readout').classList.remove('on'); UI.readT = 0;
   document.body.classList.remove('flight', 'swing');
-  G.hole = i; if (G.rig) G.rig.arr = null;
+  G.hole = i; if (G.rig) G.rig.arr = null; songHole(i);
   if (G.practice && G.pins) G.pins[i] = ((G.pins[i] | 0) + 1 + Math.floor(Math.random() * 3)) % 4; // practice: a different pin every time the hole is played
   G.C = courseFor(i);
   buildHole(G.C);
@@ -5794,7 +5847,7 @@ function showIntro() {
 }
 function beginHole() {
   if (G.state !== 'intro') return;
-  $('intro').classList.remove('on'); SFX.blip();
+  $('intro').classList.remove('on'); SFX.blip(); songArm();
   G.state = 'settle'; G.settleT = 0; G.camFrom = W.cam.position.clone(); G.lookFrom = G.camLook.clone();
 }
 function showDone(pickedUp) {
@@ -6366,6 +6419,7 @@ function frame(now) {
   const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
   dueT = gap ? Math.min(Math.max(dueT + gap, now - gap), now + gap) : 0; // carries the remainder over, so 40 fps on a 60 Hz screen is two frames in three
   if (G.state === 'intro') G.introT += dt;
+  songTick(now);
   if (G.state === 'flight') { updateFlight(dt); if ((G.savedT = (G.savedT || 0) + dt) > 1.5) { G.savedT = 0; saveRound(); } } // the round, with how far the ball has flown
   else if (G.state === 'holed') { G.holedT += dt; if (G.shot && G.shot.res.holed && G.holedT < 3) updateFlight(dt); }
   refreshMapLive(now);
