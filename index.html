@@ -401,7 +401,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
   <div class="mlist setBlock">
     <div class="mrow">Name<input id="mName" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="done"></div>
     <div class="mrow">Player ID<span id="pidState" style="opacity:.8">Guest</span></div>
-    <div class="mpInfo" id="pidInfo"><span id="pidTxt"></span><div class="mpBtns"><button class="mpb" id="pidReq">Copy ID request</button><button class="mpb" id="pidChk">Check now</button></div></div>
+    <div class="mpInfo" id="pidInfo"><span id="pidTxt"></span><div class="mpBtns"><button class="mpb" id="pidSend">Request ID</button><button class="mpb" id="pidChk">Check now</button></div><div class="mpBtns"><button class="mpb" id="pidReq">Copy ID request</button></div></div>
     <div class="mrow">Reverse controls<div class="seg" id="segRev"><button data-v="1">Yes</button><button data-v="0">No</button></div></div>
     <div class="mrow">Golfer<div class="seg" id="segHand"><button data-v="1">Righty</button><button data-v="-1">Lefty</button></div></div>
     <div class="mrow">Sound<div class="seg" id="segSnd"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
@@ -6135,7 +6135,7 @@ const ghKey = () => { try { return GH_POST_KEY.length ? atob(GH_POST_KEY.slice()
 // "ID request" code this screen copies, to the player's keys. A device whose key is in the roster is registered: its rounds are signed, the
 // workflow checks the signature against the roster, and per-hole history follows the ID to every device. Any other device is a guest: it plays
 // everything solo and keeps its own stats, but posts nothing. Removing a key from players.json turns that device back into a guest.
-const PID = { key: null, pub: '', label: '', reg: null, ready: null, at: 0, rounds: null, roundsAt: 0 };
+const PID = { key: null, pub: '', fp: '', label: '', reg: null, ready: null, at: 0, rounds: null, roundsAt: 0 };
 const b64 = u8 => { let s = ''; u8.forEach(c => s += String.fromCharCode(c)); return btoa(s); };
 const isReg = () => !!(PID.reg && PID.key);
 function pidDeviceLabel() { const u = navigator.userAgent; return /iPad/.test(u) ? 'iPad' : /iPhone/.test(u) ? 'iPhone' : /Android/.test(u) ? (/Mobile/.test(u) ? 'Android phone' : 'Android tablet') : /Windows/.test(u) ? 'Windows' : /Mac/.test(u) ? 'Mac' : /Linux/.test(u) ? 'Linux' : 'Device'; }
@@ -6150,6 +6150,7 @@ function pidInit() {
         PID.pub = b64(new Uint8Array(await sub.exportKey('spki', kp.publicKey))); PID.label = pidDeviceLabel(); PID.key = await sub.importKey('jwk', priv, alg, false, ['sign']);
         try { localStorage.setItem('ssg-pid', JSON.stringify({ priv, pub: PID.pub, label: PID.label })); } catch (e) { PID.key = null; } // a key that cannot be kept would be a different ID every visit
       }
+      try { PID.fp = Array.from(new Uint8Array(await sub.digest('SHA-256', new TextEncoder().encode(PID.pub)))).slice(0, 3).map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase(); } catch (e) { } // a short code to tell the request apart
       try { const r = JSON.parse(localStorage.getItem('ssg-reg')); if (r && r.pub === PID.pub && r.pid) PID.reg = r; } catch (e) { }
     } catch (e) { PID.key = null; }
     return PID;
@@ -6175,9 +6176,23 @@ function pidUi() {
   const st = $('pidState'), tx = $('pidTxt'), rq = $('pidReq'); if (!st || !tx) return;
   st.textContent = isReg() ? PID.reg.pid + ' · ' + PID.reg.name : PID.key ? 'Guest' : 'Not available';
   tx.textContent = isReg() ? 'Registered' + (PID.reg.label ? ' on this ' + PID.reg.label : '') + '. Your rounds are signed and posted, and your per-hole history follows your ID to your other devices. To add another device, open Settings there and send the admin its ID request.'
-    : PID.key ? 'Guest: you can play everything solo and keep stats on this device, but rounds are not posted and per-hole history is off. To get a Player ID, copy the ID request and send it to the course admin.'
+    : PID.key ? 'Guest: you can play everything solo and keep stats on this device, but rounds are not posted and per-hole history is off. To get a Player ID, set your name and tap Request ID; the admin approves it (your code is ' + PID.fp + ').' + (pidAsked() ? ' Request sent; tap Check now once the admin has approved it.' : '')
     : 'A Player ID needs a secure page with storage this browser allows.';
-  rq.hidden = isReg() || !PID.key;
+  rq.hidden = isReg() || !PID.key; $('pidSend').hidden = rq.hidden; // (the Copy button stays as a spare for the admin)
+}
+const pidAsked = () => { try { const [t, f] = (localStorage.getItem('ssg-reqat') || '').split('|'); return f === PID.fp && Date.now() - +t < 14 * 864e5; } catch (e) { return false; } };
+// "Request ID": files the key as an issue with the post-only token; the admin approves it in GitHub (Actions > Approve player), which adds the key to players.json
+async function pidSend() {
+  const btn = $('pidSend'), say = t => { btn.textContent = t; setTimeout(() => { btn.textContent = 'Request ID'; }, 3000); };
+  await pidInit(); if (!PID.key || !ghKey()) return say('Not available');
+  const name = cleanName(settings.name); if (!name) return say('Enter your name first');
+  btn.disabled = true; btn.textContent = 'Sending\u2026';
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GH_REPO}/issues`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + ghKey(), 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: `[register] ${name} ${PID.fp}`, body: 'ID request from Galena!!! Golf. The admin approves it in GitHub (Actions > Approve player).\n\n```json\n' + JSON.stringify({ v: 1, k: PID.pub, l: PID.label, name, fp: PID.fp }) + '\n```\n' }) });
+    if (res.ok) { try { localStorage.setItem('ssg-reqat', Date.now() + '|' + PID.fp); } catch (e) { } pidUi(); say('Sent \u2713 code ' + PID.fp); } else say("Couldn't send");
+  } catch (e) { say("Couldn't send"); }
+  btn.disabled = false;
 }
 // the copy must start inside the tap (iOS refuses a clipboard write after an await), so the key is made earlier (pidSync runs at start); the answer shows on the button,
 // because the readout is hidden behind the Settings sheet. If the browser refuses both clipboard routes the code is shown in a box to select and copy by hand.
@@ -6496,7 +6511,7 @@ function initInput() {
   document.querySelectorAll('#segRev button').forEach(b => b.onclick = () => { settings.reverse = +b.dataset.v === 1; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segHand button').forEach(b => b.onclick = () => { settings.hand = +b.dataset.v; saveSettings(); syncMenu(); if (G.C) { G.carryKey = ''; updateAim(true); } });
   document.querySelectorAll('#segSnd button').forEach(b => b.onclick = () => { settings.sound = b.dataset.v === '1'; saveSettings(); syncMenu(); musicTick(); });
-  $('pidReq').onclick = pidCopy; $('pidChk').onclick = () => pidSync(true);
+  $('pidSend').onclick = pidSend; $('pidReq').onclick = pidCopy; $('pidChk').onclick = () => pidSync(true);
   document.querySelectorAll('#segSong button').forEach(b => b.onclick = () => { settings.song = +b.dataset.v; saveSettings(); syncMenu(); songLevelApply(); });
   document.querySelectorAll('#segZoom button').forEach(b => b.onclick = () => { settings.zoom = b.dataset.v === '1'; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segDrama button').forEach(b => b.onclick = () => { settings.drama = b.dataset.v === '1'; saveSettings(); syncMenu(); });

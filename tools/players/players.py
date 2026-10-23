@@ -5,15 +5,19 @@
   players.py device P007 GG1-... [label]  another device for that player (label defaults to the one in the request)
   players.py drop P007 <label|key prefix> remove one device (a lost phone); that device becomes a guest
   players.py rename P007 "New Name"
+  players.py pending                      open ID requests filed from the game ("[register]" issues), with their codes
+  players.py approve 12 P003|new          the same as the Approve player workflow, from here (then commit and push)
   players.py list
 
-A player makes an ID request in the game (Settings > Player ID > Copy ID request) and sends you the code (GG1-...). Commit and push
-players.json afterwards; the game picks it up from GitHub within a few minutes (Settings > Player ID > Check now)."""
+A player taps Settings > Player ID > Request ID in the game; that files a "[register]" issue. Approve it in GitHub (Actions > Approve player > Run
+workflow: the issue number, and "new" or the player's ID), or here with pending/approve. (Copy ID request in the game gives a GG1-... code for add/device
+when a request cannot be sent.) The game picks up players.json from GitHub within a few minutes (Settings > Player ID > Check now)."""
 import base64
 import json
 import os
 import re
 import sys
+import urllib.request
 
 PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'players.json')
 SPKI = bytes.fromhex('3059301306072a8648ce3d020106082a8648ce3d030107034200')  # DER header of a P-256 public key; 65 key bytes follow
@@ -46,6 +50,23 @@ def parse(code):
     k = base64.b64decode(d['k'])
     assert len(k) == len(SPKI) + 65 and k.startswith(SPKI) and k[len(SPKI)] == 4, 'that is not a P-256 public key'
     return d['k'], re.sub(r'[^\w .\-]', '', str(d.get('l') or 'Device'))[:24] or 'Device'
+
+
+REPO = 'galenadorf/Galena-Golf'
+
+
+def issues():
+    with urllib.request.urlopen(urllib.request.Request(f'https://api.github.com/repos/{REPO}/issues?state=open&per_page=100', headers={'User-Agent': 'galena-players'})) as r:
+        out = []
+        for i in json.load(r):
+            m = re.search(r'```json\s*(.*?)```', i.get('body') or '', re.S)
+            if i['title'].startswith('[register]') and m:
+                try:
+                    q = json.loads(m.group(1)); parse('GG1-' + base64.urlsafe_b64encode(json.dumps({'k': q['k'], 'l': q.get('l')}).encode()).decode())
+                    out.append((i['number'], q))
+                except Exception:
+                    pass
+        return out
 
 
 def find(a, pid):
@@ -89,6 +110,22 @@ def main(argv):
         if any(q is not p and q['name'].lower() == name.lower() for q in a):
             sys.exit('That name is taken')
         p['name'] = name; print('renamed', p['id'], 'to', name)
+    elif cmd == 'pending':
+        have = {x['k'] for q in a for x in q['keys']}
+        for n, q in issues():
+            if q['k'] not in have:
+                print(f"#{n}  {q.get('name')}  {q.get('l')}  code {q.get('fp')}")
+        return
+    elif cmd == 'approve' and len(argv) == 3:
+        q = dict(issues()).get(int(argv[1]))
+        if not q:
+            sys.exit('No open [register] issue with that number')
+        code = 'GG1-' + base64.urlsafe_b64encode(json.dumps({'v': 1, 'k': q['k'], 'l': q.get('l')}).encode()).decode().rstrip('=')
+        if argv[2] == 'new':
+            main(['add', q['name'], code])
+        else:
+            main(['device', argv[2], code])
+        return
     elif cmd == 'list':
         for q in a:
             print(q['id'], q['name'], '·', ', '.join(f"{x['label']} ({x['k'][-8:]})" for x in q['keys']) or 'no devices')
