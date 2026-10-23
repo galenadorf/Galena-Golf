@@ -3991,6 +3991,35 @@ function songTick(now, force) {
   const want = SONG.armed && settings.sound && !document.hidden;
   if (want && !SONG.on && now >= SONG.armAt && SONG.buf) songPlay(d); else if (!want && SONG.on) songPause(false);
 }
+// ---- soft birdsong: on every hole without a song, a few unseen birds call now and then (synthesised, no files) ----
+// Each call is a short phrase of sine notes (a whistle, a trill or a two-tone call) at a low level, panned to its own spot, sometimes answered by a second bird.
+const BIRD = { next: 0, hole: -1, chk: 0 };
+function birdCall(a, t0, f0, kind, pan, vol) {
+  const out = a.createGain(); out.gain.value = vol; let n = out;
+  if (a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = pan; out.connect(p); n = p; }
+  n.connect(a.destination);
+  const notes = kind === 0 ? 2 + (Math.random() * 3 | 0) : kind === 1 ? 6 + (Math.random() * 6 | 0) : 2;
+  let t = t0;
+  for (let i = 0; i < notes; i++) {
+    const d = kind === 1 ? .045 : .07 + Math.random() * .08, f = f0 * (kind === 1 ? 1 + (i % 2) * .04 : kind === 2 ? (i ? .78 : 1) : .85 + Math.random() * .4);
+    const o = a.createOscillator(), g = a.createGain(); o.type = 'sine';
+    o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * (kind === 1 ? 1.08 : Math.random() < .5 ? 1.25 : .8), t + d);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + .012); g.gain.exponentialRampToValueAtTime(.001, t + d);
+    o.connect(g).connect(out); o.start(t); o.stop(t + d + .02);
+    t += d + (kind === 1 ? .03 : .05 + Math.random() * .1);
+  }
+}
+function birdTick(now) {
+  if (now - BIRD.chk < 300) return; BIRD.chk = now;
+  if (G.hole !== BIRD.hole) { BIRD.hole = G.hole; BIRD.next = now + 1500 + Math.random() * 2500; }
+  if (now < BIRD.next) return;
+  if (!settings.sound || document.hidden || G.state === 'title' || HOLE_SONGS[G.hole] || !AC || AC.state !== 'running') { BIRD.next = now + 1000; return; }
+  const rain = G.weather && G.weather.id === 'rain';
+  BIRD.next = now + (rain ? 9000 + Math.random() * 9000 : 2500 + Math.random() * 6500);
+  const a = AC, t = a.currentTime + .05, pan = Math.random() * 1.6 - .8, f = 2300 + Math.random() * 2200, v = .012 + Math.random() * .012;
+  birdCall(a, t, f, Math.random() * 3 | 0, pan, v);
+  if (Math.random() < .35) birdCall(a, t + .9 + Math.random() * .8, 2300 + Math.random() * 2200, Math.random() * 3 | 0, -pan, v * .7);
+}
 /* ---------- live multiplayer: rooms ---------- */
 // Players in the same room (a short code; a link with ?room=CODE joins it) share, through a public MQTT broker over secure websockets:
 // who they are, course, hole, score and where their ball lies (kept on the broker, cleared when they leave), and each shot's flight as a
@@ -6431,7 +6460,7 @@ function frame(now) {
   const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
   dueT = gap ? Math.min(Math.max(dueT + gap, now - gap), now + gap) : 0; // carries the remainder over, so 40 fps on a 60 Hz screen is two frames in three
   if (G.state === 'intro') G.introT += dt;
-  songTick(now);
+  songTick(now); birdTick(now);
   if (G.state === 'flight') { updateFlight(dt); if ((G.savedT = (G.savedT || 0) + dt) > 1.5) { G.savedT = 0; saveRound(); } } // the round, with how far the ball has flown
   else if (G.state === 'holed') { G.holedT += dt; if (G.shot && G.shot.res.holed && G.holedT < 3) updateFlight(dt); }
   refreshMapLive(now);
