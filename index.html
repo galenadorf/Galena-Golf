@@ -403,6 +403,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
     <div class="mrow">Reverse controls<div class="seg" id="segRev"><button data-v="1">Yes</button><button data-v="0">No</button></div></div>
     <div class="mrow">Golfer<div class="seg" id="segHand"><button data-v="1">Righty</button><button data-v="-1">Lefty</button></div></div>
     <div class="mrow">Sound<div class="seg" id="segSnd"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
+    <div class="mrow">Song volume<div class="seg" id="segSong"><button data-v="0">Off</button><button data-v="1">Low</button><button data-v="2">Med</button><button data-v="3">High</button></div></div>
     <div class="mrow">Short-game zoom<div class="seg" id="segZoom"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
     <div class="mrow">Dramatic bounce<div class="seg" id="segDrama"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
     <div class="mrow" id="musRow" hidden>Music<div class="seg" id="segMus"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
@@ -3855,7 +3856,7 @@ function mergeStatic(grp) {
 
 /* ================= GAME ================= */
 const WOBBLE = .48; // strike wobble (the old "Calm" level was .6; cut by 20 % so the dot on the club face moves less quickly)
-const settings = { hand: 1, sound: true, coached: false, aimed: false, drama: true, reverse: false, zoom: true };
+const settings = { hand: 1, sound: true, coached: false, aimed: false, drama: true, reverse: false, zoom: true, song: 1 };
 try { const s = JSON.parse(localStorage.getItem('ssg-settings') || 'null'); if (s) Object.assign(settings, s); } catch (e) { }
 // Leaderboard reset: when LB_EPOCH changes, every device clears its own rounds, best scores and stats once (the name and settings stay).
 const LB_EPOCH = '2026-10-16-galena';
@@ -3935,6 +3936,9 @@ function noiseBurst(d, vol, freq, q, delay) {
 // fetched through sw.js, so it works offline once seen); an audio element was tried first, but Safari played it around the volume.
 // The decoded song (about 50 MB for 4.7 minutes) is dropped again when the player moves on to a hole without a song.
 const HOLE_SONGS = { 6: { src: 'sounds/hole7-q.mp3', vol: 1, delay: 3 } }; // hole index (6 = hole 7); vol 1 because the level is baked into the file
+// the player's Song volume setting: Off, Low, Med, High (a multiplier on the hole's level)
+const SONG_LEVELS = [0, .25, .5, 1], songLevel = () => (settings.song == null ? 1 : clamp(settings.song | 0, 0, 3));
+function songLevelApply() { if (SONG.on && SONG.ctx) { const g = SONG.gain.gain, t = SONG.ctx.currentTime, d = HOLE_SONGS[SONG.hole]; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime((d ? d.vol : 1) * SONG_LEVELS[songLevel()], t + .3); } }
 const SONG = { hole: -1, buf: null, fetching: false, ctx: null, gain: null, src: null, t0: 0, pos: 0, armed: false, armAt: 0, on: false, chk: 0, tok: 0, probed: false };
 function songHole(i) { // a hole is starting
   songStop(false); SONG.hole = -1;
@@ -3956,7 +3960,7 @@ function songPlay(d) {
   const a = audio(); if (!a || a.state !== 'running' || !SONG.buf) return;
   if (SONG.ctx !== a) { SONG.ctx = a; SONG.gain = a.createGain(); SONG.gain.connect(a.destination); SONG.src = null; }
   const s = a.createBufferSource(); s.buffer = SONG.buf; s.loop = true; s.connect(SONG.gain);
-  const g = SONG.gain.gain, t = a.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(0, t); g.linearRampToValueAtTime(d.vol, t + 2.5);
+  const g = SONG.gain.gain, t = a.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(0, t); g.linearRampToValueAtTime(d.vol * SONG_LEVELS[songLevel()], t + 2.5);
   s.start(0, SONG.pos % SONG.buf.duration); SONG.src = s; SONG.t0 = t; SONG.on = true; SONG.tok++;
   if (!SONG.probed) { SONG.probed = true; setTimeout(songProbe, 6000); }
 }
@@ -5790,6 +5794,7 @@ function syncMenu() {
   const mn = $('mName'); if (mn && document.activeElement !== mn) mn.value = settings.name || '';
   document.querySelectorAll('#segHand button').forEach(b => b.classList.toggle('sel', +b.dataset.v === settings.hand));
   document.querySelectorAll('#segSnd button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.sound ? 1 : 0)));
+  document.querySelectorAll('#segSong button').forEach(b => b.classList.toggle('sel', +b.dataset.v === songLevel()));
   document.querySelectorAll('#segDrama button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (drama() ? 1 : 0)));
   document.querySelectorAll('#segZoom button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.zoom !== false ? 1 : 0)));
   document.querySelectorAll('#segMus button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.music !== false ? 1 : 0)));
@@ -6374,6 +6379,7 @@ function initInput() {
   document.querySelectorAll('#segRev button').forEach(b => b.onclick = () => { settings.reverse = +b.dataset.v === 1; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segHand button').forEach(b => b.onclick = () => { settings.hand = +b.dataset.v; saveSettings(); syncMenu(); if (G.C) { G.carryKey = ''; updateAim(true); } });
   document.querySelectorAll('#segSnd button').forEach(b => b.onclick = () => { settings.sound = b.dataset.v === '1'; saveSettings(); syncMenu(); musicTick(); });
+  document.querySelectorAll('#segSong button').forEach(b => b.onclick = () => { settings.song = +b.dataset.v; saveSettings(); syncMenu(); songLevelApply(); });
   document.querySelectorAll('#segZoom button').forEach(b => b.onclick = () => { settings.zoom = b.dataset.v === '1'; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segDrama button').forEach(b => b.onclick = () => { settings.drama = b.dataset.v === '1'; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segMus button').forEach(b => b.onclick = () => { settings.music = b.dataset.v === '1'; saveSettings(); syncMenu(); musicTick(); });
