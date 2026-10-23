@@ -3937,7 +3937,7 @@ function noiseBurst(d, vol, freq, q, delay) {
 // The decoded song (about 50 MB for 4.7 minutes) is dropped again when the player moves on to a hole without a song.
 const HOLE_SONGS = { 6: { src: 'sounds/hole7-q.mp3', vol: 1, delay: 3 } }; // hole index (6 = hole 7); vol 1 because the level is baked into the file
 // the player's Song volume setting: Off, Low, Med, High (a multiplier on the hole's level)
-const SONG_LEVELS = [0, .25, .5, 1], songLevel = () => (settings.song == null ? 1 : clamp(settings.song | 0, 0, 3));
+const SONG_LEVELS = [0, .125, .35, 1], songLevel = () => (settings.song == null ? 1 : clamp(settings.song | 0, 0, 3));
 function songLevelApply() { if (SONG.on && SONG.ctx) { const g = SONG.gain.gain, t = SONG.ctx.currentTime, d = HOLE_SONGS[SONG.hole]; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime((d ? d.vol : 1) * SONG_LEVELS[songLevel()], t + .3); } }
 const SONG = { hole: -1, buf: null, fetching: false, ctx: null, gain: null, src: null, t0: 0, pos: 0, armed: false, armAt: 0, on: false, chk: 0, tok: 0, probed: false };
 function songHole(i) { // a hole is starting
