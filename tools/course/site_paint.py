@@ -3,7 +3,7 @@ cyan = double washroom, blue = its door side (optional), orange = porta-potty, y
 (rows [kind, e, n, front-facing direction in degrees (east = 0, counter-clockwise), width m, depth m, text]); build.py puts it
 in the course data and the game draws the buildings and signs.
 
-The big entrance sign ('entry' rows) is painted on its own close-up (entrance_edit.py, entrance_paint.py) and added here from out/entrance.json.
+The big entrance sign ('entry' rows) is painted on the combined map (paint_edit.py, paint_read.py) and added here from out/entrance.json.
 
 Sign text: out/signs.txt, one line per hole number, '|' for a line break:
     7: WATCH FOR GOLFERS | ON THE 8TH TEE
