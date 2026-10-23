@@ -2,7 +2,12 @@
  {
   "id": "P001",
   "name": "Kalle",
-  "keys": []
+  "keys": [
+   {
+    "k": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEKIwEfeuh35IhqMxXdZsIxADr+x0G6unV0rEbxPKjZdp5de6OoWxLArM0omLIHQE3EXU2oXqQxYmydKzQMDIuUQ==",
+    "label": "iPhone"
+   }
+  ]
  },
  {
   "id": "P002",
