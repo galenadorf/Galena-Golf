@@ -2947,6 +2947,12 @@ function renderPlan(C) {
     d[k] = clamp(c[0] + l, 0, 1) * 255; d[k + 1] = clamp(c[1] + l, 0, 1) * 255; d[k + 2] = clamp(c[2] + l, 0, 1) * 255; d[k + 3] = 255;
   }
   ctx.putImageData(img, 0, 0);
+  if (GC.hw) { // the highway: gravel shoulders, asphalt and the yellow centre line
+    const H = GC.hw, path = new Path2D();
+    for (let i = 0; i < H.e.length; i++) { const q = C.loc(H.e[i], H.n[i]), px = (q[0] - x0) / mpp, py = (-q[1] - z0) / mpp; if (i) path.lineTo(px, py); else path.moveTo(px, py); }
+    ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
+    for (const [wd, col] of [[ROAD_HW * 2, '#a89f8a'], [ROAD_HW * 2 - 2.4, '#5d5f64'], [.5, '#e2b92b']]) { ctx.lineWidth = Math.max(1, wd / mpp); ctx.strokeStyle = col; ctx.stroke(path); }
+  }
   for (const t of W.trees) {
     if (t.far) continue; const px = (t.x - x0) / mpp, py = (t.z - z0) / mpp;
     ctx.fillStyle = '#' + new THREE.Color(t.col).offsetHSL(0, -.05, -.12).getHexString(); ctx.beginPath(); ctx.arc(px, py, Math.max(1.6, (t.r || 2.4) / mpp), 0, TAU); ctx.fill();
