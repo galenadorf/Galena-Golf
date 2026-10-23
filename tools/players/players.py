@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Player roster admin: edits players.json at the repo root (the only place player IDs and device keys live).
 
-  players.py add "Kalle" GG1-...          new player, next free ID (P001, P002, ...), first device from an ID request
+  players.py add "Kalle" [GG1-...]        new player, next free ID (P001, P002, ...); the first device from an ID request, now or later (device)
   players.py device P007 GG1-... [label]  another device for that player (label defaults to the one in the request)
   players.py drop P007 <label|key prefix> remove one device (a lost phone); that device becomes a guest
   players.py rename P007 "New Name"
@@ -66,13 +66,15 @@ def add_key(a, p, code, label=None):
 def main(argv):
     a = load()
     cmd = argv[0] if argv else 'list'
-    if cmd == 'add' and len(argv) == 3:
+    if cmd == 'add' and len(argv) in (2, 3):
         name = clean_name(argv[1])
         if any(q['name'].lower() == name.lower() for q in a):
             sys.exit('That name is taken')
         n = 1 + max([int(q['id'][1:]) for q in a] + [0])
         p = {'id': f'P{n:03d}', 'name': name, 'keys': []}
-        add_key(a, p, argv[2]); a.append(p)
+        if len(argv) == 3:
+            add_key(a, p, argv[2])
+        a.append(p)
         print('added', p['id'], name)
     elif cmd == 'device' and len(argv) in (3, 4):
         p = find(a, argv[1]); add_key(a, p, argv[2], argv[3] if len(argv) == 4 else None)
