@@ -3933,7 +3933,7 @@ function noiseBurst(d, vol, freq, q, delay) {
 // It starts `delay` seconds after the fly-over ends (the tap on Play Hole), loops, plays at `vol` (0-1; 1 because the level is baked into the file by sounds_trim.py: a phone browser may ignore a software volume), and fades out when the next hole
 // starts or the round ends. The file is fetched into a blob (works offline through sw.js and avoids range requests, which Safari
 // refuses from a service worker) and played through the Web Audio graph, because iOS ignores an audio element's own volume.
-const HOLE_SONGS = { 6: { src: 'sounds/hole7.mp3', vol: 1, delay: 3 } }; // hole index (6 = hole 7)
+const HOLE_SONGS = { 6: { src: 'sounds/hole7-q.mp3', vol: 1, delay: 3 } }; // hole index (6 = hole 7)
 const SONG = { hole: -1, el: null, ctx: null, gain: null, blob: null, fetching: false, srcSet: false, unlocked: false, armed: false, armAt: 0, on: false, chk: 0, pos: 0, tok: 0 };
 const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
 function songEl(a) {
@@ -3964,6 +3964,17 @@ function songPlay(d) {
   if (!SONG.srcSet) { SONG.srcSet = true; el.src = SONG.blob; el.addEventListener('loadedmetadata', () => { try { if (SONG.pos) el.currentTime = SONG.pos; } catch (e) { } }, { once: true }); }
   const g = SONG.gain.gain, t = a.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(d.vol, t + 2.5); SONG.tok++; SONG.on = true;
   const p = el.play(); if (p && p.catch) p.catch(() => { SONG.on = false; SONG.armAt = performance.now() + 1500; });
+  if (!SONG.probed) { SONG.probed = true; setTimeout(songProbe, 6000); }
+}
+// a check on the phone: how loud the song really is at the end of the graph (Settings > Build), or "bypass" if the browser plays it around the graph
+function songProbe() {
+  try {
+    const a = SONG.ctx, an = a.createAnalyser(), buf = new Float32Array(an.fftSize); SONG.gain.connect(an); let m = 0, k = 0;
+    const iv = setInterval(() => {
+      an.getFloatTimeDomainData(buf); let s = 0; for (const v of buf) s += v * v; m = Math.max(m, Math.sqrt(s / buf.length));
+      if (++k >= 20) { clearInterval(iv); const el = $('buildNo'); if (el) el.textContent = (BUILD.startsWith('__') ? 'local' : BUILD.slice(0, 7)) + ' · song ' + (m < 1e-5 ? 'bypass' : Math.round(20 * Math.log10(m)) + ' dB'); }
+    }, 100);
+  } catch (e) { }
 }
 function songPause(fade) { // keeps the place in the song
   if (!SONG.on || !SONG.el) { SONG.on = false; return; }

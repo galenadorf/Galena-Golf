@@ -3,7 +3,7 @@ peak-normalised to -3 dBFS; the game sets each one's level). Needs PyAV (pip ins
 above -48 dB of its peak; end: where the 5 ms envelope has dropped 60 dB below the peak, plus a short fade.
   out/sounds/Driver.m4a -> sounds/driver.mp3    3-wood.m4a -> wood.mp3    Irons.m4a -> iron.mp3 (Iron.m4a is a duplicate)
   Wedges.m4a -> wedge.mp3    Putter.m4a -> putter.mp3    Ball_in_hole.m4a -> cup.mp3
-Music: out/sounds/Hole_7_background_music.m4a -> sounds/hole7.mp3, mono at 80 kbps, the silence before and after cut (the last second
+Music: out/sounds/Hole_7_background_music.m4a -> sounds/hole7-q.mp3, mono at 80 kbps, the silence before and after cut (the last second
 holds the song's closing hit), a short fade at the end, the playing level is baked into the file (MUSIC_PEAK_DB), so it is quiet even where the browser ignores the game's volume setting (HOLE_SONGS vol is 1).
 Rerun after replacing a recording; commit sounds/ (the game loads it, sw.js caches it)."""
 import os
@@ -60,8 +60,8 @@ def music():
     p = os.path.join(OUT, 'sounds', 'Hole_7_background_music.m4a')
     if os.path.exists(p):
         y, a, b = trim_music(load(p))
-        write(y, os.path.join(DEST, 'hole7.mp3'), 80)
-        print(f'Hole_7_background_music -> sounds/hole7.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / SR:.1f} s, {os.path.getsize(os.path.join(DEST, "hole7.mp3")) / 1048576:.2f} MB)')
+        write(y, os.path.join(DEST, 'hole7-q.mp3'), 80)
+        print(f'Hole_7_background_music -> sounds/hole7-q.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / SR:.1f} s, {os.path.getsize(os.path.join(DEST, "hole7-q.mp3")) / 1048576:.2f} MB)')
 
 
 def main():
