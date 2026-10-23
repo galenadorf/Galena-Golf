@@ -4300,7 +4300,6 @@ const SFX = {
       if (putt) play('hit', (1.12 + r) * HIT_PITCH, .27 * HIT_VOL, HIT_LP + 200); else if (q < 1) play('hit', (.84 + r) * HIT_PITCH, .8 * HIT_VOL, HIT_LP - 400); else play('hit', ((ct === 'wood' ? .93 : ct === 'wedge' ? 1.08 : 1) + r) * HIT_PITCH, .95 * HIT_VOL, HIT_LP); return;
     }
     if (putt) { tone(1100, .07, 'sine', .22); tone(2200, .04, 'triangle', .06); return; } tone(q < 1 ? 1500 : 650, .14, 'triangle', .3, q < 1 ? 950 : 280); noiseBurst(.07, .35, q < 1 ? 3800 : 1100, 1); },
-  whoosh(d) { noiseBurst(Math.max(.14, d), .16, 800, .5); },
   land(s) { noiseBurst(.07, clamp(s / 30, .03, .25), 320, .7); },
   cup() { if (play('cup', 1, .95)) return; [0, .07, .12].forEach((d, i) => tone(1500 - i * 220, .045, 'square', .05, null, d)); tone(230, .28, 'sine', .3, 130, .17); },
   splash() { noiseBurst(.55, .3, 650, .5); },
@@ -4698,7 +4697,7 @@ function swingMove(y, t, x) {
       if (ls > 0 && l0 < ls && pa >= ls) buzz(8);
     }
     // the turnaround needs a drop of a quarter of the swing (5% at most, 5 px at least), so short swings register
-    if (SW.pMax - p > clamp(SW.pMax * .25, 5 / SW.fullPx, .05) && SW.pMax > .035) { SW.phase = 'down'; SFX.whoosh(.25); SW.topI = Math.max(0, SW.path.length - 1); }
+    if (SW.pMax - p > clamp(SW.pMax * .25, 5 / SW.fullPx, .05) && SW.pMax > .035) { SW.phase = 'down'; SW.topI = Math.max(0, SW.path.length - 1); }
   }
   if (SW.phase === 'down' && p <= 0) {
     const pPrev = (SW.lastY - SW.startY) / SW.fullPx, u = pPrev > 0 ? pPrev / (pPrev - p) : 1;
@@ -6168,7 +6167,7 @@ function initInput() {
   });
   document.addEventListener('keyup', e => {
     if (typing(e)) return;
-    if (e.code === 'Space' && kbHeld && SW.kb && SW.phase === 'back') { kbHeld = false; SW.tTop = e.timeStamp; SW.pMax = Math.max(SW.p, .04); SW.phase = 'down'; SFX.whoosh(.25); }
+    if (e.code === 'Space' && kbHeld && SW.kb && SW.phase === 'back') { kbHeld = false; SW.tTop = e.timeStamp; SW.pMax = Math.max(SW.p, .04); SW.phase = 'down'; }
   });
   // club picker: a tap (a few mm at most) opens the bag, a sideways swipe steps through clubs, and a press that travels downward is a swing attempt
   // (the selector sits right on top of the swing bar, so it must hand the gesture over instead of eating it)

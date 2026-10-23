@@ -51,3 +51,4 @@ Gold total 6,223; Black 6,539; Silver 5,908; Bronze 5,192 (full card in `tools/c
 - New icons (`icon.svg`, PNGs, `apple-touch-icon.png`; still SweetSpot artwork) and a theme colour in `manifest.webmanifest` and `<meta name="theme-color">`.
 - Play a full round on a phone and post a score (score posting is untested end to end).
 - Tree species (broadleaf, conifer, shrub) is a guess from crown shape and near-infrared.
+- Sounds need a proper pass. The swing's backswing tick and downswing whoosh were removed as harsh; what is left is the recorded strike (`HIT_*`), the synthesised putt `SFX.tap`, and the rest of `SFX`. Review the whole set (levels, harshness, what plays on every swing), and check the new truck `SFX.honk`, which has only been written, never heard.
