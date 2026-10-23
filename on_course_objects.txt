@@ -12,47 +12,58 @@ Wild turkeys (5 per hole: one tom with a fanned tail, four hens)
   - They bolt (run for 4-6 s) if the ball lands within ~16 m or flies within ~32 m.
   - Can be hit: "Clipped a turkey!", gobble sound, the ball ricochets.
 
-Small birds (6 per hole, always present: 4 pigeons, 2 crows)
-  - 2-3 stand on the ground pecking and walking; the rest sit in treetops near the hole.
-  - They take off now and then, or when you get close.
-  - Can be hit: "Birdie... literally!"
-
-Gulls circling (4 per hole, always present)
-  - Wheel high over the hole the whole time.
-
 Bird flocks (2, high up, crossing the sky)
   - 11 gulls: first pass ~6-20 s into a hole.
   - 8 sparrows: first pass ~28-42 s into a hole.
   - Each returns 25-75 s after it passes, from a new direction. Most holes show at least one if you wait.
+  - Can be hit in principle ("Birdie... literally!"), but they fly high.
 
 AIRCRAFT
 --------
 Small plane (white and red prop plane, low flyby)
-  - Tows a rippling banner, ~10 m long on a rope behind the tail, reading "Galena!!!" from both sides (text is PLANE_BANNER in index.html).
+  - Tows a rippling banner on a rope (its length follows the text: letters a fixed 1.5 m tall) behind the tail, reading "Hot tubbbbbb!!!" from both sides (text is PLANE_BANNER in index.html).
   - The ball passes through the banner and rope; only the plane itself can be hit.
   - Only appears right after a tee shot; sometimes crosses straight through the ball's path.
   - Each round is dealt 0, 1 or 2 planes (2/7 none, 3/7 one, 2/7 two; ~1.1 average), spread over the holes left.
   - Can be hit: "Hit the plane!"
 
-Hot air balloon (red, white and orange stripes, wicker basket, burner flame; ~18 m across)
+Hot air balloon (orange, yellow, blue and white stripes, wicker basket, burner flame; ~18 m across)
   - Drifts slowly downwind across the sky at 38-60 m up, taking ~80-130 s to cross, bobbing and turning gently.
   - Rare: per hole, 60% chance one is scheduled 10-65 s after arriving, 40% none at first;
     after one leaves, the next is due 100-220 s later.
   - Cannot be hit: the ball passes through it.
 
 Gopher (Caddyshack-style: brown, buck teeth, pops out of a dirt mound with a dark hole)
-  - Appears on the fairway or rough, 25-170 m from the ball, and pops up ~1 s after its mound fades in.
+  - Appears only while the golfer stands over a full (non-putt) shot: 30-50 yd down the aim line (within 8 degrees either side) on
+    fairway or rough, and pops up ~1 s after its mound fades in. If the spot is unsuitable it retries 2 s later.
   - Stays up 9-14 s, turning its head and watching the golfer, then ducks back down.
   - Rare: per hole, 60% chance one is scheduled 10-65 s after arriving, 40% none at first;
     after one leaves, the next is due 100-220 s later.
   - Ducks instantly if the ball lands close by (within ~12 m, or flies within ~26 m).
   - Can be hit while up: "A menace to the golfing industry...", with a squeak.
 
+HIGHWAY AND TRAFFIC
+-------------------
+US 20 (two lanes, double yellow centre line, white edge lines, gravel shoulders; 9.7 m across)
+  - Runs past the north side of the course, a few metres outside the boundary, then east along the edge of Stockton; the whole
+    stretch inside the game's map (about 2.6 km) is drawn. Trees are kept clear of it. It is out of bounds.
+  - Speed limit 55 mph, 35 mph on the town stretch (east end).
+  - Traffic keeps to the right-hand lane, in either direction chosen at random, and drives the whole stretch end to end
+    (about two minutes at 55 mph). A vehicle never drives through the one in front: it slows to follow.
+  - Cannot be hit: the ball passes through the traffic.
+18-wheeler (red tractor with sleeper cab and roof deflector, 16 m white trailer with a red band; ~21 m long)
+  - One truck: first sets off 8-33 s after arriving on a hole, then 20-60 s after each trip ends. Drives at 88-96% of the limit.
+  - Semi-rare "honk honk" (two air-horn blasts): about one trip in three has one, somewhere along the road, and it plays only if
+    the truck is within ~650 m of the camera (louder when closer).
+Car (blue-grey sedan, a 2016 Subaru Legacy)
+  - Two cars: the first sets off 2-10 s after arriving, the second 10-26 s; each starts again 6-25 s after a trip ends.
+    Drives at 95-105% of the limit.
+
 SKY AND WEATHER
 ---------------
   - Clouds drift across the sky and thicken as the weather changes.
   - Weather spells last 6-9 holes: clear, damp, rain, damp, fine. Rain has falling drops and darker sky.
-  - Rainbow: a faint one when rain is easing off and it is not too cloudy; plays a short jingle.
+  - Rainbow: a faint one in light rain when the sky is not too cloudy (as a spell builds or eases off); plays a short jingle once each time it appears.
   - Wind: the flag flutters and a wind arrow shows on screen.
 
 GROUND-LEVEL SCENERY
@@ -60,7 +71,7 @@ GROUND-LEVEL SCENERY
   - Grass blades and tufts around the camera; tan and amber fescue in the deep rough.
   - Wildflowers: small daisies in drifts (white, yellow, pink, lilac, orange, pale blue).
   - Tall reeds round ponds, the creek and ditches.
-  - Trees from the lidar data (broadleaf, conifer, shrub); they block the ball.
+  - Trees from the lidar data; they block the ball. Broadleaf: the bigger half oaks (broad, deep green), the smaller half maples (compact, livelier green). Conifer: the bigger half northern pines (tall bare trunk, tufted crown), the smaller half blue Norwegian spruces (blue-green cones). Shrubs as before.
 
 MAN-MADE OBJECTS
 ----------------
@@ -68,14 +79,15 @@ MAN-MADE OBJECTS
   - Tee markers in four colours.
   - White boundary stakes (out of bounds); red stakes round the ponds (penalty areas).
   - Distance posts at 200, 150 and 100 m.
-  - Timber fairway bridges over the creek.
+  - Buildings from OpenStreetMap (houses, farm buildings, sheds) within ~240 m of each hole; the ball can hit them.
   - Double washroom near hole 18 (MEN and WOMEN doors).
   - Two blue porta-potties (the ball can hit them).
-  - Hole 7 sign ("Andy Lewis / Hole in One / 10/10/2026"), with its own fly-over intro.
+  - Hole 7 sign ("Andy Lewis / Hole in One / 9/10/2026", text from signs.txt), with its own fly-over intro.
 
 NOT IN THE GAME
 ---------------
   - The hole-info tee signs (Nr., par, yards) are switched off (code kept; set TEE_SIGNS_ON = true in index.html). Only signs listed in signs.txt are shown.
   - The paraglider is switched off (code kept; set PARAGLIDER_ON = true in index.html to bring it back).
-  - No deer, squirrels, rabbits, butterflies or fish (the gopher is the only burrowing animal). (The stats screen only jokes "fed the fish" for balls in the water.)
+  - The six small birds (pigeons and crows on the ground and in treetops) and the four gulls circling over the hole are switched off (SMALL_BIRDS_ON and CIRCLING_GULLS_ON in index.html).
+  - No deer, squirrels, rabbits, butterflies or fish (the gopher is the only burrowing animal). Nothing else drives, and there are no bridges (the creek has none). (The stats screen only jokes "fed the fish" for balls in the water.)
   - Benches, huts, golf carts, fountains and similar props exist in the engine from the removed courses but Woodbine does not use them.

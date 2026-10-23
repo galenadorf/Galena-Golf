@@ -15,11 +15,11 @@ import numpy as np
 import rasterio
 from scipy import ndimage as ndi
 from shapely.geometry import LineString, Point, Polygon, box, shape
-from shapely.ops import substring, unary_union
+from shapely.ops import linemerge, substring, unary_union
 
 import card
 import osm
-from common import NAME, ORIGIN, OUT, cache
+from common import NAME, ORIGIN, OUT, cache, to_local
 
 YD = card.YD
 DEM_RES, DEM_AREA = 15, (-1200, -1200, 1200, 1200)
@@ -306,6 +306,27 @@ def creek_pieces(hw=2.0, step=14.0):
     return out
 
 
+def highway(area=(-1250, -720, 1250, 720)):
+    """US 20, the highway past the north edge of the course, as one west-to-east line clipped to the game's 2 m class grid, and the
+    distance along it where the 55 mph road becomes Woodbine Street (35 mph) at the edge of Stockton. Read from the raw OSM file: osm.load
+    keeps the tag-less duplicate of a way that Overpass lists twice, which loses these two ways."""
+    els = json.load(open(cache('osm.json')))['elements']
+    nodes = {e['id']: to_local(e['lon'], e['lat']) for e in els if e['type'] == 'node'}
+    ways = {e['id']: e for e in els if e['type'] == 'way' and e.get('tags', {}).get('ref') == 'US 20'}
+    assert len(ways) == 2, ways.keys()
+    line = linemerge([LineString([nodes[i] for i in w['nodes']]) for w in ways.values()])
+    assert line.geom_type == 'LineString'
+    if line.coords[0][0] > line.coords[-1][0]:
+        line = LineString(list(line.coords)[::-1])
+    fast = [w for w in ways.values() if w['tags'].get('maxspeed') == '55 mph'][0]  # the stretch that meets the town street
+    slow = line.project(Point(*[nodes[i] for i in fast['nodes']][-1]))
+    clipped = line.intersection(box(*area))
+    if clipped.geom_type != 'LineString':
+        clipped = max(clipped.geoms, key=lambda g: g.length)
+    cut = line.project(Point(*clipped.coords[0]))
+    return clipped.simplify(.4), round(slow - cut)
+
+
 def main():
     F = osm.load()
     ba = os.path.join(OUT, 'bunkers_auto.json')  # bunkers the aerial shows but OSM lacks (bunkers_auto.py)
@@ -347,6 +368,7 @@ def main():
     bp = os.path.join(OUT, 'boundary.json')  # the hand-painted boundary (boundary.py) replaces the OSM outline as the out-of-bounds line
     bound = shape(json.load(open(bp))) if os.path.exists(bp) else Polygon(course.exterior)
     fescue = [g for f in fescue for g in getattr(f.intersection(bound), 'geoms', [f.intersection(bound)]) if g.geom_type == 'Polygon' and not g.is_empty]
+    hw, hw_slow = highway()
     rd = dict(
         name=NAME, origin=list(ORIGIN), dem=dem, holes=holes,
         feat=dict(fair=enc_polys(fair), green=enc_polys([f['poly'] for f in F['green']]), tee=enc_polys([f['poly'] for f in F['tee']]),
@@ -360,6 +382,7 @@ def main():
         # the lidar trees cover the whole detail area: OSM woods only count beyond it
         cover=enc_polys([area] if trees else []),
         streams=enc_lines([f['line'] for f in F['stream']]),
+        highway=enc_lines([hw]), hwSlow=hw_slow,  # US 20 past the north edge of the course; hwSlow = metres from its west end where the limit drops from 55 to 35 mph
         relief=relief,
         props=json.load(open(os.path.join(OUT, 'site_props.json'))) if os.path.exists(os.path.join(OUT, 'site_props.json')) else [],  # washrooms, porta-potties and signposts painted on the aerial (site_paint.py)
         # tee marker colours: w is the tee played (gold), y/b/r the other sets (black, silver, bronze)
