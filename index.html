@@ -1397,6 +1397,8 @@ function makeRealCourse(idx, pin) {
   const TIER_HOLES = RDC.tiers, gl0 = loc(g0[0], g0[1]), gX0 = gl0[0], gZ0 = -gl0[1];
   const Hof0 = (X, Z) => demZ(enuE(X, Z), enuN(X, Z)) - zBase;
   tierGreen.f = { res, x0, z0, zBase, enuE, enuN };
+  // where a green sits (1 on it, fading to 0 over its edge blend): the lidar relief added below is left off it, because the green already carries the real contours of the ground
+  const GM = new Float32Array(w * h);
   const platform = (q, blend, maxS, raise, roll, key) => {
     const W2 = win(q, blend); if (!W2) return null;
     const { i0, j0, ww, hh, sd } = W2;
@@ -1437,6 +1439,7 @@ function makeRealCourse(idx, pin) {
       const s = sd[j * ww + i]; if (s >= blend) continue;
       const k = (j + j0) * w + i + i0, X = x0 + (i + i0) * res, Z = z0 + (j + j0) * res;
       Hg[k] = s <= 0 ? top(X, Z) : lerp(top(X, Z), Hg[k], smooth(0, blend, s));
+      if (key < 100) GM[k] = Math.max(GM[k], 1 - smooth(0, blend, Math.max(0, s)));
     }
     return { q, cx, cz, n, R: Math.sqrt(n * res * res / Math.PI), win: W2, h0, top };
   };
@@ -1508,7 +1511,7 @@ function makeRealCourse(idx, pin) {
         const X = x0 + i * res, Z = z0 + j * res, u = (enuE(X, Z) - RL.e0) / rs - .5, v = (enuN(X, Z) - RL.n0) / rs - .5;
         if (u < 0 || v < 0 || u >= RL.w - 1 || v >= RL.h - 1) continue;
         const iu = u | 0, iv = v | 0, fu = u - iu, fv = v - iv, k = iv * RL.w + iu, A = RL.a;
-        Hg[j * w + i] += (A[k] * (1 - fu) + A[k + 1] * fu) * (1 - fv) + (A[k + RL.w] * (1 - fu) + A[k + RL.w + 1] * fu) * fv;
+        Hg[j * w + i] += ((A[k] * (1 - fu) + A[k + 1] * fu) * (1 - fv) + (A[k + RL.w] * (1 - fu) + A[k + RL.w + 1] * fu) * fv) * (1 - GM[j * w + i]);
       }
     }
   }
