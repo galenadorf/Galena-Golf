@@ -3910,7 +3910,7 @@ function wakeAudio(fromTouch) {
 ['pointerdown', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => { wakeAudio(true); songTick(performance.now(), true); }, true));
 // iOS can bring a context back reporting 'running' while it is silent (after another app or a call had the audio), and that state is not
 // reliable, so the context is dropped whenever the page is hidden; the next touch on return builds a fresh one (the decoded samples are reused)
-function dropAudio() { const a = AC; AC = null; if (a) { try { a.onstatechange = null; a.close(); } catch (e) { } } }
+function dropAudio() { try { songPause(false); } catch (e) { } const a = AC; AC = null; if (a) { try { a.onstatechange = null; a.close(); } catch (e) { } } }
 document.addEventListener('visibilitychange', () => { if (document.hidden) { dropAudio(); try { saveRound(); } catch (e) { } } else wakeAudio(false); });
 window.addEventListener('pagehide', () => { try { saveRound(); } catch (e) { } });
 window.addEventListener('pagehide', dropAudio);
@@ -3930,58 +3930,52 @@ function noiseBurst(d, vol, freq, q, delay) {
   const g = a.createGain(); g.gain.value = vol || .2; s.connect(f).connect(g).connect(a.destination); s.start(t);
 }
 // ---- background songs: a hole can have its own song (sounds/*.mp3, made by tools/course/sounds_trim.py) ----
-// It starts `delay` seconds after the fly-over ends (the tap on Play Hole), loops, plays at `vol` (0-1; 1 because the level is baked into the file by sounds_trim.py: a phone browser may ignore a software volume), and fades out when the next hole
-// starts or the round ends. The file is fetched into a blob (works offline through sw.js and avoids range requests, which Safari
-// refuses from a service worker) and played through the Web Audio graph, because iOS ignores an audio element's own volume.
-const HOLE_SONGS = { 6: { src: 'sounds/hole7-q.mp3', vol: 1, delay: 3 } }; // hole index (6 = hole 7)
-const SONG = { hole: -1, el: null, ctx: null, gain: null, blob: null, fetching: false, srcSet: false, unlocked: false, armed: false, armAt: 0, on: false, chk: 0, pos: 0, tok: 0 };
-const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
-function songEl(a) {
-  if (SONG.el && SONG.ctx === a) return SONG.el;
-  try {
-    if (SONG.el) { SONG.el.pause(); SONG.el.removeAttribute('src'); }
-    const el = new Audio(), g = a.createGain(); el.preload = 'auto'; el.loop = true; g.gain.value = 0;
-    a.createMediaElementSource(el).connect(g).connect(a.destination);
-    Object.assign(SONG, { el, ctx: a, gain: g, srcSet: false, unlocked: false });
-  } catch (e) { SONG.el = null; }
-  return SONG.el;
-}
+// It starts `delay` seconds after the fly-over ends (the tap on Play Hole), loops, plays at `vol` (0-1), and fades out when the next hole
+// starts or the round ends. Like every other sound it is decoded into an AudioBuffer and played through the Web Audio graph (the file is
+// fetched through sw.js, so it works offline once seen); an audio element was tried first, but Safari played it around the volume.
+// The decoded song (about 50 MB for 4.7 minutes) is dropped again when the player moves on to a hole without a song.
+const HOLE_SONGS = { 6: { src: 'sounds/hole7-q.mp3', vol: 1, delay: 3 } }; // hole index (6 = hole 7); vol 1 because the level is baked into the file
+const SONG = { hole: -1, buf: null, fetching: false, ctx: null, gain: null, src: null, t0: 0, pos: 0, armed: false, armAt: 0, on: false, chk: 0, tok: 0, probed: false };
 function songHole(i) { // a hole is starting
   songStop(false); SONG.hole = -1;
-  const d = HOLE_SONGS[i]; if (!d) return;
+  const d = HOLE_SONGS[i]; if (!d) { SONG.buf = null; SONG.probed = false; return; }
   SONG.hole = i; SONG.pos = 0;
-  if (!SONG.blob && !SONG.fetching) { SONG.fetching = true; fetch(d.src).then(r => r.ok ? r.blob() : null).then(b => { SONG.fetching = false; if (b) SONG.blob = URL.createObjectURL(b); }).catch(() => { SONG.fetching = false; }); }
+  if (!SONG.buf && !SONG.fetching && settings.sound) {
+    SONG.fetching = true;
+    fetch(d.src).then(r => r.ok ? r.arrayBuffer() : null).then(ab => {
+      const a = audio(); if (!ab || !a) { SONG.fetching = false; return; }
+      a.decodeAudioData(ab, b => { SONG.fetching = false; if (SONG.hole === i) SONG.buf = b; }, () => { SONG.fetching = false; });
+    }).catch(() => { SONG.fetching = false; });
+  }
 }
 function songArm() { // the fly-over is over (called from the tap on Play Hole)
   const d = HOLE_SONGS[G.hole]; if (!d || SONG.hole !== G.hole || !settings.sound) return;
-  SONG.armed = true; SONG.armAt = performance.now() + d.delay * 1000;
-  const a = audio(), el = a && songEl(a);
-  if (el && !SONG.unlocked) { SONG.unlocked = true; el.src = SILENT_WAV; const p = el.play(); if (p && p.then) p.then(() => { if (!SONG.srcSet) el.pause(); }).catch(() => { SONG.unlocked = false; }); } // a silent play inside the tap lets iOS start it later
+  SONG.armed = true; SONG.armAt = performance.now() + d.delay * 1000; audio();
 }
 function songPlay(d) {
-  const a = audio(); if (!a || a.state !== 'running') return; const el = songEl(a); if (!el) return;
-  if (SONG.srcSet) { try { if (Math.abs(el.currentTime - SONG.pos) > 1) el.currentTime = SONG.pos; } catch (e) { } } // a replay starts from the top
-  if (!SONG.srcSet) { SONG.srcSet = true; el.src = SONG.blob; el.addEventListener('loadedmetadata', () => { try { if (SONG.pos) el.currentTime = SONG.pos; } catch (e) { } }, { once: true }); }
-  const g = SONG.gain.gain, t = a.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(d.vol, t + 2.5); SONG.tok++; SONG.on = true;
-  const p = el.play(); if (p && p.catch) p.catch(() => { SONG.on = false; SONG.armAt = performance.now() + 1500; });
+  const a = audio(); if (!a || a.state !== 'running' || !SONG.buf) return;
+  if (SONG.ctx !== a) { SONG.ctx = a; SONG.gain = a.createGain(); SONG.gain.connect(a.destination); SONG.src = null; }
+  const s = a.createBufferSource(); s.buffer = SONG.buf; s.loop = true; s.connect(SONG.gain);
+  const g = SONG.gain.gain, t = a.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(0, t); g.linearRampToValueAtTime(d.vol, t + 2.5);
+  s.start(0, SONG.pos % SONG.buf.duration); SONG.src = s; SONG.t0 = t; SONG.on = true; SONG.tok++;
   if (!SONG.probed) { SONG.probed = true; setTimeout(songProbe, 6000); }
 }
-// a check on the phone: how loud the song really is at the end of the graph (Settings > Build), or "bypass" if the browser plays it around the graph
+// a check on the phone: how loud the song is at the end of the graph (Settings > Build)
 function songProbe() {
   try {
     const a = SONG.ctx, an = a.createAnalyser(), buf = new Float32Array(an.fftSize); SONG.gain.connect(an); let m = 0, k = 0;
     const iv = setInterval(() => {
       an.getFloatTimeDomainData(buf); let s = 0; for (const v of buf) s += v * v; m = Math.max(m, Math.sqrt(s / buf.length));
-      if (++k >= 20) { clearInterval(iv); const el = $('buildNo'); if (el) el.textContent = (BUILD.startsWith('__') ? 'local' : BUILD.slice(0, 7)) + ' · song ' + (m < 1e-5 ? 'bypass' : Math.round(20 * Math.log10(m)) + ' dB'); }
+      if (++k >= 20) { clearInterval(iv); const el = $('buildNo'); if (el) el.textContent = (BUILD.startsWith('__') ? 'local' : BUILD.slice(0, 7)) + ' · song ' + (m < 1e-5 ? 'silent' : Math.round(20 * Math.log10(m)) + ' dB'); }
     }, 100);
   } catch (e) { }
 }
 function songPause(fade) { // keeps the place in the song
-  if (!SONG.on || !SONG.el) { SONG.on = false; return; }
-  SONG.on = false; const el = SONG.el, tok = ++SONG.tok;
-  try { SONG.pos = el.currentTime; } catch (e) { }
-  if (fade && SONG.ctx && SONG.ctx.state === 'running') { const g = SONG.gain.gain, t = SONG.ctx.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(0, t + 1.2); setTimeout(() => { if (SONG.tok === tok) el.pause(); }, 1300); }
-  else el.pause();
+  if (!SONG.on || !SONG.src) { SONG.on = false; return; }
+  SONG.on = false; const s = SONG.src, a = SONG.ctx;
+  try { SONG.pos = (SONG.pos + (a.currentTime - SONG.t0)) % SONG.buf.duration; } catch (e) { }
+  if (fade && a.state === 'running') { const g = SONG.gain.gain, t = a.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(0, t + 1.2); try { s.stop(t + 1.3); } catch (e) { } }
+  else { try { s.stop(); } catch (e) { } }
 }
 function songStop(now) { // the song is over for this hole: fade out (or cut) and go back to the start
   SONG.armed = false; songPause(!now); SONG.pos = 0;
@@ -3991,7 +3985,7 @@ function songTick(now, force) {
   const d = HOLE_SONGS[SONG.hole];
   if (!d || G.state === 'title' || G.hole !== SONG.hole) { songStop(true); return; }
   const want = SONG.armed && settings.sound && !document.hidden;
-  if (want && !SONG.on && now >= SONG.armAt && SONG.blob) songPlay(d); else if (!want && SONG.on) songPause(false);
+  if (want && !SONG.on && now >= SONG.armAt && SONG.buf) songPlay(d); else if (!want && SONG.on) songPause(false);
 }
 /* ---------- live multiplayer: rooms ---------- */
 // Players in the same room (a short code; a link with ?room=CODE joins it) share, through a public MQTT broker over secure websockets:
