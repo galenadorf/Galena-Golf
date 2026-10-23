@@ -6087,8 +6087,8 @@ function holeStatsHtml() {
   });
   return '<div class="sub"><span>By hole</span></div>' + (all.length ? rows.join('') : '<div class="stFun"><div>Finish a round and its holes show up here.</div></div>');
 }
-function openStats() {
-  if (isReg()) pidRounds().then(() => { if ($('statsSheet').classList.contains('on')) openStats(); });
+function openStats(again) {
+  if (isReg() && !again) pidRounds().then(fresh => { if (fresh && $('statsSheet').classList.contains('on')) openStats(true); }); // once, when my filed rounds have just arrived
   const S = ST, el = $('statsBody'), pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '–', mi = S.dist / 1609.34;
   let li = 0; LEVELS.forEach((l, i) => { if (S.holes >= l[0]) li = i; }); const nx = LEVELS[li + 1], lo = LEVELS[li][0];
   const card = (k, e, v, n, rec) => `<div class="stCard${rec ? ' rec' : ''}"><span class="em">${e}</span><div class="k">${k}</div><div class="v">${v}</div>${n ? `<div class="n">${n}</div>` : ''}</div>`;
@@ -6219,9 +6219,10 @@ const HIST_KEY = 'ssg-hist';
 const roundHoles = () => HOLE_DEFS.map((d, i) => [G.scores[i], G.putts[i] || 0, G.fir[i] == null ? -1 : +G.fir[i], G.gir[i] == null ? -1 : +G.gir[i], G.pens[i] || 0, G.pins ? G.pins[i] | 0 : 0]);
 function histAdd(e) { try { const a = histLocal(); if (a.some(x => x.at === e.at)) return; a.push({ at: e.at, course: e.course, strokes: e.strokes, hs: e.hs }); localStorage.setItem(HIST_KEY, JSON.stringify(a.slice(-300))); } catch (e2) { } }
 function histLocal() { try { const a = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); return Array.isArray(a) ? a.filter(x => x && Array.isArray(x.hs) && x.hs.length === HOLE_DEFS.length) : []; } catch (e) { return []; } }
-async function pidRounds(force) { // my rounds as the workflow filed them (rounds/<id>.json), so history follows the ID across devices
-  if (!isReg() || (!force && PID.roundsAt && Date.now() - PID.roundsAt < 6e4)) return; PID.roundsAt = Date.now();
-  try { const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/rounds/${PID.reg.pid}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' }); if (r.ok) { const a = await r.json(); PID.rounds = Array.isArray(a) ? a : []; } } catch (e) { }
+async function pidRounds(force) { // my rounds as the workflow filed them (rounds/<id>.json), so history follows the ID across devices; true when new rounds arrived
+  if (!isReg() || (!force && PID.roundsAt && Date.now() - PID.roundsAt < 6e4)) return false; PID.roundsAt = Date.now();
+  try { const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/rounds/${PID.reg.pid}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' }); if (r.ok) { const a = await r.json(); PID.rounds = Array.isArray(a) ? a : []; return true; } } catch (e) { }
+  return false;
 }
 // returns true when the round was filed (no account needed)
 async function postAuto(r) {
