@@ -84,6 +84,7 @@ MAN-MADE OBJECTS
   - Buildings from OpenStreetMap (houses, farm buildings, sheds) within ~240 m of each hole; the ball can hit them.
   - Double washroom near hole 18 (MEN and WOMEN doors).
   - Two blue porta-potties (the ball can hit them).
+  - The big Woodbine Bend entrance sign (green board on posts, a golf ball on a red tee at each end, stone-edged flower bed), drawn at the spot painted with entrance_edit.py / entrance_paint.py. Not shown until a spot is painted.
   - Hole 7 sign ("Andy Lewis / Hole in One / 9/10/2026", text from signs.txt), with its own fly-over intro.
 
 NOT IN THE GAME

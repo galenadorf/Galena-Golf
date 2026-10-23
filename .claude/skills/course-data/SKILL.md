@@ -19,7 +19,9 @@ Python venv `~/.venvs/galena` (numpy, scipy, rasterio, pyproj, shapely, pillow, 
 | trees | `trees_edit.py` | `trees_mask.png` | `trees_paint.py` → `trees_painted.json` | orange broadleaf, blue `#0080FF` conifer, magenta shrub |
 | creek | `creek_edit.py` | `creek_mask.png` | `creek_paint.py` → `creek_painted.json` | blue `#0000FF` |
 | site props | `site_edit.py` | `site_mask.png` + `signs.txt` | `site_paint.py` → `site_props.json` | cyan washroom, blue door strip, orange porta-potty, yellow sign |
-| tee boxes (shelved) | `tee_boxes_edit.py` | `tee_boxes_mask.png` | `tee_boxes_paint.py` → `tees_painted.json`, `tee_starts.json` | magenta boxes, yellow start dots |
+| entrance sign | `entrance_edit.py [e0 n0 e1 n1]` | `entrance_zoom_mask.png` | `entrance_paint.py` → `entrance.json` (site_paint.py adds it to `site_props.json`) | purple rectangle (sign + flower bed), optional blue strip on the road-facing side |
+| tee boxes, close-ups | `tee_zoom_edit.py [holes]` (8x, one picture per hole) | `tee<hole>_zoom_mask.png` | `tee_zoom_paint.py` → `tees_painted.json` (unpainted holes keep their OSM boxes), `tee_starts.json` | magenta boxes, yellow dot = played tee |
+| tee boxes, whole course (shelved) | `tee_boxes_edit.py` | `tee_boxes_mask.png` | `tee_boxes_paint.py` → `tees_painted.json`, `tee_starts.json` | magenta boxes, yellow start dots |
 
    `bunkers_auto.py` found six bunkers OSM lacks (`bunkers_auto.json`); `bunkers_painted.json` replaces OSM and auto bunkers when present. Signs: `signs.txt` lines like `7: LINE ONE | LINE TWO`; a yellow dot whose nearest hole has no line is not built.
 3. `build.py` encodes everything into `out/rd_woodbine.js`; it prefers painted files over generated ones, clips fescue to the boundary, links each hole's fairway to its green by convex hull (`link_fairways`, so no gap of rough), and snaps the four tee sets (gold, black, silver, bronze) to the tee boxes at their card yardages. Cart paths are deliberately dropped.
