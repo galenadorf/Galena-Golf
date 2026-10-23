@@ -78,13 +78,13 @@ GROUND-LEVEL SCENERY
 MAN-MADE OBJECTS
 ----------------
   - Flagstick, flag and cup on every green.
-  - Tee markers in four colours.
+  - Tee markers in four colours (white, yellow, blue, red), two per tee set, always standing inside the tee box (a narrow box gets a narrower gap).
   - White boundary stakes (out of bounds); red stakes round the ponds (penalty areas).
   - Distance posts at 200, 150 and 100 m.
   - Buildings from OpenStreetMap (houses, farm buildings, sheds) within ~240 m of each hole; the ball can hit them.
   - Double washroom near hole 18 (MEN and WOMEN doors).
   - Two blue porta-potties (the ball can hit them).
-  - The big Woodbine Bend entrance sign (green board on posts, a golf ball on a red tee at each end, stone-edged flower bed), drawn at the spot painted with paint_edit.py / paint_read.py. Not shown until a spot is painted.
+  - The big Woodbine Bend entrance sign (green board on posts, a golf ball on a red tee at each end, stone-edged flower bed) beside Route 20 on the west side of the course, facing in toward the course. Painted with paint_edit.py / paint_read.py; only seen from the holes nearest it.
   - Hole 7 sign ("Andy Lewis / Hole in One / 9/10/2026", text from signs.txt), with its own fly-over intro.
 
 NOT IN THE GAME

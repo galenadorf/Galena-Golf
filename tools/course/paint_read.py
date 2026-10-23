@@ -1,13 +1,14 @@
 """Read out/paint_mask.png (painted on out/paint_edit.png; colours in paint_edit.py):
-  MAGENTA blobs  tee boxes -> out/tees_painted.json (polygons, local metres; build.py uses them instead of the OSM boxes). A current box
-                 with no magenta within 6 m is kept as it is, so only the wrong or missing boxes need painting.
+  MAGENTA blobs  tee boxes -> out/tees_painted.json (polygons, local metres; build.py uses them instead of the OSM boxes). Every tee box
+                 has to be painted; `python paint_read.py --keep` keeps a current box with no magenta within 6 m instead.
   YELLOW dots    the played (gold) tee of the hole whose line passes nearest -> out/tee_starts.json ([e, n] points)
-  PURPLE + BLUE  the big entrance sign -> out/entrance.json (one 'entry' row: e, n, direction it faces in degrees (east = 0,
+  PURPLE (+ BLUE) the big entrance sign (it faces the course unless a blue strip says otherwise) -> out/entrance.json (one 'entry' row: e, n, direction it faces in degrees (east = 0,
                  counter-clockwise), width m, depth m); site_paint.py adds it to the site props
 Rerun this, site_paint.py, build.py, install.py after repainting."""
 import json
 import math
 import os
+import sys
 
 import numpy as np
 from PIL import Image
@@ -15,6 +16,7 @@ from rasterio import features
 from rasterio.transform import Affine
 from scipy import ndimage as ndi
 from shapely.geometry import MultiPoint, mapping, shape
+from shapely.ops import nearest_points
 
 import osm
 from common import OUT
@@ -48,7 +50,8 @@ def main():
         return [shape(g).buffer(0) for g, v in features.shapes(m.astype(np.uint8), mask=m, transform=tr) if v]
 
     boxes = [p.simplify(.1) for p in polys((255, 0, 255), MIN_TEE, True)]
-    keep = [t['poly'] for t in F['tee'] if not any(p.distance(t['poly']) < KEEP_NEAR for p in boxes)]
+    assert boxes, 'no magenta tee boxes found'
+    keep = [t['poly'] for t in F['tee'] if '--keep' in sys.argv and not any(p.distance(t['poly']) < KEEP_NEAR for p in boxes)]
     json.dump([mapping(p) for p in keep + boxes], open(os.path.join(OUT, 'tees_painted.json'), 'w'))
     starts = [[round(p.centroid.x, 2), round(p.centroid.y, 2)] for p in polys((255, 255, 0), .2, False)]
     json.dump(starts, open(os.path.join(OUT, 'tee_starts.json'), 'w'))
@@ -83,12 +86,12 @@ def main():
     if strips:
         tgt = strips[0]
     else:
-        line = min([x['line'] for x in F['road']], key=lambda ln: ln.distance(cen))
-        tgt = line.interpolate(line.project(cen))
+        course = F['course'][0]['poly']   # no strip: the lettering faces inward, toward the nearest part of the course
+        tgt = course.centroid if course.contains(cen) else nearest_points(course, cen)[0]
     sgn = 1 if ((tgt.x - cen.x) * nx + (tgt.y - cen.y) * ny) >= 0 else -1
     row = ['entry', round(cen.x, 1), round(cen.y, 1), round(math.degrees(math.atan2(sgn * ny, sgn * nx)) % 360), round(float(np.clip(w, 4, 14)), 1), round(float(np.clip(dep, 1.5, 6)), 1), '']
     json.dump([row], open(os.path.join(OUT, 'entrance.json'), 'w'))
-    print('entrance sign', row, '(facing the', 'blue strip)' if strips else 'nearest road)')
+    print('entrance sign', row, '(facing the', 'blue strip)' if strips else 'course)')
 
 
 if __name__ == '__main__':

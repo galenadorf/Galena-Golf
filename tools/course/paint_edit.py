@@ -7,8 +7,8 @@ e0, n1, ppm, w, h). Paint SOLID colours on a copy, saved as out/paint_mask.png (
                    nearest to it gets that start.
   PURPLE  #8000FF  the big Woodbine Bend entrance sign: ONE filled rectangle (any rotation) for the sign and its flower bed. Its long
                    side is the board's width (drawn about 7 m wide, so a bed 8-9 m by 2-3 m suits), the short side the bed's depth.
-  BLUE    #0000FF  (optional) a thin strip, 4+ px, just outside the long side of the purple rectangle that faces the road (the lettering
-                   side). With no strip the sign faces the nearest road, which is the highway when it stands by Route 20.
+  BLUE    #0000FF  (optional) a thin strip, 4+ px, just outside the long side of the purple rectangle that the lettering faces (the lettering
+                   side). With no strip the sign faces INWARD, toward the nearest part of the course.
 Everything else on the map (grid, outlines, rings, labels, the key in the top-left corner) is only a guide and is ignored."""
 import json
 import os
@@ -78,7 +78,7 @@ def main():
         d.text((x - 30, y - 30), str(h['ref']), fill=(160, 0, 0, 255), font=f2, anchor='mm')
     d.rectangle(KEY_BOX, fill=(0, 0, 0, 190))
     for i, (col, t) in enumerate([((255, 0, 255), 'MAGENTA: fill each tee box'), ((255, 255, 0), 'YELLOW dot: the played (gold) tee'),
-                                  ((128, 0, 255), 'PURPLE rectangle: the entrance sign + bed'), ((0, 0, 255), 'BLUE strip: the side facing the road')]):
+                                  ((128, 0, 255), 'PURPLE rectangle: the entrance sign + bed'), ((0, 0, 255), 'BLUE strip: the lettering side')]):
         y = 76 + 40 * i
         d.rectangle([76, y, 116, y + 28], fill=col + (255,))
         d.text((132, y + 14), t, fill=(255, 255, 255, 255), font=f1, anchor='lm')

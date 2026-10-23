@@ -173,16 +173,35 @@ def point_at_remaining(L, D):
     return Point(x0 - (x1 - x0) / l * -s, y0 - (y1 - y0) / l * -s)
 
 
-def snap_to_tee(p, tees, max_d=14):
-    best = min(tees, key=lambda t: t.distance(p))
-    if best.distance(p) > max_d:
-        return p, False
-    if best.contains(p):
-        return p, True
-    # the nearest point well inside the box
-    inner = best.buffer(-1) if best.buffer(-1).area > 4 else best
+def snap_to_tee(p, tees, L=None, hw=2.6, max_d=40, min_hw=.8):
+    """Move a tee-set position into a tee box so that the two markers beside it (hw m either side, square to the line to the green)
+    are inside the box too: the nearest box to p that is close to the hole line, and in it the nearest point whose markers sit at least
+    .4 m inside. A box too narrow for the gap gets a smaller gap (down to min_hw). Returns the point and the marker half-gap used."""
     from shapely.ops import nearest_points
-    return nearest_points(inner, p)[0], True
+    cand = [t for t in tees if t.distance(p) <= max_d and (L is None or t.distance(L) < 25)] or tees
+    best = min(cand, key=lambda t: t.distance(p))
+    tgt = Point(L.coords[-1]) if L is not None else None
+    core = best.buffer(-.4)
+
+    def fits(q, w):
+        if tgt is None:
+            return core.contains(q)
+        dx, dy = tgt.x - q.x, tgt.y - q.y
+        dl = math.hypot(dx, dy) or 1
+        ox, oy = -dy / dl * w, dx / dl * w
+        return core.contains(q) and core.contains(Point(q.x + ox, q.y + oy)) and core.contains(Point(q.x - ox, q.y - oy))
+    x0, y0, x1, y1 = best.bounds
+    grid = [Point(x, y) for x in np.arange(x0, x1, .25) for y in np.arange(y0, y1, .25)]
+    w = hw
+    while w >= min_hw - 1e-9:
+        if fits(p, w):
+            return p, w
+        ok = [q for q in grid if fits(q, w)]
+        if ok:
+            return min(ok, key=lambda q: q.distance(p)), w
+        w -= .2
+    inner = best.buffer(-.5) if best.buffer(-.5).area > 1 else best
+    return nearest_points(inner, p)[0], min_hw
 
 
 def describe(h, demZ1, greens_near, F, fair):
@@ -241,13 +260,20 @@ def build_holes(F, demZ1):
         c = list(L.coords)
         c[-1] = (gc.x, gc.y)
         L = LineString(c)
-        pos = {}
+        pos, gap = {}, {}
         for k in ('gold', 'black', 'silver', 'bronze'):
             yd = card.TEES[k][2][i]
-            p, ok = snap_to_tee(point_at_remaining(L, yd * YD), tees)
+            raw = point_at_remaining(L, yd * YD)
+            p, gap[k] = snap_to_tee(raw, tees, L)
+            if p.distance(raw) > 8:
+                print(f'  hole {hh["ref"]} {k}: {yd} yd is {p.distance(raw):.0f} m from the nearest tee box; placed in the box')
             pos[k] = (round(p.x, 2), round(p.y, 2))
         if i in starts:
             pos['gold'] = starts[i]
+            q, gap['gold'] = snap_to_tee(Point(starts[i]), tees, L, marks[str(hh['ref'])]['half'] if str(hh['ref']) in marks else 2.6)
+            if q.distance(Point(starts[i])) > .05:
+                print(f'  hole {hh["ref"]}: the painted start moved {q.distance(Point(starts[i])):.1f} m to keep its markers inside the tee box')
+            pos['gold'] = (round(q.x, 2), round(q.y, 2))
         tee = pos['gold']
         # the line of play starts at the played (gold) tee
         s = L.project(Point(tee))
@@ -257,8 +283,7 @@ def build_holes(F, demZ1):
                  lens=[round(card.TEES[k][2][i] * YD, 1) for k in ('gold', 'black', 'silver', 'bronze')],
                  tee=list(tee), green=[round(gc.x, 2), round(gc.y, 2)], line=[list(p) for p in line],
                  mk={'w': list(pos['gold']), 'y': list(pos['black']), 'b': list(pos['silver']), 'r': list(pos['bronze'])})
-        if str(hh['ref']) in marks:
-            h['mkw'] = marks[str(hh['ref'])]['half']
+        h['mkh'] = {'w': round(gap['gold'], 2) if 'gold' in gap else 2.6, 'y': round(gap['black'], 2), 'b': round(gap['silver'], 2), 'r': round(gap['bronze'], 2)}   # the half-gap between a set's two markers: as wide as its box allows, up to 2.6 m
         h['desc'] = describe(dict(tee=tee, green=(gc.x, gc.y), L=LineString(line), par=h['par']), demZ1, None, F, None)
         h['_green_poly'] = g
         out.append(h)
