@@ -3929,10 +3929,10 @@ function noiseBurst(d, vol, freq, q, delay) {
   const g = a.createGain(); g.gain.value = vol || .2; s.connect(f).connect(g).connect(a.destination); s.start(t);
 }
 // ---- background songs: a hole can have its own song (sounds/*.mp3, made by tools/course/sounds_trim.py) ----
-// It starts `delay` seconds after the fly-over ends (the tap on Play Hole), loops, plays at `vol` (0-1), and fades out when the next hole
+// It starts `delay` seconds after the fly-over ends (the tap on Play Hole), loops, plays at `vol` (0-1; 1 because the level is baked into the file by sounds_trim.py: a phone browser may ignore a software volume), and fades out when the next hole
 // starts or the round ends. The file is fetched into a blob (works offline through sw.js and avoids range requests, which Safari
 // refuses from a service worker) and played through the Web Audio graph, because iOS ignores an audio element's own volume.
-const HOLE_SONGS = { 6: { src: 'sounds/hole7.mp3', vol: .2, delay: 3 } }; // hole index (6 = hole 7)
+const HOLE_SONGS = { 6: { src: 'sounds/hole7.mp3', vol: 1, delay: 3 } }; // hole index (6 = hole 7)
 const SONG = { hole: -1, el: null, ctx: null, gain: null, blob: null, fetching: false, srcSet: false, unlocked: false, armed: false, armAt: 0, on: false, chk: 0, pos: 0, tok: 0 };
 const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
 function songEl(a) {

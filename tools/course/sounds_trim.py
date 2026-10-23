@@ -4,7 +4,7 @@ above -48 dB of its peak; end: where the 5 ms envelope has dropped 60 dB below t
   out/sounds/Driver.m4a -> sounds/driver.mp3    3-wood.m4a -> wood.mp3    Irons.m4a -> iron.mp3 (Iron.m4a is a duplicate)
   Wedges.m4a -> wedge.mp3    Putter.m4a -> putter.mp3    Ball_in_hole.m4a -> cup.mp3
 Music: out/sounds/Hole_7_background_music.m4a -> sounds/hole7.mp3, mono at 80 kbps, the silence before and after cut (the last second
-holds the song's closing hit), a short fade at the end, peak at -1.5 dBFS; the game plays it at 60 % (HOLE_SONGS in index.html).
+holds the song's closing hit), a short fade at the end, the playing level is baked into the file (MUSIC_PEAK_DB), so it is quiet even where the browser ignores the game's volume setting (HOLE_SONGS vol is 1).
 Rerun after replacing a recording; commit sounds/ (the game loads it, sw.js caches it)."""
 import os
 import sys
@@ -15,6 +15,7 @@ import numpy as np
 from common import OUT, HERE
 
 SR = 48000
+MUSIC_PEAK_DB = -15.5   # the song's loudest peak: -1.5 dBFS at full scale, 14 dB (a factor of .2) down
 MAP = {'Driver': 'driver', '3-wood': 'wood', 'Irons': 'iron', 'Wedges': 'wedge', 'Putter': 'putter', 'Ball_in_hole': 'cup'}
 DEST = os.path.join(os.path.dirname(os.path.dirname(HERE)) if os.path.basename(HERE) == 'course' else HERE, 'sounds')
 
@@ -43,7 +44,7 @@ def trim_music(x, lead=.05, tail=.4):
     on = np.nonzero(env > env.max() * 10 ** (-45 / 20))[0]
     a = max(0, int(on[0]) - int(lead * SR)); b = min(len(x), int(on[-1]) + int(tail * SR))
     y = x[a:b].copy(); f = int(.3 * SR); y[-f:] *= np.linspace(1, 0, f) ** 2
-    return y / np.abs(y).max() * 10 ** (-1.5 / 20), a / SR, b / SR
+    return y / np.abs(y).max() * 10 ** (MUSIC_PEAK_DB / 20), a / SR, b / SR
 
 
 def write(y, path, kbps=96):
