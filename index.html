@@ -3657,6 +3657,65 @@ function makeGopher(L) {
   };
   return e;
 }
+/* --- a giant dancing hot dog (hole 10 only): about 100 yd down the line from the tee it sidesteps back and forth across the fairway, facing the golfer, bouncing,
+   swaying and waving its arms to a beat (HOTDOG_BPM). A ball can hit it. --- */
+const HOTDOG_HOLE = 9, HOTDOG_YD = 100, HOTDOG_BPM = 128;
+function makeHotDog(L) {
+  const mat = LIFE_MAT(), g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const wiener = 0xc0482c, bun = 0xe4b866, mustard = 0xf0cf1e, glove = 0xf7f7f2, shoe = 0xd23a2a, stick = 0x2a2a2e;
+  const P = [lsp(.74, 1.55, .72, 0, 2.5, 0, wiener, 10), lsp(.46, 1.45, .42, -.62, 2.5, -.12, bun, 9), lsp(.46, 1.45, .42, .62, 2.5, -.12, bun, 9)]; // the sausage in its bun
+  for (let i = 0; i < 9; i++) P.push(lsp(.13, .1, .05, (i % 2 ? .22 : -.22), 1.55 + i * .22, .7, mustard, 5));                                          // the mustard zigzag
+  P.push(lsp(.15, .2, .08, -.28, 3.2, .62, 0xffffff, 6), lsp(.15, .2, .08, .28, 3.2, .62, 0xffffff, 6), lsp(.07, .1, .05, -.28, 3.18, .68, 0x111111, 5), lsp(.07, .1, .05, .28, 3.18, .68, 0x111111, 5)); // eyes
+  for (let i = -3; i <= 3; i++) P.push(lsp(.07, .05, .04, i * .09, 2.78 + (i * i) * .018, .68, 0x2a1210, 4));                                          // a wide smile
+  body.add(lmesh(mergeParts(P), mat));
+  const limb = (x, y, len, cx, ang, col, tipCol, tip) => {   // a stick limb hanging from a pivot, with a glove or a shoe on the end
+    const pv = new THREE.Group(); pv.position.set(x, y, 0); body.add(pv);
+    pv.add(lmesh(mergeParts([lbx(.13, len, .13, 0, -len / 2, 0, col), tip === 'shoe' ? lsp(.3, .15, .46, 0, -len - .02, .14, tipCol, 7) : lsp(.22, .22, .22, 0, -len - .08, 0, tipCol, 7)]), mat)); return pv;
+  };
+  const armL = limb(-.98, 3.15, 1.2, 0, 0, stick, glove, 'glove'), armR = limb(.98, 3.15, 1.2, 0, 0, stick, glove, 'glove');
+  const legL = limb(-.4, 1.0, 1.0, 0, 0, stick, shoe, 'shoe'), legR = limb(.4, 1.0, 1.0, 0, 0, stick, shoe, 'shoe');
+  g.visible = false; L.grp.add(g);
+  const e = { kind: 'hotdog', mat, g, st: 'wait', x: 0, y: 0, z: 0, yaw: 0, r: 1.1, tl: 0, ready: false, ax: 0, az: 0, px: 0, pz: 0, lo: -10, hi: 10, reel: 0 };
+  const gy = () => groundY(e.x, e.z);
+  e.hit = (x, y, z) => {
+    if (e.st !== 'on') return null; const g0 = gy(), dx = x - e.x, dz = z - e.z, d = Math.hypot(dx, dz);
+    if (d > e.r + .2 || y < g0 - .05 || y > g0 + 4.4) return null; const l = d || 1; return { nx: dx / l, ny: .35, nz: dz / l };
+  };
+  e.onHit = () => { e.reel = 1.4; };
+  e.init = () => {   // the spot 100 yd down the line from the tee, and how far the fairway lets it dance to each side
+    const t = L.C.def.tee, cup = L.C.cup, tx = t.x, tz = -t.f; let dx = cup.x - tx, dz = cup.z - tz; const dl = Math.hypot(dx, dz) || 1; dx /= dl; dz /= dl;
+    e.ax = dx; e.az = dz; const nx = -dz, nz = dx; let best = null;
+    const onFw = (x, z) => { const sf = L.C.surf(x, z); return (sf === S.FAIR || sf === S.FIRST) && lifeWalkable(L, x, z); };   // it dances on the fairway (and its first cut), never in the rough
+    for (let d = 0; d <= 40; d += 2) for (const sg of d ? [1, -1] : [1]) for (let la = 0; la <= 36; la += 3) for (const ls of la ? [1, -1] : [1]) {   // the fairway spot nearest 100 yd out (the fairway may bend, so look around the line too)
+      const dd = HOTDOG_YD * .9144 + d * sg, lt = la * ls, cx = tx + dx * dd + nx * lt, cz = tz + dz * dd + nz * lt; if (!onFw(cx, cz)) continue;
+      const sc = d + .35 * la; if (!best || sc < best[2]) best = [cx, cz, sc];
+    }
+    if (!best) return false;
+    e.px = best[0]; e.pz = best[1]; let ex = e.px - tx, ez = e.pz - tz; const el = Math.hypot(ex, ez) || 1; e.ax = ex / el; e.az = ez / el; e.nx = -e.az; e.nz = e.ax;   // it dances across the line from the tee to it
+    const nx2 = e.nx, nz2 = e.nz;
+    let lo = 0, hi = 0; while (lo > -26 && onFw(e.px + nx2 * (lo - 1), e.pz + nz2 * (lo - 1))) lo--; while (hi < 26 && onFw(e.px + nx2 * (hi + 1), e.pz + nz2 * (hi + 1))) hi++;
+    e.lo = lo + 2; e.hi = hi - 2; if (e.hi - e.lo < 6) { e.lo = Math.min(e.lo, -3); e.hi = Math.max(e.hi, 3); }
+    e.ready = true; return true;
+  };
+  e.update = dt => {
+    if (G.hole !== HOTDOG_HOLE || G.state === 'title') { e.st = 'wait'; return; }
+    if (!e.ready && !e.init()) { e.st = 'wait'; return; }
+    if (e.st === 'wait') { e.st = 'on'; e.tl = Math.random() * 30; }
+    e.tl += dt; const tl = e.tl, ph = tl * HOTDOG_BPM / 60 * Math.PI;   // ph: a half step (one beat = 2 * PI)
+    const mid = (e.lo + e.hi) / 2, amp = (e.hi - e.lo) / 2, lat = mid + amp * Math.sin(tl * .32);   // a slow sidestep across the fairway and back
+    e.x = e.px + e.nx * lat; e.z = e.pz + e.nz * lat;
+    const want = Math.atan2(W.cam.position.x - e.x, W.cam.position.z - e.z); let yaw = want;
+    if (e.reel > 0) { e.reel -= dt; yaw += (1 - e.reel / 1.4) * Math.PI * 4; }   // a spin when hit
+    const bounce = Math.abs(Math.sin(ph)) * (.34 + (e.reel > 0 ? .5 : 0));
+    g.position.set(e.x, gy(), e.z); g.rotation.set(0, yaw + Math.sin(ph * .5) * .35, 0);
+    body.position.y = bounce; body.rotation.z = Math.sin(ph) * .12; body.rotation.x = Math.sin(ph * 2) * .04;
+    armL.rotation.z = -(1.9 + Math.sin(ph) * .9); armR.rotation.z = 1.9 + Math.sin(ph + Math.PI * .5) * .9;       // both arms up, waving out of step
+    armL.rotation.x = Math.sin(ph * 2) * .3; armR.rotation.x = Math.sin(ph * 2 + 1.5) * .3;
+    legL.rotation.x = Math.max(0, Math.sin(ph)) * .9; legR.rotation.x = Math.max(0, -Math.sin(ph)) * .9;        // alternate kicks
+    legL.rotation.z = -Math.abs(Math.sin(ph * .5)) * .25; legR.rotation.z = Math.abs(Math.sin(ph * .5 + 1)) * .25;
+  };
+  return e;
+}
 /* --- a hot air balloon drifting across the sky with the wind (red, white and orange; the ball cannot hit it). As rare as the paraglider --- */
 function makeBalloon(L) {
   const mat = LIFE_MAT(), g = new THREE.Group(), R = 9, cols = [0xf08a24, 0xf7d23a, 0x2f6fbf, 0xf7f3ea], N = 12, parts = [];
@@ -3810,6 +3869,7 @@ function buildLife(C, grp) {
     L.ents.push(makeTurkey(L, true), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false)); // a tom and four hens, each on its own random timer
     initBirds(L, grp);
     L.plane = makePlane(L); L.gopher = makeGopher(L); L.balloon = makeBalloon(L); L.ents.push(L.plane, L.gopher, L.balloon);
+    if (G.hole === HOTDOG_HOLE) L.ents.push(makeHotDog(L));
     if (GC.hw) { const cg = carGeo(), sg = santaFeGeo(); L.traffic = [makeVehicle(L, 'car', cg, [2, 8], [6, 19]), makeVehicle(L, 'car', cg, [10, 16], [6, 19]), makeVehicle(L, 'car', sg, [4, 10], [6, 19]), makeVehicle(L, 'car', sg, [12, 16], [6, 19]), makeVehicle(L, 'truck', truckGeos(), [8, 25], [20, 40])]; L.ents.push(...L.traffic); } else L.traffic = [];
     if (PARAGLIDER_ON) { L.glider = makeGlider(L); L.ents.push(L.glider); }
   } catch (e) { console.error('life', e); W.life = null; }
@@ -3868,9 +3928,9 @@ function deflectShot(sh, tt, hit) {
 }
 function lifeHitNote(hit) {
   const e = hit.e, bd = hit.h.bird, k = bd ? 'bird' : e ? e.kind : '';
-  const txt = { turkey: 'Clipped a turkey!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!', gopher: 'A menace to the golfing industry...' }[k];
+  const txt = { turkey: 'Clipped a turkey!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!', gopher: 'A menace to the golfing industry...', hotdog: 'You hit the hot dog!' }[k];
   if (txt) readoutNote(txt, 'bad');
-  try { if (k === 'plane' || k === 'glider') SFX.trunk(); else if (k === 'turkey') SFX.gobble(); else if (k === 'gopher') SFX.squeak(); else SFX.leaves(); } catch (er) { }
+  try { if (k === 'plane' || k === 'glider') SFX.trunk(); else if (k === 'turkey') SFX.gobble(); else if (k === 'gopher' || k === 'hotdog') SFX.squeak(); else SFX.leaves(); } catch (er) { }
   if (bd) { bd.st = 'hit'; bd.t = 0; const n = hit.h; bd.hitV = [-n.nx * 3 + (Math.random() - .5) * 2, 3, -n.nz * 3 + (Math.random() - .5) * 2]; }
   else if (e && e.onHit) e.onHit();
 }
