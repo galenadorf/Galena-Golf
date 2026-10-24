@@ -432,7 +432,8 @@ def main():
     fair = [shape(g) for g in json.load(open(fp0 if os.path.exists(fp0) else os.path.join(OUT, 'fairways.json')))]
     fair, rep = link_fairways(fair, F)
     print('fairway -> green links (hole, gap m, area added m2):', rep)
-    paths = []  # cart paths removed on purpose (trace.py's paths.json was only fragments)
+    cp = os.path.join(OUT, 'cartpaths.json')   # the cart paths: found on the aerial and corrected by hand (cartpaths_edit.py, cartpaths_read.py); trace.py's paths.json was only fragments
+    paths = [shape(g) for g in json.load(open(cp))] if os.path.exists(cp) else []
     course = F['course'][0]['poly']
     dem, demZ = build_dem()
     d1, tr1 = read(cache('dem1m.tif'))
