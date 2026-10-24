@@ -5370,8 +5370,9 @@ function restsOnGreen(r) {
 }
 function finishShot() {
   const sh = G.shot, r = sh.res, C = G.C, h = G.hole, par = C.def.par, first = G.strokes === 1;
-  document.body.classList.remove('flight'); if (r.cup) C.cup = r.cup; statsShot(sh, r);
-  if (G.pg) { pgFinish(r); return; }
+  document.body.classList.remove('flight'); if (r.cup) C.cup = r.cup;
+  if (G.pg) { pgFinish(r); return; }   // the practice green keeps no stats, records or awards
+  statsShot(sh, r);
   if (r.holed) {
     G.state = 'holed'; G.holedT = 0; G.scores[h] = G.strokes;
     if (G.gir[h] == null) G.gir[h] = G.strokes - 1 <= par - 2;
