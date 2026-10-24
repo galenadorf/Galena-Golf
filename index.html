@@ -2753,6 +2753,7 @@ function initThree() {
   [r1, r2, r3].forEach(m => { m.rotation.x = -Math.PI / 2; m.material.depthTest = false; m.renderOrder = 6; W.ring.add(m); }); W.ringPulse = r1; scene.add(W.ring);
   initParticles();
   window.addEventListener('resize', onResize); onResize();
+  window.addEventListener('orientationchange', () => [150, 500, 1200].forEach(ms => setTimeout(onResize, ms))); // the rotated layout settles after the event
 }
 
 /* ---------- particles ---------- */
@@ -4955,6 +4956,7 @@ function strikeNow() {
   return { h: -settings.hand * px / f.hw, v: -py / f.hh, px, py, x: d.x, y: d.y, loose: !!d.loose };
 }
 function impact(tImp) {
+  measureFace();
   const Tb = Math.max(.05, (SW.tTop - SW.t0) / 1000), Td = Math.max(.03, (tImp - SW.tTop) / 1000);
   const st = strikeNow();
   SW.phase = 'done'; SW.mark = { x: st.x, y: st.y }; SW.resultT = performance.now(); SW.impactT = performance.now();
@@ -5366,6 +5368,14 @@ function sizeCanvases() {
   const R = rs.width / 2 - 5; UI.R = R;
   const c = CLUBS[G.club] || CLUBS[0];
   UI.face = faceFor(c, R);
+}
+// Where the dial is on screen right now. iOS fires resize/orientationchange before the rotated layout has settled, so the numbers cached by sizeCanvases
+// can be the portrait ones: the dot (which follows the thumb) is then measured against the wrong face and every strike reads far too high. Called again
+// whenever a touch or a strike depends on it; a changed dial size redoes the canvases.
+function measureFace() {
+  const cv = $('strikeCv'); if (!cv) return; const rs = cv.getBoundingClientRect(); if (!rs.width) return;
+  if (Math.abs(rs.width - UI.sw) > .5) { sizeCanvases(); return; }
+  UI.faceCX = rs.left + rs.width / 2; UI.faceCY = rs.top + rs.width / 2;
 }
 // the viewport height (kept as one function so every screen-space calculation agrees)
 function VH() { return window.innerHeight; }
@@ -6503,7 +6513,7 @@ function initInput() {
     const tg = e.target;
     if (tg && tg.closest && tg.closest('button, .sheet, .layer.on, #scrim, #mpPanel, #specBar')) return;
     if (!canSwing()) return;
-    audio();
+    audio(); measureFace();
     const x = e.clientX, y = e.clientY;
     const left = swingSide(x); // the swing (tempo) thumb's side
     if (left ? y > zoneY() : y > strikeTop()) {
