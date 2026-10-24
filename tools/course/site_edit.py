@@ -7,6 +7,9 @@ Paint SOLID colours on a copy, saved as out/site_mask.png (hard edges, no anti-a
                    (touching it). With no strip the doors face the nearest tee box.
   ORANGE  #FF8000  a porta-potty: a small solid blob (3-4 px square is enough; it is always drawn 1.25 m square). Its door faces
                    the nearest tee box.
+  VIOLET  #8000FF  the parking lot: fill its whole paved area (any shape, one or more blobs). The game draws asphalt with parking stalls
+                   there and parks 8 cars in it (site_paint.py lays out the stalls and picks the spots). The OSM outline of the lot is drawn
+                   in violet as a starting guide.
   YELLOW  #FFFF00  a signpost: one small solid dot, 3-4 px, in the ground at the spot. The board faces the nearest tee box. Its
                    message comes from out/signs.txt (see site_paint.py); a dot whose nearest hole has no line there
                    is not shown.
@@ -22,7 +25,15 @@ from common import OUT
 from preview import E0, N1, load_rgb
 
 YD = .9144
-KEY = [((0, 255, 255), 'washroom: fill the footprint'), ((0, 0, 255), 'door side (optional): a thin strip'), ((255, 128, 0), 'porta-potty: small blob'), ((255, 255, 0), 'signpost: small dot')]
+KEY = [((0, 255, 255), 'washroom: fill the footprint'), ((0, 0, 255), 'door side (optional): a thin strip'), ((255, 128, 0), 'porta-potty: small blob'), ((255, 255, 0), 'signpost: small dot'), ((128, 0, 255), 'parking lot: fill the paved area')]
+
+
+def parking():
+    """The OSM amenity=parking outlines, as lists of (e, n) in the local frame."""
+    from common import CACHE, to_local
+    d = json.load(open(os.path.join(CACHE, 'osm.json')))
+    nodes = {e['id']: e for e in d['elements'] if e['type'] == 'node'}
+    return [[to_local(nodes[n]['lon'], nodes[n]['lat']) for n in e['nodes']] for e in d['elements'] if e['type'] == 'way' and e.get('tags', {}).get('amenity') == 'parking']
 
 
 def main(pad=40):
@@ -51,6 +62,8 @@ def main(pad=40):
     for k, col in (('tee', (255, 150, 255, 255)), ('green', (255, 255, 255, 255)), ('building', (255, 255, 255, 255))):
         for f in F.get(k, []):
             outline(f['poly'], col)
+    for q in parking():   # the OSM outline of the parking lot, as a guide
+        d.line([px(*c) for c in q], fill=(128, 0, 255, 255), width=1)
     f2 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 20)
     for h in F['hole']:
         x, y = px(*h['line'].coords[0])

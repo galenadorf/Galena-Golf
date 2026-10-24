@@ -18,7 +18,7 @@ Python venv `~/.venvs/galena` (numpy, scipy, rasterio, pyproj, shapely, pillow, 
 | bunkers | `bunkers_edit.py` | `bunkers_mask.png` | `bunkers_paint.py` → `bunkers_painted.json` | orange `#FF8000` |
 | trees | `trees_edit.py` | `trees_mask.png` | `trees_paint.py` → `trees_painted.json` | orange broadleaf, blue `#0080FF` conifer, magenta shrub |
 | creek | `creek_edit.py` | `creek_mask.png` | `creek_paint.py` → `creek_painted.json` | blue `#0000FF` |
-| site props | `site_edit.py` | `site_mask.png` + `signs.txt` | `site_paint.py` → `site_props.json` | cyan washroom, blue door strip, orange porta-potty, yellow sign |
+| site props | `site_edit.py` | `site_mask.png` + `signs.txt` | `site_paint.py` → `site_props.json` | cyan washroom, blue door strip, orange porta-potty, yellow sign, violet `#8000FF` parking lot (the OSM outline is drawn as a guide; `lot_rows` lays out the stalls along the nearest building and parks `CARS` = 8 cars, seeded, in `CAR_LOOKS` models and colours) |
 | tee boxes + entrance sign + shed | `paint_edit.py` (whole course and US 20, 4 px per metre) | `paint_mask.png` | `paint_read.py` → `tees_painted.json` (every box must be painted; `--keep` keeps unpainted ones), `tee_starts.json`, `paint_props.json` (site_paint.py adds it to `site_props.json`) | magenta tee boxes, yellow played-tee dots, purple rectangle (entrance sign + flower bed), optional blue strip on its lettering side (default: facing the course), orange rectangle = a shed (pump house) |
 | tee boxes, whole course (shelved) | `tee_boxes_edit.py` | `tee_boxes_mask.png` | `tee_boxes_paint.py` → `tees_painted.json`, `tee_starts.json` | magenta boxes, yellow start dots |
 
