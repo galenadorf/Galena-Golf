@@ -3659,7 +3659,7 @@ function makeGopher(L) {
 }
 /* --- a giant dancing hot dog (hole 10 only): about 100 yd down the line from the tee it sidesteps back and forth across the fairway, facing the golfer, bouncing,
    swaying and waving its arms to a beat (HOTDOG_BPM). A ball can hit it. --- */
-const HOTDOG_HOLE = 9, HOTDOG_YD = 100, HOTDOG_BPM = 128;
+const HOTDOG_HOLE = 9, HOTDOG_YD = 100, HOTDOG_BPM = 128, HOTDOG_K = 10 * .3048 / 4.05;   // the model is 4.05 m to the top of the sausage: scaled to 10 ft
 function makeHotDog(L) {
   const mat = LIFE_MAT(), g = new THREE.Group(), body = new THREE.Group(); g.add(body);
   const wiener = 0xc0482c, bun = 0xe4b866, mustard = 0xf0cf1e, glove = 0xf7f7f2, shoe = 0xd23a2a, stick = 0x2a2a2e;
@@ -3674,12 +3674,12 @@ function makeHotDog(L) {
   };
   const armL = limb(-.98, 3.15, 1.2, 0, 0, stick, glove, 'glove'), armR = limb(.98, 3.15, 1.2, 0, 0, stick, glove, 'glove');
   const legL = limb(-.4, 1.0, 1.0, 0, 0, stick, shoe, 'shoe'), legR = limb(.4, 1.0, 1.0, 0, 0, stick, shoe, 'shoe');
-  g.visible = false; L.grp.add(g);
-  const e = { kind: 'hotdog', mat, g, st: 'wait', x: 0, y: 0, z: 0, yaw: 0, r: 1.1, tl: 0, ready: false, ax: 0, az: 0, px: 0, pz: 0, lo: -10, hi: 10, reel: 0 };
+  g.scale.setScalar(HOTDOG_K); g.visible = false; L.grp.add(g);
+  const e = { kind: 'hotdog', mat, g, st: 'wait', x: 0, y: 0, z: 0, yaw: 0, r: 1.1 * HOTDOG_K, tl: 0, ready: false, ax: 0, az: 0, px: 0, pz: 0, lo: -10, hi: 10, reel: 0 };
   const gy = () => groundY(e.x, e.z);
   e.hit = (x, y, z) => {
     if (e.st !== 'on') return null; const g0 = gy(), dx = x - e.x, dz = z - e.z, d = Math.hypot(dx, dz);
-    if (d > e.r + .2 || y < g0 - .05 || y > g0 + 4.4) return null; const l = d || 1; return { nx: dx / l, ny: .35, nz: dz / l };
+    if (d > e.r + .2 || y < g0 - .05 || y > g0 + 4.4 * HOTDOG_K) return null; const l = d || 1; return { nx: dx / l, ny: .35, nz: dz / l };
   };
   e.onHit = () => { e.reel = 1.4; };
   e.init = () => {   // the spot 100 yd down the line from the tee, and how far the fairway lets it dance to each side
@@ -3928,7 +3928,7 @@ function deflectShot(sh, tt, hit) {
 }
 function lifeHitNote(hit) {
   const e = hit.e, bd = hit.h.bird, k = bd ? 'bird' : e ? e.kind : '';
-  const txt = { turkey: 'Clipped a turkey!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!', gopher: 'A menace to the golfing industry...', hotdog: 'You hit the hot dog!' }[k];
+  const txt = { turkey: 'Clipped a turkey!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!', gopher: 'A menace to the golfing industry...', hotdog: 'You hit the choker!' }[k];
   if (txt) readoutNote(txt, 'bad');
   try { if (k === 'plane' || k === 'glider') SFX.trunk(); else if (k === 'turkey') SFX.gobble(); else if (k === 'gopher' || k === 'hotdog') SFX.squeak(); else SFX.leaves(); } catch (er) { }
   if (bd) { bd.st = 'hit'; bd.t = 0; const n = hit.h; bd.hitV = [-n.nx * 3 + (Math.random() - .5) * 2, 3, -n.nz * 3 + (Math.random() - .5) * 2]; }
