@@ -271,6 +271,7 @@ body:has(#menuSheet.on) #tempo,body:has(#menuSheet.on) #strike,body:has(#menuShe
 .hbhBar .e{background:#3f6fb5;color:#fff}.hbhBar .b{background:#7aa3d6;color:#fff}.hbhBar .p{background:#fff}.hbhBar .g{background:#f8d9c9}.hbhBar .d{background:#f0a07c}.hbhNone{color:var(--ink3);font:600 13px var(--cond);text-align:center;width:100%;align-self:center}
 .stRow{display:flex;justify-content:space-between;align-items:center;font:600 15px var(--cond);text-transform:uppercase;padding:6px 0;border-bottom:1px solid var(--hair)}.stRow span:first-child{color:var(--ink3);letter-spacing:.08em;font-size:12px}
 .mpRoom{display:flex;gap:6px;flex:1;justify-content:flex-end}.mpRoom input{max-width:120px}
+.mpb:active{transform:scale(.95);filter:brightness(1.2)}.mpb:disabled{opacity:.7}#pidChk.ok{background:#2f9e44!important}#pidChk.bad{background:#c0392b!important}
 .mpb{height:38px;padding:0 14px;border-radius:12px;background:#2f6b35;color:#fff;font:600 15px var(--cond);text-transform:uppercase;letter-spacing:.05em;border:0}
 .mpList{display:flex;flex-direction:column;gap:5px;margin-bottom:6px}.mpList .empty{font:500 13px var(--sans,system-ui);color:var(--ink3);padding:2px 4px}
 .mpLr{display:flex;align-items:center;gap:8px;background:var(--soft);border-radius:14px;padding:6px 6px 6px 12px;font:600 15px var(--cond);text-transform:uppercase}
@@ -6243,8 +6244,9 @@ function pidInit() {
 }
 const pidRequest = () => 'GG1-' + btoa(JSON.stringify({ v: 1, k: PID.pub, l: PID.label })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 // asks the roster whether this device's key is in it (at most every 10 minutes unless forced); offline, the last answer stands
-async function pidSync(force) {
-  await pidInit(); if (!PID.key) { pidUi(); return; }
+async function pidSync(force) { // resolves to 'reg', 'guest' (the roster answered, this key is not in it), 'fail' (no answer), 'skip' (asked recently) or 'none' (no key)
+  await pidInit(); if (!PID.key) { pidUi(); return 'none'; }
+  let res = 'skip';
   if (force || !PID.at || Date.now() - PID.at > 6e5) {
     PID.at = Date.now();
     try {
@@ -6253,9 +6255,20 @@ async function pidSync(force) {
       PID.reg = me ? { pid: String(me.id), name: cleanName(me.name) || 'Player', pub: PID.pub, label: String(me.keys.find(k => k.k === PID.pub).label || '') } : null;
       try { if (PID.reg) localStorage.setItem('ssg-reg', JSON.stringify(PID.reg)); else localStorage.removeItem('ssg-reg'); } catch (e) { }
       if (PID.reg && settings.name !== PID.reg.name) { settings.name = PID.reg.name; saveSettings(); }
-    } catch (e) { }
+      res = PID.reg ? 'reg' : 'guest';
+    } catch (e) { res = 'fail'; }
   }
   pidUi(); try { syncMenu(); showBest(); updateHUD(); } catch (e) { }
+  return res;
+}
+// "Check now": the button says Checking..., then shows the answer for a moment
+async function pidCheck() {
+  const btn = $('pidChk'); if (btn.disabled) return;
+  btn.disabled = true; btn.textContent = 'Checking\u2026';
+  const res = await pidSync(true).catch(() => 'fail');
+  btn.textContent = res === 'reg' ? '\u2713 Registered' : res === 'guest' ? '\u2717 Not approved yet' : res === 'fail' ? "\u2717 Can't reach server" : '\u2717 Not available';
+  btn.classList.add(res === 'reg' ? 'ok' : 'bad'); SFX.blip();
+  setTimeout(() => { btn.textContent = 'Check now'; btn.classList.remove('ok', 'bad'); btn.disabled = false; }, 2500);
 }
 function pidUi() {
   const st = $('pidState'), tx = $('pidTxt'), rq = $('pidReq'); if (!st || !tx) return;
@@ -6612,7 +6625,7 @@ function initInput() {
   document.querySelectorAll('#segRev button').forEach(b => b.onclick = () => { settings.reverse = +b.dataset.v === 1; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segHand button').forEach(b => b.onclick = () => { settings.hand = +b.dataset.v; saveSettings(); syncMenu(); if (G.C) { G.carryKey = ''; updateAim(true); } });
   document.querySelectorAll('#segSnd button').forEach(b => b.onclick = () => { settings.sound = b.dataset.v === '1'; saveSettings(); syncMenu(); musicTick(); });
-  $('pidSend').onclick = pidSend; $('pidReq').onclick = pidCopy; $('pidChk').onclick = () => pidSync(true);
+  $('pidSend').onclick = pidSend; $('pidReq').onclick = pidCopy; $('pidChk').onclick = pidCheck;
   document.querySelectorAll('#segSong button').forEach(b => b.onclick = () => { settings.song = +b.dataset.v; saveSettings(); syncMenu(); songLevelApply(); });
   document.querySelectorAll('#segZoom button').forEach(b => b.onclick = () => { settings.zoom = b.dataset.v === '1'; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segDrama button').forEach(b => b.onclick = () => { settings.drama = b.dataset.v === '1'; saveSettings(); syncMenu(); });
