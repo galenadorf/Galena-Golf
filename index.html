@@ -3898,7 +3898,7 @@ function loadSounds(a) {
     try { fetch('sounds/' + k + '.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(buf => { if (buf) a.decodeAudioData(buf, b => { SND['s_' + k] = b; }, () => { }); }).catch(() => { }); } catch (e) { }
   }
 }
-const SND_FILES = ['driver', 'wood', 'iron', 'wedge', 'putter', 'cup'];
+const SND_FILES = ['driver', 'wood', 'iron', 'wedge', 'putter', 'cup', 'fart1', 'fart2', 'fart3', 'fart4', 'fart5', 'fart6', 'fart7', 'fart8'];
 function play(name, rate, vol, lp, delay) {
   if (!settings.sound || !SND[name]) return false; const a = audio(); if (!a) return false;
   const s = a.createBufferSource(); s.buffer = SND[name]; s.playbackRate.value = rate || 1; const g = a.createGain(); g.gain.value = vol == null ? 1 : vol; let n = s;
@@ -4004,6 +4004,17 @@ function songTick(now, force) {
   if (!d || G.state === 'title' || G.hole !== SONG.hole) { songStop(true); return; }
   const want = SONG.armed && settings.sound && !document.hidden;
   if (want && !SONG.on && now >= SONG.armAt && SONG.buf) songPlay(d); else if (!want && SONG.on) songPause(false);
+}
+// ---- an unseen, very rare sound: a pool of recordings (sounds/fart1-8.mp3), one picked at random ----
+// Their level is baked into the files (the same loudness as the hole-7 song at Med), so they play at gain 1. Per hole there is a 12% chance
+// that one is due 20-90 s after arriving (the balloon: 60% per hole, then every 100-220 s); if the sound is off or the game is on the title screen when it is due, it waits.
+const FART = { hole: -1, at: 0, chk: 0 };
+function fartTick(now) {
+  if (now - FART.chk < 500) return; FART.chk = now;
+  if (G.hole !== FART.hole) { FART.hole = G.hole; FART.at = Math.random() < .12 ? now + (20 + Math.random() * 70) * 1000 : 0; }
+  if (!FART.at || now < FART.at) return;
+  if (!settings.sound || document.hidden || G.state === 'title' || !AC || AC.state !== 'running') { FART.at = now + 2000; return; }
+  if (play('s_fart' + (1 + (Math.random() * 8 | 0)), 1, 1)) FART.at = 0; else FART.at = now + 2000;
 }
 // ---- soft birdsong: on every hole without a song, a few unseen birds call now and then (synthesised, no files) ----
 // Each call is a short phrase of sine notes (a whistle, a trill or a two-tone call) at a low level, panned to its own spot, sometimes answered by a second bird.
@@ -6635,7 +6646,7 @@ function frame(now) {
   const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
   dueT = gap ? Math.min(Math.max(dueT + gap, now - gap), now + gap) : 0; // carries the remainder over, so 40 fps on a 60 Hz screen is two frames in three
   if (G.state === 'intro') G.introT += dt;
-  songTick(now); birdTick(now);
+  songTick(now); birdTick(now); fartTick(now);
   if (G.state === 'flight') { updateFlight(dt); if ((G.savedT = (G.savedT || 0) + dt) > 1.5) { G.savedT = 0; saveRound(); } } // the round, with how far the ball has flown
   else if (G.state === 'holed') { G.holedT += dt; if (G.shot && G.shot.res.holed && G.holedT < 3) updateFlight(dt); }
   refreshMapLive(now);

@@ -5,6 +5,8 @@ above -48 dB of its peak; end: where the 5 ms envelope has dropped 60 dB below t
   Wedges.m4a -> wedge.mp3    Putter.m4a -> putter.mp3    Ball_in_hole.m4a -> cup.mp3
 Music: out/sounds/Hole_7_background_music.m4a -> sounds/hole7-q.mp3, mono at 80 kbps, the silence before and after cut (the last second
 holds the song's closing hit), a short fade at the end, the playing level is baked into the file (MUSIC_PEAK_DB), so it is quiet even where the browser ignores the game's volume setting (HOLE_SONGS vol is 1).
+Fart_01..07.m4a and Penis.m4a -> sounds/fart1..8.mp3: trimmed like the strikes, mono at 96 kbps, the playing level baked in (FART_RMS_DB: the same loudness as the
+hole-7 song at its Med setting, measured as RMS over the trimmed clip), so the game plays them at gain 1 (a pool, one picked at random: `fartTick`).
 Rerun after replacing a recording; commit sounds/ (the game loads it, sw.js caches it)."""
 import os
 import sys
@@ -16,6 +18,8 @@ from common import OUT, HERE
 
 SR = 48000
 MUSIC_PEAK_DB = -15.5   # the song's loudest peak: -1.5 dBFS at full scale, 14 dB (a factor of .2) down
+FART_RMS_DB = -44.8     # the song's RMS over the whole file is -35.7 dB; Med is x.35 (-9.1 dB)
+FARTS = ['Fart_01', 'Fart_02', 'Fart_03', 'Fart_04', 'Fart_05', 'Fart_06', 'Fart_07', 'Penis']   # fart1.mp3 ... in this order
 MAP = {'Driver': 'driver', '3-wood': 'wood', 'Irons': 'iron', 'Wedges': 'wedge', 'Putter': 'putter', 'Ball_in_hole': 'cup'}
 DEST = os.path.join(os.path.dirname(os.path.dirname(HERE)) if os.path.basename(HERE) == 'course' else HERE, 'sounds')
 
@@ -64,8 +68,21 @@ def music():
         print(f'Hole_7_background_music -> sounds/hole7-q.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / SR:.1f} s, {os.path.getsize(os.path.join(DEST, "hole7-q.mp3")) / 1048576:.2f} MB)')
 
 
+def farts():
+    for i, nm in enumerate(FARTS, 1):
+        p = os.path.join(OUT, 'sounds', nm + '.m4a')
+        if not os.path.exists(p):
+            print('missing', p); continue
+        y, a, b = trim(load(p))
+        y = y / np.sqrt((y ** 2).mean()) * 10 ** (FART_RMS_DB / 20)
+        assert np.abs(y).max() < 10 ** (-12 / 20), p
+        d = os.path.join(DEST, f'fart{i}.mp3'); write(y, d)
+        print(f'{nm} -> sounds/fart{i}.mp3  kept {a:.2f}-{b:.2f} s  (peak {20 * np.log10(np.abs(y).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
+
+
 def main():
     music()
+    farts()
     os.makedirs(DEST, exist_ok=True)
     for src, dst in MAP.items():
         p = os.path.join(OUT, 'sounds', src + '.m4a')

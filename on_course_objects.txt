@@ -68,6 +68,9 @@ SKY AND WEATHER
   - Rainbow: a faint one in light rain when the sky is not too cloudy (as a spell builds or eases off); plays a short jingle once each time it appears.
   - Wind: the flag flutters and a wind arrow shows on screen.
 
+  - Heard, not seen: one of 8 short recordings (sounds/fart1-8.mp3, picked at random) plays on 12% of holes, 20-90 s after arriving; much rarer than the
+    balloon. Same loudness as the hole-7 song at its Med setting, whatever the Song setting; only the Sound switch silences it.
+
 GROUND-LEVEL SCENERY
 --------------------
   - Grass blades and tufts around the camera; tan and amber fescue in the deep rough.
