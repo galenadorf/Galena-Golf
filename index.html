@@ -128,7 +128,7 @@ body.rev #strike{right:auto;left:calc(var(--sl) + 38px)}
 .logoCard .lt{min-width:0}
 .logoCard img{height:126px;width:auto;flex:none;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.35))}
 .logoCard h1{margin:0;font:700 46px/.95 var(--cond);text-transform:uppercase;letter-spacing:.01em}
-.logoCard h1 span{color:#c6f2a9}
+.logoCard h1 span{color:inherit}
 .logoCard p{margin:9px 0 0;font:600 13px/1.45 var(--cond);text-transform:uppercase;letter-spacing:.14em;color:var(--w2);white-space:pre-line}
 @media (max-width:380px){.logoCard{padding-left:20px;padding-right:12px}.logoCard h1{font-size:39px}.logoCard img{height:98px}}
 @media (max-width:340px){.logoCard h1{font-size:33px}.logoCard p{letter-spacing:.08em}.logoCard img{height:78px}}
@@ -175,7 +175,6 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
 .qt{font:700 32px/1 var(--cond);text-transform:uppercase}
 .qcard p{margin:8px 0 18px;font:500 15px/1.35 var(--body);color:var(--w2)}
 .qb{display:flex;flex-direction:column;gap:10px}
-#mQuit{color:#ffd2ca}
 .best{text-align:center;font:600 13px var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--w1);text-shadow:var(--tsh);min-height:16px}
 #intro,#done{display:flex;align-items:flex-end;justify-content:center;padding:0 calc(var(--sr) + 12px) calc(var(--sb) + 12px) calc(var(--sl) + 12px)}
 #intro{background:linear-gradient(180deg,rgba(10,40,20,0) 55%,rgba(10,40,20,.28))}
@@ -239,17 +238,27 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
   box-shadow:0 -10px 40px rgba(8,34,16,.28),inset 0 1px 0 rgba(255,255,255,.55);color:#fff;text-shadow:var(--tsh)}
 #menuSheet .grab{background:rgba(255,255,255,.5)}
 #menuSheet .shX{background:rgba(255,255,255,.2);color:#fff}#menuSheet .shX:active{background:rgba(255,255,255,.34)}
-#menuSheet .mrow,#menuSheet .mpLr,#menuSheet .pracHoles button,#menuSheet .mbtn:not(.dark),#menuSheet .mpBtns .mpb{box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),inset 0 1px 0 rgba(255,255,255,.3)}
+#menuSheet .mrow,#menuSheet .mpLr,#menuSheet .mbtn:not(.dark),#menuSheet .mpBtns .mpb{box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),inset 0 1px 0 rgba(255,255,255,.3)}
 #menuSheet .mrow input{color:#fff;background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);text-shadow:var(--tsh)}
 #menuSheet .mrow input::placeholder{color:rgba(255,255,255,.55)}
 #menuSheet .seg{background:rgba(255,255,255,.14)}
 #menuSheet .seg button{color:rgba(255,255,255,.8)}
 #menuSheet .seg button.sel{background:rgba(255,255,255,.92);color:#16211c;text-shadow:none;box-shadow:0 2px 6px rgba(8,34,16,.25)}
-#menuSheet .pracHoles button.sel{background:var(--g1);color:#fff}
 #menuSheet .mbtn.dark,#menuSheet .mpb{text-shadow:none}
 #menuSheet .mpBtns .mpb{background:rgba(255,255,255,.18);color:#fff;text-shadow:var(--tsh)}
 body:has(#menuSheet.on) #scrim{background:rgba(10,30,18,.08)}
 body:has(#menuSheet.on) #tempo,body:has(#menuSheet.on) #strike,body:has(#menuSheet.on) #mpPanel{opacity:0!important;transition:opacity .2s}
+#practiceSheet{--ink:#fff;--ink2:rgba(255,255,255,.82);--ink3:rgba(255,255,255,.66);--hair:rgba(255,255,255,.28);--soft:rgba(255,255,255,.14);
+  background:var(--gl-bg),rgba(18,48,28,.30);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);border-color:var(--gl-line);
+  box-shadow:0 -10px 40px rgba(8,34,16,.28),inset 0 1px 0 rgba(255,255,255,.55);color:#fff;text-shadow:var(--tsh)}
+#practiceSheet .grab{background:rgba(255,255,255,.5)}
+#practiceSheet .shX{background:rgba(255,255,255,.2);color:#fff}#practiceSheet .shX:active{background:rgba(255,255,255,.34)}
+#practiceSheet .shBack{background:rgba(255,255,255,.2);color:#fff}#practiceSheet .shBack:active{background:rgba(255,255,255,.34)}
+body:has(#practiceSheet.on) #scrim{background:rgba(10,30,18,.08)}
+.pracGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pracGrid button{height:58px;border-radius:16px;background:var(--soft);box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),inset 0 1px 0 rgba(255,255,255,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;font:700 24px/1 var(--cond);font-variant-numeric:tabular-nums;transition:transform .12s}
+.pracGrid button:active{transform:scale(.96);background:rgba(255,255,255,.26)}
+.pracGrid button small{font:600 10px var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-top:3px}
 /* record card + stats */
 #recCard{position:fixed;left:50%;top:36%;z-index:12;width:min(92vw,430px);padding:20px 18px 18px;border-radius:28px;text-align:center;pointer-events:none;opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(-8deg);overflow:hidden;
   background:linear-gradient(135deg,var(--c1,#ffe85a),var(--c2,#ffab1f) 52%,var(--c3,#ff5d3a));color:var(--ink,#2b1200);box-shadow:0 18px 60px var(--c2,#ffab1f),inset 0 0 0 3px rgba(255,255,255,.85),inset 0 -10px 30px rgba(0,0,0,.18)}
@@ -321,7 +330,6 @@ body.spec #tempo,body.spec #strike{opacity:.55!important}body.spec #tempo *,body
 #mpPanel .mpr.me .n{text-decoration:underline;text-underline-offset:2px}
 #mpTags .gtag{position:fixed;left:0;top:0;z-index:2;padding:2px 8px;border-radius:9px;font:600 12px var(--cond);pointer-events:none;white-space:nowrap;text-transform:uppercase;color:#fff;transition:opacity .2s}
 .boardCourse{display:flex;margin:0 0 10px}.boardCourse button{flex:1}
-.pracHoles{display:grid;grid-template-columns:repeat(9,1fr);gap:6px}.pracHoles button{height:38px;border-radius:12px;background:var(--soft);font:600 16px var(--cond);font-variant-numeric:tabular-nums}.pracHoles button.sel{background:var(--g1);color:#fff}
 .scw{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font:600 17px var(--cond);font-variant-numeric:tabular-nums}
 th,td{padding:9px 4px;text-align:center;border-bottom:1px solid var(--hair)}
@@ -419,7 +427,7 @@ Golf Course
     <div class="card nameRow courseRow" hidden><span>Course</span><div class="seg segCourse" id="segCourse"><button data-v="woodbine">Woodbine Bend</button></div></div>
     <label class="card nameRow" id="nameRow"><span>Player</span><input id="nameIn" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="go"></label>
     <div class="playRow"><button class="btn alt" id="btnResume" style="display:none">Resume<small id="resumeInfo"></small></button><button class="btn" id="btnPlay">Tee off</button></div>
-    <div class="playRow"><button class="btn subBtn" id="btnPractice" disabled aria-disabled="true">Practice</button><button class="btn subBtn" id="btnSettings">Settings</button></div>
+    <div class="playRow"><button class="btn subBtn" id="btnPractice">Practice</button><button class="btn subBtn" id="btnSettings">Settings</button></div>
     <div class="best" id="best"></div>
   </div>
 </div>
@@ -433,7 +441,6 @@ Golf Course
     <div class="sub"><span>Players online</span></div><div class="mpList" id="mpList"></div>
     <div class="mrow" hidden>Course<div class="seg segCourse" id="segCourseM"><button data-v="woodbine">Woodbine Bend</button></div></div>
   </div>
-  <div class="sub"><span id="pracHint">Practice</span></div><div class="pracHoles" id="pracHoles"></div>
   <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mQuit">Quit to Main Screen</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
   <div class="mlist setBlock">
     <div class="mrow">Name<input id="mName" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="done"></div>
@@ -451,6 +458,7 @@ Golf Course
     <div class="mpInfo" id="mpInfo">Play live with friends: everyone in the same room sees the others' balls fly on the same hole, and the scores.<div class="mpBtns"><button class="mpb" id="mpNew">New room</button><button class="mpb" id="mpShare">Share link</button></div></div>
   </div>
 </div>
+<div class="sheet" id="practiceSheet"><div class="grab"></div><div class="sht">Practice <small>Pick a hole · scores are not recorded</small></div><div class="pracGrid" id="pracGrid"></div></div>
 <div class="sheet" id="cardSheet"><div class="grab"></div><div id="cardBody"></div></div>
 <div class="sheet" id="boardSheet"><div class="grab"></div><div class="sht">Leaderboard <small id="boardName">Woodbine Bend Golf Course</small></div><div id="boardBody"></div></div>
 <div class="sheet" id="mapSheet"><div class="grab"></div><div class="sht"><span id="mapTitle">Hole map</span><small id="mapInfo"></small></div><div class="mapwrap"><canvas id="mapCv"></canvas></div><div class="maph"><span>Tap or drag to place your target</span><button class="mbtn dark" id="mapDone" style="height:44px;padding:0 22px">Done</button></div></div>
@@ -5981,7 +5989,7 @@ function sheetBack() {
 }
 // every menu screen except the main menu (where Stats is a button) and Stats itself carries a small Stats shortcut with the player's level in its header
 function addStatsChip(id) {
-  if (id === 'menuSheet' || id === 'statsSheet') return;
+  if (id === 'menuSheet' || id === 'statsSheet' || id === 'practiceSheet') return;
   const h = $(id).querySelector('.sht'); if (!h) return; let c = h.querySelector('.stChip');
   if (!c) { c = document.createElement('button'); c.className = 'stChip'; c.onclick = e => { e.stopPropagation(); openStats(); }; h.appendChild(c); }
   let li = 0; LEVELS.forEach((l, i) => { if (ST.holes >= l[0]) li = i; }); c.textContent = '📊 ' + LEVELS[li][1];
@@ -6027,12 +6035,12 @@ function syncMenu() {
   document.querySelectorAll('#segMus button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.music !== false ? 1 : 0)));
   mpSync();
   $('mQuit').style.display = G.state === 'title' ? 'none' : ''; // nothing to quit from the start screen
-  const ph = $('pracHoles');
-  if (ph) {
-    if (ph.children.length !== HOLE_DEFS.length) { ph.innerHTML = ''; HOLE_DEFS.forEach((d, i) => { const b = document.createElement('button'); b.textContent = i + 1; b.onclick = () => startPractice(i); ph.appendChild(b); }); }
-    [...ph.children].forEach((b, i) => b.classList.toggle('sel', !!G.practice && G.hole === i));
-    $('pracHint').textContent = G.practice ? 'Practice mode · scores are not recorded' : 'Practice · pick a hole (ends the round)';
-  }
+}
+// the Practice sheet (from the start screen): every hole with its par and length
+function openPractice() {
+  const g = $('pracGrid');
+  if (g.children.length !== HOLE_DEFS.length) { g.innerHTML = ''; HOLE_DEFS.forEach((d, i) => { const b = document.createElement('button'); b.innerHTML = `${i + 1}<small>Par ${d.par} · ${HOLE_LEN[i]} yd</small>`; b.onclick = () => startPractice(i); g.appendChild(b); }); }
+  openSheet('practiceSheet');
 }
 // practice: one hole at a time, nothing scored. Picking a hole ends the round in progress.
 function startPractice(i) {
@@ -6820,6 +6828,7 @@ function initInput() {
   $('mQuit').onclick = () => { SFX.blip(); $('quitAsk').classList.add('on'); };
   $('qNo').onclick = () => { SFX.blip(); $('quitAsk').classList.remove('on'); };
   $('qYes').onclick = quitToMain;
+  $('btnPractice').onclick = () => { audio(); SFX.blip(); openPractice(); };
   $('btnSettings').onclick = () => { audio(); SFX.blip(); syncMenu(); openSheet('menuSheet'); };
   // course: on the title it just switches the course shown; in the menu it starts a new round on it
   document.querySelectorAll('#segCourse button').forEach(b => b.onclick = () => {
