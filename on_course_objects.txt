@@ -5,10 +5,10 @@ Frequencies come from the code (buildLife / updateLife in index.html), not from 
 
 ANIMALS
 -------
-Wild turkeys (5 per hole: one tom with a fanned tail, four hens)
+Wild turkeys (a flock of four on about 4 holes in 10: one tom with a fanned tail, three hens; the other holes have none)
   - First appear 4-24 s after arriving on a hole.
   - Each walks across the line of play, stopping to peck, leaves the far side, and returns 14-54 s later.
-  - Expect one or two on nearly every hole.
+  - On a hole that has the flock, expect one or two at a time.
   - They bolt (run for 4-6 s) if the ball lands within ~16 m or flies within ~32 m.
   - Can be hit: "Clipped a turkey!", gobble sound, the ball ricochets.
 
@@ -27,7 +27,7 @@ Small plane (white and red prop plane, low flyby)
   - Each round is dealt 0, 1 or 2 planes (2/7 none, 3/7 one, 2/7 two; ~1.1 average), spread over the holes left.
   - Can be hit: "Hit the plane!"
 
-Hot air balloon (orange, yellow, blue and white stripes, wicker basket, burner flame; ~18 m across)
+Hot air balloon (brown, red, orange and white stripes, wicker basket, burner flame; ~18 m across)
   - Drifts slowly downwind across the sky at 38-60 m up, taking ~80-130 s to cross, bobbing and turning gently.
   - Rare: per hole, 60% chance one is scheduled 10-65 s after arriving, 40% none at first;
     after one leaves, the next is due 100-220 s later.
@@ -45,9 +45,9 @@ Gopher (Caddyshack-style: brown, buck teeth, pops out of a dirt mound with a dar
 Dancing hot dog (hole 10 only; a giant, 10 ft: red sausage in a bun with a mustard zigzag, a smiling face, stick arms with white gloves, red sneakers)
   - Always there on hole 10, from the moment the hole loads: about 100 yd down the line from the tee, on the fairway (it picks the nearest fairway spot if the
     exact one is rough or a bunker).
-  - Dances to a 128 bpm beat: bounces, sways, waves both arms, kicks alternate legs, and sidesteps slowly back and forth across the fairway (never into the
+  - Dances to a 100 bpm beat: bounces, sways, waves both arms, kicks alternate legs, and sidesteps slowly back and forth across the fairway (never into the
     rough), always facing the golfer.
-  - Can be hit (it bounces the ball off and spins): "You hit the choker!", with a squeak.
+  - Can be hit (it bounces the ball off and spins): "Revenge of The Choker!", with a squeak.
 
 HIGHWAY AND TRAFFIC
 -------------------
@@ -100,10 +100,12 @@ MAN-MADE OBJECTS
   - The pump house: a small plain metal building (corrugated grey siding and roof, no doors) by the 8th tee, painted with paint_edit.py / paint_read.py; solid, so a ball hits it.
   - Hole 7 sign ("Andy Lewis / Hole in One / 9/10/2026", text from signs.txt), with its own fly-over intro.
 
+Fountain (hole 1 only): a small spray in the middle of the pond right of the first tee, about 10 ft high, always running. The ball does not hit it.
+
 NOT IN THE GAME
 ---------------
   - The hole-info tee signs (Nr., par, yards) are switched off (code kept; set TEE_SIGNS_ON = true in index.html). Only signs listed in signs.txt are shown.
   - The paraglider is switched off (code kept; set PARAGLIDER_ON = true in index.html to bring it back).
   - The six small birds (pigeons and crows on the ground and in treetops) and the four gulls circling over the hole are switched off (SMALL_BIRDS_ON and CIRCLING_GULLS_ON in index.html).
   - No deer, squirrels, rabbits, butterflies or fish (the gopher is the only burrowing animal). Nothing else drives, and there are no bridges (the creek has none). (The stats screen only jokes "fed the fish" for balls in the water.)
-  - Benches, huts, golf carts, fountains and similar props exist in the engine from the removed courses but Woodbine does not use them.
+  - Benches, huts, golf carts and similar props exist in the engine from the removed courses but Woodbine does not use them.

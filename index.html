@@ -3701,7 +3701,7 @@ function makeGopher(L) {
 }
 /* --- a giant dancing hot dog (hole 10 only): about 100 yd down the line from the tee it sidesteps back and forth across the fairway, facing the golfer, bouncing,
    swaying and waving its arms to a beat (HOTDOG_BPM). A ball can hit it. --- */
-const HOTDOG_HOLE = 9, HOTDOG_YD = 100, HOTDOG_BPM = 128, HOTDOG_K = 10 * .3048 / 4.05;   // the model is 4.05 m to the top of the sausage: scaled to 10 ft
+const HOTDOG_HOLE = 9, HOTDOG_YD = 100, HOTDOG_BPM = 100, HOTDOG_K = 10 * .3048 / 4.05;   // the model is 4.05 m to the top of the sausage: scaled to 10 ft
 function makeHotDog(L) {
   const mat = LIFE_MAT(), g = new THREE.Group(), body = new THREE.Group(); g.add(body);
   const wiener = 0xc0482c, bun = 0xe4b866, mustard = 0xf0cf1e, glove = 0xf7f7f2, shoe = 0xd23a2a, stick = 0x2a2a2e;
@@ -3744,7 +3744,7 @@ function makeHotDog(L) {
     if (!e.ready && !e.init()) { e.st = 'wait'; return; }
     if (e.st === 'wait') { e.st = 'on'; e.tl = Math.random() * 30; }
     e.tl += dt; const tl = e.tl, ph = tl * HOTDOG_BPM / 60 * Math.PI;   // ph: a half step (one beat = 2 * PI)
-    const mid = (e.lo + e.hi) / 2, amp = (e.hi - e.lo) / 2, lat = mid + amp * Math.sin(tl * .32);   // a slow sidestep across the fairway and back
+    const mid = (e.lo + e.hi) / 2, amp = (e.hi - e.lo) / 2, lat = mid + amp * Math.sin(tl * .2);   // a slow sidestep across the fairway and back
     e.x = e.px + e.nx * lat; e.z = e.pz + e.nz * lat;
     const want = Math.atan2(W.cam.position.x - e.x, W.cam.position.z - e.z); let yaw = want;
     if (e.reel > 0) { e.reel -= dt; yaw += (1 - e.reel / 1.4) * Math.PI * 4; }   // a spin when hit
@@ -3758,10 +3758,10 @@ function makeHotDog(L) {
   };
   return e;
 }
-/* --- a hot air balloon drifting across the sky with the wind (red, white and orange; the ball cannot hit it). As rare as the paraglider --- */
+/* --- a hot air balloon drifting across the sky with the wind (brown, red, orange and white; the ball cannot hit it). As rare as the paraglider --- */
 function makeBalloon(L) {
-  const mat = LIFE_MAT(), g = new THREE.Group(), R = 9, cols = [0xf08a24, 0xf7d23a, 0x2f6fbf, 0xf7f3ea], N = 12, parts = [];
-  for (let i = 0; i < N; i++) { // the gores: a stripe of the sphere above, a stripe of the tapering skirt below, in red, white and orange
+  const mat = LIFE_MAT(), g = new THREE.Group(), R = 9, cols = [0x6b4226, 0xc62828, 0xf08a24, 0xf7f3ea], N = 12, parts = [];
+  for (let i = 0; i < N; i++) { // the gores: a stripe of the sphere above, a stripe of the tapering skirt below, in brown, red, orange and white
     const c = cols[i % cols.length], a0 = i / N * TAU, da = TAU / N + .01;
     parts.push({ g: new THREE.SphereGeometry(1, 3, 12, a0, da, 0, Math.PI * .72), c, m: new THREE.Matrix4().makeScale(R, R * 1.12, R).setPosition(0, R * 1.12, 0) });
     parts.push({ g: new THREE.CylinderGeometry(R * Math.sin(Math.PI * .72) * .99, R * .34, R * .62, 3, 1, true, a0, da), c, m: new THREE.Matrix4().setPosition(0, R * 1.12 + R * 1.12 * Math.cos(Math.PI * .72) - R * .31, 0) });
@@ -3903,15 +3903,45 @@ function makeVehicle(L, kind, geo, first, wait) {
   return e;
 }
 const PARAGLIDER_ON = false; // switched off but kept: set true to bring the paraglider back
+/* --- a small fountain in the hole-1 pond (right of the tee box): a spray of drops about 10 ft up, from the middle of the water --- */
+const FOUNTAIN_HOLE = 0, FOUNTAIN_UP = 10 * .3048, TURKEY_ODDS = .4;
+function makeFountain(L) {
+  const C = L.C, tee = C.def.tee, wet = (x, z) => C.surf(x, z) === S.WATER; let best = null;
+  for (const p of C.ponds) {   // the pond to the right of the tee: the middle of its water
+    if (p.creek) continue; const r = p.q.enu[0], n = r.length >> 1; let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+    for (let i = 0; i < n; i++) { const q = C.loc(r[2 * i], r[2 * i + 1]), z = -q[1]; x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    if (x1 < tee.x + 4) continue; let sx = 0, sz = 0, k = 0;
+    for (let x = x0; x <= x1; x += 3) for (let z = z0; z <= z1; z += 3) if (wet(x, z)) { sx += x; sz += z; k++; }
+    if (k < 20) continue; const cx = sx / k, cz = sz / k; if (!wet(cx, cz)) continue;
+    const d = Math.hypot(cx - tee.x, cz + tee.f); if (!best || d < best.d) best = { x: cx, z: cz, lv: p.lv, d };
+  }
+  if (!best) return null;
+  const N = 110, g0 = 9.81, v0 = Math.sqrt(2 * g0 * FOUNTAIN_UP), T = 2 * v0 / g0, pos = new Float32Array(N * 3), drops = [];
+  for (let i = 0; i < N; i++) drops.push({ ph: i / N, a: Math.random() * TAU, h: Math.random() * 1.3, v: v0 * (.93 + Math.random() * .07) });
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({ color: 0xeafcff, size: .16, sizeAttenuation: true, transparent: true, opacity: .85, depthWrite: false });
+  const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; L.grp.add(pts);
+  const e = { kind: 'fountain', t: Math.random() * T };
+  e.update = dt => {
+    if (G.state === 'title') return; e.t += dt;
+    for (let i = 0; i < N; i++) {
+      const d = drops[i], u = ((e.t / T + d.ph) % 1) * T, y = d.v * u - .5 * g0 * u * u, r = d.h * u / T * 2;   // lands a little way out from the nozzle
+      pos[3 * i] = best.x + Math.cos(d.a) * r; pos[3 * i + 1] = best.lv + Math.max(0, y); pos[3 * i + 2] = best.z + Math.sin(d.a) * r;
+    }
+    geo.attributes.position.needsUpdate = true;
+  };
+  return e;
+}
 function buildLife(C, grp) {
   const L = { C, grp, t: 0, R: mulberry32((Math.random() * 1e9) | 0), ents: [], T: { x: 0, y: 0, z: 0, fly: false }, last: { x: 0, z: 0 }, ballMovingAway: false };
   W.life = L; W.birds = null;
   try {
     initGround(L, grp);
-    L.ents.push(makeTurkey(L, true), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false)); // a tom and four hens, each on its own random timer
+    if (Math.random() < TURKEY_ODDS) L.ents.push(makeTurkey(L, true), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false)); // a tom and three hens, each on its own random timer; the flock visits only some holes
     initBirds(L, grp);
     L.plane = makePlane(L); L.gopher = makeGopher(L); L.balloon = makeBalloon(L); L.ents.push(L.plane, L.gopher, L.balloon);
     if (G.hole === HOTDOG_HOLE) L.ents.push(makeHotDog(L));
+    if (G.hole === FOUNTAIN_HOLE) { const f = makeFountain(L); if (f) L.ents.push(f); }
     if (GC.hw) { const cg = carGeo(), sg = santaFeGeo(); L.traffic = [makeVehicle(L, 'car', cg, [2, 8], [6, 19]), makeVehicle(L, 'car', cg, [10, 16], [6, 19]), makeVehicle(L, 'car', sg, [4, 10], [6, 19]), makeVehicle(L, 'car', sg, [12, 16], [6, 19]), makeVehicle(L, 'truck', truckGeos(), [8, 25], [20, 40])]; L.ents.push(...L.traffic); } else L.traffic = [];
     if (PARAGLIDER_ON) { L.glider = makeGlider(L); L.ents.push(L.glider); }
   } catch (e) { console.error('life', e); W.life = null; }
@@ -3970,7 +4000,7 @@ function deflectShot(sh, tt, hit) {
 }
 function lifeHitNote(hit) {
   const e = hit.e, bd = hit.h.bird, k = bd ? 'bird' : e ? e.kind : '';
-  const txt = { turkey: 'Clipped a turkey!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!', gopher: 'A menace to the golfing industry...', hotdog: 'You hit the choker!' }[k];
+  const txt = { turkey: 'Clipped a turkey!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!', gopher: 'A menace to the golfing industry...', hotdog: 'Revenge of The Choker!' }[k];
   if (txt) readoutNote(txt, 'bad');
   try { if (k === 'plane' || k === 'glider') SFX.trunk(); else if (k === 'turkey') SFX.gobble(); else if (k === 'gopher' || k === 'hotdog') SFX.squeak(); else SFX.leaves(); } catch (er) { }
   if (bd) { bd.st = 'hit'; bd.t = 0; const n = hit.h; bd.hitV = [-n.nx * 3 + (Math.random() - .5) * 2, 3, -n.nz * 3 + (Math.random() - .5) * 2]; }
