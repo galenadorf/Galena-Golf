@@ -140,7 +140,8 @@ body.rev #strike{right:auto;left:calc(var(--sl) + 38px)}
 .how svg{width:30px;height:30px;display:block}
 body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.replay #done,body.replay #recCard,body.replay #confetti,body.replay #readout{display:none!important}
 .how svg.tut{width:100%;max-width:120px;height:auto;margin:0 auto 2px}
-@media (max-height:780px) and (orientation:portrait){.how svg.tut{max-width:72px}}   /* iPhone Safari with its bars: ~680 px of screen */
+@media (max-height:780px) and (orientation:portrait){.how svg.tut{max-width:100px}}
+@media (max-height:670px) and (orientation:portrait){.how svg.tut{max-width:84px}}   /* iPhone Safari with its bars: ~680 px of screen */
 .tThumb{animation:tUp 4.2s infinite;transform-box:view-box}
 .tDown{stroke-dasharray:62;animation:tTrace 4.2s infinite}
 @keyframes tUp{0%{transform:translate(45px,20px);animation-timing-function:cubic-bezier(.45,0,.55,1)}56%{transform:translate(45px,80px)}60%{transform:translate(45px,80px);animation-timing-function:cubic-bezier(.5,0,.6,1)}76%{transform:translate(46px,20px)}100%{transform:translate(45px,20px)}}
