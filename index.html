@@ -4950,10 +4950,11 @@ function dotScreen() {
     return { x: UI.faceCX - hand * h * f.hw, y: UI.faceCY - v * f.hh, loose: true };
   }
   const wx = -hand * (SW.dH + SW.jH) * f.hw, wy = -(SW.dV + SW.jV) * f.hh;
-  let x = SW.tx + THUMB_OFF.x + wx, y = SW.ty + THUMB_OFF.y + wy;
+  const m = settings.reverse ? -1 : 1; // reversed controls: the strike thumb is the left one, so the ball sits up-right of it
+  let x = SW.tx + m * THUMB_OFF.x + wx, y = SW.ty + THUMB_OFF.y + wy;
   // the wobble may never pull the dot back under the thumb: keep it at least THUMB_CLEAR px up-left of the touch
-  const u = Math.SQRT1_2, proj = -(x - SW.tx) * u - (y - SW.ty) * u;
-  if (proj < THUMB_CLEAR) { x -= u * (THUMB_CLEAR - proj); y -= u * (THUMB_CLEAR - proj); }
+  const u = Math.SQRT1_2, proj = -m * (x - SW.tx) * u - (y - SW.ty) * u;
+  if (proj < THUMB_CLEAR) { x -= m * u * (THUMB_CLEAR - proj); y -= u * (THUMB_CLEAR - proj); }
   return { x, y };
 }
 function strikeNow() {
@@ -6510,7 +6511,7 @@ function initInput() {
     if (left ? y > zoneY() : y > strikeTop()) {
       if (left) {
         if (SW.id == null && (SW.phase === 'idle' || SW.phase === 'done')) { SW.id = e.pointerId; swingBegin(x, y, e.timeStamp); }
-      } else if (SW.sid == null) {
+      } else if (SW.sid == null || SW.sid !== e.pointerId) { // a new touch on the strike dial always takes over (a stale one whose release was lost must not pin the ball where it was)
         SW.sid = e.pointerId; SW.tx = x; SW.ty = Math.max(y, strikeTop()); SW.thumb = true;
       }
       try { tg.setPointerCapture && tg.setPointerCapture(e.pointerId); } catch (_) { }
@@ -6539,6 +6540,11 @@ function initInput() {
     if (e.pointerId === aim.id) { aim.id = null; }
   };
   document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+  // a release the browser never reported (system gesture, notification pull, app switch) must not leave the strike thumb or the aim finger held
+  const lost = e => { if (!e || !e.touches || !e.touches.length) { if (SW.sid != null) { SW.sid = null; SW.relT = performance.now(); if (SW.phase === 'idle' || SW.phase === 'ready') SW.thumb = false; } aim.id = null; } };
+  document.addEventListener('touchend', lost, { passive: true }); document.addEventListener('touchcancel', lost, { passive: true });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) lost(null); });
+  window.addEventListener('blur', () => lost(null));
   document.addEventListener('pointerout', e => { if (e.pointerType === 'mouse' && !e.relatedTarget) SW.mouseR = false; });
   document.addEventListener('touchmove', e => { const t = e.target; if (!(t && t.closest && t.closest('.sheet'))) e.preventDefault(); }, { passive: false });
   document.addEventListener('gesturestart', e => e.preventDefault());
