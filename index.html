@@ -164,6 +164,7 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
 .playRow{display:flex;gap:10px}.playRow .btn{flex:1;min-width:0}.playRow .btn.alt{flex:1.35}
 .btn.alt{background:rgba(255,255,255,.92);color:#2f6b35;text-shadow:none;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
 .btn.alt small{font:600 12px var(--cond);letter-spacing:.1em;color:var(--ink2);margin-top:3px}
+.playRow+.playRow{margin-top:-5px}   /* the Practice / Settings row sits close under Tee off; the room this frees goes between the logo card and the how-to cards (the title is space-between) */
 .btn.sub{display:flex;align-items:center;justify-content:center;text-align:center;height:48px;font-size:19px;border-radius:18px;background:rgba(255,255,255,.9);color:#2f6b35;text-shadow:none;box-shadow:0 6px 16px rgba(20,70,30,.25),inset 0 1px 0 rgba(255,255,255,.6)}
 .btn.sub:disabled{opacity:.45;filter:grayscale(1);box-shadow:none;pointer-events:none}
 .btn.danger{display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#d9604f,#a8362a);box-shadow:0 8px 20px rgba(120,30,20,.35),inset 0 1px 0 rgba(255,255,255,.35)}
