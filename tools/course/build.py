@@ -20,6 +20,7 @@ from shapely.ops import linemerge, substring, unary_union
 
 import card
 import osm
+import practice_read
 from common import NAME, ORIGIN, OUT, cache, to_local
 
 YD = card.YD
@@ -153,10 +154,9 @@ def build_relief(demZ, area, inside=None):
     return dict(e0=float(e0), n0=float(n0), res=RELIEF_RES, w=w, h=h, b8=1, d=base64.b64encode(bytes(out)).decode())
 
 
-def green_alti(green_poly):
+def green_alti(green_poly, s=1.5):
     d1, tr1 = read(cache('dem1m.tif'))
     e0, n0, e1, n1 = green_poly.buffer(6).bounds
-    s = 1.5
     nx, ny = int(math.ceil((e1 - e0) / s)) + 1, int(math.ceil((n1 - n0) / s)) + 1
     E, N = np.meshgrid(e0 + np.arange(nx) * s, n0 + np.arange(ny) * s)
     z = sample(ndi.gaussian_filter(d1, .5), tr1, E, N)
@@ -416,6 +416,19 @@ def main():
     relief = build_relief(demZ, course.buffer(40).bounds, course.buffer(30))
     holes = build_holes(F, demZ1)
     alti = {i: green_alti(h.pop('_green_poly')) for i, h in enumerate(holes)}
+    prac = None   # the practice green (practice_read.py): a scene of its own, not one of the 18 holes
+    ppn = os.path.join(OUT, 'practice.json')
+    if os.path.exists(ppn):
+        pr = json.load(open(ppn))
+        pg = shape(pr['green'])
+        F['green'].append(dict(poly=pg, tags={'practice': 'yes'}))
+        if pr['bunkers']:
+            F['bunker'] += [dict(poly=shape(g), tags={'painted': 'yes'}) for g in pr['bunkers']]
+        gc = pg.centroid
+        tee = (round(gc.x, 2), round(gc.y - 25, 2))   # the scene's frame: from the south, 25 m from the middle of the green
+        alti['prac'] = green_alti(pg, 1.0)
+        prac = dict(tee=list(tee), green=[round(gc.x, 2), round(gc.y, 2)], line=[list(tee), [round(gc.x, 2), round(gc.y, 2)]],
+                    mk={k: list(tee) for k in 'wybr'}, cups=[[round(float(e), 2), round(float(n), 2)] for e, n in pr['cups']])
 
     area = box(-700, -700, 700, 700)
     clip = lambda ps: [p.intersection(area) for p in ps if p.intersects(area)]
@@ -424,6 +437,8 @@ def main():
     tp = os.path.join(OUT, 'trees_painted.json')  # trees added by hand-painting (trees_paint.py) on top of the lidar ones
     if os.path.exists(tp):
         trees += json.load(open(tp))
+    if os.path.exists(ppn):   # the trees painted on the practice-green map stand in for any lidar tree under them
+        trees = [t for t in trees if not any(math.hypot(t['e'] - q['e'], t['n'] - q['n']) < .5 * q['d'] for q in pr['trees'])] + pr['trees']
     tq = []
     for t in trees:  # e, n, crown diameter (dm), kind * 1000 + height (dm)
         tq += [int(round(t['e'] * 10)), int(round(t['n'] * 10)), int(round(t['d'] * 10)), t['kind'] * 1000 + min(999, int(round(t['h'] * 10)))]
@@ -433,6 +448,8 @@ def main():
     fescue = [shape(g) for g in json.load(open(fp))] if os.path.exists(fp) else []
     bp = os.path.join(OUT, 'boundary.json')  # the hand-painted boundary (boundary.py) replaces the OSM outline as the out-of-bounds line
     bound = shape(json.load(open(bp))) if os.path.exists(bp) else Polygon(course.exterior)
+    if os.path.exists(ppn):
+        fescue = practice_read.merge_fescue(fescue, pr)
     fescue = [g for f in fescue for g in getattr(f.intersection(bound), 'geoms', [f.intersection(bound)]) if g.geom_type == 'Polygon' and not g.is_empty]
     hw, hw_slow = highway()
     rd = dict(
@@ -449,7 +466,7 @@ def main():
         cover=enc_polys([area] if trees else []),
         streams=enc_lines([f['line'] for f in F['stream']]),
         highway=enc_lines([hw]), hwSlow=hw_slow,  # US 20 past the north edge of the course; hwSlow = metres from its west end where the limit drops from 55 to 35 mph
-        relief=relief,
+        relief=relief, prac=prac,
         props=json.load(open(os.path.join(OUT, 'site_props.json'))) if os.path.exists(os.path.join(OUT, 'site_props.json')) else [],  # washrooms, porta-potties and signposts painted on the aerial (site_paint.py)
         # tee marker colours: w is the tee played (gold), y/b/r the other sets (black, silver, bronze)
         mkc=dict(w=0xd9b23a, y=0x26282b, b=0xc9ced3, r=0xb07045),
