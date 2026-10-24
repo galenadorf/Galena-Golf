@@ -51,12 +51,12 @@ jobs:
             try { rows = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { rows = []; }
             const by = r.pid, pfile = `rounds/${r.pid}.json`; let mine = []; try { mine = JSON.parse(fs.readFileSync(pfile, 'utf8')); } catch (e) { mine = []; }
             if (mine.some(x => x.at === r.at)) return finish(true, 'This round is already filed.');
-            if (rows.some(x => x.by === by && x.strokes === r.strokes)) return finish(true, 'This score is already on the board for this player.'); // one player, one entry per score per course
-            if (rows.filter(x => x.by === by && x.at > Date.now() - 864e5).length >= 6) return finish(false, 'Too many rounds posted today by this player.');
+            if (rows.some(x => x.by === by && x.at === r.at)) return finish(true, 'This round is already on the board.'); // a round is its player and its time; equal scores are separate rounds
+            if (rows.filter(x => x.by === by && x.at > Date.now() - 864e5).length >= 15) return finish(false, 'Too many rounds posted today by this player.');
             if (rows.filter(x => x.at > Date.now() - 36e5).length >= 120) return finish(false, 'The board is busy; try again later.');
             mine.push({ course: r.course, at: r.at, strokes: r.strokes, toPar: r.toPar, hs: r.hs }); fs.mkdirSync('rounds', { recursive: true }); fs.writeFileSync(pfile, JSON.stringify(mine) + '\n');
             rows.push({ name, pid: r.pid, strokes: r.strokes, toPar: r.toPar, holes: 18, at: r.at, by });
-            rows.sort((a, b) => a.toPar - b.toPar || a.strokes - b.strokes || a.at - b.at); rows = rows.slice(0, 500);
+            rows.sort((a, b) => a.toPar - b.toPar || a.strokes - b.strokes || a.at - b.at); rows = rows.filter((x, i) => i < 500 || x.at > Date.now() - 46 * 864e5); // the best 500 rounds, plus every round of the last 46 days (the game's "Last 45 days" view)
             fs.writeFileSync(file, JSON.stringify(rows) + '\n');
             const rank = rows.findIndex(x => x.name === name && x.at === r.at) + 1;
             await exec.exec('git', ['config', 'user.name', 'github-actions[bot]']); await exec.exec('git', ['config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com']);

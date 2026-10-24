@@ -6232,8 +6232,8 @@ async function postAuto(r) {
   const k = ghKey(); if (!k || !isReg() || !Array.isArray(r.hs)) return false; // guests (and rounds from before per-hole data) stay on this device
   const CO = COURSES[r.course] || COURSE; // the round's own course (a retry may run while another course is in play)
   const markPosted = () => { const loc = localRounds(CO.key), q = loc.find(x => x.at === r.at && x.name === r.name); if (q) { q.posted = true; try { localStorage.setItem(CO.board, JSON.stringify(sortRounds(loc).slice(0, 60))); } catch (e) { } } };
-  // one player, one entry per score per course: a score already on the world board under this name is not posted again
-  const wb = Board.gh[CO.key]; if (wb && wb.some(x => x.name.toLowerCase() === String(r.name).toLowerCase() && x.strokes === r.strokes)) { markPosted(); refreshBoards(); return true; }
+  // a round is its player and its time: one already on the world board is not posted again (equal scores are separate rounds)
+  const wb = Board.gh[CO.key]; if (wb && PID.reg && wb.some(x => x.pid === PID.reg.pid && x.at === r.at)) { markPosted(); refreshBoards(); return true; }
   try {
     const env = await signRound(r); if (!env) return false;
     const res = await fetch(`https://api.github.com/repos/${GH_REPO}/issues`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + k, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
@@ -6338,6 +6338,15 @@ function fillBoard(el, limit, key, pick) {
     head.appendChild(tabs);
   }
   el.appendChild(head);
+  if (pick) { // the period: every round on the board, or only the last 45 days
+    const ps = document.createElement('div'); ps.className = 'seg boardCourse';
+    for (const [k, t] of [['all', 'All time'], ['45', 'Last 45 days']]) {
+      const b = document.createElement('button'); b.textContent = t; if ((Board.period || 'all') === k) b.className = 'sel';
+      b.onclick = () => { Board.period = k; refreshBoards(); }; ps.appendChild(b);
+    }
+    el.appendChild(ps);
+  }
+  const recent = (Board.period || 'all') === '45' && pick, since = Date.now() - 45 * 864e5;
   if (own && Board.post && tab !== 'all') {
     const ps = document.createElement('div'); ps.className = 'lbnote'; ps.style.margin = '0 0 8px';
     ps.textContent = Board.post.st === 'posting' ? 'Posting your round to the world board…' : Board.post.st === 'posted' ? 'Your round is posted · it shows on the world board within a minute' : "Your round couldn't be posted yet · it is kept on this device";
@@ -6345,10 +6354,10 @@ function fillBoard(el, limit, key, pick) {
   }
   const list = document.createElement('div'); list.className = 'lb'; el.appendChild(list);
   const wr = tab === 'world' ? worldRows(key) : null;
-  const rows = sortRounds(tab === 'world' ? wr || [] : tab === 'all' ? (Board.shared[CO.coll] || []) : localRounds(key)).slice(0, limit || 25);
+  const rows = sortRounds(tab === 'world' ? wr || [] : tab === 'all' ? (Board.shared[CO.coll] || []) : localRounds(key)).filter(r => !recent || r.at >= since).slice(0, limit || 25);
   if (!rows.length) {
     const e = document.createElement('div'); e.className = 'empty';
-    e.textContent = tab === 'world' && wr == null ? (Board.gh[key] === null ? 'The world board could not be reached.' : 'Loading…') : tab === 'all' && !Board.ready[CO.coll] ? 'Loading…' : 'No rounds yet. Finish all ' + CO.defs.length + ' holes to post a score.';
+    e.textContent = recent && ((tab === 'world' && wr) || tab !== 'world') ? 'No rounds in the last 45 days.' : tab === 'world' && wr == null ? (Board.gh[key] === null ? 'The world board could not be reached.' : 'Loading…') : tab === 'all' && !Board.ready[CO.coll] ? 'Loading…' : 'No rounds yet. Finish all ' + CO.defs.length + ' holes to post a score.';
     list.appendChild(e);
   }
   rows.forEach((r, i) => {
@@ -6371,10 +6380,10 @@ function fillBoard(el, limit, key, pick) {
   } else if (tab === 'device' || (!shared && tab !== 'world')) { const n = document.createElement('div'); n.className = 'lbnote'; n.textContent = 'Rounds are kept on this device.'; el.appendChild(n); }
 }
 function refreshBoards() {
-  if ($('boardSheet').classList.contains('on')) fillBoard($('boardBody'), 30, Board.view, true);
+  if ($('boardSheet').classList.contains('on')) fillBoard($('boardBody'), 50, Board.view, true);
   const fb = $('finalBoard'); if (fb && $('cardSheet').classList.contains('on')) fillBoard(fb, 10);
 }
-function openBoard() { Board.view = COURSE.key; loadWorld(); fillBoard($('boardBody'), 30, Board.view, true); openSheet('boardSheet'); }
+function openBoard() { Board.view = COURSE.key; loadWorld(); fillBoard($('boardBody'), 50, Board.view, true); openSheet('boardSheet'); }
 
 /* ================= INPUT + LOOP ================= */
 function initInput() {
