@@ -124,14 +124,14 @@ body.rev #strike{right:auto;left:calc(var(--sl) + 38px)}
 .layer{position:fixed;inset:0;z-index:6;opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
 .layer.on{opacity:1;pointer-events:auto}
 #title{display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--st) + 26px) calc(var(--sr) + 16px) calc(var(--sb) + 16px) calc(var(--sl) + 16px);background:linear-gradient(180deg,rgba(10,40,20,0) 45%,rgba(10,40,20,.32) 100%)}
-.logoCard{align-self:stretch;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:14px 18px 14px 24px;border-radius:28px}
+.logoCard{align-self:stretch;display:flex;align-items:center;justify-content:space-between;gap:4px;text-align:left;padding:14px 14px 14px 24px;border-radius:28px}
 .logoCard .lt{min-width:0}
-.logoCard img{height:112px;width:auto;flex:none;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.35))}
+.logoCard img{height:126px;width:auto;flex:none;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.35))}
 .logoCard h1{margin:0;font:700 46px/.95 var(--cond);text-transform:uppercase;letter-spacing:.01em}
 .logoCard h1 span{color:#c6f2a9}
 .logoCard p{margin:9px 0 0;font:600 13px/1.45 var(--cond);text-transform:uppercase;letter-spacing:.14em;color:var(--w2);white-space:pre-line}
-@media (max-width:380px){.logoCard{padding-left:20px;padding-right:14px}.logoCard h1{font-size:39px}.logoCard img{height:86px}}
-@media (max-width:340px){.logoCard h1{font-size:33px}.logoCard p{letter-spacing:.08em}.logoCard img{height:68px}}
+@media (max-width:380px){.logoCard{padding-left:20px;padding-right:12px}.logoCard h1{font-size:39px}.logoCard img{height:98px}}
+@media (max-width:340px){.logoCard h1{font-size:33px}.logoCard p{letter-spacing:.08em}.logoCard img{height:78px}}
 .tb{display:flex;flex-direction:column;gap:10px}
 .how{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .how .card{padding:13px}
@@ -164,6 +164,15 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
 .playRow{display:flex;gap:10px}.playRow .btn{flex:1;min-width:0}.playRow .btn.alt{flex:1.35}
 .btn.alt{background:rgba(255,255,255,.92);color:#2f6b35;text-shadow:none;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
 .btn.alt small{font:600 12px var(--cond);letter-spacing:.1em;color:var(--ink2);margin-top:3px}
+.btn.sub{display:flex;align-items:center;justify-content:center;text-align:center;height:48px;font-size:19px;border-radius:18px;background:rgba(255,255,255,.9);color:#2f6b35;text-shadow:none;box-shadow:0 6px 16px rgba(20,70,30,.25),inset 0 1px 0 rgba(255,255,255,.6)}
+.btn.sub:disabled{opacity:.45;filter:grayscale(1);box-shadow:none;pointer-events:none}
+.btn.danger{display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#d9604f,#a8362a);box-shadow:0 8px 20px rgba(120,30,20,.35),inset 0 1px 0 rgba(255,255,255,.35)}
+#quitAsk{z-index:12;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(10,30,18,.5)}
+.qcard{width:100%;max-width:340px;padding:22px 18px 18px;text-align:center;border-radius:28px}
+.qt{font:700 32px/1 var(--cond);text-transform:uppercase}
+.qcard p{margin:8px 0 18px;font:500 15px/1.35 var(--body);color:var(--w2)}
+.qb{display:flex;flex-direction:column;gap:10px}
+#mQuit{color:#ffd2ca}
 .best{text-align:center;font:600 13px var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--w1);text-shadow:var(--tsh);min-height:16px}
 #intro,#done{display:flex;align-items:flex-end;justify-content:center;padding:0 calc(var(--sr) + 12px) calc(var(--sb) + 12px) calc(var(--sl) + 12px)}
 #intro{background:linear-gradient(180deg,rgba(10,40,20,0) 55%,rgba(10,40,20,.28))}
@@ -396,8 +405,9 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 <div id="specBar" class="glass"><span id="specInfo">Following</span><button class="btn" id="specResume">Resume play</button></div>
 <div id="ballTag" class="gtag"><div class="bt1"><span id="btD">0</span><small>YD</small></div><div class="bt2" id="btC"></div></div>
 <div class="layer on" id="title">
-  <div class="card logoCard"><div class="lt"><h1>Galena<span>!!!</span><br>Golf</h1><p id="courseLine">Woodbine Bend Golf Course
-18 holes · Par 72</p></div><img src="crest.png" width="110" height="112" alt="Galena crest" decoding="async"></div>
+  <div class="card logoCard"><div class="lt"><h1>Galena<span>!!!</span><br>Golf</h1><p id="courseLine">Woodbine Bend
+Golf Course
+18 holes · Par 72</p></div><img src="crest.png" width="123" height="126" alt="Galena crest" decoding="async"></div>
   <div class="tb">
     <div class="how">
       <div class="card"><svg class="tut" viewBox="0 0 90 100" aria-hidden="true"><rect x="31" y="6" width="28" height="88" rx="14" fill="#2f6b35"/><rect x="38" y="14" width="14" height="72" rx="7" fill="rgba(255,255,255,.16)"/><path class="tDown" d="M45 80V20" stroke="#ffe85a" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M17 34V62m0 0l-5-6m5 6l5-6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".75"/><path d="M73 68V40m0 0l-5 6m5-6l5 6" stroke="#ffe85a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".9"/><g class="tThumb"><circle r="9" fill="#fff" stroke="#1d3d22" stroke-width="2"/></g></svg><b>Left thumb · tempo</b><p>Slide down, then slide straight up. A tempo of 3:1 gets the best smash factor.</p></div>
@@ -406,11 +416,13 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
     <div class="card nameRow courseRow" hidden><span>Course</span><div class="seg segCourse" id="segCourse"><button data-v="woodbine">Woodbine Bend</button></div></div>
     <label class="card nameRow" id="nameRow"><span>Player</span><input id="nameIn" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="go"></label>
     <div class="playRow"><button class="btn alt" id="btnResume" style="display:none">Resume<small id="resumeInfo"></small></button><button class="btn" id="btnPlay">Tee off</button></div>
+    <div class="playRow"><button class="btn sub" id="btnPractice" disabled aria-disabled="true">Practice</button><button class="btn sub" id="btnSettings">Settings</button></div>
     <div class="best" id="best"></div>
   </div>
 </div>
 <div class="layer" id="intro"><div class="card icard"><canvas id="introMap" width="172" height="288"></canvas><div class="ic-b"><div><div class="ic-k" id="icK">Hole 1 of 3</div><div class="ic-n" id="icN">Headland</div><div class="ic-i" id="icI"></div><div class="ic-f"><div>Par<b id="icPar">4</b></div><div>Length<b id="icLen">390 yd</b></div><div>Wind<b id="icWind">5 mph</b></div><div>Fairway<b id="icWx">Fine</b></div></div></div><button class="btn ic-go" id="icGo">Play hole</button></div></div></div>
 <div class="layer" id="done"><div class="card dcard"><div class="d1" id="d1">Birdie</div><div class="d2" id="d2">Hole 1 · 3 strokes · Par 4</div><div class="dstats" id="dstats"></div><button class="btn" id="dNext" style="width:100%">Next hole</button><button class="mbtn dark" id="dReplay" style="width:100%;margin-top:8px">▶ Replay last shot</button></div></div>
+<div class="layer" id="quitAsk"><div class="card qcard" role="alertdialog" aria-labelledby="qT"><div class="qt" id="qT">Are you sure?</div><p>Any progress will be lost.</p><div class="qb"><button class="btn danger" id="qYes">Yes I'm sure</button><button class="btn sub" id="qNo">No</button></div></div></div>
 <div id="scrim"></div>
 <div class="sheet" id="bagSheet"><div class="grab"></div><div class="sht">Your bag <small id="bagLie">From the tee</small></div><div class="bag" id="bag"></div></div>
 <div class="sheet" id="menuSheet"><div class="grab"></div><div class="sht">Settings</div>
@@ -419,7 +431,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
     <div class="mrow" hidden>Course<div class="seg segCourse" id="segCourseM"><button data-v="woodbine">Woodbine Bend</button></div></div>
   </div>
   <div class="sub"><span id="pracHint">Practice</span></div><div class="pracHoles" id="pracHoles"></div>
-  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
+  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mQuit">Quit to Main Screen</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
   <div class="mlist setBlock">
     <div class="mrow">Name<input id="mName" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="done"></div>
     <div class="mrow">Player ID<span id="pidState" style="opacity:.8">Guest</span></div>
@@ -2516,7 +2528,7 @@ function setCourse(key) {
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   G.hole = 0; G.submitted = false; G.practice = false;
   if (settings.course !== COURSE.key) { settings.course = COURSE.key; saveSettings(); }
-  $('courseLine').textContent = `${COURSE.name}\n${HOLE_DEFS.length} holes · Par ${PAR_TOTAL}`;
+  $('courseLine').textContent = `${COURSE.name.replace(/ (Golf Course)$/, '\n$1')}\n${HOLE_DEFS.length} holes · Par ${PAR_TOTAL}`;
   $('boardName').textContent = COURSE.name; $('musRow').hidden = !COURSE.music;
   document.querySelectorAll('.segCourse button').forEach(b => b.classList.toggle('sel', b.dataset.v === COURSE.key));
   showBest(); refreshBoards(); try { loadWorld(); } catch (e) { } refreshResume();
@@ -6011,6 +6023,7 @@ function syncMenu() {
   document.querySelectorAll('#segZoom button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.zoom !== false ? 1 : 0)));
   document.querySelectorAll('#segMus button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.music !== false ? 1 : 0)));
   mpSync();
+  $('mQuit').style.display = G.state === 'title' ? 'none' : ''; // nothing to quit from the start screen
   const ph = $('pracHoles');
   if (ph) {
     if (ph.children.length !== HOLE_DEFS.length) { ph.innerHTML = ''; HOLE_DEFS.forEach((d, i) => { const b = document.createElement('button'); b.textContent = i + 1; b.onclick = () => startPractice(i); ph.appendChild(b); }); }
@@ -6026,6 +6039,17 @@ function startPractice(i) {
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   if (!G.pins) G.pins = HOLE_DEFS.map(() => Math.floor(Math.random() * 4));
   $('title').classList.remove('on'); closeSheets(); startHole(i);
+}
+// quit to the start screen: the round (or practice hole) in progress is abandoned entirely, nothing is scored or saved
+function quitToMain() {
+  $('quitAsk').classList.remove('on'); closeSheets();
+  const sp = MP.spec; MP.follow = null; if (sp) { MP.spec = null; mpWorld(sp.course); } // (following someone: back on my own course)
+  G.rep = null; G.shot = null; G.practice = false; G.submitted = true; G.strokes = 0; SW.phase = 'idle';
+  document.body.classList.remove('flight', 'swing', 'replay', 'spec');
+  ['done', 'intro', 'readout', 'skipBtn'].forEach(id => $(id).classList.remove('on')); UI.readT = 0;
+  clearRound();
+  G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
+  showTitleHole(); $('title').classList.add('on'); showBest(); refreshResume(); MP.panelT = 0; SFX.blip();
 }
 function totalToPar() { let s = 0, p = 0; G.scores.forEach((v, i) => { if (v != null) { s += v; p += HOLE_DEFS[i].par; } }); return { s, p, d: s - p }; }
 function fmtToPar(d) { return d === 0 ? 'E' : (d > 0 ? '+' + d : '' + d); }
@@ -6790,6 +6814,10 @@ function initInput() {
   $('mStats').onclick = () => openStats();
   $('mHelp').onclick = () => openSheet('helpSheet');
   $('mRound').onclick = () => { closeSheets(); startRound(); };
+  $('mQuit').onclick = () => { SFX.blip(); $('quitAsk').classList.add('on'); };
+  $('qNo').onclick = () => { SFX.blip(); $('quitAsk').classList.remove('on'); };
+  $('qYes').onclick = quitToMain;
+  $('btnSettings').onclick = () => { audio(); SFX.blip(); syncMenu(); openSheet('menuSheet'); };
   // course: on the title it just switches the course shown; in the menu it starts a new round on it
   document.querySelectorAll('#segCourse button').forEach(b => b.onclick = () => {
     if (b.dataset.v === COURSE.key) return; SFX.blip(); setCourse(b.dataset.v); showTitleHole();
