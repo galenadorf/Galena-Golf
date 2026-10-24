@@ -353,6 +353,30 @@ def highway(area=(-1250, -720, 1250, 720)):
     return clipped.simplify(.4), round(slow - cut)
 
 
+def side_roads(F, hw, area=(-1250, -720, 1250, 720)):
+    """The two public roads that border the course, drawn for looks only (the ball does not touch them): East Center Road along the south
+    side and South Brown Road (with Chicago Street, its stretch through Stockton) along the east side. Each runs out past the map and
+    stops at the middle of US 20, which both meet. Lines from OSM, ordered west to east / south to north."""
+    out = []
+    for names in (('East Center Road',), ('South Brown Road', 'Chicago Street')):
+        line = linemerge([r['line'] for r in F['road'] if r['tags'].get('name') in names])
+        assert line.geom_type == 'LineString', names
+        x = line.intersection(hw)
+        if not x.is_empty:   # the road meets US 20: keep the long side of it, ending on the highway's centre line
+            p = x if x.geom_type == 'Point' else list(x.geoms)[0]
+            d = line.project(p)
+            a, b = substring(line, 0, d), substring(line, d, line.length)
+            line = a if a.length > b.length else b
+        c = line.intersection(box(*area))
+        if c.geom_type != 'LineString':
+            c = max(c.geoms, key=lambda g: g.length)
+        pts = list(c.simplify(.4).coords)
+        if pts[0][0] + pts[0][1] > pts[-1][0] + pts[-1][1]:
+            pts = pts[::-1]
+        out.append(LineString(pts))
+    return out
+
+
 def round_green(p, iters=3):
     """A green's OSM outline has corners every 2-3 m; Chaikin corner cutting (each corner replaced by two points a quarter of the way along
     its edges) gives smooth curves that stay within the original outline and lose only a few percent of its area."""
@@ -452,6 +476,7 @@ def main():
         fescue = practice_read.merge_fescue(fescue, pr)
     fescue = [g for f in fescue for g in getattr(f.intersection(bound), 'geoms', [f.intersection(bound)]) if g.geom_type == 'Polygon' and not g.is_empty]
     hw, hw_slow = highway()
+    roads = side_roads(F, hw)
     rd = dict(
         name=NAME, origin=list(ORIGIN), dem=dem, holes=holes,
         feat=dict(fair=enc_polys(fair), green=enc_polys([f['poly'] for f in F['green']]), tee=enc_polys([f['poly'] for f in F['tee']]),
@@ -466,7 +491,7 @@ def main():
         cover=enc_polys([area] if trees else []),
         streams=enc_lines([f['line'] for f in F['stream']]),
         highway=enc_lines([hw]), hwSlow=hw_slow,  # US 20 past the north edge of the course; hwSlow = metres from its west end where the limit drops from 55 to 35 mph
-        relief=relief, prac=prac,
+        relief=relief, prac=prac, roads=[enc_lines([r]) for r in roads],
         props=json.load(open(os.path.join(OUT, 'site_props.json'))) if os.path.exists(os.path.join(OUT, 'site_props.json')) else [],  # washrooms, porta-potties and signposts painted on the aerial (site_paint.py)
         # tee marker colours: w is the tee played (gold), y/b/r the other sets (black, silver, bronze)
         mkc=dict(w=0xd9b23a, y=0x26282b, b=0xc9ced3, r=0xb07045),
