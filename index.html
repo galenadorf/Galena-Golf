@@ -191,6 +191,10 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
 .shX{position:absolute;top:12px;right:calc(var(--sr) + 12px);width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.07);color:var(--ink2,#334);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 .shX svg{width:18px;height:18px}
 .sheet .sht{padding-right:46px}
+.shBack{position:absolute;top:12px;left:calc(var(--sl) + 12px);width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.07);color:var(--ink2,#334);display:none;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.shBack svg{width:18px;height:18px}.shBack:active{background:rgba(0,0,0,.14)}
+.sheet.hasBack .shBack{display:flex}.sheet.hasBack .sht{padding-left:46px}.sheet.hasBack #cardBody{padding-top:34px}
+#menuSheet .shBack{background:rgba(255,255,255,.2);color:#fff}#menuSheet .shBack:active{background:rgba(255,255,255,.34)}
 .shX:active{background:rgba(0,0,0,.14)}
 .bag{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .bag button{background:var(--soft);border-radius:16px;padding:10px;text-align:left;position:relative;transition:transform .12s}
@@ -5812,7 +5816,22 @@ function readoutNote(text, cls) {
 }
 /* ---------- sheets ---------- */
 function sheetOpen() { return !!document.querySelector('.sheet.on'); }
-function openSheet(id) { closeSheets(true); addStatsChip(id); $(id).classList.add('on'); $('scrim').classList.add('on'); SFX.blip(); }
+// Menus open on top of each other (Settings > Stats > Hole by hole): the sheet being left goes on SHEET_BACK, and the Back button at the top left of the
+// new one (shown only when there is something to go back to) shows it again as it was. Opening a sheet that is already on the stack pops back to it
+// instead of stacking it twice; closing (X, tap outside, a button that ends the menu) clears the stack.
+const SHEET_BACK = [];
+function hideSheets() { const hv = $('howVid'); if (hv && !hv.paused) hv.pause(); document.querySelectorAll('.sheet.on').forEach(s => s.classList.remove('on')); }
+function syncBack() { const on = document.querySelector('.sheet.on'); document.querySelectorAll('.sheet').forEach(s => s.classList.toggle('hasBack', s === on && SHEET_BACK.length > 0)); }
+function openSheet(id) {
+  const cur = document.querySelector('.sheet.on'), cid = cur && cur.id;
+  if (!cid) SHEET_BACK.length = 0;
+  else if (cid !== id) { const k = SHEET_BACK.indexOf(id); if (k >= 0) SHEET_BACK.length = k; else SHEET_BACK.push(cid); }
+  hideSheets(); addStatsChip(id); $(id).classList.add('on'); $('scrim').classList.add('on'); syncBack(); SFX.blip();
+}
+function sheetBack() {
+  const id = SHEET_BACK.pop(); if (!id) { closeSheets(); return; }
+  hideSheets(); if (id === 'menuSheet') syncMenu(); $(id).classList.add('on'); syncBack(); SFX.blip();
+}
 // every menu screen except the main menu (where Stats is a button) and Stats itself carries a small Stats shortcut with the player's level in its header
 function addStatsChip(id) {
   if (id === 'menuSheet' || id === 'statsSheet') return;
@@ -5820,7 +5839,7 @@ function addStatsChip(id) {
   if (!c) { c = document.createElement('button'); c.className = 'stChip'; c.onclick = e => { e.stopPropagation(); openStats(); }; h.appendChild(c); }
   let li = 0; LEVELS.forEach((l, i) => { if (ST.holes >= l[0]) li = i; }); c.textContent = '📊 ' + LEVELS[li][1];
 }
-function closeSheets(keepScrim) { const hv = $('howVid'); if (hv && !hv.paused) hv.pause(); document.querySelectorAll('.sheet.on').forEach(s => s.classList.remove('on')); if (!keepScrim) $('scrim').classList.remove('on'); }
+function closeSheets() { hideSheets(); SHEET_BACK.length = 0; syncBack(); $('scrim').classList.remove('on'); }
 function openBag() {
   if (G.state !== 'address' && G.state !== 'settle') return;
   const b = $('bag'); b.innerHTML = '';
@@ -6521,7 +6540,7 @@ function initInput() {
       if (e.code === 'ArrowRight') { G.yaw += isPutt() ? .004 : .012; G.target = null; updateAim(); }
       if (e.code === 'ArrowUp') changeClub(-1); if (e.code === 'ArrowDown') changeClub(1);
     }
-    if (e.code === 'Escape') closeSheets();
+    if (e.code === 'Escape') sheetBack();
   });
   document.addEventListener('keyup', e => {
     if (typing(e)) return;
@@ -6589,7 +6608,7 @@ function initInput() {
     if (!cleanName(settings.name)) { nr.classList.remove('need'); void nr.offsetWidth; nr.classList.add('need'); ni.focus(); return; }
     audio(); SFX.blip(); $('title').classList.remove('on'); startRound();
   };
-  $('mBoard').onclick = () => { closeSheets(true); openBoard(); };
+  $('mBoard').onclick = openBoard;
   document.querySelectorAll('#segRev button').forEach(b => b.onclick = () => { settings.reverse = +b.dataset.v === 1; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segHand button').forEach(b => b.onclick = () => { settings.hand = +b.dataset.v; saveSettings(); syncMenu(); if (G.C) { G.carryKey = ''; updateAim(true); } });
   document.querySelectorAll('#segSnd button').forEach(b => b.onclick = () => { settings.sound = b.dataset.v === '1'; saveSettings(); syncMenu(); musicTick(); });
@@ -6607,6 +6626,9 @@ function initInput() {
     const b = document.createElement('button'); b.className = 'shX'; b.setAttribute('aria-label', 'Close');
     b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     b.onclick = e => { e.stopPropagation(); closeSheets(); }; sh.appendChild(b);
+    const k = document.createElement('button'); k.className = 'shBack'; k.setAttribute('aria-label', 'Back');
+    k.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+    k.onclick = e => { e.stopPropagation(); sheetBack(); }; sh.appendChild(k);
   });
   $('mCard').onclick = () => showScorecard(false);
   $('dReplay').onclick = () => { SFX.blip(); replayLast(); };
