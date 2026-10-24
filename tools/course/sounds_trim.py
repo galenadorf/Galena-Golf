@@ -7,6 +7,8 @@ Music: out/sounds/Hole_7_background_music.m4a -> sounds/hole7-q.mp3, mono at 80 
 holds the song's closing hit), a short fade at the end, the playing level is baked into the file (MUSIC_PEAK_DB), so it is quiet even where the browser ignores the game's volume setting (HOLE_SONGS vol is 1).
 Fart_01..07.m4a and Penis.m4a -> sounds/fart1..8.mp3: trimmed like the strikes, mono at 96 kbps, the playing level baked in (FART_RMS_DB: the same loudness as the
 hole-7 song at its Med setting, measured as RMS over the trimmed clip), so the game plays them at gain 1 (a pool, one picked at random: `fartTick`).
+Truck_horn.m4a -> sounds/truckhorn.mp3, Truck_rumble.m4a -> sounds/truckrumble.mp3: trimmed like the strikes, mono at 96 kbps (the rumble at 64), peak -3 dBFS;
+the truck on the road plays one of the two at random (`SFX.honk`, TRUCK_SND), each with its own level there.
 Rerun after replacing a recording; commit sounds/ (the game loads it, sw.js caches it)."""
 import os
 import sys
@@ -80,9 +82,19 @@ def farts():
         print(f'{nm} -> sounds/fart{i}.mp3  kept {a:.2f}-{b:.2f} s  (peak {20 * np.log10(np.abs(y).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
 
 
+def trucks():
+    for nm, dst, kbps in (('Truck_horn', 'truckhorn', 96), ('Truck_rumble', 'truckrumble', 64)):
+        p = os.path.join(OUT, 'sounds', nm + '.m4a')
+        if not os.path.exists(p):
+            print('missing', p); continue
+        y, a, b = trim(load(p)); d = os.path.join(DEST, dst + '.mp3'); write(y, d, kbps)
+        print(f'{nm} -> sounds/{dst}.mp3  kept {a:.2f}-{b:.2f} s  (rms {20 * np.log10(np.sqrt((y ** 2).mean())):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
+
+
 def main():
     music()
     farts()
+    trucks()
     os.makedirs(DEST, exist_ok=True)
     for src, dst in MAP.items():
         p = os.path.join(OUT, 'sounds', src + '.m4a')

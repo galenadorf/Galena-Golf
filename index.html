@@ -3904,7 +3904,7 @@ function loadSounds(a) {
     try { fetch('sounds/' + k + '.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(buf => { if (buf) a.decodeAudioData(buf, b => { SND['s_' + k] = b; }, () => { }); }).catch(() => { }); } catch (e) { }
   }
 }
-const SND_FILES = ['driver', 'wood', 'iron', 'wedge', 'putter', 'cup', 'fart1', 'fart2', 'fart3', 'fart4', 'fart5', 'fart6', 'fart7', 'fart8'];
+const SND_FILES = ['driver', 'wood', 'iron', 'wedge', 'putter', 'cup', 'fart1', 'fart2', 'fart3', 'fart4', 'fart5', 'fart6', 'fart7', 'fart8', 'truckhorn', 'truckrumble'];
 function play(name, rate, vol, lp, delay) {
   if (!settings.sound || !SND[name]) return false; const a = audio(); if (!a) return false;
   const s = a.createBufferSource(); s.buffer = SND[name]; s.playbackRate.value = rate || 1; const g = a.createGain(); g.gain.value = vol == null ? 1 : vol; let n = s;
@@ -4508,15 +4508,8 @@ const SFX = {
   land(s) { noiseBurst(.07, clamp(s / 30, .03, .25), 320, .7); },
   cup() { if (play('s_cup', 1, .9) || play('cup', 1, .95)) return; [0, .07, .12].forEach((d, i) => tone(1500 - i * 220, .045, 'square', .05, null, d)); tone(230, .28, 'sine', .3, 130, .17); },
   splash() { noiseBurst(.55, .3, 650, .5); },
-  // a truck's air horn, synthesised: two blasts (short, long), each a pair of detuned sawtooth notes a major third apart; k = loudness 0..1
-  honk(k) {
-    if (!settings.sound) return; const a = audio(); if (!a) return; const t0 = a.currentTime;
-    for (const [dl, d] of [[0, .36], [.5, .62]]) for (const [f, v, ty] of [[311, .07, 'sawtooth'], [392, .06, 'sawtooth'], [156, .025, 'square']]) {
-      const t = t0 + dl, o = a.createOscillator(), g = a.createGain(), lp = a.createBiquadFilter(); o.type = ty; o.frequency.value = f * (1 + (Math.random() - .5) * .004); lp.type = 'lowpass'; lp.frequency.value = 1500;
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v * k, t + .03); g.gain.setValueAtTime(v * k, t + d - .06); g.gain.linearRampToValueAtTime(0, t + d); // a horn holds its note
-      o.connect(lp).connect(g).connect(a.destination); o.start(t); o.stop(t + d + .02);
-    }
-  },
+  // the truck's recorded sound (sounds/truckhorn.mp3 or truckrumble.mp3, one picked at random); k = loudness 0..1
+  honk(k) { play('s_truck' + (Math.random() < .5 ? 'horn' : 'rumble'), 1, .85 * k); },
   tree() { noiseBurst(.28, .22, 2600, .4); tone(320, .06, 'square', .06); },
   trunk() { tone(190, .09, 'triangle', .2, 120); noiseBurst(.05, .18, 900, 1.2); },
   leaves() { noiseBurst(.22, .14, 3200, .4); },

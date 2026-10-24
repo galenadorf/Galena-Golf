@@ -53,8 +53,8 @@ US 20 (two lanes, double yellow centre line, white edge lines, gravel shoulders;
   - Cannot be hit: the ball passes through the traffic.
 18-wheeler (red tractor with sleeper cab and roof deflector, 16 m white trailer with a red band; ~21 m long)
   - One truck: first sets off 8-33 s after arriving on a hole, then 20-60 s after each trip ends. Drives at 88-96% of the limit.
-  - Semi-rare "honk honk" (two air-horn blasts): about one trip in three has one, somewhere along the road, and it plays only if
-    the truck is within ~650 m of the camera (louder when closer).
+  - Semi-rare truck sound (a recorded air horn or engine rumble, picked at random): about one trip in three has one, somewhere along
+    the road, and it plays only if the truck is within ~650 m of the camera (louder when closer).
 Car (blue-grey sedan, a 2016 Subaru Legacy)
   - Two Subarus: the first sets off 2-10 s after arriving, the second 10-26 s; each starts again 6-25 s after a trip ends.
     Drives at 95-105% of the limit.
