@@ -6078,17 +6078,23 @@ function statsRound(tp) {
   const b1 = beat('round', tp.d, c + ' · ' + tp.s + ' strokes'); setTimeout(() => beat('roundPutts', pu, c), b1 ? 4300 : 300);
 }
 const LEVELS = [[0, 'Rookie'], [18, 'Club Member'], [54, 'Fairway Regular'], [108, 'Scratch Hunter'], [216, 'Course Legend'], [432, 'Hall of Famer']];
-// per hole: this device's finished rounds plus (registered) the ones filed under my ID, each counted once
+// per hole, lifetime: the filed summary plus this device's finished rounds newer than the last filed one (not filed yet), each counted once
+function holeAgg() {
+  const c = PID.stats && PID.stats.courses && PID.stats.courses[COURSE.key], last = PID.stats ? PID.stats.last : 0;
+  const A = HOLE_DEFS.map((d, i) => c && c.holes[i] ? c.holes[i].slice() : [0, 0, 0, 0, 0, 0, 0, 0, 99]);
+  for (const x of histLocal()) if (x.at > last && x.course === COURSE.key) x.hs.forEach((h, i) => {
+    const a = A[i]; a[0]++; a[1] += h[0]; a[2] += h[1]; if (h[2] >= 0) { a[3] += h[2]; a[4]++; } if (h[3] >= 0) { a[5] += h[3]; a[6]++; } a[7] += h[4]; a[8] = Math.min(a[8], h[0]);
+  });
+  return A;
+}
 function holeStatsHtml() {
   if (!isReg()) return '<div class="sub"><span>By hole</span></div><div class="stFun"><div>Per-hole history is for registered players. Get a Player ID in Settings.</div></div>';
-  const seen = new Set(), all = [];
-  for (const x of histLocal().concat((PID.rounds || []).filter(x => x && x.course === COURSE.key && Array.isArray(x.hs) && x.hs.length === HOLE_DEFS.length))) if (!seen.has(x.at)) { seen.add(x.at); all.push(x); }
+  const A = holeAgg(), pc = (a, b) => Math.round(100 * a / b) + '%';
   const rows = HOLE_DEFS.map((d, i) => {
-    const h = all.map(x => x.hs[i]).filter(v => Array.isArray(v) && v[0] > 0); if (!h.length) return `<div class="stRow"><span>Hole ${i + 1} · par ${d.par}</span><span>–</span></div>`;
-    const avg = h.reduce((a, v) => a + v[0], 0) / h.length, pu = h.reduce((a, v) => a + v[1], 0) / h.length, fw = h.filter(v => v[2] >= 0), gi = h.filter(v => v[3] >= 0);
-    return `<div class="stRow"><span>Hole ${i + 1} · par ${d.par}</span><span>${avg.toFixed(2)} avg · best ${Math.min(...h.map(v => v[0]))} · ${pu.toFixed(1)} putts${fw.length ? ' · FW ' + Math.round(100 * fw.filter(v => v[2] === 1).length / fw.length) + '%' : ''}${gi.length ? ' · GIR ' + Math.round(100 * gi.filter(v => v[3] === 1).length / gi.length) + '%' : ''} · ${h.length}×</span></div>`;
+    const a = A[i]; if (!a[0]) return `<div class="stRow"><span>Hole ${i + 1} · par ${d.par}</span><span>–</span></div>`;
+    return `<div class="stRow"><span>Hole ${i + 1} · par ${d.par}</span><span>${(a[1] / a[0]).toFixed(2)} avg · best ${a[8]} · ${(a[2] / a[0]).toFixed(1)} putts${a[4] ? ' · FW ' + pc(a[3], a[4]) : ''}${a[6] ? ' · GIR ' + pc(a[5], a[6]) : ''} · ${a[0]}×</span></div>`;
   });
-  return '<div class="sub"><span>By hole</span></div>' + (all.length ? rows.join('') : '<div class="stFun"><div>Finish a round and its holes show up here.</div></div>');
+  return '<div class="sub"><span>By hole</span></div>' + (A.some(a => a[0]) ? rows.join('') : '<div class="stFun"><div>Finish a round and its holes show up here.</div></div>');
 }
 function openStats(again) {
   if (isReg() && !again) pidRounds().then(fresh => { if (fresh && $('statsSheet').classList.contains('on')) openStats(true); }); // once, when my filed rounds have just arrived
@@ -6138,7 +6144,7 @@ const ghKey = () => { try { return GH_POST_KEY.length ? atob(GH_POST_KEY.slice()
 // "ID request" code this screen copies, to the player's keys. A device whose key is in the roster is registered: its rounds are signed, the
 // workflow checks the signature against the roster, and per-hole history follows the ID to every device. Any other device is a guest: it plays
 // everything solo and keeps its own stats, but posts nothing. Removing a key from players.json turns that device back into a guest.
-const PID = { key: null, pub: '', fp: '', label: '', reg: null, ready: null, at: 0, rounds: null, roundsAt: 0 };
+const PID = { key: null, pub: '', fp: '', label: '', reg: null, ready: null, at: 0, stats: null, roundsAt: 0 };
 const b64 = u8 => { let s = ''; u8.forEach(c => s += String.fromCharCode(c)); return btoa(s); };
 const isReg = () => !!(PID.reg && PID.key);
 function pidDeviceLabel() { const u = navigator.userAgent; return /iPad/.test(u) ? 'iPad' : /iPhone/.test(u) ? 'iPhone' : /Android/.test(u) ? (/Mobile/.test(u) ? 'Android phone' : 'Android tablet') : /Windows/.test(u) ? 'Windows' : /Mac/.test(u) ? 'Mac' : /Linux/.test(u) ? 'Linux' : 'Device'; }
@@ -6222,9 +6228,15 @@ const HIST_KEY = 'ssg-hist';
 const roundHoles = () => HOLE_DEFS.map((d, i) => [G.scores[i], G.putts[i] || 0, G.fir[i] == null ? -1 : +G.fir[i], G.gir[i] == null ? -1 : +G.gir[i], G.pens[i] || 0, G.pins ? G.pins[i] | 0 : 0]);
 function histAdd(e) { try { const a = histLocal(); if (a.some(x => x.at === e.at)) return; a.push({ at: e.at, course: e.course, strokes: e.strokes, hs: e.hs }); localStorage.setItem(HIST_KEY, JSON.stringify(a.slice(-300))); } catch (e2) { } }
 function histLocal() { try { const a = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); return Array.isArray(a) ? a.filter(x => x && Array.isArray(x.hs) && x.hs.length === HOLE_DEFS.length) : []; } catch (e) { return []; } }
-async function pidRounds(force) { // my rounds as the workflow filed them (rounds/<id>.json), so history follows the ID across devices; true when new rounds arrived
+// my lifetime summary as the workflow keeps it (stats/<id>.json: per course the rounds, the best round, and per hole [rounds, strokes, putts, fairways hit,
+// fairway chances, greens hit, green chances, penalties, best]); a constant size however many rounds are filed. The rounds themselves are in
+// rounds/<id>/<year>.json, one small file per year, for anything that needs them (seasons, handicap). True when the summary changed.
+async function pidRounds(force) {
   if (!isReg() || (!force && PID.roundsAt && Date.now() - PID.roundsAt < 6e4)) return false; PID.roundsAt = Date.now();
-  try { const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/rounds/${PID.reg.pid}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' }); if (r.ok) { const a = await r.json(); PID.rounds = Array.isArray(a) ? a : []; return true; } } catch (e) { }
+  try {
+    const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/stats/${PID.reg.pid}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' });
+    if (r.ok) { const a = await r.json(), old = PID.stats; PID.stats = a && a.courses ? a : null; return !old || !PID.stats || old.rounds !== PID.stats.rounds || old.last !== PID.stats.last; }
+  } catch (e) { }
   return false;
 }
 // returns true when the round was filed (no account needed)
