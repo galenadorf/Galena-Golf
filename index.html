@@ -4012,15 +4012,17 @@ function songTick(now, force) {
   if (want && !SONG.on && now >= SONG.armAt && SONG.buf) songPlay(d); else if (!want && SONG.on) songPause(false);
 }
 // ---- an unseen, very rare sound: a pool of recordings (sounds/fart1-8.mp3), one picked at random ----
-// Their level is baked into the files (the same loudness as the hole-7 song at Med), so they play at gain 1. Per hole there is a 12% chance
-// that one is due 20-90 s after arriving (the balloon: 60% per hole, then every 100-220 s); if the sound is off or the game is on the title screen when it is due, it waits.
+// Their level is baked into the files (the same loudness as the hole-7 song at Med), so they play at gain 1. A round is dealt one hole where it is
+// certain (G.fartHole, saved with the round), so a full round has at least one, and every other hole also has a 1 in 18 chance, so a second or third
+// is possible. It is due 10-90 s after arriving on the hole (the balloon: 60% per hole, then every 100-220 s); if the sound is off or the game is on
+// the title screen when it is due, it waits. Practice has no dealt hole: each hole there just has the 1 in 18 chance.
 const FART = { hole: -1, at: 0, chk: 0 };
 function fartTick(now) {
   if (now - FART.chk < 500) return; FART.chk = now;
-  if (G.hole !== FART.hole) { FART.hole = G.hole; FART.at = Math.random() < .12 ? now + (20 + Math.random() * 70) * 1000 : 0; }
+  if (G.hole !== FART.hole) { FART.hole = G.hole; FART.at = ((G.fartHole === G.hole && !G.fartDone) || Math.random() < 1 / HOLE_DEFS.length) ? now + (10 + Math.random() * 80) * 1000 : 0; }
   if (!FART.at || now < FART.at) return;
   if (!settings.sound || document.hidden || G.state === 'title' || !AC || AC.state !== 'running') { FART.at = now + 2000; return; }
-  if (play('s_fart' + (1 + (Math.random() * 8 | 0)), 1, 1)) FART.at = 0; else FART.at = now + 2000;
+  if (play('s_fart' + (1 + (Math.random() * 8 | 0)), 1, 1)) { FART.at = 0; if (G.hole === G.fartHole) G.fartDone = true; } // (a chance one on another hole does not use up the dealt one) else FART.at = now + 2000;
 }
 // ---- soft birdsong: on every hole without a song, a few unseen birds call now and then (synthesised, no files) ----
 // Each call is a short phrase of sine notes (a whistle, a trill or a two-tone call) at a low level, panned to its own spot, sometimes answered by a second bird.
@@ -4593,7 +4595,7 @@ function saveRound() {
     wx: G.weather ? { id: G.weather.id, left: G.wxLeft, n: G.wxN, k: G.wxK, next: G.wxNext ? G.wxNext.id : null, prev: G.wxPrev || null } : null,
     shot: flying ? { L: sh.L, x: G.prev.x, z: G.prev.z, teed: !!G.prev.teed, playT: Math.max(0, G.playT), summary: sh.summary } : null
   } : null;
-  const r = { v: 1, course: COURSE.key, hole: h, scores: G.scores, putts: G.putts, fir: G.fir, gir: G.gir, pens: G.pens, pins: G.pins, planes: G.planes, at: Date.now(), mid };
+  const r = { v: 1, course: COURSE.key, hole: h, scores: G.scores, putts: G.putts, fir: G.fir, gir: G.gir, pens: G.pens, pins: G.pins, planes: G.planes, fh: G.fartHole, fd: !!G.fartDone, at: Date.now(), mid };
   try { localStorage.setItem(saveKey(COURSE.key), JSON.stringify(r)); } catch (e) { }
   refreshResume();
 }
@@ -4635,6 +4637,7 @@ function resumeRound(course) {
   setCourse(r.course);
   const n = HOLE_DEFS.length, arr = (a, d) => Array.isArray(a) && a.length === n ? a : HOLE_DEFS.map(() => d);
   G.practice = false; G.submitted = false; if (r.planes != null) G.planes = r.planes;
+  G.fartHole = Number.isInteger(r.fh) && r.fh >= 0 && r.fh < n ? r.fh : null; G.fartDone = !!r.fd; // (a round saved before this existed has none: it falls back to the plain chance)
   G.scores = arr(r.scores, null); G.putts = arr(r.putts, 0); G.fir = arr(r.fir, null); G.gir = arr(r.gir, null); G.pens = arr(r.pens, 0); G.pins = arr(r.pins, 0);
   const h = resumeHole(r), mid = r.mid && h === r.hole ? r.mid : null, pu = G.putts[h], pe = G.pens[h];
   startHole(h);
@@ -4670,13 +4673,14 @@ function startRound() {
   G.practice = false; G.submitted = false; G.planes = [0, 0, 1, 1, 1, 2, 2][(Math.random() * 7) | 0];
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   G.pins = HOLE_DEFS.map(() => Math.floor(Math.random() * 4)); // a fresh pin sheet every round
+  G.fartHole = Math.floor(Math.random() * HOLE_DEFS.length); G.fartDone = false; // the hole where this round's rare sound plays (fartTick)
   startHole(0);
 }
 function startHole(i) {
   if (MP.spec) { const sp = MP.spec; MP.spec = null; MP.follow = null; document.body.classList.remove('spec'); mpWorld(sp.course); } // a new hole ends following (back on my own course)
   closeSheets(); $('done').classList.remove('on'); $('readout').classList.remove('on'); UI.readT = 0;
   document.body.classList.remove('flight', 'swing');
-  G.hole = i; if (G.rig) G.rig.arr = null; songHole(i);
+  G.hole = i; FART.hole = -1; if (G.rig) G.rig.arr = null; songHole(i);
   if (G.practice && G.pins) G.pins[i] = ((G.pins[i] | 0) + 1 + Math.floor(Math.random() * 3)) % 4; // practice: a different pin every time the hole is played
   G.C = courseFor(i);
   buildHole(G.C);
