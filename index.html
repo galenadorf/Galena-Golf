@@ -279,8 +279,9 @@ body:has(#menuSheet.on) #tempo,body:has(#menuSheet.on) #strike,body:has(#menuShe
 .mpLr .mpb{height:34px;padding:0 12px;font-size:13px}.mpLr.on .mpb{background:#c0392b}
 .mpInfo{font:500 13px var(--sans,system-ui);color:var(--ink2);padding:2px 4px 4px;line-height:1.35}.mpInfo b{color:var(--ink)}
 .mpBtns{display:flex;gap:6px;margin-top:6px}.mpBtns .mpb{flex:1;background:var(--soft);color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair)}
-#mpPanel{position:fixed;z-index:2;right:calc(var(--sr) + 10px);top:0;min-width:128px;max-width:46vw;padding:6px 9px 7px;border-radius:16px;pointer-events:none;opacity:0;transition:opacity .3s,top .25s;font:600 13px var(--cond);color:#fff;text-shadow:var(--tsh)}
+#mpPanel{position:fixed;z-index:2;right:calc(var(--sr) + 10px);top:0;max-width:46vw;padding:6px 9px 7px;border-radius:16px;pointer-events:none;opacity:0;transition:opacity .3s,top .25s;font:600 13px var(--cond);color:#fff;text-shadow:var(--tsh)}
 #mpPanel.on{opacity:1}
+#mpPanel.open{min-width:128px}
 #mpPanel button.mpr{pointer-events:auto;width:100%;background:none;border:0;padding:0 4px;margin:0 -4px;font:inherit;color:inherit;text-shadow:inherit;border-radius:8px;cursor:pointer;text-align:left}
 #mpPanel .mpr.on{background:rgba(255,255,255,.22)}
 #mpPanel .mpr.fol .n{color:#ffe28a;text-shadow:0 0 6px rgba(255,200,60,.95),0 0 14px rgba(255,190,40,.75)}
@@ -292,7 +293,11 @@ body.spec #specBar{display:flex}
 body.spec .tb-hole,body.spec #windCard,body.spec #pinCard{visibility:hidden}
 body.spec #pinTag,body.spec #ballTag,body.spec #aimHint,body.spec #skipBtn,body.spec #readout{display:none!important}
 body.spec #tempo,body.spec #strike{opacity:.55!important}body.spec #tempo *,body.spec #strike *{pointer-events:none!important}body.spec #fx{opacity:.7}
+#mpPanel .mptog{pointer-events:auto;display:block;width:100%;background:none;border:0;padding:0;margin:0 0 2px;font:inherit;color:inherit;text-shadow:inherit;text-align:left;cursor:pointer;white-space:nowrap}
 #mpPanel .mph{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.8;margin-bottom:2px}
+#mpPanel .mpo{display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;line-height:1.3}
+#mpPanel .mpo i{width:6px;height:6px;border-radius:50%;background:#ff3b30;box-shadow:0 0 5px rgba(255,59,48,.9);animation:mpPulse 1.4s ease-in-out infinite}
+@keyframes mpPulse{0%,100%{opacity:1}50%{opacity:.25}}
 #mpPanel .mpr{display:flex;align-items:center;gap:6px;white-space:nowrap;line-height:1.5}
 #mpPanel .mpr i{width:8px;height:8px;border-radius:50%;flex:none}
 #mpPanel .mpr .n{flex:1;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
@@ -4349,11 +4354,17 @@ function mpPanel() {
   const sp = MP.spec, rows = [{ id: MP.id, n: playerName(), tp: sp ? sp.tp : totalToPar().d, h: G.hole, c: sp ? sp.course : COURSE.key, th: sp ? sp.th : G.scores.filter(v => v != null).length, col: '#ffffff', me: true }];
   rows.push(...others); rows.sort((a, b) => a.tp - b.tp || b.th - a.th);
   // rebuilt only when something in it changed, so a tap on a name is never lost to a refresh
-  const sig = MP.room + MP.st + (MP.follow || '') + COURSE.key + rows.slice(0, 8).map(r => [r.id, r.n, r.tp, r.th, r.h, r.c, r.fo === MP.id].join(',')).join('|');
+  const sig = MP.room + MP.st + (MP.open ? 1 : 0) + (MP.follow || '') + COURSE.key + rows.slice(0, 8).map(r => [r.id, r.n, r.tp, r.th, r.h, r.c, r.fo === MP.id].join(',')).join('|');
   if (sig === MP.sig) { mpPlace(el); return; } MP.sig = sig;
   el.textContent = '';
-  const hd = document.createElement('div'); hd.className = 'mph'; hd.textContent = (mpIsLobby(MP.room) ? 'Public lobby · ' + COURSE.short + (MP.peers.size > 7 ? ' · ' + (MP.peers.size + 1) + ' playing' : '') : 'Room ' + MP.room) + (MP.st === 'on' ? '' : ' · ' + (MP.st === 'error' ? 'offline' : 'connecting…')); el.appendChild(hd);
-  for (const r of rows.slice(0, 8)) {
+  // just the lobby's name and a pulsing "Players online"; a tap on them opens the list (and closes it again)
+  el.classList.toggle('open', !!MP.open);
+  const tog = document.createElement('button'); tog.className = 'mptog'; tog.setAttribute('aria-expanded', MP.open ? 'true' : 'false');
+  tog.onclick = e => { e.stopPropagation(); MP.open = !MP.open; mpPanel(); };
+  const hd = document.createElement('div'); hd.className = 'mph'; hd.textContent = (mpIsLobby(MP.room) ? 'Public lobby' : 'Room ' + MP.room) + (MP.st === 'on' ? '' : ' · ' + (MP.st === 'error' ? 'offline' : 'connecting…'));
+  const lv = document.createElement('div'); lv.className = 'mpo'; lv.append(document.createElement('i'), 'Players online');
+  tog.append(hd, lv); el.appendChild(tog);
+  for (const r of MP.open ? rows.slice(0, 8) : []) {
     // tap a name to follow that player; a golden glow: they are following me
     const row = document.createElement(r.me ? 'div' : 'button'); row.className = 'mpr' + (r.me ? ' me' : '') + (!r.me && r.fo === MP.id ? ' fol' : '') + (r.id === MP.follow ? ' on' : '');
     if (!r.me) row.onclick = e => { e.stopPropagation(); if (MP.follow === r.id) mpResume(); else mpFollow(r.id); };
