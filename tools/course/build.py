@@ -14,6 +14,7 @@ import os
 import numpy as np
 import rasterio
 from scipy import ndimage as ndi
+from shapely import affinity
 from shapely.geometry import LineString, Point, Polygon, box, shape
 from shapely.ops import linemerge, substring, unary_union
 
@@ -323,7 +324,7 @@ def creek_pieces(hw=2.0, step=14.0):
         return []
     out = []
     for g in json.load(open(p)):
-        L = shape(g)
+        L = LineString(round_line(shape(g).coords))   # the centre line is rounded, so the ribbons bend smoothly
         n = max(1, int(round(L.length / step)))
         for i in range(n):
             a, b = L.length * i / n, min(L.length, L.length * (i + 1) / n + .3)
@@ -365,8 +366,31 @@ def round_green(p, iters=3):
     return Polygon(pts).simplify(.04)
 
 
+def round_pond(p, iters=3):
+    """A pond's OSM outline has corners every 8-22 m; the same corner cutting as round_green, then scaled about its centre back to the original
+    area (cutting corners alone shrinks a pond by a few percent, which would pull the shore in from the real one)."""
+    q = round_green(p, iters)
+    c = p.centroid
+    return affinity.scale(q, math.sqrt(p.area / q.area), math.sqrt(p.area / q.area), origin=c)
+
+
+def round_line(coords, iters=3):
+    """Corner cutting on an open line (the creek's centre line); the two ends stay where they are."""
+    pts = list(coords)
+    for _ in range(iters):
+        q = [pts[0]]
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+            q += [(.75 * x0 + .25 * x1, .75 * y0 + .25 * y1), (.25 * x0 + .75 * x1, .25 * y0 + .75 * y1)]
+        pts = q + [pts[-1]]
+    return pts
+
+
 def main():
     F = osm.load()
+    for w in F['water']:
+        a0 = w['poly'].area
+        w['poly'] = round_pond(w['poly'])
+        assert abs(w['poly'].area / a0 - 1) < .01 and w['poly'].is_valid and w['poly'].geom_type == 'Polygon'
     for g in F['green']:
         a0 = g['poly'].area
         g['poly'] = round_green(g['poly'])

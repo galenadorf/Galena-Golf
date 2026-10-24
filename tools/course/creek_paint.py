@@ -7,15 +7,16 @@ import os
 
 import numpy as np
 from PIL import Image
-from rasterio import features
-from rasterio.transform import Affine
 from scipy import ndimage as ndi
-from shapely.geometry import box, mapping, shape
+from shapely.geometry import box, mapping
 
-from common import OUT
+from common import OUT, smooth_polys
 
 CELL = 14.0
 MIN_AREA = 6.0   # m2: smaller specks are paint noise
+SMOOTH = 1.5     # px of Gaussian blur before the outline is traced (the painted edges are pixel staircases)
+LEVEL = .46
+TOL = .1
 
 
 def main():
@@ -27,8 +28,7 @@ def main():
     lab, n = ndi.label(m)
     sizes = ndi.sum(m, lab, range(1, n + 1))
     m = np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s * fr['res'] ** 2 >= MIN_AREA])
-    tr = Affine(fr['res'], 0, fr['e0'], 0, -fr['res'], fr['n1'])
-    polys = [shape(g).buffer(0) for g, v in features.shapes(m.astype(np.uint8), mask=m, transform=tr) if v]
+    polys = smooth_polys(m, fr, SMOOTH, LEVEL, MIN_AREA, TOL)
     pieces = []
     for p in polys:
         x0, y0, x1, y1 = p.bounds
@@ -37,7 +37,7 @@ def main():
                 q = p.intersection(box(gx - .3, gy - .3, gx + CELL + .3, gy + CELL + .3))
                 for g in getattr(q, 'geoms', [q]):
                     if g.geom_type == 'Polygon' and g.area >= MIN_AREA:
-                        pieces.append(g.simplify(.25))
+                        pieces.append(g.simplify(.1))
     json.dump([mapping(p) for p in pieces], open(os.path.join(OUT, 'creek_painted.json'), 'w'))
     print(len(polys), 'creek areas,', len(pieces), 'pieces,', round(sum(p.area for p in polys)), 'm2 of water')
 

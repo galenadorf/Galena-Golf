@@ -72,7 +72,7 @@ SKY AND WEATHER
 ---------------
   - Clouds drift across the sky and thicken as the weather changes.
   - Weather spells last 6-9 holes: clear, damp, rain, damp, fine. Rain has falling drops and darker sky.
-  - Rainbow: a faint one in light rain when the sky is not too cloudy (as a spell builds or eases off); plays a short jingle once each time it appears.
+  - Rainbow: a faint one in light rain when the sky is not too cloudy (as a spell builds or eases off); plays a short jingle once each time it appears, but only once it is well faded in and the camera is facing it (it sits low in the east).
   - Wind: the flag flutters and a wind arrow shows on screen.
 
   - Heard, not seen: one of 8 short recordings (sounds/fart1-8.mp3, picked at random) plays at least once per round: the round is dealt one of its 18 holes where it is certain, and every
