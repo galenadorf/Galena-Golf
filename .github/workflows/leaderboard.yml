@@ -59,10 +59,10 @@ jobs:
             if (rows.filter(x => x.at > Date.now() - 36e5).length >= 120) return finish(false, 'The board is busy; try again later.');
             mine.push({ course: r.course, at: r.at, strokes: r.strokes, toPar: r.toPar, hs: r.hs }); mine.sort((a, b) => a.at - b.at);
             fs.mkdirSync(`rounds/${r.pid}`, { recursive: true }); fs.writeFileSync(pfile, JSON.stringify(mine) + '\n');
-            // summary: per course { rounds, best: {strokes, at}, holes: 18 x [rounds, strokes, putts, fairways hit, fairway chances, greens hit, green chances, penalties, best] }
+            // summary: per course { rounds, best: {strokes, at}, holes: 18 x [rounds, strokes, putts, fairways hit, fairway chances, greens hit, green chances, penalties, best, histogram of strokes 1..9 and 10+] }
             let st; try { st = JSON.parse(fs.readFileSync(sfile, 'utf8')); } catch (e) { st = { v: 1, pid: r.pid, rounds: 0, first: r.at, last: r.at, years: [], courses: {} }; }
-            const co = st.courses[r.course] || (st.courses[r.course] = { rounds: 0, best: null, holes: r.hs.map(() => [0, 0, 0, 0, 0, 0, 0, 0, 99]) });
-            r.hs.forEach((h, i) => { const a = co.holes[i]; a[0]++; a[1] += h[0]; a[2] += h[1]; if (h[2] >= 0) { a[3] += h[2]; a[4]++; } if (h[3] >= 0) { a[5] += h[3]; a[6]++; } a[7] += h[4]; a[8] = Math.min(a[8], h[0]); });
+            const co = st.courses[r.course] || (st.courses[r.course] = { rounds: 0, best: null, holes: r.hs.map(() => [0, 0, 0, 0, 0, 0, 0, 0, 99, new Array(10).fill(0)]) });
+            r.hs.forEach((h, i) => { const a = co.holes[i]; if (!a[9]) a[9] = new Array(10).fill(0); a[9][Math.min(h[0], 10) - 1]++; a[0]++; a[1] += h[0]; a[2] += h[1]; if (h[2] >= 0) { a[3] += h[2]; a[4]++; } if (h[3] >= 0) { a[5] += h[3]; a[6]++; } a[7] += h[4]; a[8] = Math.min(a[8], h[0]); });
             co.rounds++; if (!co.best || r.strokes < co.best.strokes) co.best = { strokes: r.strokes, at: r.at };
             st.rounds++; st.first = Math.min(st.first, r.at); st.last = Math.max(st.last, r.at); if (!st.years.includes(year)) st.years = st.years.concat(year).sort();
             fs.mkdirSync('stats', { recursive: true }); fs.writeFileSync(sfile, JSON.stringify(st) + '\n');

@@ -257,6 +257,14 @@ body:has(#menuSheet.on) #tempo,body:has(#menuSheet.on) #strike,body:has(#menuShe
 .stCard .v{font:700 28px/1.1 var(--cond);color:var(--ink);font-variant-numeric:tabular-nums;margin-top:3px}
 .stCard .n{font:500 12px/1.25 var(--body);color:var(--ink2);margin-top:2px}
 .stFun{display:flex;flex-direction:column;gap:6px}.stFun div{background:var(--soft);border-radius:14px;padding:9px 12px;font:500 14px/1.35 var(--body);color:var(--ink2)}.stFun b{color:var(--ink);font-weight:700}
+.hbhSum{font:600 12px var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:2px 0 6px}
+.hbhChart{width:100%;height:auto;display:block}.hbhChart text{font:500 10px var(--body);fill:var(--ink2)}.hbhChart .bar{fill:#4a7cc0}.hbhChart .bar.sel{fill:#16407f}.hbhChart .grid{stroke:var(--hair)}.hbhChart .par{stroke:var(--ink);stroke-width:2}
+.hbhLeg{display:flex;gap:14px;font:600 12px var(--body);color:var(--ink2);margin:2px 0 8px}.hbhLeg i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+.hbhCap{min-height:18px;font:600 13px var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);margin-bottom:6px}
+.hbhRow{display:grid;grid-template-columns:26px 62px 38px 38px 1fr;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--hair)}
+.hbhRow .hn{font:700 26px var(--cond);color:var(--ink)}.hbhRow b{display:block;font:700 18px/1.05 var(--cond);color:var(--ink);font-variant-numeric:tabular-nums}.hbhRow small{display:block;font:600 11px var(--cond);letter-spacing:.06em;color:var(--ink3);text-transform:uppercase;margin-top:1px}
+.hbhBar{display:flex;height:36px;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--hair);background:#fff}.hbhBar i{display:flex;align-items:center;justify-content:center;min-width:0;font:700 14px var(--cond);font-style:normal;color:#16211c}
+.hbhBar .e{background:#3f6fb5;color:#fff}.hbhBar .b{background:#7aa3d6;color:#fff}.hbhBar .p{background:#fff}.hbhBar .g{background:#f8d9c9}.hbhBar .d{background:#f0a07c}.hbhNone{color:var(--ink3);font:600 13px var(--cond);text-align:center;width:100%;align-self:center}
 .stRow{display:flex;justify-content:space-between;align-items:center;font:600 15px var(--cond);text-transform:uppercase;padding:6px 0;border-bottom:1px solid var(--hair)}.stRow span:first-child{color:var(--ink3);letter-spacing:.08em;font-size:12px}
 .mpRoom{display:flex;gap:6px;flex:1;justify-content:flex-end}.mpRoom input{max-width:120px}
 .mpb{height:38px;padding:0 14px;border-radius:12px;background:#2f6b35;color:#fff;font:600 15px var(--cond);text-transform:uppercase;letter-spacing:.05em;border:0}
@@ -417,6 +425,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 <div class="sheet" id="cardSheet"><div class="grab"></div><div id="cardBody"></div></div>
 <div class="sheet" id="boardSheet"><div class="grab"></div><div class="sht">Leaderboard <small id="boardName">Woodbine Bend Golf Course</small></div><div id="boardBody"></div></div>
 <div class="sheet" id="mapSheet"><div class="grab"></div><div class="sht"><span id="mapTitle">Hole map</span><small id="mapInfo"></small></div><div class="mapwrap"><canvas id="mapCv"></canvas></div><div class="maph"><span>Tap or drag to place your target</span><button class="mbtn dark" id="mapDone" style="height:44px;padding:0 22px">Done</button></div></div>
+<div class="sheet" id="holeSheet"><div class="grab"></div><div class="sht">Hole by hole <small id="hbhSub"></small></div><div id="hbhBody"></div></div>
 <div class="sheet" id="statsSheet"><div class="grab"></div><div class="sht">Stats <small id="stSub"></small></div><div id="statsBody"></div></div>
 <div class="sheet" id="helpSheet"><div class="grab"></div><div class="sht">How to swing</div><div class="help">
   <div><b>Aim</b>Drag across the course, or open the map and tap a target. The white ring is where a pure, full swing lands with no wind.</div>
@@ -6078,23 +6087,60 @@ function statsRound(tp) {
   const b1 = beat('round', tp.d, c + ' · ' + tp.s + ' strokes'); setTimeout(() => beat('roundPutts', pu, c), b1 ? 4300 : 300);
 }
 const LEVELS = [[0, 'Rookie'], [18, 'Club Member'], [54, 'Fairway Regular'], [108, 'Scratch Hunter'], [216, 'Course Legend'], [432, 'Hall of Famer']];
-// per hole, lifetime: the filed summary plus this device's finished rounds newer than the last filed one (not filed yet), each counted once
+// per hole, lifetime: the filed summary plus this device's finished rounds newer than the last filed one (not filed yet), each counted once.
+// A hole is [rounds, strokes, putts, fairways hit, fairway chances, greens hit, green chances, penalties, best, histogram]; the histogram counts strokes 1..9 and 10+.
 function holeAgg() {
   const c = PID.stats && PID.stats.courses && PID.stats.courses[COURSE.key], last = PID.stats ? PID.stats.last : 0;
-  const A = HOLE_DEFS.map((d, i) => c && c.holes[i] ? c.holes[i].slice() : [0, 0, 0, 0, 0, 0, 0, 0, 99]);
+  const A = HOLE_DEFS.map((d, i) => { const a = c && c.holes[i] ? c.holes[i].slice() : [0, 0, 0, 0, 0, 0, 0, 0, 99]; a[9] = (a[9] || new Array(10).fill(0)).slice(); return a; });
   for (const x of histLocal()) if (x.at > last && x.course === COURSE.key) x.hs.forEach((h, i) => {
-    const a = A[i]; a[0]++; a[1] += h[0]; a[2] += h[1]; if (h[2] >= 0) { a[3] += h[2]; a[4]++; } if (h[3] >= 0) { a[5] += h[3]; a[6]++; } a[7] += h[4]; a[8] = Math.min(a[8], h[0]);
+    const a = A[i]; a[0]++; a[1] += h[0]; a[2] += h[1]; if (h[2] >= 0) { a[3] += h[2]; a[4]++; } if (h[3] >= 0) { a[5] += h[3]; a[6]++; } a[7] += h[4]; a[8] = Math.min(a[8], h[0]); a[9][Math.min(h[0], 10) - 1]++;
   });
   return A;
 }
-function holeStatsHtml() {
-  if (!isReg()) return '<div class="sub"><span>By hole</span></div><div class="stFun"><div>Per-hole history is for registered players. Get a Player ID in Settings.</div></div>';
-  const A = holeAgg(), pc = (a, b) => Math.round(100 * a / b) + '%';
-  const rows = HOLE_DEFS.map((d, i) => {
-    const a = A[i]; if (!a[0]) return `<div class="stRow"><span>Hole ${i + 1} · par ${d.par}</span><span>–</span></div>`;
-    return `<div class="stRow"><span>Hole ${i + 1} · par ${d.par}</span><span>${(a[1] / a[0]).toFixed(2)} avg · best ${a[8]} · ${(a[2] / a[0]).toFixed(1)} putts${a[4] ? ' · FW ' + pc(a[3], a[4]) : ''}${a[6] ? ' · GIR ' + pc(a[5], a[6]) : ''} · ${a[0]}×</span></div>`;
-  });
-  return '<div class="sub"><span>By hole</span></div>' + (A.some(a => a[0]) ? rows.join('') : '<div class="stFun"><div>Finish a round and its holes show up here.</div></div>');
+// the round totals for the chart: the filed year files (newest first until there are enough), plus this device's unfiled rounds
+async function pidRoundList(n) {
+  const out = [], st = PID.stats; PID.years = PID.years || {};
+  for (const y of (st && st.years ? st.years.slice().reverse() : [])) {
+    if (!PID.years[y]) { try { const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/rounds/${PID.reg.pid}/${y}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' }); if (r.ok) PID.years[y] = await r.json(); } catch (e) { } }
+    for (const x of PID.years[y] || []) out.push(x);
+    if (out.filter(x => x.course === COURSE.key).length >= n) break;
+  }
+  const last = st ? st.last : 0; for (const x of histLocal()) if (x.at > last) out.push(x);
+  return out.filter(x => x.course === COURSE.key).sort((p, q) => p.at - q.at).slice(-n);
+}
+// the Hole by hole page: the totals of the last rounds against par, then every hole with its par, length, best, average and how its rounds split into
+// eagle or better / birdie / par / bogey / double or worse (the segments are as wide as their counts)
+function holeChart(R) {
+  const par = HOLE_DEFS.reduce((a, d) => a + d.par, 0), sc = R.map(x => x.strokes), lo0 = Math.min(par, ...sc) - 2, hi0 = Math.max(par, ...sc) + 2;
+  const step = [1, 2, 3, 5, 10, 20].find(v => (hi0 - lo0) / v <= 5), lo = Math.floor(lo0 / step) * step, hi = Math.ceil(hi0 / step) * step;
+  const W = 340, H = 150, L = 28, B = 4, y = v => H - B - (v - lo) / (hi - lo) * (H - B - 6), bw = (W - L) / Math.max(R.length, 1);
+  let g = '';
+  for (let v = lo; v <= hi; v += step) g += `<line class="grid" x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 4}" y="${y(v) + 3}" text-anchor="end">${v}</text>`;
+  R.forEach((x, i) => { g += `<rect class="bar" data-i="${i}" x="${L + i * bw + bw * .1}" y="${y(x.strokes)}" width="${bw * .8}" height="${Math.max(0, y(lo) - y(x.strokes))}"/>`; });
+  g += `<line class="par" x1="${L}" x2="${W}" y1="${y(par)}" y2="${y(par)}"/>`;
+  return `<svg class="hbhChart" viewBox="0 0 ${W} ${H}">${g}</svg><div class="hbhLeg"><span><i style="background:var(--ink)"></i>Par ${par}</span><span><i style="background:#4a7cc0"></i>Total score</span></div><div class="hbhCap" id="hbhCap">Tap a bar</div>`;
+}
+function openHoles() {
+  const el = $('hbhBody'), sub = $('hbhSub'); sub.textContent = playerName();
+  if (!isReg()) { el.innerHTML = '<div class="stFun"><div>Hole-by-hole history is for registered players. Get a Player ID in Settings.</div></div>'; openSheet('holeSheet'); return; }
+  const draw = R => {
+    const A = holeAgg(), pc = Math.max(0, ...A.map(a => a[0])), all = (PID.stats && PID.stats.courses && PID.stats.courses[COURSE.key]) || null;
+    const nr = Math.max(R.length, all ? all.rounds : 0);
+    const rows = HOLE_DEFS.map((d, i) => {
+      const a = A[i], n = a[0], h = a[9], seg = [0, 0, 0, 0, 0];
+      h.forEach((c, k) => { const dlt = k + 1 - d.par; seg[dlt <= -2 ? 0 : dlt === -1 ? 1 : dlt === 0 ? 2 : dlt === 1 ? 3 : 4] += c; });
+      const tot = seg.reduce((u, v) => u + v, 0), cls = ['e', 'b', 'p', 'g', 'd'];
+      const bar = tot ? '<div class="hbhBar">' + seg.map((c, k) => c ? `<i class="${cls[k]}" style="flex:${c} 1 0">${c / tot >= .07 ? c : ''}</i>` : '').join('') + '</div>' : '<div class="hbhNone">no rounds yet</div>';
+      return `<div class="hbhRow"><div class="hn">${i + 1}</div><div><b>PAR ${d.par}</b><small>${HOLE_LEN[i]} YD</small></div><div><b>${n ? a[8] : '–'}</b><small>Best</small></div><div><b>${n ? (a[1] / n).toFixed(1) : '–'}</b><small>Avg</small></div>${bar}</div>`;
+    });
+    el.innerHTML = `<div class="hbhSum">${COURSE.name} · ${nr} round${nr === 1 ? '' : 's'}${pc ? ' · ' + pc + ' with hole scores' : ''}</div>` + (R.length ? holeChart(R) : '') + rows.join('');
+    el.querySelectorAll('.bar').forEach(b => b.onclick = () => {
+      el.querySelectorAll('.bar.sel').forEach(q => q.classList.remove('sel')); b.classList.add('sel'); const x = R[+b.dataset.i], par = HOLE_DEFS.reduce((u, d) => u + d.par, 0);
+      $('hbhCap').textContent = new Date(x.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) + ' \u00b7 ' + x.strokes + ' (' + fmtToPar(x.strokes - par) + ')';
+    });
+  };
+  draw([]); openSheet('holeSheet');
+  pidRounds().then(() => pidRoundList(45)).then(R => { if ($('holeSheet').classList.contains('on')) draw(R); }).catch(() => { });
 }
 function openStats(again) {
   if (isReg() && !again) pidRounds().then(fresh => { if (fresh && $('statsSheet').classList.contains('on')) openStats(true); }); // once, when my filed rounds have just arrived
@@ -6113,15 +6159,15 @@ function openStats(again) {
   if (S.aces) fun.push(`<b>${S.aces}</b> hole${S.aces > 1 ? 's' : ''} in one. Legend. 👑`);
   if (!fun.length) fun.push('Play a few holes and the fun facts will show up here.');
   el.innerHTML = `<div class="stLvl"><b>${LEVELS[li][1]}</b><span>${nx ? (nx[0] - S.holes) + (nx[0] - S.holes === 1 ? ' hole to ' : ' holes to ') + nx[1] : 'Top level reached'} · ${S.holes} hole${S.holes === 1 ? '' : 's'} · ${S.rounds} round${S.rounds === 1 ? '' : 's'}</span>${nx ? `<div class="stBar"><i style="width:${Math.min(100, 100 * (S.holes - lo) / (nx[0] - lo))}%"></i></div>` : ''}</div>
+    <div class="mbtns"><button class="mbtn wide" id="stHoles">\u26f3 Hole by hole \u203a</button></div>
     <div class="sub"><span>Records</span></div><div class="stGrid">${['holed', 'putt', 'drive', 'girStreak', 'fwStreak', 'birdStreak', 'round', 'roundPutts'].map(rc).join('')}</div>
     <div class="sub"><span>Streaks running now</span></div><div class="stGrid">${card('Greens in a row', '🟢', S.cur.gir, 'best ' + S.rec.girStreak.v)}${card('Fairways in a row', '🛣️', S.cur.fw, 'best ' + S.rec.fwStreak.v)}${card('Birdie streak', '🐦', S.cur.bird, 'best ' + S.rec.birdStreak.v)}${card('Holes in one', '👑', S.aces)}</div>
     <div class="sub"><span>Scoring</span></div>
     <div class="stRow"><span>Eagles or better</span><span>${S.eagles}</span></div><div class="stRow"><span>Birdies</span><span>${S.birdies}</span></div><div class="stRow"><span>Pars</span><span>${S.pars}</span></div><div class="stRow"><span>Bogeys</span><span>${S.bogeys}</span></div><div class="stRow"><span>Double or worse</span><span>${S.doubles}</span></div>
     <div class="stRow"><span>Fairways hit</span><span>${pct(S.fwHit, S.fwTry)}</span></div><div class="stRow"><span>Greens in regulation</span><span>${pct(S.gir, S.girTry)}</span></div><div class="stRow"><span>Putts per hole</span><span>${S.holes ? (S.putts / S.holes).toFixed(2) : '–'}</span></div><div class="stRow"><span>Strokes per hole</span><span>${pace}</span></div>
-    ${holeStatsHtml()}
     <div class="sub"><span>Fun facts</span></div><div class="stFun">${fun.map(f => `<div>${f}</div>`).join('')}</div>
     <div class="mbtns"><button class="mbtn" id="stReset">Reset stats</button><button class="mbtn dark" id="stClose">Close</button></div>`;
-  $('stSub').textContent = playerName(); $('stClose').onclick = () => closeSheets();
+  $('stSub').textContent = playerName(); $('stClose').onclick = () => closeSheets(); $('stHoles').onclick = openHoles;
   $('stReset').onclick = () => { if (confirm('Reset all stats and records on this device?')) { ST = defStats(); saveStats(); openStats(); } };
   openSheet('statsSheet');
 }

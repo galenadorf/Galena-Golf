@@ -7,7 +7,7 @@
 
 Reads rounds/<id>/<year>.json (a player's rounds, one file per UTC year, each {course, at, strokes, toPar, hs}) and writes stats/<id>.json, the
 lifetime summary the game's Stats screen reads: per course the rounds played, the best round, and for each hole
-[rounds, strokes, putts, fairways hit, fairway chances, greens hit, green chances, penalties, best score].
+[rounds, strokes, putts, fairways hit, fairway chances, greens hit, green chances, penalties, best score, histogram of strokes 1..9 and 10+].
 A round with hs null counts as a round (and for the best round) but adds nothing to the per-hole totals. A flat rounds/<id>.json from before the year split is moved into the year files first. The workflow adds each new round to the same files
 (one line of arithmetic per hole), so this is only for repairing or checking them."""
 import json
@@ -75,7 +75,7 @@ def rebuild(pid):
     rounds.sort(key=lambda r: r['at'])
     st = {'v': 1, 'pid': pid, 'rounds': 0, 'first': rounds[0]['at'], 'last': rounds[0]['at'], 'years': [], 'courses': {}}
     for r in rounds:
-        co = st['courses'].setdefault(r['course'], {'rounds': 0, 'best': None, 'holes': [[0, 0, 0, 0, 0, 0, 0, 0, 99] for _ in range(HOLES)]})
+        co = st['courses'].setdefault(r['course'], {'rounds': 0, 'best': None, 'holes': [[0, 0, 0, 0, 0, 0, 0, 0, 99, [0] * 10] for _ in range(HOLES)]})
         for a, h in zip(co['holes'], r.get('hs') or []):
             a[0] += 1
             a[1] += h[0]
@@ -88,6 +88,7 @@ def rebuild(pid):
                 a[6] += 1
             a[7] += h[4]
             a[8] = min(a[8], h[0])
+            a[9][min(h[0], 10) - 1] += 1
         co['rounds'] += 1
         if co['best'] is None or r['strokes'] < co['best']['strokes']:
             co['best'] = {'strokes': r['strokes'], 'at': r['at']}
