@@ -569,7 +569,7 @@ const POW_EXP = .78;
 const DOWN_FULL = .35; // seconds
 const DOWN_STEP = .2, DOWN_STEP_LOSS = .2; // each 0.2 s the downswing is slower than DOWN_FULL cuts the ball speed by a further 20 % (compounding)
 const TEMPO_K = -Math.log((1.4 / 1.5 - .85) / .15); // tempo multiplier .85 + .15 * exp(-K * (R - 3)^2) hits 1.4/1.5 at 2:1 and 4:1
-const PUTT_RANGES = [3, 6, 10, 15, 22, 30];
+const PUTT_RANGES = [3, 6, 10, 15, 71 * FT]; // the longest stroke is 105 % of 71 ft, the longest putt on any green (holes 5 and 9)
 // part swings make less spin: a short chip leaves the face with a fraction of a full swing's backspin
 const SPIN_BASE = .55;
 function spinFrac(p) { return SPIN_BASE + (1 - SPIN_BASE) * p; }
@@ -891,7 +891,8 @@ function computeLaunch(ci, sw, st, surf, yaw, hand, teed, lieRoll) {
   const off = Math.hypot(h, v * .85);
   if (c.type === 'putter') {
     const D = clamp(sw.p, 0, 1.08) * sw.range;
-    let vb = Math.sqrt(2 * SURF[S.GREEN].mu * GRAV * Math.max(.05, D));
+    // the stroke is sized for the green; the part of the roll that crosses the fringe (sw.fr metres of it along the line) costs more, so the stroke carries that extra
+    let vb = Math.sqrt(2 * GRAV * (SURF[S.GREEN].mu * Math.max(.05, D) + Math.min(D, sw.fr || 0) * (SURF[S.FRINGE].mu - SURF[S.GREEN].mu)));
     const sm = (1 - .22 * h * h - .06 * v * v) * (.95 + .05 * q);
     vb *= sm;
     const start = 1.4 * h * hand - (sw.pathDeg || 0);
@@ -4785,7 +4786,7 @@ function autoClubAndAim() {
 }
 // equivalent flat distance: uphill costs (5/7)·dh/μ metres of roll, downhill gives it back
 function puttEquiv() { const d = distToPin(), dh = G.C.cup.y - G.ball.y; return Math.max(.5, d + (5 / 7) * dh / SURF[S.GREEN].mu); }
-function pickPuttRange() { const e = puttEquiv(); G.puttRange = PUTT_RANGES.find(r => r >= e * 1.25) || 30; }
+function pickPuttRange() { const e = puttEquiv(); G.puttRange = PUTT_RANGES.find(r => r >= e * 1.25) || PUTT_RANGES[PUTT_RANGES.length - 1]; }
 function cycleRange() { const i = PUTT_RANGES.indexOf(G.puttRange); G.puttRange = PUTT_RANGES[(i + 1) % PUTT_RANGES.length]; updateAim(true); SFX.blip(); }
 function aimDir() { return [Math.sin(G.yaw), -Math.cos(G.yaw)]; }
 let aimTimer = 0;
@@ -4961,7 +4962,8 @@ function impact(tImp) {
   SW.phase = 'done'; SW.mark = { x: st.x, y: st.y }; SW.resultT = performance.now(); SW.impactT = performance.now();
   document.body.classList.remove('swing'); document.body.classList.add('flight');
   SW.pathDeg = pathAngle(); SW.pathAt = performance.now();
-  const L = computeLaunch(G.club, { p: trackToPower(Math.min(SW.pMax, 1.05), SW.map || TMAP_LIN), Tb, Td, range: G.puttRange, pathDeg: SW.pathDeg }, st, G.surf, G.yaw, settings.hand, G.teed, Math.random());
+  let fr = 0; if (G.surf === S.FRINGE && isPutt()) { const d = aimDir(); while (fr < 3 && G.C.surf(G.ball.x + d[0] * fr, G.ball.z + d[1] * fr) === S.FRINGE) fr += .1; } // how far the ball has to roll over fringe
+  const L = computeLaunch(G.club, { p: trackToPower(Math.min(SW.pMax, 1.05), SW.map || TMAP_LIN), Tb, Td, range: G.puttRange, pathDeg: SW.pathDeg, fr }, st, G.surf, G.yaw, settings.hand, G.teed, Math.random());
   L.Tb = Tb; L.Td = Td; L.loose = st.loose; SW.last = L;
   SFX.hit(L.qualityLevel, L.putt, L.ballSpeed); buzz(L.qualityLevel < 1 ? 12 : 30);
   G.strokes++;
