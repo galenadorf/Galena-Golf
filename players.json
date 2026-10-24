@@ -27,7 +27,12 @@
  {
   "id": "P004",
   "name": "Craig",
-  "keys": []
+  "keys": [
+   {
+    "k": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEpC3m7cz2ohG4txV1Nc5J58WvoEaCC1BVoiQOydvpha4fKtXZsNEqL7TVyjjWeJVhASmkazo4LalKEObzCcp7vg==",
+    "label": "iPhone"
+   }
+  ]
  },
  {
   "id": "P005",
