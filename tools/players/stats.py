@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Rebuild the per-player files the leaderboard workflow keeps up to date, from the rounds themselves.
 
-  stats.py [P001 P002 ...]   (no IDs: every player with rounds)
+  stats.py [P001 P002 ...]            rebuild the summaries (no IDs: every player with rounds)
+  stats.py --backfill [P001 ...]      first file the rounds on the leaderboard (leaderboard/<course>.json) that a player's year files lack,
+                                      with hs null (they were played before holes were recorded), then rebuild
 
 Reads rounds/<id>/<year>.json (a player's rounds, one file per UTC year, each {course, at, strokes, toPar, hs}) and writes stats/<id>.json, the
 lifetime summary the game's Stats screen reads: per course the rounds played, the best round, and for each hole
 [rounds, strokes, putts, fairways hit, fairway chances, greens hit, green chances, penalties, best score].
-A flat rounds/<id>.json from before the year split is moved into the year files first. The workflow adds each new round to the same files
+A round with hs null counts as a round (and for the best round) but adds nothing to the per-hole totals. A flat rounds/<id>.json from before the year split is moved into the year files first. The workflow adds each new round to the same files
 (one line of arithmetic per hole), so this is only for repairing or checking them."""
 import json
 import os
@@ -16,6 +18,7 @@ from datetime import datetime, timezone
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
 ROUNDS, STATS = os.path.join(ROOT, 'rounds'), os.path.join(ROOT, 'stats')
+HOLES = 18
 
 
 def dump(path, obj):
@@ -38,6 +41,28 @@ def migrate(pid):
     print('split', flat, 'into', sorted(by))
 
 
+def backfill(pid):
+    """File the leaderboard's rounds for this player that the year files lack (rounds played before per-hole data was recorded)."""
+    lb = os.path.join(ROOT, 'leaderboard')
+    have = set()
+    d = os.path.join(ROUNDS, pid)
+    for fn in os.listdir(d) if os.path.isdir(d) else []:
+        have |= {r['at'] for r in json.load(open(os.path.join(d, fn)))}
+    added = defaultdict(list)
+    for fn in sorted(os.listdir(lb)) if os.path.isdir(lb) else []:
+        for x in json.load(open(os.path.join(lb, fn))):
+            if x.get('pid') == pid and x['at'] not in have:
+                y = datetime.fromtimestamp(x['at'] / 1000, timezone.utc).year
+                added[y].append({'course': os.path.splitext(fn)[0], 'at': x['at'], 'strokes': x['strokes'], 'toPar': x['toPar'], 'hs': None})
+                have.add(x['at'])
+    for y, rs in added.items():
+        path = os.path.join(ROUNDS, pid, f'{y}.json')
+        old = json.load(open(path)) if os.path.isfile(path) else []
+        dump(path, sorted(old + rs, key=lambda r: r['at']))
+    if added:
+        print(pid, 'backfilled', sum(len(v) for v in added.values()), 'rounds')
+
+
 def rebuild(pid):
     migrate(pid)
     rounds = []
@@ -50,8 +75,8 @@ def rebuild(pid):
     rounds.sort(key=lambda r: r['at'])
     st = {'v': 1, 'pid': pid, 'rounds': 0, 'first': rounds[0]['at'], 'last': rounds[0]['at'], 'years': [], 'courses': {}}
     for r in rounds:
-        co = st['courses'].setdefault(r['course'], {'rounds': 0, 'best': None, 'holes': [[0, 0, 0, 0, 0, 0, 0, 0, 99] for _ in r['hs']]})
-        for a, h in zip(co['holes'], r['hs']):
+        co = st['courses'].setdefault(r['course'], {'rounds': 0, 'best': None, 'holes': [[0, 0, 0, 0, 0, 0, 0, 0, 99] for _ in range(HOLES)]})
+        for a, h in zip(co['holes'], r.get('hs') or []):
             a[0] += 1
             a[1] += h[0]
             a[2] += h[1]
@@ -77,8 +102,18 @@ def rebuild(pid):
 
 
 def main(argv):
-    ids = argv or sorted({os.path.splitext(f)[0] for f in os.listdir(ROUNDS)}) if os.path.isdir(ROUNDS) else []
+    bf = '--backfill' in argv
+    ids = [a for a in argv if a != '--backfill']
+    if not ids:
+        names = set(os.listdir(ROUNDS)) if os.path.isdir(ROUNDS) else set()
+        if bf:
+            lb = os.path.join(ROOT, 'leaderboard')
+            names |= {x['pid'] for fn in os.listdir(lb) for x in json.load(open(os.path.join(lb, fn))) if x.get('pid')}
+        ids = sorted({os.path.splitext(f)[0] for f in names})
     for pid in ids:
+        migrate(pid)
+        if bf:
+            backfill(pid)
         rebuild(pid)
 
 
