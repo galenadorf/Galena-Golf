@@ -91,6 +91,7 @@ MAN-MADE OBJECTS
   - Tee markers in four colours (white, yellow, blue, red), two per tee set, always standing inside the tee box (a narrow box gets a narrower gap).
   - White boundary stakes (out of bounds); red stakes round the ponds (penalty areas).
   - Distance posts at 200, 150 and 100 m.
+  - The clubhouse (the long building by the parking lot, after photos of its front): rust-brown vertical-board walls, green-framed windows, a grey-green shingle roof, a gabled entrance with two limestone columns, a brick-paver porch and a round "Woodbine Bend" sign in the gable, shrubs along the front. Solid, so a ball hits it.
   - Buildings from OpenStreetMap (houses, farm buildings, sheds) within ~240 m of each hole; the ball can hit them.
   - Double washroom near hole 18 (MEN and WOMEN doors).
   - Two blue porta-potties (the ball can hit them).

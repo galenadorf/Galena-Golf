@@ -1943,6 +1943,7 @@ function buildRealTrees(C, grp) {
     if ((TREE_TWEAK[t.fill ? -1 : fi] || {}).hide) return;
     if (GC.hw && hwDist(t.e, t.n) < 8) return; // the highway and its shoulders are clear of trees
     if (GC.sides && sideDist(t.e, t.n) < 5.5) return; // and so are the side roads
+    if (Math.hypot(t.e - 99.5, t.n + 146.8) < 9) return; // and the clubhouse's front door
     const q = C.loc(t.e, t.n), X = q[0], Z = -q[1], d = dOut(X, Z); if (d > m) return;
     let sc = 1; if (t.fill && d > 220) { if (hash2(fi, 3, 17) < .45) return; sc = 1.22; }
     const dl = d < 25 ? polyQ(C.center, X, Z, 80).d : 1e6;
@@ -2125,7 +2126,7 @@ function realBuildings(C) {
     if (wu < 2 || dv < 2) return;
     let lo = 1e9, hi = -1e9; for (const q of pts) { const y = C.h(q[0], q[1]); lo = Math.min(lo, y); hi = Math.max(hi, y); }
     const big = best.area > 300, hgt = big ? 6.5 : best.area > 90 ? 4.6 : 3;
-    out.push({ x: bx, z: bz, w: wu, d: dv, rot: best.a, lo, hi, h: hgt, big, i: bi });
+    out.push({ x: bx, z: bz, w: wu, d: dv, rot: best.a, lo, hi, h: hgt, big, i: bi, area: best.area });
   });
   C._blds = out; return out;
 }
@@ -2548,9 +2549,72 @@ function realSiteMeshes(C, grp) {
     g.position.set(b.X, 0, b.Z); g.rotation.y = b.yaw; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
   }
 }
+/* --- the clubhouse (the one OSM building over 800 m2), after the photos of its front: a long low building clad in rust-brown vertical board, green-framed windows, a grey-green
+   shingle roof, and a gabled entrance with two limestone columns, a round "Woodbine Bend" sign in the gable and a brick-paver porch. The front faces the parking lot. --- */
+const CLUB_FRONT = [100, -175];   // ENU: the parking lot, which the front looks onto
+function clubSignTexture() {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256; const x = cv.getContext('2d');
+  x.fillStyle = '#e8e4da'; x.beginPath(); x.arc(128, 128, 126, 0, TAU); x.fill(); x.strokeStyle = '#cfc9bb'; x.lineWidth = 6; x.beginPath(); x.arc(128, 128, 118, 0, TAU); x.stroke();
+  x.fillStyle = '#4a5a64'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.font = '600 29px Georgia, serif'; x.fillText('WOODBINE', 128, 76); x.font = '600 25px Georgia, serif'; x.fillText('B E N D', 128, 104);
+  x.strokeStyle = '#6b7c84'; x.lineWidth = 2.5; for (let i = -3; i <= 3; i++) { x.beginPath(); x.moveTo(128, 168); x.quadraticCurveTo(128 + i * 6, 148, 128 + i * 11, 128); x.stroke(); }   // the reeds
+  x.beginPath(); x.moveTo(70, 176); x.lineTo(186, 176); x.stroke(); x.font = '600 9px Georgia, serif'; x.fillText('GOLF COURSE & RESTAURANT', 128, 194);
+  const t = new THREE.CanvasTexture(cv); t.anisotropy = 4; return t;
+}
+function buildClubhouse(C, grp, b) {
+  const W = b.w, D = b.d, yb = b.lo - .8, Hw = 4.3, over = .6, parts = [];
+  const q = C.loc(CLUB_FRONT[0], CLUB_FRONT[1]), dx = q[0] - b.x, dz = -q[1] - b.z, a = -b.rot * DEG;   // which long side the parking lot is on, in the building's own frame (the group is turned by a about y)
+  const flip = dx * Math.sin(a) + dz * Math.cos(a) < 0, fs = flip ? -1 : 1;
+  const wz = (lx, lz) => [b.x + lx * Math.cos(a) + fs * lz * Math.sin(a), b.z - lx * Math.sin(a) + fs * lz * Math.cos(a)];
+  const fp = wz(0, D / 2 + 6), y0 = C.h(fp[0], fp[1]) + .15;   // the floor stands level with the front door, where the parking lot is; the hill behind it is higher
+  const bx = (w, h, d, x, y, z, c, rx, ry, rz) => parts.push(lbx(w, h, d, x, y, z, c, rx, ry, rz));
+  const rust = 0x7f4a33, batten = 0x6c3b27, stone = 0xcdbb8e, stone2 = 0xb9a577, trim = 0xe2d9c6, green = 0x2f5d3a, glass = 0x33505a, brick = 0xa5624a, wood = 0x6a3a1f;
+  // the body: foundation to eaves, rust boards; battens every 0.6 m on the front and back
+  bx(W, y0 + Hw - yb, D, 0, (yb + y0 + Hw) / 2, 0, rust); bx(W + .1, y0 - yb, D + .1, 0, (yb + y0) / 2, 0, 0x8d8a82);   // (the ground falls away under it: bare concrete below the floor)
+  for (const sz of [1, -1]) for (let k = 0, n = Math.floor(W / .6); k < n; k++) if (k % 2) bx(.1, Hw - .2, .06, -W / 2 + (k + .5) * W / n, y0 + Hw / 2, sz * (D / 2 + .03), batten);
+  bx(W + .3, .3, D + .3, 0, y0 + .15, 0, 0x8d8a82);                                       // the concrete plinth
+  const zf = D / 2, PW = 9.6, PD = 4.8, hwb = PW / 2 + over, rise = 3;
+  // windows in green frames, three panes wide, spaced along the front either side of the entrance
+  const win = (x, z, sz) => { bx(4.7, 2.3, .14, x, y0 + 2.35, z + sz * .04, green); bx(4.3, 1.9, .16, x, y0 + 2.35, z + sz * .06, glass); for (const m of [-1.45, 1.45]) bx(.14, 1.9, .2, x + m, y0 + 2.35, z + sz * .07, green); bx(4.3, .12, .2, x, y0 + 2.35, z + sz * .07, green); };
+  for (const sx of [-1, 1]) for (let x = PW / 2 + 4.2; x < W / 2 - 3; x += 8.6) { win(sx * x, zf, 1); win(sx * x, -zf, -1); }
+  for (let x = -W / 2 + 6; x < W / 2 - 3; x += 8.6) if (Math.abs(x) > PW / 2 + 2) win(x, -zf, -1);
+  // the entrance: the doors with their transoms, lanterns, a wooden bin and two chairs under the portico
+  for (const sx of [-1, 1]) { bx(1.25, 2.5, .12, sx * .66, y0 + 1.3, zf + .05, wood); bx(.9, 1.6, .14, sx * .66, y0 + 1.5, zf + .07, glass); bx(.25, .5, .22, sx * 2.1, y0 + 2.6, zf + .14, 0x23272b); bx(1.1, .5, .14, sx * 1.9, y0 + 3.15, zf + .05, trim); }
+  bx(4.2, .5, .14, 0, y0 + 3.15, zf + .06, trim); bx(1.0, 1.4, .7, 3.4, y0 + .75, zf + .45, 0x9a5a2e); bx(.5, .8, .5, -3.1, y0 + .5, zf + 1.1, 0xb59b72); bx(.5, .8, .5, -4.1, y0 + .5, zf + 1.1, 0xb59b72);
+  // the porch: brick pavers, two limestone columns, the dark-wood ceiling and the gabled roof with white trim
+  bx(PW + 2, .08, PD + 1.4, 0, y0 + .04, zf + (PD + 1.4) / 2, brick); bx(W - 4, .06, 1.6, 0, y0 + .03, zf + .9 + PD + 1.2, 0x9a6b57);
+  for (const sx of [-1, 1]) { bx(1.1, Hw + .9, 1.1, sx * (PW / 2 - .55), y0 + (Hw + .9) / 2, zf + PD - .6, stone); bx(1.25, .22, 1.25, sx * (PW / 2 - .55), y0 + Hw + .8, zf + PD - .6, stone2); bx(1.2, .35, 1.2, sx * (PW / 2 - .55), y0 + .17, zf + PD - .6, stone2); }
+  bx(PW + .2, .16, PD, 0, y0 + Hw + .6, zf + PD / 2, 0x6a3a22);
+  const pos = [], idx = [], Lr = PD + 4, zc = zf + PD + over - Lr / 2, ry = y0 + Hw + .75;
+  const V = [[-hwb, 0, -Lr / 2], [hwb, 0, -Lr / 2], [0, rise, -Lr / 2], [-hwb, 0, Lr / 2], [hwb, 0, Lr / 2], [0, rise, Lr / 2]];
+  for (const v of V) pos.push(v[0], v[1] + ry, v[2] + zc);
+  idx.push(0, 1, 2, 3, 5, 4, 0, 3, 2, 3, 5, 2, 1, 2, 4, 4, 2, 5);
+  const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); pg.setIndex(idx); parts.push({ g: pg, c: 0x6a776c });
+  // the gable face: boards, a white fascia along both slopes, and the sign
+  const zg = zc + Lr / 2 + .03, fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute([-hwb, ry, zg, hwb, ry, zg, 0, ry + rise, zg], 3)); fg.setIndex([0, 1, 2]); parts.push({ g: fg, c: 0x934f30 });
+  for (let k = -7; k <= 7; k++) { const hh = rise * (1 - Math.abs(k) / 7.6); bx(.08, hh, .04, k * (hwb / 7.6), ry + hh / 2, zg + .02, batten); }
+  const ang = Math.atan2(rise, hwb), sl = Math.hypot(hwb, rise);
+  for (const sx of [-1, 1]) bx(sl + .2, .26, .2, sx * hwb / 2, ry + rise / 2, zg + .1, trim, 0, 0, -sx * ang);
+  bx(PW + 2 * over + .2, .24, .2, 0, ry - .05, zg + .1, trim);
+  // the long roof: low-pitched grey-green shingles with a white eave line
+  const rr = (D / 2 + over) * .28, rp = [], ri = [], ey = y0 + Hw, ex = W / 2 + over, ez = D / 2 + over;
+  rp.push(-ex, ey, ez, ex, ey, ez, ex, ey + rr, 0, -ex, ey + rr, 0, -ex, ey, -ez, ex, ey, -ez);
+  ri.push(0, 1, 2, 0, 2, 3, 5, 4, 3, 5, 3, 2, 0, 3, 4, 1, 5, 2);   // the front slope, the back slope, the two gable ends
+  const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); lg.setIndex(ri); parts.push({ g: lg, c: 0x6a776c });
+  bx(W + 2 * over, .22, .2, 0, ey + .05, ez, trim); bx(W + 2 * over, .22, .2, 0, ey + .05, -ez, trim);
+  // shrubs in the beds along the front
+  const R = mulberry32(77);
+  for (let i = 0; i < 26; i++) { const sx = (i % 2 ? 1 : -1) * (PW / 2 + 1.5 + R() * (W / 2 - PW / 2 - 3)), r = .45 + R() * .5; parts.push({ g: new THREE.SphereGeometry(r, 6, 5), c: [0x3f7a3c, 0x4f8a45, 0x6a9a3c, 0x2f6a3a][i % 4], m: new THREE.Matrix4().makeScale(1.2, .85, 1).setPosition(sx, y0 + r * .6, zf + 2.4 + R() * 1.2) }); }
+  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true });
+  const g = new THREE.Group(), cg = new THREE.Group(); cg.add(new THREE.Mesh(mergeParts(parts), mat));
+  const sign = new THREE.Mesh(new THREE.CircleGeometry(1.3, 40), new THREE.MeshLambertMaterial({ map: clubSignTexture() })); sign.position.set(0, ry + rise * .4, zg + .09); cg.add(sign);
+  cg.rotation.y = flip ? Math.PI : 0; g.add(cg);
+  g.position.set(b.x, 0, b.z); g.rotation.y = a; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
+}
 function realBuildingMeshes(C, grp) {
   const wallA = lambert(0xf1e9d8), wallB = lambert(0xe7dcc6), roofM = new THREE.MeshLambertMaterial({ color: 0xa8553f, side: THREE.DoubleSide }), roofB = new THREE.MeshLambertMaterial({ color: 0x8f4a3a, side: THREE.DoubleSide });
   for (const b of realBuildings(C)) {
+    if (b.area > 800) { buildClubhouse(C, grp, b); continue; }
     const g = new THREE.Group(), base = b.lo - .8, top = b.hi + b.h, wall = b.big ? wallA : wallB;
     const body = new THREE.Mesh(unitBox, wall); body.scale.set(b.w, top - base, b.d); body.position.y = (top + base) / 2; g.add(body);
     // the ridge runs along the long side
