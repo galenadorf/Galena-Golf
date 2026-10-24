@@ -69,7 +69,7 @@ SKY AND WEATHER
   - Wind: the flag flutters and a wind arrow shows on screen.
 
   - Heard, not seen: one of 8 short recordings (sounds/fart1-8.mp3, picked at random) plays at least once per round: the round is dealt one of its 18 holes where it is certain, and every
-    other hole has a 1 in 18 chance (practice: 1 in 18 per hole); it plays 10-90 s after arriving on the hole; much rarer than the balloon. Same loudness as the hole-7 song at its Med setting, whatever the Song setting; only the Sound switch silences it.
+    other hole has a 1 in 18 chance (practice: 1 in 18 per hole); it plays only during a swing, the moment you start the backswing, on the 1st, 2nd or 3rd swing of that hole (picked at random, putts count; a dealt hole that ends first is dealt again, later in the round); much rarer than the balloon. Same loudness as the hole-7 song at its Med setting, whatever the Song setting; only the Sound switch silences it.
 
 GROUND-LEVEL SCENERY
 --------------------

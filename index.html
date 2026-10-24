@@ -4049,15 +4049,16 @@ function songTick(now, force) {
 // ---- an unseen, very rare sound: a pool of recordings (sounds/fart1-8.mp3), one picked at random ----
 // Their level is baked into the files (the same loudness as the hole-7 song at Med), so they play at gain 1. A round is dealt one hole where it is
 // certain (G.fartHole, saved with the round), so a full round has at least one, and every other hole also has a 1 in 18 chance, so a second or third
-// is possible. It is due 10-90 s after arriving on the hole (the balloon: 60% per hole, then every 100-220 s); if the sound is off or the game is on
-// the title screen when it is due, it waits. Practice has no dealt hole: each hole there just has the 1 in 18 chance.
-const FART = { hole: -1, at: 0, chk: 0 };
-function fartTick(now) {
-  if (now - FART.chk < 500) return; FART.chk = now;
-  if (G.hole !== FART.hole) { FART.hole = G.hole; FART.at = ((G.fartHole === G.hole && !G.fartDone) || Math.random() < 1 / HOLE_DEFS.length) ? now + (10 + Math.random() * 80) * 1000 : 0; }
-  if (!FART.at || now < FART.at) return;
-  if (!settings.sound || document.hidden || G.state === 'title' || !AC || AC.state !== 'running') { FART.at = now + 2000; return; }
-  if (play('s_fart' + (1 + (Math.random() * 8 | 0)), 1, 1)) { FART.at = 0; if (G.hole === G.fartHole) G.fartDone = true; } // (a chance one on another hole does not use up the dealt one) else FART.at = now + 2000;
+// is possible. It only ever plays during a swing, the moment the thumb starts the backswing (fartSwing, from swingMove / the keyboard swing), and on
+// any swing of the hole, putts included: a hole that has one picks the 1st, 2nd or 3rd swing at random. If the hole is finished before that swing
+// comes and it was the dealt one, the round's dealt hole moves to a later hole (startHole), so a full round still has one. If the sound is off or not
+// running yet, it stays due for the next swing. Practice has no dealt hole: each hole there just has the 1 in 18 chance.
+const FART = { hole: -1, n: 0, at: 0 };
+function fartSwing() {
+  if (G.hole !== FART.hole) { FART.hole = G.hole; FART.n = 0; FART.at = ((G.fartHole === G.hole && !G.fartDone) || Math.random() < 1 / HOLE_DEFS.length) ? 1 + Math.floor(Math.random() * 3) : 0; }
+  FART.n++;
+  if (!FART.at || FART.n < FART.at || !settings.sound || document.hidden) return;
+  if (play('s_fart' + (1 + (Math.random() * 8 | 0)), 1, 1)) { FART.at = 0; if (G.hole === G.fartHole) G.fartDone = true; } // (a chance one on another hole does not use up the dealt one)
 }
 // ---- soft birdsong: on every hole without a song, a few unseen birds call now and then (synthesised, no files) ----
 // Each call is a short phrase of sine notes (a whistle, a trill or a two-tone call) at a low level, panned to its own spot, sometimes answered by a second bird.
@@ -4701,13 +4702,14 @@ function startRound() {
   G.practice = false; G.submitted = false; G.planes = [0, 0, 1, 1, 1, 2, 2][(Math.random() * 7) | 0];
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   G.pins = HOLE_DEFS.map(() => Math.floor(Math.random() * 4)); // a fresh pin sheet every round
-  G.fartHole = Math.floor(Math.random() * HOLE_DEFS.length); G.fartDone = false; // the hole where this round's rare sound plays (fartTick)
+  G.fartHole = Math.floor(Math.random() * HOLE_DEFS.length); G.fartDone = false; // the hole where this round's rare sound plays (fartSwing)
   startHole(0);
 }
 function startHole(i) {
   if (MP.spec) { const sp = MP.spec; MP.spec = null; MP.follow = null; document.body.classList.remove('spec'); mpWorld(sp.course); } // a new hole ends following (back on my own course)
   closeSheets(); $('done').classList.remove('on'); $('readout').classList.remove('on'); UI.readT = 0;
   document.body.classList.remove('flight', 'swing');
+  if (i !== G.hole && G.fartHole === G.hole && !G.fartDone && i + 1 < HOLE_DEFS.length) G.fartHole = i + 1 + Math.floor(Math.random() * (HOLE_DEFS.length - i - 1)); // the dealt hole went by without it: deal it again, further on
   G.hole = i; FART.hole = -1; if (G.rig) G.rig.arr = null; songHole(i);
   if (G.practice && G.pins) G.pins[i] = ((G.pins[i] | 0) + 1 + Math.floor(Math.random() * 3)) % 4; // practice: a different pin every time the hole is played
   G.C = courseFor(i);
@@ -4922,7 +4924,7 @@ function swingMove(y, t, x) {
   SW.vel = lerp(SW.vel, Math.abs(y - SW.lastY) / dtm, .5);
   advanceDrift(dtm);
   if (x != null && SW.path && SW.path.length < 600 && (SW.phase === 'back' || SW.phase === 'down')) SW.path.push([x, y]);
-  if (SW.phase === 'ready' && p > .03) { SW.phase = 'back'; SW.t0 = t; document.body.classList.add('swing'); $('aimHint').classList.remove('on'); }
+  if (SW.phase === 'ready' && p > .03) { SW.phase = 'back'; SW.t0 = t; document.body.classList.add('swing'); $('aimHint').classList.remove('on'); fartSwing(); }
   if (SW.phase === 'back') {
     // the peak is the mean of the last three samples, so one overshooting sample doesn't set the power
     const H = SW.hist; H.push(p); if (H.length > 3) H.shift();
@@ -6599,7 +6601,7 @@ function initInput() {
       e.preventDefault(); if (e.repeat) return;
       if (G.state === 'intro') { beginHole(); return; }
       if (!canSwing()) return;
-      if (SW.phase === 'idle' || SW.phase === 'done') { audio(); swingBegin(0, 0, e.timeStamp, true); SW.phase = 'back'; SW.t0 = e.timeStamp; kbHeld = true; document.body.classList.add('swing'); }
+      if (SW.phase === 'idle' || SW.phase === 'done') { audio(); swingBegin(0, 0, e.timeStamp, true); SW.phase = 'back'; SW.t0 = e.timeStamp; kbHeld = true; document.body.classList.add('swing'); fartSwing(); }
       else if (SW.kb && SW.phase === 'down') impact(e.timeStamp);
     }
     if (G.state === 'address' && !sheetOpen()) {
@@ -6735,7 +6737,7 @@ function frame(now) {
   const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
   dueT = gap ? Math.min(Math.max(dueT + gap, now - gap), now + gap) : 0; // carries the remainder over, so 40 fps on a 60 Hz screen is two frames in three
   if (G.state === 'intro') G.introT += dt;
-  songTick(now); birdTick(now); fartTick(now);
+  songTick(now); birdTick(now);
   if (G.state === 'flight') { updateFlight(dt); if ((G.savedT = (G.savedT || 0) + dt) > 1.5) { G.savedT = 0; saveRound(); } } // the round, with how far the ball has flown
   else if (G.state === 'holed') { G.holedT += dt; if (G.shot && G.shot.res.holed && G.holedT < 3) updateFlight(dt); }
   refreshMapLive(now);
