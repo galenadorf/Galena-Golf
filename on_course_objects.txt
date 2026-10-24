@@ -100,6 +100,8 @@ MAN-MADE OBJECTS
   - The pump house: a small plain metal building (corrugated grey siding and roof, no doors) by the 8th tee, painted with paint_edit.py / paint_read.py; solid, so a ball hits it.
   - Hole 7 sign ("Andy Lewis / Hole in One / 9/10/2026", text from signs.txt), with its own fly-over intro.
 
+Practice putting green (southeast of the 1st tee, beside the parking lot): a green with four cups and flags (numbered 1-4), a collar, tall fescue joined to the course's own, and three large broadleaf trees round it. Visible from hole 1; played from Practice > Putting green.
+
 Fountain (hole 1 only): a small spray in the middle of the pond right of the first tee, about 10 ft high, always running. The ball does not hit it.
 
 NOT IN THE GAME

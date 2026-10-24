@@ -255,6 +255,15 @@ body:has(#menuSheet.on) #tempo,body:has(#menuSheet.on) #strike,body:has(#menuShe
 #practiceSheet .shX{background:rgba(255,255,255,.2);color:#fff}#practiceSheet .shX:active{background:rgba(255,255,255,.34)}
 #practiceSheet .shBack{background:rgba(255,255,255,.2);color:#fff}#practiceSheet .shBack:active{background:rgba(255,255,255,.34)}
 body:has(#practiceSheet.on) #scrim{background:rgba(10,30,18,.08)}
+.pracPutt{width:100%;height:64px;margin-bottom:10px;border-radius:18px;background:linear-gradient(180deg,#3f9a4a,#2a7a36);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 4px 12px rgba(0,0,0,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;font:700 20px var(--disp);letter-spacing:.04em;text-transform:uppercase}
+.pracPutt small{font:600 11px var(--cond);letter-spacing:.1em;opacity:.85;margin-top:2px}
+.pracPutt:active{transform:scale(.98)}
+#pgBar{position:fixed;z-index:3;left:calc(var(--sl) + 10px);top:calc(var(--st) + 72px);width:112px;display:none;flex-direction:column;align-items:stretch;gap:6px;padding:8px;border-radius:18px;line-height:1.25;color:#fff;font:600 13px var(--cond);text-transform:uppercase;letter-spacing:.05em;text-shadow:var(--tsh);white-space:nowrap;transition:opacity .25s}
+body.pg:not(.spec) #pgBar{display:flex}
+body.pg.swing #pgBar,body.pg.flight #pgBar{opacity:0;pointer-events:none}
+#pgBar button{height:36px;padding:0 6px;border-radius:14px;background:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.28);color:#fff;font:700 14px var(--cond);letter-spacing:.06em;text-transform:uppercase}
+#pgBar button:active{background:rgba(255,255,255,.34)}
+#pgBar button:disabled{opacity:.4}
 .pracGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .pracGrid button{height:58px;border-radius:16px;background:var(--soft);box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),inset 0 1px 0 rgba(255,255,255,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;font:700 24px/1 var(--cond);font-variant-numeric:tabular-nums;transition:transform .12s}
 .pracGrid button:active{transform:scale(.96);background:rgba(255,255,255,.26)}
@@ -412,6 +421,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 </div>
 <canvas id="fx"></canvas>
 <div id="pinTag" class="gtag">0 yd</div>
+<div id="pgBar" class="glass"><span id="pgTxt"></span><button id="pgCup">Cup 1</button><button id="pgRe">Re-putt</button></div>
 <div id="mpPanel" class="glass"></div><div id="mpTags"></div>
 <div id="specBar" class="glass"><span id="specInfo">Following</span><button class="btn" id="specResume">Resume play</button></div>
 <div id="ballTag" class="gtag"><div class="bt1"><span id="btD">0</span><small>YD</small></div><div class="bt2" id="btC"></div></div>
@@ -458,10 +468,10 @@ Golf Course
     <div class="mpInfo" id="mpInfo">Play live with friends: everyone in the same room sees the others' balls fly on the same hole, and the scores.<div class="mpBtns"><button class="mpb" id="mpNew">New room</button><button class="mpb" id="mpShare">Share link</button></div></div>
   </div>
 </div>
-<div class="sheet" id="practiceSheet"><div class="grab"></div><div class="sht">Practice <small>Pick a hole · scores are not recorded</small></div><div class="pracGrid" id="pracGrid"></div></div>
+<div class="sheet" id="practiceSheet"><div class="grab"></div><div class="sht">Practice <small>Pick a hole · scores are not recorded</small></div><button class="pracPutt" id="pracPutt">Putting green<small>Chip and putt · four cups · nothing scored</small></button><div class="pracGrid" id="pracGrid"></div></div>
 <div class="sheet" id="cardSheet"><div class="grab"></div><div id="cardBody"></div></div>
 <div class="sheet" id="boardSheet"><div class="grab"></div><div class="sht">Leaderboard <small id="boardName">Woodbine Bend Golf Course</small></div><div id="boardBody"></div></div>
-<div class="sheet" id="mapSheet"><div class="grab"></div><div class="sht"><span id="mapTitle">Hole map</span><small id="mapInfo"></small></div><div class="mapwrap"><canvas id="mapCv"></canvas></div><div class="maph"><span>Tap or drag to place your target</span><button class="mbtn dark" id="mapDone" style="height:44px;padding:0 22px">Done</button></div></div>
+<div class="sheet" id="mapSheet"><div class="grab"></div><div class="sht"><span id="mapTitle">Hole map</span><small id="mapInfo"></small></div><div class="mapwrap"><canvas id="mapCv"></canvas></div><div class="maph"><span id="mapHint">Tap or drag to place your target</span><button class="mbtn dark" id="mapDone" style="height:44px;padding:0 22px">Done</button></div></div>
 <div class="sheet" id="holeSheet"><div class="grab"></div><div class="sht">Hole by hole <small id="hbhSub"></small></div><div id="hbhBody"></div></div>
 <div class="sheet" id="statsSheet"><div class="grab"></div><div class="sht">Stats <small id="stSub"></small></div><div id="statsBody"></div></div>
 <div class="sheet" id="helpSheet"><div class="grab"></div><div class="sht">How to swing</div><div class="help">
@@ -617,8 +627,8 @@ const WIND_EFFECT = .7; // all wind pushes 30% less than its displayed speed wou
 // in the middle. Near the hole the ball is integrated as a rolling sphere against the green, the rim edge, the cup wall,
 // its floor and the stick, so drops, lip-outs, hops and stick hits all come out of the same physics.
 const CUP_DEPTH = .52, PIN_R = .035, CUP_G = GRAV * .35, CUP_IN = CUP_RIM + .03, CUP_OUT = CUP_RIM + VIS_R + .08, CUP_IMP = .35;
-function cupZone(C, o, x, yb, z, vx, vy, vz, t, fr, ev, mu, air, w) {
-  const cup = C.cup, R = CUP_RIM, rb = VIS_R, h = 1 / 2000, bot = cup.y - CUP_DEPTH, flag = !!o.flag;
+function cupZone(C, o, x, yb, z, vx, vy, vz, t, fr, ev, mu, air, w, cup) {
+  cup = cup || C.cup; const R = CUP_RIM, rb = VIS_R, h = 1 / 2000, bot = cup.y - CUP_DEPTH, flag = !!o.flag;
   const s0 = Math.hypot(vx, vz), hx0 = vx, hz0 = vz;
   // spin (rad/s about the drawn ball): rolling on entry, or the flight spin scaled to the same surface speed
   let ox = w ? w[0] * BALL_R / rb : vz / rb, oy = w ? w[1] * BALL_R / rb : 0, oz = w ? w[2] * BALL_R / rb : -vx / rb;
@@ -729,8 +739,9 @@ function simulateShot(C, o) {
   const fr = [t, x, y, z, mode], ev = [];
   let apex = y, land = null, lastDry = [x, z], res = { holed: false, water: false, ob: false };
   const sx = x, sz = z;
-  const cup = C.cup;
+  let cup = C.cup; const cups = C.cups;   // the practice green has four cups: the ball is judged against the nearest
   while (t < maxT) {
+    if (cups) { let bd = 1e9; for (const c of cups) { const d = (x - c.x) ** 2 + (z - c.z) ** 2; if (d < bd) { bd = d; cup = c; } } }
     if (mode === 0) {
       const gy = C.h(x, z);
       const ws = clamp((y - gy) / 10, .3, 1.15);
@@ -793,9 +804,9 @@ function simulateShot(C, o) {
         const rx = x - cup.x, rz = z - cup.z;
         if (rx * rx + rz * rz < CUP_IN * CUP_IN && y - cup.y < 1.2) {
           if (!land) land = { x, y, z, t, carry: Math.hypot(x - sx, z - sz), angle: Math.atan2(-vy, Math.hypot(vx, vz)) / DEG, surf: S.GREEN };
-          _w3[0] = wx; _w3[1] = wy; _w3[2] = wz; const q = cupZone(C, o, x, y, z, vx, vy, vz, t, fr, ev, SURF[S.GREEN].mu, true, _w3);
+          _w3[0] = wx; _w3[1] = wy; _w3[2] = wz; const q = cupZone(C, o, x, y, z, vx, vy, vz, t, fr, ev, SURF[S.GREEN].mu, true, _w3, cup);
           t = q.t; x = q.x; y = q.yb; z = q.z;
-          if (q.kind === 'in') { res.holed = true; break; }
+          if (q.kind === 'in') { res.holed = true; res.cup = cup; break; }
           if (q.kind === 'stop') { ev.push({ t, type: 'stop', x, y, z }); break; }
           vx = q.vx; vy = q.vy; vz = q.vz;
           if (q.touched) { wx = wy = wz = 0; bounces = Math.max(bounces, 1); }
@@ -880,9 +891,9 @@ function simulateShot(C, o) {
       if (cup) {
         const rx = x - cup.x, rz = z - cup.z;
         if (rx * rx + rz * rz < CUP_IN * CUP_IN) {
-          const q = cupZone(C, o, x, y, z, vx, 0, vz, t, fr, ev, mu, false, null);
+          const q = cupZone(C, o, x, y, z, vx, 0, vz, t, fr, ev, mu, false, null, cup);
           t = q.t; x = q.x; y = q.yb; z = q.z;
-          if (q.kind === 'in') { res.holed = true; break; }
+          if (q.kind === 'in') { res.holed = true; res.cup = cup; break; }
           if (q.kind === 'stop') { ev.push({ t, type: 'stop', x, y, z }); break; }
           vx = q.vx; vz = q.vz;
           if (q.ground) y = C.h(x, z); else { mode = 0; vy = q.vy; bounces = Math.max(bounces, 1); wx = wy = wz = 0; }
@@ -1410,7 +1421,7 @@ function makeRealCourse(idx, pin) {
   // the white tee is where the tracker puts it; where the map has no tee box drawn there (or drew it like a bunker),
   // a plain 7 x 12 m box square to the hole, and no sand on it
   const node = (A, X, Z) => A[Math.round((Z - z0) / res) * w + Math.round((X - x0) / res)];
-  if (node(F.tee, 0, 0) > 2.5) {
+  if (idx !== PRAC && node(F.tee, 0, 0) > 2.5) {
     const px = new Float64Array(8), en = new Float64Array(8);
     [[-3.5, -4.5], [3.5, -4.5], [3.5, 7.5], [-3.5, 7.5]].forEach(([X, f], k) => { px[2 * k] = (X - x0) / res + .5; px[2 * k + 1] = (-f - z0) / res + .5; en[2 * k] = enuE(X, -f); en[2 * k + 1] = enuN(X, -f); });
     P.tee.push({ px: [px], enu: [en] });
@@ -1671,6 +1682,10 @@ function makeRealCourse(idx, pin) {
     }
   }
   C.cup = { x: cup.x, z: cup.z, y: Hh(cup.x, cup.z) };
+  if (idx === PRAC) {   // the practice green: four cups, painted on the aerial; the one aimed at is C.cup
+    C.cups = H0.cups.map(c => { const q = loc(c[0], c[1]), X = q[0], Z = -q[1]; return { x: X, z: Z, y: Hh(X, Z) }; });
+    C.cup = C.cups[0]; C.planBox = { x0: G1.cx - 30, x1: G1.cx + 30, z0: G1.cz - 30, z1: G1.cz + 30, mpp: .3 };
+  }
   // start on the white tee (the hole line starts there); if the point misses the drawn tee, the nearest tee spot
   let sx = 0, sz = 0;
   if (fieldAt(fT, 0, 0) > -.4) {
@@ -2067,11 +2082,16 @@ function realBuildingColliders(C, colliders) {
 function buildRealDecor(C, grp) {
   const def = C.def, H0 = def.rh, cup = C.cup, r = mulberry32(def.seed + 3);
   // cup, flagstick and flag
-  const pole = buildCup(C, grp);
-  const fc = document.createElement('canvas'); fc.width = 128; fc.height = 80; const fx = fc.getContext('2d'); fx.fillStyle = '#e8303a'; fx.fillRect(0, 0, 128, 80); fx.fillStyle = '#fff'; fx.font = '700 54px Fredoka, sans-serif'; fx.textAlign = 'center'; fx.textBaseline = 'middle'; fx.fillText(String(C.idx + 1), 64, 44);
+  W.flags = []; CUP_U.value.forEach(v => v.set(0, 0, 0, 0));
+  (C.cups || [cup]).forEach((cp, ci) => {
+  const pole = buildCup(C, grp, cp, ci);
+  const fc = document.createElement('canvas'); fc.width = 128; fc.height = 80; const fx = fc.getContext('2d'); fx.fillStyle = '#e8303a'; fx.fillRect(0, 0, 128, 80); fx.fillStyle = '#fff'; fx.font = '700 54px Fredoka, sans-serif'; fx.textAlign = 'center'; fx.textBaseline = 'middle'; fx.fillText(String(C.cups ? ci + 1 : C.idx + 1), 64, 44);
   const fg = new THREE.PlaneGeometry(1.1, .7, 8, 2); fg.translate(.55, 0, 0);
   const flag = new THREE.Mesh(fg, new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(fc), side: THREE.DoubleSide }));
-  flag.position.set(cup.x, cup.y + PIN_H - .38, cup.z); flag.castShadow = true; grp.add(flag); W.flag = flag; W.flagBase = fg.attributes.position.array.slice(); W.pole = pole; pole.userData.keep = true;
+  flag.position.set(cp.x, cp.y + PIN_H - .38, cp.z); flag.castShadow = true; grp.add(flag); pole.userData.keep = true;
+  W.flags.push({ flag, pole, base: fg.attributes.position.array.slice() });
+  });
+  W.flag = W.flags[0].flag; W.flagBase = W.flags[0].base; W.pole = W.flags[0].pole;
   // tee markers where the tracker puts each tee (white, yellow, blue, red), snapped onto the nearest tee box
   const FG = C.fg, MC = RDC.data.mkc || { w: 0xffffff, y: 0xffd966, b: 0x6fa8dc, r: 0xf4a0a0 };
   const snapTee = (X, Z) => {
@@ -2530,7 +2550,7 @@ const COURSES = {
 };
 let COURSE = COURSES.woodbine;
 // each round sets a pin (0-3: front, back, left, right) per hole in G.pins
-function courseFor(i) { const pin = G.pins ? G.pins[i] | 0 : 0; return makeRealCourse(i, pin); }
+function courseFor(i) { if (G.pg) return makeRealCourse(PRAC, 0); const pin = G.pins ? G.pins[i] | 0 : 0; return makeRealCourse(i, pin); }
 // switches everything that depends on the course in play; the round in progress is dropped
 function setCourse(key) {
   COURSE = COURSES[key] || COURSES.woodbine; // (a saved round from the removed Legacy Course opens on Woodbine)
@@ -2539,7 +2559,7 @@ function setCourse(key) {
   HOLE_LEN = HOLE_DEFS.map(holeYd);
   BEST_KEY = COURSE.best; BOARD_KEY = COURSE.board;
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
-  G.hole = 0; G.submitted = false; G.practice = false;
+  G.hole = 0; G.submitted = false; G.practice = false; G.pg = null; document.body.classList.remove('pg');
   if (settings.course !== COURSE.key) { settings.course = COURSE.key; saveSettings(); }
   $('courseLine').textContent = `${COURSE.name.replace(/ (Golf Course)$/, '\n$1')}\n${HOLE_DEFS.length} holes · Par ${PAR_TOTAL}`;
   $('boardName').textContent = COURSE.name; $('musRow').hidden = !COURSE.music;
@@ -2884,7 +2904,8 @@ function buildHole(C) {
 /* ---------- terrain shading: smooth light, crisp per-pixel surface edges ---------- */
 const TERRAIN_GLSL = `
 uniform sampler2D tFA, tFB, tFC, tFar; uniform vec2 fO, fN; uniform float fInv, fR, wLo, wHi, seaLv, hasCoast, isLinks, isRocky, hasFar, isStraw;
-uniform vec4 farA, farB, cupP;
+uniform vec4 farA, farB;
+uniform vec4 cupP[4];
 uniform vec3 cStraw, cRough, cDeep, cOut, cFirst, cFairA, cFairB, cGreenA, cGreenB, cFringe, cSand, cWaste, cTee, cPath, cBeach, cPond, cRock, cBed1, cBed2, cDune, cGranite;
 varying vec3 vWPos; varying vec3 vWN;
 float dcF(float v) { return (v * 2. - 1.) * fR; }
@@ -2973,7 +2994,7 @@ function terrainMatFrom(o) {
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWN;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = position; vWN = normal;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + TERRAIN_GLSL).replace('#include <color_fragment>', 'if (cupP.w > .5 && length(vWPos.xz - cupP.xy) < cupP.z) discard;\ndiffuseColor.rgb *= surfaceColor();');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + TERRAIN_GLSL).replace('#include <color_fragment>', 'for (int ci = 0; ci < 4; ci++) if (cupP[ci].w > .5 && length(vWPos.xz - cupP[ci].xy) < cupP[ci].z) discard;\ndiffuseColor.rgb *= surfaceColor();');
   };
   mat.userData.disposeTex = () => { U.tFA.value.dispose(); U.tFB.value.dispose(); U.tFC.value.dispose(); };
   return mat;
@@ -3002,10 +3023,10 @@ function groundY(x, z) {
 }
 // the hole: the terrain shader cuts a round opening (CUP_U) and a lined bucket sits in it, its top following the drawn
 // green; the flagstick stands on the floor of the cup
-const CUP_U = { value: new THREE.Vector4(0, 0, 0, 0) };
-function buildCup(C, grp) {
-  const cup = C.cup, R = CUP_RIM, n = 48, D = CUP_DEPTH, rows = [0, -.075, -.08, -.2, -D];
-  CUP_U.value.set(cup.x, cup.z, R, 1);
+const CUP_U = { value: [0, 1, 2, 3].map(() => new THREE.Vector4(0, 0, 0, 0)) };
+function buildCup(C, grp, cup, ci) {
+  const R = CUP_RIM, n = 48, D = CUP_DEPTH, rows = [0, -.075, -.08, -.2, -D];
+  CUP_U.value[ci].set(cup.x, cup.z, R, 1);
   const pos = [], col = [], idx = [], cols = [[1, 1, 1], [.93, .94, .92], [.25, .3, .27], [.17, .2, .18], [.1, .12, .11]];
   for (let i = 0; i <= n; i++) {
     const a = i / n * TAU, px = cup.x + Math.cos(a) * R, pz = cup.z + Math.sin(a) * R, top = groundY(px, pz) + .004;
@@ -3070,7 +3091,7 @@ function updateSea(t) {
 // top-down yardage-book image of the hole
 const PLAN_STRAW = hslToRgb(.068, .5, .45);
 function renderPlan(C) {
-  const I = C.inner, x0 = I.minX + 22, x1 = I.maxX - 22, z0 = I.minZ + 18, z1 = I.maxZ - 12, mpp = 1.7;
+  const I = C.inner, PB = C.planBox, x0 = PB ? PB.x0 : I.minX + 22, x1 = PB ? PB.x1 : I.maxX - 22, z0 = PB ? PB.z0 : I.minZ + 18, z1 = PB ? PB.z1 : I.maxZ - 12, mpp = PB ? PB.mpp : 1.7;
   const w = Math.ceil((x1 - x0) / mpp), h = Math.ceil((z1 - z0) / mpp);
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const ctx = cv.getContext('2d');
   const img = ctx.createImageData(w, h), d = img.data;
@@ -4289,7 +4310,7 @@ function mpMsg(topic, buf) {
 }
 // my state: kept on the broker (retained) so a newcomer sees everyone at once
 function mpState(force) {
-  const c = MP.client; if (!c || MP.st !== 'on' || !G.C || G.state === 'title' || (MP.spec && MP.spec.title)) return;
+  const c = MP.client; if (!c || MP.st !== 'on' || !G.C || G.pg || G.state === 'title' || (MP.spec && MP.spec.title)) return;
   const now = Date.now(); if (!force && now - MP.beat < 10000) return; // a heartbeat every 10 s; changes go out at once MP.beat = now;
   const tp = totalToPar(), en = (MP.spec ? MP.spec.C : G.C).enu(G.ball.x, G.ball.z); // (while following someone, my ball is still on my own hole)
   const sp = MP.spec, d = { n: playerName(), c: sp ? sp.course : COURSE.key, h: G.hole, tp: sp ? sp.tp : tp.d, th: sp ? sp.th : G.scores.filter(v => v != null).length, s: G.strokes, x: +en[0].toFixed(1), z: +en[1].toFixed(1), at: now, pin: G.pins ? G.pins[G.hole] | 0 : 0, fo: MP.follow || '' };
@@ -4805,7 +4826,7 @@ function resumeRound(course) {
   const r = savedRound(course); if (!r) return false;
   setCourse(r.course);
   const n = HOLE_DEFS.length, arr = (a, d) => Array.isArray(a) && a.length === n ? a : HOLE_DEFS.map(() => d);
-  G.practice = false; G.submitted = false; if (r.planes != null) G.planes = r.planes;
+  G.practice = false; G.pg = null; document.body.classList.remove('pg'); G.submitted = false; if (r.planes != null) G.planes = r.planes;
   G.fartHole = Number.isInteger(r.fh) && r.fh >= 0 && r.fh < n ? r.fh : null; G.fartDone = !!r.fd; // (a round saved before this existed has none: it falls back to the plain chance)
   G.scores = arr(r.scores, null); G.putts = arr(r.putts, 0); G.fir = arr(r.fir, null); G.gir = arr(r.gir, null); G.pens = arr(r.pens, 0); G.pins = arr(r.pins, 0);
   const h = resumeHole(r), mid = r.mid && h === r.hole ? r.mid : null, pu = G.putts[h], pe = G.pens[h];
@@ -4839,7 +4860,7 @@ function resumeRound(course) {
 }
 function startRound() {
   clearRound();
-  G.practice = false; G.submitted = false; G.planes = [0, 0, 1, 1, 1, 2, 2][(Math.random() * 7) | 0];
+  G.practice = false; G.pg = null; document.body.classList.remove('pg'); G.submitted = false; G.planes = [0, 0, 1, 1, 1, 2, 2][(Math.random() * 7) | 0];
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   G.pins = HOLE_DEFS.map(() => Math.floor(Math.random() * 4)); // a fresh pin sheet every round
   G.fartHole = Math.floor(Math.random() * HOLE_DEFS.length); G.fartDone = false; // the hole where this round's rare sound plays (fartSwing)
@@ -5295,6 +5316,53 @@ function endReplay() {
   G.state = 'settle'; G.settleT = 0; G.camFrom = W.cam.position.clone(); G.lookFrom = G.camLook.clone(); SW.phase = 'idle';
   updateAim(true); drawMapThumb();
 }
+/* ---------- the practice green: chip and putt at four cups, place the ball on the map ---------- */
+// each shot, putt or chip, counts; a holed ball is set 2 ft from its cup; Re-putt goes back to where the last shot was played from
+function pgSync() {
+  const pg = G.pg; if (!pg) return;
+  const pct = pg.shots ? Math.round(100 * pg.makes / pg.shots) : 0;
+  $('pgTxt').innerHTML = `${pg.shots} shot${pg.shots === 1 ? '' : 's'}<br>${pg.makes} holed${pg.shots ? ' · ' + pct + '%' : ''}`;
+  $('pgCup').textContent = 'Cup ' + (pg.cup + 1); $('pgRe').disabled = !pg.from; $('pgRe').textContent = G.surf === S.GREEN ? 'Re-putt' : 'Replay';
+}
+function pgAim(cupIdx) {   // aim at one of the four cups
+  const pg = G.pg, C = G.C; if (cupIdx != null) pg.cup = cupIdx; C.cup = C.cups[pg.cup];
+  autoClubAndAim(); updateHUD(); drawMapThumb(); setFlags(!isPutt());
+}
+function pgPlace(x, z, from) {
+  const pg = G.pg; placeBall(x, z, false); G.prev = { x, z, teed: false }; G.strokes = 0; if (from !== undefined) pg.from = from;
+  pgAim(); if (G.state === 'address') { G.snapCam = true; }
+}
+function pgFinish(r) {
+  const pg = G.pg, C = G.C; pg.shots++; G.strokes = 0; pg.from = { x: G.prev.x, z: G.prev.z };
+  let big, sub = '';
+  if (r.holed) {
+    pg.makes++; const c = r.cup || C.cup, pc = C.cups.indexOf(c); SFX.chime();
+    // 2 ft from the cup it fell into, on the side the shot came from (any side on the green if that one is not)
+    const ux = pg.from.x - c.x, uz = pg.from.z - c.z, ul = Math.hypot(ux, uz) || 1; let bx = c.x + ux / ul * .61, bz = c.z + uz / ul * .61;
+    for (let k = 0; k < 12 && C.surf(bx, bz) !== S.GREEN; k++) { const a = Math.atan2(uz, ux) + (k % 2 ? 1 : -1) * Math.ceil((k + 1) / 2) * .5; bx = c.x + Math.cos(a) * .61; bz = c.z + Math.sin(a) * .61; }
+    placeBall(bx, bz, false); G.prev = { x: bx, z: bz, teed: false };
+    big = `<span class="good">In the hole!</span>`; sub = `Cup ${pc + 1} · ${fmtDistShort(Math.hypot(pg.from.x - c.x, pg.from.z - c.z))}`;
+  } else if (r.water || r.ob) {
+    placeBall(pg.from.x, pg.from.z, false); G.prev = { x: pg.from.x, z: pg.from.z, teed: false }; big = '<span class="bad">Out of play</span>'; sub = 'Back to where you played from';
+  } else {
+    placeBall(r.final.x, r.final.z, false); G.prev = { x: G.ball.x, z: G.ball.z, teed: false };
+    big = SURF[G.surf].name; sub = fmtDistShort(r.total) + (CLUBS[G.club].type === 'putter' ? ' putt' : ' shot');
+  }
+  readout(`<div class="r1">${big}</div><div class="r3"><span>${sub}</span><span>To pin <b>${fmtDistShort(distToPin())}</b></span></div>`, r.holed ? 2.4 : 3);
+  G.state = 'settle'; G.settleT = 0; G.camFrom = W.cam.position.clone(); G.lookFrom = G.camLook.clone(); SW.phase = 'idle';
+  pgAim();
+}
+function pgStartSpot() { const C = G.C, c = C.cups[1] || C.cup, a = Math.atan2(C.green.cx - c.x, C.green.cz - c.z) + 2.2; return [c.x + Math.sin(a) * 4.6, c.z + Math.cos(a) * 4.6]; }
+function startPuttingGreen() {
+  const inRound = !G.practice && (G.scores.some(v => v != null) || G.strokes > 0) && G.state !== 'title';
+  if (inRound && !confirm('End the current round and practise on the putting green?')) return;
+  G.practice = true; G.submitted = true; clearRound(); G.pg = { shots: 0, makes: 0, cup: 0, from: null };
+  G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
+  if (!G.pins) G.pins = HOLE_DEFS.map(() => Math.floor(Math.random() * 4));
+  document.body.classList.add('pg'); $('title').classList.remove('on'); closeSheets(); startHole(0);
+  const sp = pgStartSpot(); pgPlace(sp[0], sp[1], null); $('pgRe').disabled = true;
+  beginHole(); G.snapCam = true; pgSync();
+}
 // stopped on the green (or on the fringe close enough to putt): nothing should cover the green any more
 function restsOnGreen(r) {
   if (r.holed || r.water || r.ob) return false;
@@ -5302,7 +5370,8 @@ function restsOnGreen(r) {
 }
 function finishShot() {
   const sh = G.shot, r = sh.res, C = G.C, h = G.hole, par = C.def.par, first = G.strokes === 1;
-  document.body.classList.remove('flight'); statsShot(sh, r);
+  document.body.classList.remove('flight'); if (r.cup) C.cup = r.cup; statsShot(sh, r);
+  if (G.pg) { pgFinish(r); return; }
   if (r.holed) {
     G.state = 'holed'; G.holedT = 0; G.scores[h] = G.strokes;
     if (G.gir[h] == null) G.gir[h] = G.strokes - 1 <= par - 2;
@@ -5517,10 +5586,12 @@ function updateCamera(dt) {
   camStep(R.q, lc, A.pre ? 1 - w : 0, dt);
   if (G.state === 'settle' && ((w >= 1 && cam.position.distanceTo(R.aPos) < .05 && R.pv.length() < .05 && R.lv.length() < .05) || R.t - A.t0 > A.D + 5)) enterAddress();
 }
+// the flags stand in for every shot but a putt (on the practice green all four stay up, to aim at)
+function setFlags(on) { for (const f of W.flags || []) f.flag.visible = f.pole.visible = on || !!G.pg; }
 function enterAddress() {
   saveRound(); mpState(true);
   if (G.rig) G.rig.arr = null; G.state = 'address'; if (SW.sid == null && !SW.mouseR) SW.thumb = false; SW.mark = null; SW.looseSide = Math.random() < .5 ? -1 : 1; W.aim.visible = W.ring.visible = true; W.ball.visible = true;
-  const pin = !isPutt(); if (W.flag) { W.flag.visible = pin; W.pole.visible = pin; }
+  setFlags(!isPutt());
   if (W.slope) W.slope.mesh.visible = isPutt() && (G.surf === S.GREEN || G.surf === S.FRINGE);
   if (!settings.aimed) $('aimHint').classList.add('on');
   updateHUD();
@@ -5878,11 +5949,12 @@ function sizeFaceFor(c) {
 function updateHUD() {
   if (!G.C) return;
   const def = G.C.def, c = CLUBS[G.club];
-  $('hl1').textContent = `Hole ${G.hole + 1} · Par ${def.par}`;
+  $('hl1').textContent = G.pg ? `Putting · Cup ${G.pg.cup + 1}` : `Hole ${G.hole + 1} · Par ${def.par}`;
   const lieTxt = G.teed ? 'Tee' : SURF[G.surf].name;
   // while the ball is moving it's still the stroke being played (and the holing stroke once it drops); at rest, the next one
   const sn = G.state === 'flight' || G.state === 'holed' ? Math.max(1, G.strokes) : G.strokes + 1;
-  $('hl2').innerHTML = `Stroke ${Math.min(sn, def.par + 5)} <span class="lie" data-s="${G.surf}">${lieTxt}</span>`;
+  $('hl2').innerHTML = G.pg ? `${G.pg.shots} shot${G.pg.shots === 1 ? '' : 's'} <span class="lie" data-s="${G.surf}">${lieTxt}</span>` : `Stroke ${Math.min(sn, def.par + 5)} <span class="lie" data-s="${G.surf}">${lieTxt}</span>`;
+  if (G.pg) pgSync();
   const d = distToPin(); $('dNum').textContent = d < 10 ? toFt(d) : toYd(d); $('dUnit').textContent = d < 10 ? 'ft' : 'yd';
   const dh = G.C.cup.y - G.ball.y;
   $('dSub').textContent = c.type === 'putter' && Math.abs(puttEquiv() - d) > .4 ? `Plays ${toFt(puttEquiv())} ft` : Math.abs(dh) > .5 ? `${dh > 0 ? '↑' : '↓'} ${toFt(Math.abs(dh))} ft` : 'To pin';
@@ -6034,7 +6106,7 @@ function openBag() {
   CLUBS.forEach((c, i) => {
     const bt = document.createElement('button'); if (i === G.club) bt.className = 'sel';
     bt.innerHTML = `<div class="bi">${({ Dr: 'DR', Pt: 'PUTT' })[c.id] || c.id}</div><div class="bn">${c.name}</div><div class="bd">${c.type === 'putter' ? 'On the green' : toYd(c.carry) + ' yd'}</div>${i === G.suggested ? '<span class="tip">TIP</span>' : ''}`;
-    bt.onclick = () => { G.club = i; if (c.type === 'putter') pickPuttRange(); G.carryKey = ''; updateAim(true); closeSheets(); SFX.blip(); if (W.slope) W.slope.mesh.visible = c.type === 'putter' && (G.surf === S.GREEN || G.surf === S.FRINGE); if (W.flag) { W.flag.visible = W.pole.visible = c.type !== 'putter'; } };
+    bt.onclick = () => { G.club = i; if (c.type === 'putter') pickPuttRange(); G.carryKey = ''; updateAim(true); closeSheets(); SFX.blip(); if (W.slope) W.slope.mesh.visible = c.type === 'putter' && (G.surf === S.GREEN || G.surf === S.FRINGE); setFlags(c.type !== 'putter'); };
     b.appendChild(bt);
   });
   openSheet('bagSheet');
@@ -6044,7 +6116,7 @@ function changeClub(d) {
   const n = clamp(G.club + d, 0, PUTTER); if (n === G.club) return;
   G.club = n; if (isPutt()) pickPuttRange(); SFX.blip(); G.carryKey = ''; updateAim(true);
   if (W.slope) W.slope.mesh.visible = isPutt() && (G.surf === S.GREEN || G.surf === S.FRINGE);
-  if (W.flag) { W.flag.visible = W.pole.visible = !isPutt(); }
+  setFlags(!isPutt());
   const el = $('clubName'); el.style.transform = `translateX(${d * 8}px)`; setTimeout(() => el.style.transform = '', 120);
 }
 function applyReverse() {
@@ -6074,11 +6146,14 @@ function openPractice() {
   if (g.children.length !== HOLE_DEFS.length) { g.innerHTML = ''; HOLE_DEFS.forEach((d, i) => { const b = document.createElement('button'); b.innerHTML = `${i + 1}<small>Par ${d.par} · ${HOLE_LEN[i]} yd</small>`; b.onclick = () => startPractice(i); g.appendChild(b); }); }
   openSheet('practiceSheet');
 }
+$('pracPutt').onclick = () => { SFX.blip(); startPuttingGreen(); };
+$('pgCup').onclick = () => { if (!G.pg || G.state !== 'address') return; SFX.blip(); pgAim((G.pg.cup + 1) % G.C.cups.length); };
+$('pgRe').onclick = () => { const pg = G.pg; if (!pg || !pg.from || G.state !== 'address') return; SFX.blip(); pgPlace(pg.from.x, pg.from.z); readoutNote('Back where you played from', 'ok'); };
 // practice: one hole at a time, nothing scored. Picking a hole ends the round in progress.
 function startPractice(i) {
   const inRound = !G.practice && (G.scores.some(v => v != null) || G.strokes > 0) && G.state !== 'title';
   if (inRound && !confirm('End the current round and practice hole ' + (i + 1) + '?')) return;
-  G.practice = true; G.submitted = true; clearRound();
+  G.practice = true; G.pg = null; document.body.classList.remove('pg'); G.submitted = true; clearRound();
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   if (!G.pins) G.pins = HOLE_DEFS.map(() => Math.floor(Math.random() * 4));
   $('title').classList.remove('on'); closeSheets(); startHole(i);
@@ -6087,8 +6162,8 @@ function startPractice(i) {
 function quitToMain() {
   $('quitAsk').classList.remove('on'); closeSheets();
   const sp = MP.spec; MP.follow = null; if (sp) { MP.spec = null; mpWorld(sp.course); } // (following someone: back on my own course)
-  G.rep = null; G.shot = null; G.practice = false; G.submitted = true; G.strokes = 0; SW.phase = 'idle';
-  document.body.classList.remove('flight', 'swing', 'replay', 'spec');
+  G.rep = null; G.shot = null; G.practice = false; G.pg = null; G.submitted = true; G.strokes = 0; SW.phase = 'idle';
+  document.body.classList.remove('flight', 'swing', 'replay', 'spec', 'pg');
   ['done', 'intro', 'readout', 'skipBtn'].forEach(id => $(id).classList.remove('on')); UI.readT = 0;
   clearRound();
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
@@ -6186,9 +6261,12 @@ function drawPlan(cv, opt) {
     tag(toYd(d1) + ' YD', (b[0] + tm[0]) / 2 - 26, (b[1] + tm[1]) / 2);
     if (d2 > 3 && Math.hypot(tm[0] - p[0], tm[1] - p[1]) > 34) tag(toYd(d2) + ' YD', (tm[0] + p[0]) / 2 + 26, (tm[1] + p[1]) / 2);
   }
-  // pin flag
-  x.strokeStyle = '#16211c'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(p[0], p[1]); x.lineTo(p[0], p[1] - (opt.small ? 8 : 14)); x.stroke();
-  x.fillStyle = '#e2392f'; x.beginPath(); x.moveTo(p[0], p[1] - (opt.small ? 8 : 14)); x.lineTo(p[0] + (opt.small ? 6 : 9), p[1] - (opt.small ? 6 : 11)); x.lineTo(p[0], p[1] - (opt.small ? 4 : 8)); x.fill();
+  // pin flag (the practice green has four)
+  for (const cp of C.cups || [C.cup]) {
+    const q = cp === C.cup || !C.cups ? p : w2m(f, cp.x, cp.z);
+    x.strokeStyle = '#16211c'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(q[0], q[1]); x.lineTo(q[0], q[1] - (opt.small ? 8 : 14)); x.stroke();
+    x.fillStyle = cp === C.cup ? '#e2392f' : '#f08a8a'; x.beginPath(); x.moveTo(q[0], q[1] - (opt.small ? 8 : 14)); x.lineTo(q[0] + (opt.small ? 6 : 9), q[1] - (opt.small ? 6 : 11)); x.lineTo(q[0], q[1] - (opt.small ? 4 : 8)); x.fill();
+  }
   // ball
   x.fillStyle = '#fff'; x.strokeStyle = '#16211c'; x.lineWidth = 1.5; x.beginPath(); x.arc(b[0], b[1], opt.small ? 3 : 5, 0, TAU); x.fill(); x.stroke();
   return f;
@@ -6196,10 +6274,11 @@ function drawPlan(cv, opt) {
 function drawMapThumb() { const c = $('mapThumb'); if (c) drawPlan(c, { small: true, pad: 2 }); }
 let mapFit = null;
 // the map also opens while the ball is moving: then it just follows the ball (no target to place until the next shot is ready)
-function mapOpts() { const live = G.state === 'flight' || G.state === 'settle'; return live ? { pad: 10, ball: { x: W.ball.position.x, z: W.ball.position.z } } : { aim: true, pad: 10 }; }
+function mapOpts() { if (G.pg) return { pad: 10, pg: true }; const live = G.state === 'flight' || G.state === 'settle'; return live ? { pad: 10, ball: { x: W.ball.position.x, z: W.ball.position.z } } : { aim: true, pad: 10 }; }
 function openMap() {
   if (G.state !== 'address' && G.state !== 'flight' && G.state !== 'settle') return;
-  $('mapTitle').textContent = `Hole ${G.hole + 1} · ${G.C.def.name}`; $('mapInfo').textContent = `Par ${G.C.def.par} · ${Math.round(Math.hypot(G.C.cup.x - W.ball.position.x, G.C.cup.z - W.ball.position.z))} m to pin`;
+  if (G.pg) { $('mapTitle').textContent = 'Practice green'; $('mapInfo').textContent = 'Tap or drag to place your ball'; $('mapHint').textContent = 'Tap or drag to place your ball'; }
+  else { $('mapHint').textContent = 'Tap or drag to place your target'; $('mapTitle').textContent = `Hole ${G.hole + 1} · ${G.C.def.name}`; $('mapInfo').textContent = `Par ${G.C.def.par} · ${Math.round(Math.hypot(G.C.cup.x - W.ball.position.x, G.C.cup.z - W.ball.position.z))} m to pin`; }
   openSheet('mapSheet');
   requestAnimationFrame(() => { mapFit = drawPlan($('mapCv'), mapOpts()); mapLast = performance.now(); mapMode = mapOpts().aim ? 'aim' : 'live'; });
 }
@@ -6213,6 +6292,12 @@ function refreshMapLive(now) {
 function mapPick(e) {
   if (!mapFit || G.state !== 'address') return; const r = $('mapCv').getBoundingClientRect();
   const wpt = m2w(mapFit, e.clientX - r.left, e.clientY - r.top);
+  if (G.pg) {   // the practice green: the tap puts the ball there (on the course, not in the water), the nearest cup is the target
+    if (!G.C.inBounds(wpt[0], wpt[1]) || G.C.surf(wpt[0], wpt[1]) === S.WATER) return;
+    let bi = 0, bd = 1e9; G.C.cups.forEach((c, i) => { const d = Math.hypot(c.x - wpt[0], c.z - wpt[1]); if (d < bd) { bd = d; bi = i; } });
+    G.pg.cup = bi; pgPlace(wpt[0], wpt[1], { x: wpt[0], z: wpt[1] }); mapFit = drawPlan($('mapCv'), { pad: 10, pg: true });
+    $('mapInfo').textContent = fmtDistShort(distToPin()) + ' to cup ' + (bi + 1); return;
+  }
   G.target = wpt; G.yaw = Math.atan2(wpt[0] - G.ball.x, -(wpt[1] - G.ball.z)); settings.aimed = true;
   if (!isPutt()) { G.carry = predictCarry(); } placeAimGeo(); updateHUD();
   mapFit = drawPlan($('mapCv'), { aim: true, pad: 10 });
@@ -6932,7 +7017,7 @@ function frame(now) {
   }
   const tt = now / 1000;
   if (W.ring.visible) { const k = 1 + Math.sin(tt * 3) * .05; W.ringPulse.scale.set(k, k, 1); }
-  if (W.flag && C) { const pa = W.flag.geometry.attributes.position, b = W.flagBase, ws = Math.hypot(G.wind[0], G.wind[1]); for (let i = 0; i < pa.count; i++) { const x0 = b[i * 3]; pa.array[i * 3 + 2] = Math.sin(x0 * 5 - tt * (3 + ws)) * .08 * x0; } pa.needsUpdate = true; W.flag.rotation.y = Math.atan2(-G.wind[1], G.wind[0]); }
+  if (W.flags && C) for (const f of W.flags) { const pa = f.flag.geometry.attributes.position, b = f.base, ws = Math.hypot(G.wind[0], G.wind[1]); for (let i = 0; i < pa.count; i++) { const x0 = b[i * 3]; pa.array[i * 3 + 2] = Math.sin(x0 * 5 - tt * (3 + ws)) * .08 * x0; } pa.needsUpdate = true; f.flag.rotation.y = Math.atan2(-G.wind[1], G.wind[0]); }
   W.clouds.children.forEach(c => { c.position.x += c.userData.sp * dt; if (c.position.x > 1400) c.position.x = -1400; });
   if (UI.readT > 0) { UI.readT -= dt; if (UI.readT <= 0) { $('readout').classList.remove('on'); if ($('mpPanel').classList.contains('on')) mpPlace($('mpPanel')); } }
   if (C) { updateSeeThru(); updatePinTag(); updateWindArrow(); updateBallTag(); }
