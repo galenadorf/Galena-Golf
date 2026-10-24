@@ -124,10 +124,14 @@ body.rev #strike{right:auto;left:calc(var(--sl) + 38px)}
 .layer{position:fixed;inset:0;z-index:6;opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
 .layer.on{opacity:1;pointer-events:auto}
 #title{display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--st) + 26px) calc(var(--sr) + 16px) calc(var(--sb) + 16px) calc(var(--sl) + 16px);background:linear-gradient(180deg,rgba(10,40,20,0) 45%,rgba(10,40,20,.32) 100%)}
-.logoCard{align-self:center;text-align:center;padding:16px 28px 15px;border-radius:28px}
+.logoCard{align-self:stretch;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:14px 18px 14px 24px;border-radius:28px}
+.logoCard .lt{min-width:0}
+.logoCard img{height:112px;width:auto;flex:none;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.35))}
 .logoCard h1{margin:0;font:700 46px/.95 var(--cond);text-transform:uppercase;letter-spacing:.01em}
 .logoCard h1 span{color:#c6f2a9}
 .logoCard p{margin:9px 0 0;font:600 13px/1.45 var(--cond);text-transform:uppercase;letter-spacing:.14em;color:var(--w2);white-space:pre-line}
+@media (max-width:380px){.logoCard{padding-left:20px;padding-right:14px}.logoCard h1{font-size:39px}.logoCard img{height:86px}}
+@media (max-width:340px){.logoCard h1{font-size:33px}.logoCard p{letter-spacing:.08em}.logoCard img{height:68px}}
 .tb{display:flex;flex-direction:column;gap:10px}
 .how{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .how .card{padding:13px}
@@ -392,8 +396,8 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 <div id="specBar" class="glass"><span id="specInfo">Following</span><button class="btn" id="specResume">Resume play</button></div>
 <div id="ballTag" class="gtag"><div class="bt1"><span id="btD">0</span><small>YD</small></div><div class="bt2" id="btC"></div></div>
 <div class="layer on" id="title">
-  <div class="card logoCard"><h1>Galena<span>!!!</span><br>Golf</h1><p id="courseLine">Woodbine Bend Golf Course
-18 holes · Par 72</p></div>
+  <div class="card logoCard"><div class="lt"><h1>Galena<span>!!!</span><br>Golf</h1><p id="courseLine">Woodbine Bend Golf Course
+18 holes · Par 72</p></div><img src="crest.png" width="110" height="112" alt="Galena crest" decoding="async"></div>
   <div class="tb">
     <div class="how">
       <div class="card"><svg class="tut" viewBox="0 0 90 100" aria-hidden="true"><rect x="31" y="6" width="28" height="88" rx="14" fill="#2f6b35"/><rect x="38" y="14" width="14" height="72" rx="7" fill="rgba(255,255,255,.16)"/><path class="tDown" d="M45 80V20" stroke="#ffe85a" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M17 34V62m0 0l-5-6m5 6l5-6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".75"/><path d="M73 68V40m0 0l-5 6m5-6l5 6" stroke="#ffe85a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".9"/><g class="tThumb"><circle r="9" fill="#fff" stroke="#1d3d22" stroke-width="2"/></g></svg><b>Left thumb · tempo</b><p>Slide down, then slide straight up. A tempo of 3:1 gets the best smash factor.</p></div>
