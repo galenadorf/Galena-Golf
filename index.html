@@ -2411,7 +2411,7 @@ function spotBeside(C, x, z, side, back) {
 // (extra: for 'lot' {poly: outline [e, n]..., lines: stall edges [e1, n1, e2, n2]...}; for 'car' [model 'car' | 'suv', body colour])
 const SITE_NAMES = { wash: 'Off the washroom!', potty: 'Off the porta-potty!', shed: 'Off the pump house!', car: 'Off a parked car!', cart: 'Off a golf cart!' };
 // two Club Car Precedents parked nose to tail on the cart path north-east of the practice green (rows like GC.props: kind, e, n, front-facing degrees, width m, depth m)
-const CART_PROPS = [['cart', 60.6, -157.2, 323, 1.25, 2.45, ''], ['cart', 63.0, -159.0, 323, 1.25, 2.45, '']];
+const CART_PROPS = [['cart', 63.4, -160.2, 323, 1.25, 2.45, ''], ['cart', 65.8, -162.0, 323, 1.25, 2.45, '', 'riders']];
 function realProps(C) {
   if (C._props) return C._props;
   const I = C.inner, out = [];
@@ -2510,12 +2510,14 @@ function realCarMesh(C, b, mat) {
   m.position.set(b.X, (gr.lo + gr.hi) / 2 + LOT_LIFT, b.Z); m.rotation.y = b.yaw; m.castShadow = true; m.receiveShadow = true; return m;
 }
 // a Club Car Precedent (2024): black roof on thin posts, off-white body, black bumpers, floor and tyres, tan bench seat, clear windshield, a bag on the back
-// (about 2.4 m long, 1.2 m wide, 1.9 m to the roof); the front is +z
-function realCartMesh(C, b) {
-  const g = new THREE.Group(), gr = propGround(C, b, b.w, b.d);
+// (about 2.4 m long, 1.2 m wide, 1.9 m to the roof); the front is +z. riders: false = empty, true = two men (the driver sits on the left, +x when facing forward).
+// g.userData.wheels lists the four wheel groups (they turn about their local y) so a moving cart can spin them.
+const CART_RIDERS = [{ x: .26, shirt: 0xC4DCF0 }, { x: -.26, shirt: 0xF7A780 }], CART_SKIN = 0xe3b48f, CART_HAIR = 0x2b1c14, CART_PANTS = 0x6d7076;
+function makeGolfCart(riders) {
+  const g = new THREE.Group();
   const body = lambert(0xfcfbf6), black = lambert(0x18181a), seat = lambert(0xb89f6e), post = lambert(0x2a2b2e), hub = lambert(0x9a9da2), bag = lambert(0x24364f), trim = lambert(0x3a7a52);
   const glass = new THREE.MeshLambertMaterial({ color: 0xbfd8e6, transparent: true, opacity: .35, side: THREE.DoubleSide, depthWrite: false });
-  const bx = (m, sx, sy, sz, x, y, z) => { const o = new THREE.Mesh(unitBox, m); o.scale.set(sx, sy, sz); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  const bx = (m, sx, sy, sz, x, y, z, grp) => { const o = new THREE.Mesh(unitBox, m); o.scale.set(sx, sy, sz); o.position.set(x, y, z); o.castShadow = true; (grp || g).add(o); return o; };
   bx(black, 1.0, .1, 2.15, 0, .26, 0);                                   // the chassis and floor
   bx(body, 1.2, .3, .72, 0, .5, .78);  bx(body, 1.08, .24, .5, 0, .72, .84); // the nose and the dash cowl
   bx(black, 1.14, .14, .14, 0, .3, 1.2);  bx(black, 1.16, .16, .16, 0, .34, -1.22); // front and rear bumpers
@@ -2523,14 +2525,36 @@ function realCartMesh(C, b) {
   bx(seat, 1.02, .11, .46, 0, .56, -.02); bx(seat, 1.02, .38, .1, 0, .8, -.28);   // the bench seat and its back
   bx(body, 1.18, .1, .3, 0, .4, .3);                                     // the floor mat step
   for (const sx of [-1, 1]) { bx(body, .06, .24, 1.4, sx * .6, .52, -.12); bx(post, .04, 1.12, .04, sx * .56, 1.22, .62); bx(post, .04, 1.2, .04, sx * .56, 1.26, -.86); } // the side panels and roof posts
-  const roof = bx(black, 1.3, .06, 2.0, 0, 1.87, -.1); roof.castShadow = true;  // the black roof
+  bx(black, 1.3, .06, 2.0, 0, 1.87, -.1);                                // the black roof
   bx(black, 1.3, .08, .2, 0, 1.84, .93);                                 // its front lip
   const ws = new THREE.Mesh(unitBox, glass); ws.scale.set(1.08, .84, .02); ws.position.set(0, 1.3, .66); ws.rotation.x = -.16; g.add(ws);   // the windshield, leaning back
-  const sg = (x, z) => { const w = new THREE.Group(), t = new THREE.Mesh(new THREE.CylinderGeometry(.23, .23, .17, 12), black), h = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, .18, 8), hub); t.castShadow = true; w.add(t, h); w.rotation.z = Math.PI / 2; w.position.set(x, .23, z); g.add(w); };
+  const wheels = [];
+  const sg = (x, z) => { const w = new THREE.Group(), r = new THREE.Group(), t = new THREE.Mesh(new THREE.CylinderGeometry(.23, .23, .17, 12), black), h = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, .18, 8), hub); t.castShadow = true; r.add(t, h); r.rotation.z = Math.PI / 2; w.add(r); w.position.set(x, .23, z); g.add(w); wheels.push(r); };
   for (const x of [-.55, .55]) { sg(x, .85); sg(x, -.78); }
   for (const x of [-.55, .55]) { bx(body, .2, .06, .56, x * 1.02, .52, .85); bx(body, .2, .06, .56, x * 1.02, .52, -.78); } // fenders over the wheels
   const bg = new THREE.Mesh(new THREE.CylinderGeometry(.15, .13, .85, 8), bag); bg.position.set(0, .98, -1.02); bg.rotation.x = -.12; bg.castShadow = true; g.add(bg);   // a golf bag on the back
   bx(trim, .3, .1, .3, 0, 1.42, -1.1);
+  const col = bx(black, .05, .05, .34, CART_RIDERS[0].x, .78, .5); col.rotation.x = .5;                       // the steering column and wheel (driver's side)
+  const sw = new THREE.Mesh(new THREE.CylinderGeometry(.14, .14, .025, 14), black); sw.position.set(CART_RIDERS[0].x, .9, .38); sw.rotation.x = 1.1; g.add(sw);
+  if (riders) for (const [i, R] of CART_RIDERS.entries()) {   // a seated man: grey trousers, a golf shirt and cap in his colour, dark hair
+    const m = lambert(R.shirt), skin = lambert(CART_SKIN), hair = lambert(CART_HAIR), pants = lambert(CART_PANTS), shoe = lambert(0x1c1c1e), x = R.x;
+    bx(pants, .32, .14, .44, x, .72, .09); bx(pants, .15, .38, .14, x - .08, .5, .34); bx(pants, .15, .38, .14, x + .08, .5, .34);   // thighs and shins
+    bx(shoe, .14, .07, .24, x - .08, .33, .42); bx(shoe, .14, .07, .24, x + .08, .33, .42);                                          // shoes
+    bx(m, .38, .5, .22, x, .96, -.1);                                                                                                // the shirt
+    for (const sx of [-1, 1]) {
+      const ua = bx(m, .1, .1, .3, x + sx * .24, 1.08, .02); ua.rotation.x = .5;                                                      // short sleeves, upper arms
+      const fa = bx(skin, .07, .07, .32, x + sx * (i ? .2 : .14), i ? .9 : 1.0, i ? .18 : .3); fa.rotation.x = i ? .1 : .25;         // forearms: the driver's on the wheel, the other's in his lap
+    }
+    const hd = new THREE.Mesh(new THREE.SphereGeometry(.115, 10, 8), skin); hd.position.set(x, 1.33, -.06); hd.castShadow = true; g.add(hd);
+    const hr = new THREE.Mesh(new THREE.SphereGeometry(.12, 10, 8), hair); hr.position.set(x, 1.34, -.095); hr.scale.set(1, .95, .95); g.add(hr);   // dark hair at the back and sides, under the cap
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(.125, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), m); cap.position.set(x, 1.37, -.04); cap.scale.set(1, .9, 1.05); g.add(cap);
+    bx(m, .2, .02, .15, x, 1.385, .1);                                                                                               // the brim
+    bx(skin, .06, .09, .06, x, 1.2, -.02);                                                                                           // the neck
+  }
+  g.userData.wheels = wheels; return g;
+}
+function realCartMesh(C, b) {
+  const g = makeGolfCart(b.a === 'riders'), gr = propGround(C, b, b.w, b.d);
   g.position.set(b.X, (gr.lo + gr.hi) / 2, b.Z); g.rotation.y = b.yaw; return g;
 }
 function realSiteMeshes(C, grp) {
