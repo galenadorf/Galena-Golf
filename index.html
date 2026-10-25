@@ -4982,11 +4982,26 @@ function resumeRound(course) {
   beginHole(); G.snapCam = true; updateHUD(); // straight to the address view, no flyover
   return true;
 }
+// Pins move every morning at 5:00 AM Central: one sheet per pin day, course and lobby (private room code, otherwise the shared public one).
+function pinDay(now) {
+  const f = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const p = {}; f.formatToParts(new Date(now == null ? Date.now() : now)).forEach(x => { p[x.type] = +x.value; });
+  return new Date(Date.UTC(p.year, p.month - 1, p.day, p.hour - 5, p.minute)).toISOString().slice(0, 10); // Chicago wall clock minus 5 h: before 5:00 it is still yesterday
+}
+function pinSheet(now) {
+  const room = typeof MP !== 'undefined' && MP.room && !mpIsLobby(MP.room) ? MP.room : 'open';
+  return HOLE_DEFS.map((d, i) => {
+    let h = 2166136261; const k = pinDay(now) + '|' + COURSE.key + '|' + room + '|' + i;
+    for (let j = 0; j < k.length; j++) { h ^= k.charCodeAt(j); h = Math.imul(h, 16777619); }
+    h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13;
+    return (h >>> 0) % 4;
+  });
+}
 function startRound() {
   clearRound();
   G.practice = false; G.pg = null; document.body.classList.remove('pg'); G.submitted = false; G.planes = [0, 0, 1, 1, 1, 2, 2][(Math.random() * 7) | 0];
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
-  G.pins = HOLE_DEFS.map(() => Math.floor(Math.random() * 4)); // a fresh pin sheet every round
+  G.pins = pinSheet(); // the day's pin sheet, the same for everyone in the same lobby
   G.fartHole = Math.floor(Math.random() * HOLE_DEFS.length); G.fartDone = false; // the hole where this round's rare sound plays (fartSwing)
   startHole(0);
 }
