@@ -258,6 +258,8 @@ body:has(#practiceSheet.on) #scrim{background:rgba(10,30,18,.08)}
 .pracPutt{width:100%;height:64px;margin-bottom:10px;border-radius:18px;background:linear-gradient(180deg,#3f9a4a,#2a7a36);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 4px 12px rgba(0,0,0,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;font:700 20px var(--disp);letter-spacing:.04em;text-transform:uppercase}
 .pracPutt small{font:600 11px var(--cond);letter-spacing:.1em;opacity:.85;margin-top:2px}
 .pracPutt:active{transform:scale(.98)}
+.pracPutt.cur{box-shadow:inset 0 0 0 3px #fff,0 4px 12px rgba(0,0,0,.2)}
+.pracGrid button.cur{box-shadow:inset 0 0 0 3px #fff;background:rgba(255,255,255,.3)}
 #pgBar{position:fixed;z-index:3;left:calc(var(--sl) + 10px);top:calc(var(--st) + 72px);width:112px;display:none;flex-direction:column;align-items:stretch;gap:6px;padding:8px;border-radius:18px;line-height:1.25;color:#fff;font:600 13px var(--cond);text-transform:uppercase;letter-spacing:.05em;text-shadow:var(--tsh);white-space:nowrap;transition:opacity .25s}
 body.pg:not(.spec) #pgBar{display:flex}
 body.pg.swing #pgBar,body.pg.flight #pgBar{opacity:0;pointer-events:none}
@@ -421,7 +423,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 </div>
 <canvas id="fx"></canvas>
 <div id="pinTag" class="gtag">0 yd</div>
-<div id="pgBar" class="glass"><span id="pgTxt"></span><button id="pgCup">Cup 1</button><button id="pgRe">Redo</button></div>
+<div id="pgBar" class="glass"><span id="pgTxt"></span><button id="pgCup">Cup 1</button><button id="pgRe">Redo</button><button id="pgChange">Change</button></div>
 <div id="mpPanel" class="glass"></div><div id="mpTags"></div>
 <div id="specBar" class="glass"><span id="specInfo">Following</span><button class="btn" id="specResume">Resume play</button></div>
 <div id="ballTag" class="gtag"><div class="bt1"><span id="btD">0</span><small>YD</small></div><div class="bt2" id="btC"></div></div>
@@ -442,7 +444,7 @@ Golf Course
   </div>
 </div>
 <div class="layer" id="intro"><div class="card icard"><canvas id="introMap" width="172" height="288"></canvas><div class="ic-b"><div><div class="ic-k" id="icK">Hole 1 of 3</div><div class="ic-n" id="icN">Headland</div><div class="ic-i" id="icI"></div><div class="ic-f"><div>Par<b id="icPar">4</b></div><div>Length<b id="icLen">390 yd</b></div><div>Wind<b id="icWind">5 mph</b></div><div>Fairway<b id="icWx">Fine</b></div></div></div><button class="btn ic-go" id="icGo">Play hole</button></div></div></div>
-<div class="layer" id="done"><div class="card dcard"><div class="d1" id="d1">Birdie</div><div class="d2" id="d2">Hole 1 · 3 strokes · Par 4</div><div class="dstats" id="dstats"></div><button class="btn" id="dNext" style="width:100%">Next hole</button><button class="mbtn dark" id="dReplay" style="width:100%;margin-top:8px">▶ Replay last shot</button></div></div>
+<div class="layer" id="done"><div class="card dcard"><div class="d1" id="d1">Birdie</div><div class="d2" id="d2">Hole 1 · 3 strokes · Par 4</div><div class="dstats" id="dstats"></div><button class="btn" id="dNext" style="width:100%">Next hole</button><button class="mbtn dark" id="dReplay" style="width:100%;margin-top:8px">▶ Replay last shot</button><button class="mbtn dark" id="dChange" style="width:100%;margin-top:8px;display:none">⛳ Change practice</button></div></div>
 <div class="layer" id="quitAsk"><div class="card qcard" role="alertdialog" aria-labelledby="qT"><div class="qt" id="qT">Are you sure?</div><p>Any progress will be lost.</p><div class="qb"><button class="btn danger" id="qYes">Yes I'm sure</button><button class="btn subBtn light" id="qNo">No</button></div></div></div>
 <div id="scrim"></div>
 <div class="sheet" id="bagSheet"><div class="grab"></div><div class="sht">Your bag <small id="bagLie">From the tee</small></div><div class="bag" id="bag"></div></div>
@@ -451,7 +453,7 @@ Golf Course
     <div class="sub"><span>Players online</span></div><div class="mpList" id="mpList"></div>
     <div class="mrow" hidden>Course<div class="seg segCourse" id="segCourseM"><button data-v="woodbine">Woodbine Bend</button></div></div>
   </div>
-  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mQuit">Quit to Main Screen</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
+  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mChange">⛳ Change practice</button><button class="mbtn dark wide" id="mQuit">Quit to Main Screen</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
   <div class="mlist setBlock">
     <div class="mrow">Name<input id="mName" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="done"></div>
     <div class="mrow">Player ID<span id="pidState" style="opacity:.8">Guest</span></div>
@@ -5476,6 +5478,7 @@ function pgFinish(r) {
 }
 function pgStartSpot() { const C = G.C, c = C.cups[1] || C.cup, a = Math.atan2(C.green.cx - c.x, C.green.cz - c.z) + 2.2; return [c.x + Math.sin(a) * 4.6, c.z + Math.cos(a) * 4.6]; }
 function startPuttingGreen() {
+  leaveShot();
   const inRound = !G.practice && (G.scores.some(v => v != null) || G.strokes > 0) && G.state !== 'title';
   if (inRound && !confirm('End the current round and practise on the putting green?')) return;
   G.practice = true; G.submitted = true; clearRound(); G.pg = { shots: 0, makes: 0, cup: 0, from: null };
@@ -6262,18 +6265,24 @@ function syncMenu() {
   document.querySelectorAll('#segMus button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.music !== false ? 1 : 0)));
   mpSync();
   $('mQuit').style.display = G.state === 'title' ? 'none' : ''; // nothing to quit from the start screen
+  $('mChange').style.display = G.practice && G.state !== 'title' ? '' : 'none';   // only while practising
 }
 // the Practice sheet (from the start screen): every hole with its par and length
 function openPractice() {
   const g = $('pracGrid');
   if (g.children.length !== HOLE_DEFS.length) { g.innerHTML = ''; HOLE_DEFS.forEach((d, i) => { const b = document.createElement('button'); b.innerHTML = `${i + 1}<small>Par ${d.par} · ${HOLE_LEN[i]} yd</small>`; b.onclick = () => startPractice(i); g.appendChild(b); }); }
+  [...g.children].forEach((b, i) => b.classList.toggle('cur', !G.pg && G.practice && G.state !== 'title' && G.hole === i)); $('pracPutt').classList.toggle('cur', !!G.pg);
   openSheet('practiceSheet');
 }
 $('pracPutt').onclick = () => { SFX.blip(); startPuttingGreen(); };
 $('pgCup').onclick = () => { if (!G.pg || G.state !== 'address') return; SFX.blip(); pgAim((G.pg.cup + 1) % G.C.cups.length); };
 $('pgRe').onclick = () => { const pg = G.pg; if (!pg || !pg.from || G.state !== 'address') return; SFX.blip(); pgPlace(pg.from.x, pg.from.z); readoutNote('Back where you played from', 'ok'); };
 // practice: one hole at a time, nothing scored. Picking a hole ends the round in progress.
+function leaveShot() {   // switching practice in the middle of play: whatever was happening stops
+  G.rep = null; G.shot = null; SW.phase = 'idle'; $('done').classList.remove('on'); $('readout').classList.remove('on'); UI.readT = 0;
+}
 function startPractice(i) {
+  leaveShot();
   const inRound = !G.practice && (G.scores.some(v => v != null) || G.strokes > 0) && G.state !== 'title';
   if (inRound && !confirm('End the current round and practice hole ' + (i + 1) + '?')) return;
   G.practice = true; G.pg = null; document.body.classList.remove('pg'); G.submitted = true; clearRound();
@@ -6346,7 +6355,7 @@ function showDone(pickedUp) {
   $('d1').className = 'd1 ' + (d < 0 ? 'good' : d > 1 ? 'bad' : '');
   $('d2').textContent = `${G.practice ? 'Practice · ' : ''}Hole ${h + 1} · ${s} strokes · Par ${par}`;
   $('dstats').innerHTML = `<div><b>${G.putts[h]}</b>Putts</div><div><b>${par >= 4 ? (G.fir[h] ? 'Hit' : 'Miss') : (G.gir[h] ? 'Yes' : 'No')}</b>${par >= 4 ? 'Fairway' : 'Green'}</div><div><b>${G.practice ? 'Practice' : fmtToPar(tp.d)}</b>${G.practice ? 'Mode' : 'Round'}</div>`;
-  $('dNext').textContent = G.practice ? 'Play again' : last ? 'Final scorecard' : 'Next hole';
+  $('dNext').textContent = G.practice ? 'Play again' : last ? 'Final scorecard' : 'Next hole'; $('dChange').style.display = G.practice ? '' : 'none';
   $('done').classList.add('on');
   if (!pickedUp && d <= -1) burstConfetti();
 }
@@ -7066,6 +7075,9 @@ function initInput() {
   $('mHelp').onclick = () => openSheet('helpSheet');
   $('mRound').onclick = () => { closeSheets(); startRound(); };
   $('mQuit').onclick = () => { SFX.blip(); $('quitAsk').classList.add('on'); };
+  $('mChange').onclick = () => { openPractice(); };
+  $('dChange').onclick = () => { openPractice(); };
+  $('pgChange').onclick = () => { openPractice(); };
   $('qNo').onclick = () => { SFX.blip(); $('quitAsk').classList.remove('on'); };
   $('qYes').onclick = quitToMain;
   $('btnPractice').onclick = () => { audio(); SFX.blip(); openPractice(); };
