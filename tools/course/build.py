@@ -455,6 +455,18 @@ def main():
         prac = dict(tee=list(tee), green=[round(gc.x, 2), round(gc.y, 2)], line=[list(tee), [round(gc.x, 2), round(gc.y, 2)]],
                     mk={k: list(tee) for k in 'wybr'}, cups=[[round(float(e), 2), round(float(n), 2)] for e, n in pr['cups']])
 
+    drv = None   # the driving range (range_read.py): a scene of its own, like the practice green; its features are drawn only there
+    rpn = os.path.join(OUT, 'range.json')
+    if os.path.exists(rpn):
+        rr = json.load(open(rpn))
+        spots, flags = rr['spots'], rr['flags']
+        tee = (round(sum(p[0] for p in spots) / len(spots), 2), round(sum(p[1] for p in spots) / len(spots), 2))   # the scene's frame: from the middle of the hitting spots to the middle of the flags
+        flags = sorted(flags, key=lambda p: math.hypot(p[0] - tee[0], p[1] - tee[1]))   # nearest first
+        gc = (round(sum(p[0] for p in flags) / len(flags), 2), round(sum(p[1] for p in flags) / len(flags), 2))
+        drv = dict(tee=list(tee), green=list(gc), line=[list(tee), list(gc)], mk={k: list(tee) for k in 'wybr'}, spots=spots, flags=flags, ext=spots + flags,
+                   feat=dict(fair=enc_polys([shape(g) for g in rr['fair']]), green=enc_polys([shape(g) for g in rr['greens']]), sand=enc_polys([shape(g) for g in rr['bunkers']]),
+                             fescue=enc_polys([shape(g) for g in rr['fescue']])),
+                   boundary=enc_polys([shape(rr['boundary'])]), box=rr['box'])
     area = box(-700, -700, 700, 700)
     clip = lambda ps: [p.intersection(area) for p in ps if p.intersects(area)]
     trees_path = os.path.join(OUT, 'trees.json')
@@ -464,6 +476,8 @@ def main():
         trees += json.load(open(tp))
     if os.path.exists(ppn):   # the trees painted on the practice-green map stand in for any lidar tree under them
         trees = [t for t in trees if not any(math.hypot(t['e'] - q['e'], t['n'] - q['n']) < .5 * q['d'] for q in pr['trees'])] + pr['trees']
+    if os.path.exists(rpn):   # the trees painted on the range map stand in for any lidar tree under them
+        trees = [t for t in trees if not any(math.hypot(t['e'] - q['e'], t['n'] - q['n']) < .5 * q['d'] for q in rr['trees'])] + rr['trees']
     tq = []
     for t in trees:  # e, n, crown diameter (dm), kind * 1000 + height (dm)
         tq += [int(round(t['e'] * 10)), int(round(t['n'] * 10)), int(round(t['d'] * 10)), t['kind'] * 1000 + min(999, int(round(t['h'] * 10)))]
@@ -492,8 +506,8 @@ def main():
         cover=enc_polys([area] if trees else []),
         streams=enc_lines([f['line'] for f in F['stream']]),
         highway=enc_lines([hw]), hwSlow=hw_slow,  # US 20 past the north edge of the course; hwSlow = metres from its west end where the limit drops from 55 to 35 mph
-        relief=relief, prac=prac, roads=[enc_lines([r]) for r in roads],
-        props=json.load(open(os.path.join(OUT, 'site_props.json'))) if os.path.exists(os.path.join(OUT, 'site_props.json')) else [],  # washrooms, porta-potties and signposts painted on the aerial (site_paint.py)
+        relief=relief, prac=prac, drv=drv, roads=[enc_lines([r]) for r in roads],
+        props=(json.load(open(os.path.join(OUT, 'site_props.json'))) if os.path.exists(os.path.join(OUT, 'site_props.json')) else []) + ([rr['shed']] if drv and rr.get('shed') else []),  # washrooms, porta-potties and signposts painted on the aerial (site_paint.py)
         # tee marker colours: w is the tee played (gold), y/b/r the other sets (black, silver, bronze)
         mkc=dict(w=0xd9b23a, y=0x26282b, b=0xc9ced3, r=0xb07045),
     )
