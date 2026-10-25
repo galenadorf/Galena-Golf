@@ -2540,16 +2540,16 @@ function makeGolfCart(riders) {
     const m = lambert(R.shirt), skin = lambert(CART_SKIN), hair = lambert(CART_HAIR), pants = lambert(CART_PANTS), shoe = lambert(0x1c1c1e), x = R.x;
     bx(pants, .32, .14, .44, x, .72, .09); bx(pants, .15, .38, .14, x - .08, .5, .34); bx(pants, .15, .38, .14, x + .08, .5, .34);   // thighs and shins
     bx(shoe, .14, .07, .24, x - .08, .33, .42); bx(shoe, .14, .07, .24, x + .08, .33, .42);                                          // shoes
-    bx(m, .38, .5, .22, x, .96, -.1);                                                                                                // the shirt
+    bx(m, .38, .65, .22, x, 1.035, -.1);                                                                                                // the shirt
     for (const sx of [-1, 1]) {
-      const ua = bx(m, .1, .1, .3, x + sx * .24, 1.08, .02); ua.rotation.x = .5;                                                      // short sleeves, upper arms
-      const fa = bx(skin, .07, .07, .32, x + sx * (i ? .2 : .14), i ? .9 : 1.0, i ? .18 : .3); fa.rotation.x = i ? .1 : .25;         // forearms: the driver's on the wheel, the other's in his lap
+      const ua = bx(m, .1, .1, .3, x + sx * .24, 1.23, .02); ua.rotation.x = .5;                                                      // short sleeves, upper arms
+      const fa = bx(skin, .07, .07, .32, x + sx * (i ? .2 : .14), i ? .9 : 1.05, i ? .18 : .3); fa.rotation.x = i ? .1 : .25;         // forearms: the driver's on the wheel, the other's in his lap
     }
-    const hd = new THREE.Mesh(new THREE.SphereGeometry(.115, 10, 8), skin); hd.position.set(x, 1.33, -.06); hd.castShadow = true; g.add(hd);
-    const hr = new THREE.Mesh(new THREE.SphereGeometry(.12, 10, 8), hair); hr.position.set(x, 1.34, -.095); hr.scale.set(1, .95, .95); g.add(hr);   // dark hair at the back and sides, under the cap
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(.125, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), m); cap.position.set(x, 1.37, -.04); cap.scale.set(1, .9, 1.05); g.add(cap);
-    bx(m, .2, .02, .15, x, 1.385, .1);                                                                                               // the brim
-    bx(skin, .06, .09, .06, x, 1.2, -.02);                                                                                           // the neck
+    const hd = new THREE.Mesh(new THREE.SphereGeometry(.115, 10, 8), skin); hd.position.set(x, 1.48, -.06); hd.castShadow = true; g.add(hd);
+    const hr = new THREE.Mesh(new THREE.SphereGeometry(.12, 10, 8), hair); hr.position.set(x, 1.49, -.095); hr.scale.set(1, .95, .95); g.add(hr);   // dark hair at the back and sides, under the cap
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(.125, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), m); cap.position.set(x, 1.52, -.04); cap.scale.set(1, .9, 1.05); g.add(cap);
+    bx(m, .2, .02, .15, x, 1.535, .1);                                                                                               // the brim
+    bx(skin, .06, .09, .06, x, 1.35, -.02);                                                                                           // the neck
   }
   g.userData.wheels = wheels; return g;
 }
