@@ -2523,15 +2523,14 @@ function realSiteMeshes(C, grp) {
       const walls = new THREE.Mesh(new THREE.BoxGeometry(w, hgt, d), [mx, mx, mt, mt, mz, mz]); walls.position.y = (top + gr.hi + .15) / 2; g.add(walls);
       const roof = new THREE.Mesh(gableRoof(w, d, .7, .3), new THREE.MeshLambertMaterial({ color: 0x7d858b, side: THREE.DoubleSide })); roof.position.y = top; g.add(roof);
       box(g, w + .04, .12, d + .04, 0, top - .06, 0, lambert(0x6f767b)); // the eave trim
-    } else if (b.k === 'entry') { // the entrance sign: three wooden posts, the board (face +z), a ball on a red tee at each end, a stone-edged flower bed
+    } else if (b.k === 'entry') { // the entrance sign: three wooden posts, the board (face +z), the same ball on a red tee at each end, a stone-edged flower bed
       const bw = 7, bh = 3.05, by = gr.hi + 2.4 + bh / 2, wood = lambert(0x7a5a3a), red = lambert(0xa63a42), stone = lambert(0xb9b1a0), stone2 = lambert(0xa49c8c);
       const sg = new THREE.Group(); sg.position.z = -b.d * .12; g.add(sg);
       for (const x of [-2.5, .2, 3.1]) box(sg, .22, by + bh / 2 - base - .3, .2, x, (base + by - bh / 2 + .3) / 2 + .6, -.2, wood);
       box(sg, bw, bh, .14, 0, by, -.05, lambert(0x1c3d2a));
       const face = new THREE.Mesh(new THREE.PlaneGeometry(bw - .2, bh - .2), new THREE.MeshLambertMaterial({ map: entryTexture() })); face.position.set(0, by, .03); sg.add(face);
-      box(sg, .2, bh + 2.0, .22, bw / 2 + .1, by + .4, -.1, wood); // the tall right-hand post
       const dm = new THREE.MeshLambertMaterial({ map: dimpleTexture() });
-      for (const [sx, r, up] of [[-1, .85, .75], [1, 1.05, 1.5]]) {
+      for (const [sx, r, up] of [[-1, .85, .75], [1, .85, .75]]) {   // both ends alike: the same ball, the same height
         const x = sx * (bw / 2 - .12), yb = by + bh / 2 + up;
         const ball = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), dm); ball.position.set(x, yb, .02); sg.add(ball);
         const tee = new THREE.Mesh(new THREE.CylinderGeometry(.14, .3, bh * .9, 8), red); tee.position.set(x, yb - r - bh * .45 + .1, .12); sg.add(tee); // the red tee under the ball, running down the board
@@ -2562,8 +2561,9 @@ function clubSignTexture() {
   const t = new THREE.CanvasTexture(cv); t.anisotropy = 4; return t;
 }
 function buildClubhouse(C, grp, b) {
-  const W = b.w, D = b.d, yb = b.lo - .8, Hw = 4.3, over = .6, parts = [];
-  const q = C.loc(CLUB_FRONT[0], CLUB_FRONT[1]), dx = q[0] - b.x, dz = -q[1] - b.z, a = -b.rot * DEG;   // which long side the parking lot is on, in the building's own frame (the group is turned by a about y)
+  // (the fitted rectangle may come out either way round in this hole's frame: the long side is always the model's x)
+  const long = b.w >= b.d, W = long ? b.w : b.d, D = long ? b.d : b.w, yb = b.lo - .8, Hw = 4.3, over = .6, parts = [];
+  const q = C.loc(CLUB_FRONT[0], CLUB_FRONT[1]), dx = q[0] - b.x, dz = -q[1] - b.z, a = -b.rot * DEG - (long ? 0 : Math.PI / 2);   // which long side the parking lot is on, in the building's own frame (the group is turned by a about y)
   const flip = dx * Math.sin(a) + dz * Math.cos(a) < 0, fs = flip ? -1 : 1;
   const wz = (lx, lz) => [b.x + lx * Math.cos(a) + fs * lz * Math.sin(a), b.z - lx * Math.sin(a) + fs * lz * Math.cos(a)];
   const fp = wz(0, D / 2 + 6), y0 = C.h(fp[0], fp[1]) + .15;   // the floor stands level with the front door, where the parking lot is; the hill behind it is higher
@@ -2609,6 +2609,7 @@ function buildClubhouse(C, grp, b) {
   const g = new THREE.Group(), cg = new THREE.Group(); cg.add(new THREE.Mesh(mergeParts(parts), mat));
   const sign = new THREE.Mesh(new THREE.CircleGeometry(1.3, 40), new THREE.MeshLambertMaterial({ map: clubSignTexture() })); sign.position.set(0, ry + rise * .4, zg + .09); cg.add(sign);
   cg.rotation.y = flip ? Math.PI : 0; g.add(cg);
+  C._clubFront = wz(0, D / 2 + 6);   // (for checking which way it faces)
   g.position.set(b.x, 0, b.z); g.rotation.y = a; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
 }
 function realBuildingMeshes(C, grp) {
