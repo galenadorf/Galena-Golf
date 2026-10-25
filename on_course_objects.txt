@@ -97,8 +97,8 @@ MAN-MADE OBJECTS
   - Two blue porta-potties (the ball can hit them).
   - The clubhouse parking lot (between holes 10 and 13): asphalt with painted stalls (violet area on site_mask.png, stalls laid out by site_paint.py) and 8 parked cars that are always the
     same ones: sedans and SUVs in assorted colours, among them the Subaru and the Hyundai. Seen on holes 1, 7-10, 12, 13 and 16-18. Cars are solid, so a ball hits them (the lot itself is only paint).
-  - Two golf carts (Club Car Precedent: black roof on thin posts, off-white body, black bumpers and tyres, tan bench seat, a bag on the back) parked nose to tail on the cart path
-    north-east of the practice green, facing the parking lot. The second one has two men riding in it (dark hair, grey trousers; the driver in a light blue #C4DCF0 shirt and cap, the passenger in a salmon #F7A780 shirt and cap).
+  - Two golf carts (Club Car Precedent: black roof on thin posts, off-white body, black bumpers and tyres, tan bench seat, two golf bags on the back) parked nose to tail on the cart path
+    north-east of the practice green, facing up the path toward the first hole. The second one has two men riding in it (dark hair, grey trousers; the driver in a light blue #C4DCF0 shirt and cap, the passenger in a salmon #F7A780 shirt and cap).
     Always there, parked (the model, `makeGolfCart(true)`, is built to be driven later: its wheels are in `userData.wheels`); solid, so a ball hits them ("Off a golf cart!"). Positions are `CART_PROPS` in index.html, not painted.
   - The big Woodbine Bend entrance sign (green board on posts, a golf ball on a red tee at each end, stone-edged flower bed) beside Route 20 on the west side of the course, facing in toward the course. Painted with paint_edit.py / paint_read.py; only seen from the holes nearest it.
   - The pump house: a small plain metal building (corrugated grey siding and roof, no doors) by the 8th tee, painted with paint_edit.py / paint_read.py; solid, so a ball hits it.
