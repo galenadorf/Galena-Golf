@@ -100,8 +100,8 @@ MAN-MADE OBJECTS
   - Two golf carts (Club Car Precedent: black roof on thin posts, off-white body, black bumpers and tyres, tan bench seat, two golf bags on the back) parked nose to tail on the cart path
     north-east of the practice green, facing up the path toward the first hole. The second one has two men riding in it (dark hair, grey trousers; the driver in a light blue #C4DCF0 shirt and cap, the passenger in a salmon #F7A780 shirt and cap).
     Always there, parked (the model, `makeGolfCart(true)`, is built to be driven later: its wheels are in `userData.wheels`); solid, so a ball hits them ("Off a golf cart!"). Positions are `CART_PROPS` in index.html, not painted.
-  - TEST RUN: a moving golf cart with the same two men, on hole 3 in practice mode only (Practice > a single hole; never in a round, the putting green or the range). Guaranteed on every load of the practice hole; it sets off the moment the golfer starts the first backswing
-    (`cartRideGo`, called from `fartSwing`): it appears on the left cart path 40 m out from the tee, drives down it at 20 mph, crosses the rough and fairway at about 200 yd
+  - TEST RUN: a moving golf cart with the same two men, on hole 3 in practice mode only (Practice > a single hole; never in a round, the putting green or the range). Guaranteed on every load of the practice hole; it sets off the moment the golfer presses Play Hole
+    (`cartRideGo`, from `beginHole`): it appears on the left cart path 40 m out from the tee, drives down it at 25 mph, crosses the rough and fairway at about 200 yd
     (183 m) from the tee and parks on the right-hand cart path, where it stays. Wheels turn, it follows the ground, and a ball can hit it ("Off a golf cart!"). Route is
     `CARTRIDE_ROUTE` in index.html.
   - The big Woodbine Bend entrance sign (green board on posts, a golf ball on a red tee at each end, stone-edged flower bed) beside Route 20 on the west side of the course, facing in toward the course. Painted with paint_edit.py / paint_read.py; only seen from the holes nearest it.

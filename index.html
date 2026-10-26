@@ -4151,10 +4151,10 @@ function makeFountain(L) {
   };
   return e;
 }
-/* --- a golf cart with two men that drives down hole 3's cart path (20 mph), crosses the fairway about 200 yd from the tee and parks on the path on the far side.
-   TEST RUN, practice holes only (not in a round yet): it is guaranteed on that hole and sets off the moment the golfer starts the first backswing (cartRideGo, from fartSwing). Waypoints are course
+/* --- a golf cart with two men that drives down hole 3's cart path (25 mph), crosses the fairway about 200 yd from the tee and parks on the path on the far side.
+   TEST RUN, practice holes only (not in a round yet): it is guaranteed on that hole and sets off the moment the golfer presses Play Hole (cartRideGo, from beginHole). Waypoints are course
    metres (x, z) read off the cart path on that hole: the left path from beside the tee to 183 m out, then straight across the rough to the right path. --- */
-const CARTRIDE_HOLE = 2, CARTRIDE_V = 20 * .44704, CARTRIDE_PARK_YAW = 125 * DEG;
+const CARTRIDE_HOLE = 2, CARTRIDE_V = 25 * .44704, CARTRIDE_PARK_YAW = 125 * DEG;
 const CARTRIDE_ROUTE = [[-20, -40], [-21.5, -52], [-24.5, -70], [-27, -82], [-29, -94], [-32.5, -112], [-35, -124], [-38.5, -142], [-42.5, -154], [-46, -166], [-49, -177],
   [-44, -181.5], [-34, -183.5], [-18, -184], [0, -184], [18, -184], [32, -183.8], [41, -184], [46, -185.4]];
 function makeCartRide(L) {
@@ -4185,7 +4185,7 @@ function makeCartRide(L) {
   };
   return e;
 }
-function cartRideGo() { const L = W.life; if (L && L.cartRide && !G.pg) L.cartRide.start(); }
+function cartRideGo() { const L = W.life; if (L && L.cartRide && L.C === G.C) L.cartRide.start(); }   // from beginHole: the golfer pressed Play Hole
 function buildLife(C, grp) {
   const L = { C, grp, t: 0, R: mulberry32((Math.random() * 1e9) | 0), ents: [], T: { x: 0, y: 0, z: 0, fly: false }, last: { x: 0, z: 0 }, ballMovingAway: false };
   W.life = L; W.birds = null;
@@ -4442,7 +4442,6 @@ function songTick(now, force) {
 // running yet, it stays due for the next swing. Practice has no dealt hole: each hole there just has the 1 in 18 chance.
 const FART = { hole: -1, n: 0, at: 0 };
 function fartSwing() {
-  cartRideGo();
   if (G.hole !== FART.hole) { FART.hole = G.hole; FART.n = 0; FART.at = ((G.fartHole === G.hole && !G.fartDone) || Math.random() < 1 / HOLE_DEFS.length) ? 1 + Math.floor(Math.random() * 3) : 0; }
   FART.n++;
   if (!FART.at || FART.n < FART.at || !settings.sound || document.hidden) return;
@@ -6497,6 +6496,7 @@ function beginHole() {
   if (G.state !== 'intro') return;
   $('intro').classList.remove('on'); SFX.blip(); songArm();
   G.state = 'settle'; G.settleT = 0; G.camFrom = W.cam.position.clone(); G.lookFrom = G.camLook.clone();
+  cartRideGo();
 }
 function showDone(pickedUp) {
   const h = G.hole, par = G.C.def.par, s = G.scores[h], last = h === HOLE_DEFS.length - 1, d = s - par;
