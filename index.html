@@ -4151,10 +4151,10 @@ function makeFountain(L) {
   };
   return e;
 }
-/* --- a golf cart with two men that drives down hole 3's cart path (12 mph), crosses the fairway about 200 yd from the tee and parks on the path on the far side.
+/* --- a golf cart with two men that drives down hole 3's cart path (20 mph), crosses the fairway about 200 yd from the tee and parks on the path on the far side.
    TEST RUN, practice holes only (not in a round yet): it is guaranteed on that hole and sets off the moment the golfer starts the first backswing (cartRideGo, from fartSwing). Waypoints are course
    metres (x, z) read off the cart path on that hole: the left path from beside the tee to 183 m out, then straight across the rough to the right path. --- */
-const CARTRIDE_HOLE = 2, CARTRIDE_V = 12 * .44704, CARTRIDE_PARK_YAW = 125 * DEG;
+const CARTRIDE_HOLE = 2, CARTRIDE_V = 20 * .44704, CARTRIDE_PARK_YAW = 125 * DEG;
 const CARTRIDE_ROUTE = [[-20, -40], [-21.5, -52], [-24.5, -70], [-27, -82], [-29, -94], [-32.5, -112], [-35, -124], [-38.5, -142], [-42.5, -154], [-46, -166], [-49, -177],
   [-44, -181.5], [-34, -183.5], [-18, -184], [0, -184], [18, -184], [32, -183.8], [41, -184], [46, -185.4]];
 function makeCartRide(L) {
