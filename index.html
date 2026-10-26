@@ -5147,7 +5147,7 @@ function pinSheet(now) {
   });
 }
 function startRound() {
-  clearRound();
+  UI.finalCard = false; clearRound();
   G.practice = false; G.pg = null; document.body.classList.remove('pg'); G.submitted = false; G.planes = [0, 0, 1, 1, 1, 2, 2][(Math.random() * 7) | 0];
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   G.pins = pinSheet(); // the day's pin sheet, the same for everyone in the same lobby
@@ -6422,7 +6422,8 @@ function addStatsChip(id) {
   if (!c) { c = document.createElement('button'); c.className = 'stChip'; c.onclick = e => { e.stopPropagation(); openStats(); }; h.appendChild(c); }
   let li = 0; LEVELS.forEach((l, i) => { if (ST.holes >= l[0]) li = i; }); c.textContent = '📊 ' + LEVELS[li][1];
 }
-function closeSheets() { hideSheets(); SHEET_BACK.length = 0; syncBack(); $('scrim').classList.remove('on'); }
+// closing the final scorecard (the X, a tap outside, Main menu) takes the player back to the home screen; Play again clears the flag first
+function closeSheets() { const home = UI.finalCard; UI.finalCard = false; hideSheets(); SHEET_BACK.length = 0; syncBack(); $('scrim').classList.remove('on'); if (home) quitToMain(); }
 function openBag() {
   if (G.state !== 'address' && G.state !== 'settle') return;
   const b = $('bag'); b.innerHTML = '';
@@ -6527,10 +6528,10 @@ function showScorecard(final) {
   let best = null; try { best = +localStorage.getItem(BEST_KEY) || null; } catch (e) { }
   $('cardBody').innerHTML = `<div class="sht">${final ? 'Round complete' : 'Scorecard'} <small>${final ? playerName() + ' · ' + COURSE.short : COURSE.name}</small></div>${final ? '<div id="finalBoard"></div><div class="sub">Scorecard</div>' : ''}<div class="scw"><table class="vcard">${rows}</table></div>
     <div class="scsum"><div><b>${played ? fmtToPar(tp.d) : '–'}</b>To par</div><div><b>${firN ? firH + '/' + firN : '–'}</b>Fairways</div><div><b>${played ? girH + '/' + played : '–'}</b>Greens</div><div><b>${best || '–'}</b>Best</div></div>
-    ${final ? '<div class="mbtns"><button class="mbtn dark" id="scAgain">Play again</button><button class="mbtn" id="scClose">Close</button></div>' : ''}`;
+    ${final ? '<div class="mbtns"><button class="mbtn dark" id="scAgain">Play again</button><button class="mbtn" id="scClose">Main menu</button></div>' : ''}`;
   if (final) fillBoard($('finalBoard'), 10);
-  openSheet('cardSheet');
-  if (final) { $('scAgain').onclick = () => { closeSheets(); startRound(); }; $('scClose').onclick = () => { closeSheets(); G.state = 'title'; $('title').classList.add('on'); showBest(); }; }
+  openSheet('cardSheet'); UI.finalCard = !!final;
+  if (final) { $('scAgain').onclick = () => { UI.finalCard = false; closeSheets(); startRound(); }; $('scClose').onclick = closeSheets; }
 }
 function showBest() { const ni = $('nameIn'); if (ni && document.activeElement !== ni) ni.value = settings.name || ''; if (ni) ni.readOnly = isReg(); let b = null; try { b = +localStorage.getItem(BEST_KEY) || null; } catch (e) { } $('best').textContent = b ? `Best round ${b} (${fmtToPar(b - PAR_TOTAL)})` : ''; }
 /* ---------- intro & hole done ---------- */
