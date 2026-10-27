@@ -491,7 +491,7 @@ Golf Course
     <div class="mrow" id="musRow" hidden>Music<div class="seg" id="segMus"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
     <div class="mrow mpRow">Live room<div class="mpRoom"><input id="mpCode" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Code" enterkeyhint="go"><button class="mpb" id="mpJoin">Join</button></div></div>
     <div class="mpInfo" id="mpInfo">Play live with friends: everyone in the same room sees the others' balls fly on the same hole, and the scores.<div class="mpBtns"><button class="mpb" id="mpNew">New room</button><button class="mpb" id="mpShare">Share link</button></div></div>
-    <div id="buildNo" style="font:500 13px var(--sans,system-ui);color:#b4b4b4;padding:6px 4px 2px;font-variant-numeric:tabular-nums">…</div>
+    <div id="buildNo" style="font:500 13px var(--sans,system-ui);color:#b4b4b4;padding:6px 4px 2px;text-align:center;font-variant-numeric:tabular-nums">Build …</div>
   </div>
 </div>
 <div class="sheet" id="practiceSheet"><div class="grab"></div><div class="sht">Practice <small>Pick a hole · scores are not recorded</small></div><button class="pracPutt" id="pracPutt">Putting green<small>Chip and putt · four cups · nothing scored</small></button><button class="pracPutt" id="pracRange">Driving range<small>Any club · flags to aim at · nothing scored</small></button><div class="pracGrid" id="pracGrid"></div></div>
@@ -4487,7 +4487,7 @@ function songProbe() {
     const a = SONG.ctx, an = a.createAnalyser(), buf = new Float32Array(an.fftSize); SONG.gain.connect(an); let m = 0, k = 0;
     const iv = setInterval(() => {
       an.getFloatTimeDomainData(buf); let s = 0; for (const v of buf) s += v * v; m = Math.max(m, Math.sqrt(s / buf.length));
-      if (++k >= 20) { clearInterval(iv); const el = $('buildNo'); if (el) el.textContent = (BUILD.startsWith('__') ? 'local' : BUILD.slice(0, 7)) + ' · song ' + (m < 1e-5 ? 'silent' : Math.round(20 * Math.log10(m)) + ' dB'); }
+      if (++k >= 20) { clearInterval(iv); const el = $('buildNo'); if (el) el.textContent = 'Build ' + (BUILD.startsWith('__') ? 'local' : BUILD.slice(0, 7)) + ' · song ' + (m < 1e-5 ? 'silent' : Math.round(20 * Math.log10(m)) + ' dB'); }
     }, 100);
   } catch (e) { }
 }
@@ -7686,7 +7686,7 @@ function boot(data) {
 // Updates: GitHub Pages lets browsers keep the page for 10 minutes, and a home-screen app much longer. The deploy stamps BUILD and
 // writes version.txt; when the two differ the page reloads itself through a fresh URL.
 const BUILD = '__BUILD__';
-window.addEventListener('load', () => { const el = $('buildNo'); if (el) el.textContent = BUILD.startsWith('__') ? 'local' : BUILD.slice(0, 7); }); // the commit this copy of the game was built from (Settings)
+window.addEventListener('load', () => { const el = $('buildNo'); if (el) el.textContent = 'Build ' + (BUILD.startsWith('__') ? 'local' : BUILD.slice(0, 7)); }); // the commit this copy of the game was built from (Settings)
 function checkUpdate() {
   if (BUILD.startsWith('__')) return;
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(v => {
