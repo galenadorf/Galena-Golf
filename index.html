@@ -570,7 +570,7 @@ const WET_HALF = VIS_R * BALL_DRAW;   // water this deep over the ground covers 
 const CUP_VIS_R = 0.14;   // cup radius: 2.5 ball radii, the real proportion (108 mm hole, 42.7 mm ball); an 11 in hole, ~2.6x real.
 // It was 0.28 (22 in): simulated putts with tour-level aim and pace errors holed 92% from 8 ft and 36% from 30 ft (tour: 50% and 7%); at 0.14 it is 78% and 19%
 const CUP_RIM = CUP_VIS_R,
-  PIN_HIT = .035 + VIS_R * .95; // stick radius + ball radius
+  PIN_HIT = .0175 + VIS_R * .95; // stick radius (PIN_R) + ball radius
 const PIN_H = 2.3;
 
 const S = { TEE: 0, FAIR: 1, FIRST: 2, ROUGH: 3, DEEP: 4, FRINGE: 5, GREEN: 6, SAND: 7, WATER: 8, PATH: 9 };
@@ -654,7 +654,8 @@ const WIND_EFFECT = .7; // all wind pushes 30% less than its displayed speed wou
 // A real hole: a bucket CUP_RIM wide and CUP_DEPTH deep cut into the green with a sharp top edge, the flagstick standing
 // in the middle. Near the hole the ball is integrated as a rolling sphere against the green, the rim edge, the cup wall,
 // its floor and the stick, so drops, lip-outs, hops and stick hits all come out of the same physics.
-const CUP_DEPTH = .52, PIN_R = .035, CUP_G = GRAV * .7, CUP_IN = CUP_RIM + .03, CUP_OUT = CUP_RIM + VIS_R + .08, CUP_IMP = .35;
+const CUP_DEPTH = .52, PIN_R = .0175,   // PIN_R: the stick, scaled with the cup (at .035 the gap between stick and wall was narrower than the ball, and nothing dropped with the flag in)
+  CUP_G = GRAV * .7, CUP_IN = CUP_RIM + .03, CUP_OUT = CUP_RIM + VIS_R + .08, CUP_IMP = .35;
 function cupZone(C, o, x, yb, z, vx, vy, vz, t, fr, ev, mu, air, w, cup) {
   cup = cup || C.cup; const R = CUP_RIM, rb = VIS_R, h = 1 / 2000, bot = cup.y - CUP_DEPTH, flag = !!o.flag;
   const s0 = Math.hypot(vx, vz), hx0 = vx, hz0 = vz;
@@ -3250,7 +3251,7 @@ const CUP_U = { value: [0, 1, 2, 3].map(() => new THREE.Vector4(0, 0, 0, 0)) };
 const RANGE_K = 2;   // driving-range flags stand twice as tall, to be seen from 200 yd
 function buildCup(C, grp, cup, ci) {
   if (C.noCup) {   // a driving-range flag: just a taller stick
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(PIN_R * 1.5, PIN_R * 1.5, PIN_H * RANGE_K, 8), lambert(0xffffff)); pole.position.set(cup.x, cup.y + PIN_H * RANGE_K / 2, cup.z); pole.castShadow = true; grp.add(pole); return pole;
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(.0525, .0525, PIN_H * RANGE_K, 8), lambert(0xffffff)); pole.position.set(cup.x, cup.y + PIN_H * RANGE_K / 2, cup.z); pole.castShadow = true; grp.add(pole); return pole;
   }
   const R = CUP_RIM, n = 48, D = CUP_DEPTH, rows = [0, -.075, -.08, -.2, -D];
   CUP_U.value[ci].set(cup.x, cup.z, R, 1);
