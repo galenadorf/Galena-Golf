@@ -283,6 +283,7 @@ body.pg.swing #pgBar,body.pg.flight #pgBar{opacity:0;pointer-events:none}
 .rc-k{display:inline-block;font:700 14px/1 var(--cond);letter-spacing:.34em;text-transform:uppercase;padding:6px 12px 5px;border-radius:999px;background:var(--ink,#2b1200);color:var(--c1,#ffe85a);animation:recBlink .5s steps(2) 5}
 .rc-t{margin-top:10px;font:700 30px/1.02 var(--cond);text-transform:uppercase;font-style:italic;transform:skewX(-6deg);letter-spacing:.01em;text-shadow:0 2px 0 rgba(255,255,255,.5)}
 .rc-v{margin-top:4px;font:700 74px/1 var(--cond);font-style:italic;transform:skewX(-6deg);font-variant-numeric:tabular-nums;color:#fff;-webkit-text-stroke:2px var(--ink,#2b1200);paint-order:stroke fill;text-shadow:0 5px 0 rgba(0,0,0,.3)}
+.gimme .rc-face{margin:8px auto 0;display:block;width:132px;height:132px;filter:drop-shadow(0 6px 4px rgba(0,0,0,.35))}
 .gimme .rc-rope{margin:6px auto 0;display:block;width:min(92%,330px);height:auto;filter:drop-shadow(0 6px 4px rgba(0,0,0,.35))}
 #recCard.gimme{color:#fff}#recCard.gimme .rc-t{color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.35)}#recCard.gimme .rc-s{opacity:1;color:#fff}#recCard.gimme:before{background:repeating-conic-gradient(rgba(255,230,190,.2) 0 7deg,transparent 7deg 20deg)}
 .rc-s{margin-top:6px;font:600 15px/1.2 var(--cond);letter-spacing:.1em;text-transform:uppercase;opacity:.85}
@@ -504,7 +505,7 @@ Golf Course
   <div><b>Tempo · <span class="hSw">left</span> thumb</b>Touch anywhere on the <span class="hSw">left</span> and slide down for the backswing. The scale shows the carry for your club; the low end of the scale is stretched for finer control, and when a part-shot line shows, the whole scale zooms so that line sits about two thirds of the way down (a readout beside your thumb shows the distance, and the phone buzzes as you reach the line). Short-game zoom in the menu turns this off. Slide back up past where you started to strike. The upstroke must take under 0.35 s for full power; every 0.2 s slower takes a further 20 % off the ball speed. Keep the upstroke straight: the sideways drift of your thumb on the way up (traced in yellow on the tempo scale, fading after the strike) sets the starting line, so drifting right sends the ball right of your aim line and drifting left sends it left. Backswing three times as long as the downswing gives the full smash factor; anywhere from 2:1 to 4:1 still strikes well. Putts want 2:1.</div>
   <div><b>Strike · <span class="hSt">right</span> thumb</b>Hold your thumb on the dial: the ball sits up-<span class="hSt2">left</span> of your thumb so it never hides, and where it lies on the club face is where the club will hit it. It wobbles, wilder the faster you swing. Keep it on the sweet spot. With no thumb on the dial the ball slips loose around the edge of the face and the strike is always a mishit. Toe hooks, heel slices. High on the face spins less and flies further, low spins more.</div>
   <div><b>Flagstick</b>The flag stays in for every shot but a putt. A firm ball running at the stick can't hop the hole: square on it drops in, a glancing hit ricochets away. Only a ball right on the edge of the cup can lip in or out.</div>
-  <div><b>Rules</b>Water costs a penalty stroke and a drop. White stakes are out of bounds: one stroke and replay. Max score is par + 5.</div>
+  <div><b>Rules</b>Water costs a penalty stroke and a drop. White stakes are out of bounds: one stroke and replay. Max score is par + 5 (double par + 1 with PALS Rules on).</div>
   <div><b>Keyboard</b>Hold Space to swing back, release, press again to strike. Rest the mouse low on the right side to hold and steer the dot. Arrows aim and change clubs.</div>
   <div><b>The course</b>Woodbine Bend Golf Course (Stockton, Illinois) is played from the gold tees. Hole lines, greens, tees, bunkers, ponds, buildings and the out-of-bounds line from © OpenStreetMap contributors (ODbL); fairways traced from USDA NAIP aerial imagery; trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.</div>
 </div></div>
@@ -4379,6 +4380,7 @@ delete settings.wiggle;
 const drama = () => settings.drama !== false, HOP_K = 2.2;
 // "PALS Rules" (Settings, off by default): house rules for play, so far the mulligan (mulliganOk). Test with pals().
 const pals = () => settings.pals === true;
+const maxScore = par => pals() ? 2 * par + 1 : par + 5;   // the most a hole can cost: par + 5, or double par + 1 with PALS Rules on (par 3: 7, par 4: 9, par 5: 11)
 function saveSettings() { try { localStorage.setItem('ssg-settings', JSON.stringify(settings)); } catch (e) { } }
 const $ = id => document.getElementById(id);
 
@@ -5840,14 +5842,15 @@ function finishShot() {
   if (first && par >= 4 && G.fir[h] == null) G.fir[h] = false;
   if (G.surf === S.GREEN && G.gir[h] == null && G.strokes <= par - 2) G.gir[h] = true;
   if (pals() && (G.surf === S.GREEN || G.surf === S.FRINGE) && distToPin() < GIMME_M) {   // PALS Rules: the gimme (in practice holes too, so it can be tried; nothing is scored there)
-    const d = distToPin(); G.strokes++; G.putts[h]++; G.scores[h] = Math.min(G.strokes, par + 5); G.state = 'holed'; G.holedT = 0; statsHole(h); saveRound(); mpState(true);
+    const d = distToPin(); G.strokes++; G.putts[h]++; G.scores[h] = Math.min(G.strokes, maxScore(par)); G.state = 'holed'; G.holedT = 0; statsHole(h); saveRound(); mpState(true);
     gimmeCard(d); readout('<div class="r1 good">Gimme</div><div class="r3"><span>Inside 24 inches · counted as holed</span></div>', 2.4);
     setTimeout(() => { if (G.state === 'holed') showDone(false); }, 3000); updateHUD(); return;
   }
-  if (G.strokes >= par + 5) {
-    G.scores[h] = par + 5; G.state = 'holed'; G.holedT = 0; statsHole(h); saveRound();
-    readout('<div class="r1">Picked up <span class="r1s">Max score · par + 5</span></div>', 2);
-    setTimeout(() => { if (G.state === 'holed') showDone(true); }, 1200); updateHUD(); return;
+  if (G.strokes >= maxScore(par)) {
+    G.scores[h] = maxScore(par); G.state = 'holed'; G.holedT = 0; statsHole(h); saveRound();
+    readout(`<div class="r1">Picked up <span class="r1s">Max score · ${pals() ? 'double par + 1' : 'par + 5'}</span></div>`, 2);
+    if (pals()) maxCard(G.scores[h], par);
+    setTimeout(() => { if (G.state === 'holed') showDone(true); }, pals() ? 3000 : 1200); updateHUD(); return;
   }
   if (!restsOnGreen(r)) readout(`<div class="r1">${big}</div><div class="r3"><span>${sub}</span><span>To pin <b>${fmtDistShort(distToPin())}</b></span></div>`, 3.2);
   G.state = 'settle'; G.settleT = 0; G.camFrom = W.cam.position.clone(); G.lookFrom = G.camLook.clone();
@@ -6392,7 +6395,7 @@ function updateHUD() {
   const lieTxt = G.teed ? 'Tee' : SURF[G.surf].name;
   // while the ball is moving it's still the stroke being played (and the holing stroke once it drops); at rest, the next one
   const sn = G.state === 'flight' || G.state === 'holed' ? Math.max(1, G.strokes) : G.strokes + 1;
-  $('hl2').innerHTML = G.pg ? `${G.pg.shots} shot${G.pg.shots === 1 ? '' : 's'} <span class="lie" data-s="${G.surf}">${lieTxt}</span>` : `Stroke ${Math.min(sn, def.par + 5)} <span class="lie" data-s="${G.surf}">${lieTxt}</span>`;
+  $('hl2').innerHTML = G.pg ? `${G.pg.shots} shot${G.pg.shots === 1 ? '' : 's'} <span class="lie" data-s="${G.surf}">${lieTxt}</span>` : `Stroke ${Math.min(sn, maxScore(def.par))} <span class="lie" data-s="${G.surf}">${lieTxt}</span>`;
   if (G.pg) pgSync();
   const d = distToPin(); $('dNum').textContent = d < 10 ? toFt(d) : toYd(d); $('dUnit').textContent = d < 10 ? 'ft' : 'yd';
   const dh = G.C.cup.y - G.ball.y;
@@ -6944,6 +6947,18 @@ function gimmeRope() {
 <path d="${path}" transform="translate(0 ${f(-w * .24)})" stroke="#bff7ec" stroke-opacity=".4" stroke-width="${f(w * .34)}" fill="none" stroke-linejoin="round"/>
 <path d="${path}" transform="translate(0 ${f(w * .27)})" stroke="#042a20" stroke-opacity=".38" stroke-width="${f(w * .36)}" fill="none" stroke-linejoin="round"/></g>
 ${end(P[0], P[3], -1)}${end(P[P.length - 1], P[P.length - 4], -1)}</svg>`;
+}
+// PALS Rules, the maximum hole score: the same brown card with a drawn disappointed face (an SVG, so it does not depend on the device's emoji font)
+function sadFace() {
+  return `<svg class="rc-face" viewBox="0 0 120 120" role="img" aria-label="A disappointed face"><defs><radialGradient id="sfG" cx=".38" cy=".3" r=".85"><stop offset="0" stop-color="#ffe88a"/><stop offset=".6" stop-color="#ffcb3d"/><stop offset="1" stop-color="#e8962a"/></radialGradient></defs>
+<ellipse cx="60" cy="112" rx="38" ry="5" fill="rgba(0,0,0,.28)"/><circle cx="60" cy="58" r="52" fill="url(#sfG)" stroke="#7a4a12" stroke-width="3"/>
+<path d="M30 38 Q40 30 52 36" stroke="#5a3408" stroke-width="4.5" fill="none" stroke-linecap="round"/><path d="M90 38 Q80 30 68 36" stroke="#5a3408" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+<path d="M32 52 Q41 59 50 52" stroke="#3a2005" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M88 52 Q79 59 70 52" stroke="#3a2005" stroke-width="4" fill="none" stroke-linecap="round"/>
+<path d="M42 84 Q60 70 78 84" stroke="#3a2005" stroke-width="5" fill="none" stroke-linecap="round"/>
+<path d="M90 62 Q96 72 90 78 Q84 72 90 62Z" fill="#7cc4f0" stroke="#2f7fb5" stroke-width="1.5"/></svg>`;
+}
+function maxCard(score, par) {
+  recordCard('Max score', "Max'd out!", '', score + ' strokes on a par ' + par + ' \u00b7 picked up', ['#c8966a', '#8a5a34', '#4e2f17', '#2a170a'], { img: sadFace(), cls: 'gimme' });
 }
 function gimmeCard(d) {
   recordCard('Gimme', 'Inside the rope!', '', Math.max(1, Math.round(d / .0254)) + ' in from the cup \u00b7 one stroke added', ['#c8966a', '#8a5a34', '#4e2f17', '#2a170a'], { img: gimmeRope(), cls: 'gimme' });
@@ -7554,7 +7569,7 @@ function initInput() {
   $('mReplay').onclick = () => { closeSheets(); setTimeout(replayLast, 120); };
   $('mStats').onclick = () => openStats();
   $('mHelp').onclick = () => openSheet('helpSheet');
-  $('mRound').onclick = () => { closeSheets(); startRound(); };
+  $('mRound').onclick = () => { audio(); $('title').classList.remove('on'); closeSheets(); startRound(); }; // (from the title screen's Settings too: the title must go, as with Tee off, or the round starts behind it)
   $('mQuit').onclick = () => { SFX.blip(); $('quitAsk').classList.add('on'); };
   $('mChange').onclick = () => { openPractice(); };
   $('dChange').onclick = () => { openPractice(); };
