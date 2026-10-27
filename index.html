@@ -4111,7 +4111,7 @@ function makeVehicle(L, kind, geo, first, wait) {
     e.v += clamp(vt - e.v, -7 * dt, 2.2 * dt); const u0 = e.u; e.u += e.v * dt;
     if (e.honkAt >= 0 && u0 < e.honkAt && e.u >= e.honkAt) { // honk honk, if the golfer is within earshot
       const c = W.cam.position, d = Math.hypot(c.x - body.position.x, c.z - body.position.z); e.honkAt = -1;
-      if (d < 650) try { SFX.honk(Math.pow(1 - d / 650, 1.5) * .9 + .1); } catch (er) { }
+      if (d < 650) try { SFX.honk(Math.pow(1 - d / 650, 1.5)); } catch (er) { }
     }
     if (e.u >= R.len) { e.st = 'wait'; e.tmr = wait[0] + Math.random() * wait[1]; return; }
     roadPose(R, e.u, e.dir, p); body.position.set(p.x, p.y, p.z); body.rotation.set(p.pitch, p.yaw, 0, 'YXZ');
@@ -5012,7 +5012,7 @@ const SFX = {
     if (putt) { SFX.tap(speed); return; }
     const ct = CLUBS[G.club] ? CLUBS[G.club].type : 'iron', r = (Math.random() - .5) * .06;
     const fk = G.club === 0 ? 'driver' : ct === 'wood' ? 'wood' : ct === 'wedge' ? 'wedge' : 'iron', fv = { driver: .85, wood: .8, iron: .75, wedge: .7 }[fk]; // the recorded strike of this club type (hybrids use the irons)
-    if (SND['s_' + fk]) { if (q < 1) play('s_' + fk, .9 + r, fv * .8, 3200); else play('s_' + fk, 1 + r, fv); return; } // a mishit is duller and softer
+    if (SND['s_' + fk]) { if (q < 1) play('s_' + fk, .9 + r, fv * .8, 3200); else play('s_' + fk, 1 + r, fv, { driver: 4200, iron: 4000 }[fk]); return; }   // the driver and iron recordings are bright (a fifth to two fifths of their energy above 4 kHz): rolled off a little // a mishit is duller and softer
     if (SND.hit) { // the recorded strike: pitch follows the club, a mishit is duller, a putt is a soft tap
       // softened: pitched down, with the harsh top rolled off (HIT_LP) and a lower level (HIT_VOL)
       if (putt) play('hit', (1.12 + r) * HIT_PITCH, .27 * HIT_VOL, HIT_LP + 200); else if (q < 1) play('hit', (.84 + r) * HIT_PITCH, .8 * HIT_VOL, HIT_LP - 400); else play('hit', ((ct === 'wood' ? .93 : ct === 'wedge' ? 1.08 : 1) + r) * HIT_PITCH, .95 * HIT_VOL, HIT_LP); return;
@@ -5022,10 +5022,10 @@ const SFX = {
   cup() { if (play('s_cup', 1, .9) || play('cup', 1, .95)) return; [0, .07, .12].forEach((d, i) => tone(1500 - i * 220, .045, 'square', .05, null, d)); tone(230, .28, 'sine', .3, 130, .17); },
   splash() { noiseBurst(.55, .3, 650, .5); },
   // the truck's recorded sound (sounds/truckhorn.mp3 or truckrumble.mp3, one picked at random); k = loudness 0..1
-  honk(k) { play('s_truck' + (Math.random() < .5 ? 'horn' : 'rumble'), 1, .85 * k); },
-  tree() { noiseBurst(.28, .22, 2600, .4); tone(320, .06, 'square', .06); },
+  honk(k) { if (k > .02) play('s_truck' + (Math.random() < .5 ? 'horn' : 'rumble'), 1, .3 * k); },   // .3: the recordings are sustained and were 10 dB louder than a strike
+  tree() { noiseBurst(.28, .13, 1800, .4); tone(320, .06, 'square', .06); },
   trunk() { tone(190, .09, 'triangle', .2, 120); noiseBurst(.05, .18, 900, 1.2); },
-  leaves() { noiseBurst(.22, .14, 3200, .4); },
+  leaves() { noiseBurst(.22, .09, 2000, .4); },
   // a turkey's "gobble-gobble", synthesised: two phrases, each a quick trill of short, nasal, warbling sawtooth chirps that
   // swells and falls away, the second a little lower and shorter, with a gap between
   gobble() {
@@ -5053,7 +5053,7 @@ const SFX = {
   plane() { tone(92, 5.5, 'sawtooth', .03, 68); tone(184, 5.5, 'triangle', .018, 136, .1); },
   chime() { [523, 659, 784, 1047].forEach((f, i) => tone(f, .4, 'sine', .13, null, i * .09)); },
   rim() { [0, .05, .1, .16].forEach((d, i) => tone(1300 + i * 90, .03, 'triangle', .05, null, d)); },
-  pin() { tone(2600, .05, 'triangle', .1); tone(3400, .035, 'sine', .05, null, .01); noiseBurst(.05, .1, 4200, 2); },
+  pin() { tone(1900, .05, 'triangle', .09); tone(2500, .035, 'sine', .04, null, .01); noiseBurst(.05, .07, 2800, 2); },
   blip() { tone(700, .05, 'sine', .07); }
 };
 function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { } }
