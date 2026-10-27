@@ -5755,6 +5755,8 @@ function pgFinish(r) {
   } else {
     placeBall(r.final.x, r.final.z, false); G.prev = { x: G.ball.x, z: G.ball.z, teed: false };
     big = SURF[G.surf].name; sub = fmtDistShort(r.total) + (CLUBS[G.club].type === 'putter' ? ' putt' : ' shot');
+    const gd = Math.min(...C.cups.map(c => Math.hypot(c.x - G.ball.x, c.z - G.ball.z)));
+    if (pals() && (G.surf === S.GREEN || G.surf === S.FRINGE) && gd < GIMME_M) { pg.makes++; gimmeCard(gd); big = '<span class="good">Gimme</span>'; sub = 'Inside 24 inches · counted as made'; }   // PALS Rules: the gimme
   }
   readout(`<div class="r1">${big}</div><div class="r3"><span>${sub}</span><span>To pin <b>${fmtDistShort(distToPin())}</b></span></div>`, r.holed ? 2.4 : 3);
   G.state = 'settle'; G.settleT = 0; G.camFrom = W.cam.position.clone(); G.lookFrom = G.camLook.clone(); SW.phase = 'idle';
@@ -5837,7 +5839,7 @@ function finishShot() {
   }
   if (first && par >= 4 && G.fir[h] == null) G.fir[h] = false;
   if (G.surf === S.GREEN && G.gir[h] == null && G.strokes <= par - 2) G.gir[h] = true;
-  if (pals() && !G.practice && (G.surf === S.GREEN || G.surf === S.FRINGE) && distToPin() < GIMME_M) {   // PALS Rules: the gimme
+  if (pals() && (G.surf === S.GREEN || G.surf === S.FRINGE) && distToPin() < GIMME_M) {   // PALS Rules: the gimme (in practice holes too, so it can be tried; nothing is scored there)
     const d = distToPin(); G.strokes++; G.putts[h]++; G.scores[h] = Math.min(G.strokes, par + 5); G.state = 'holed'; G.holedT = 0; statsHole(h); saveRound(); mpState(true);
     gimmeCard(d); readout('<div class="r1 good">Gimme</div><div class="r3"><span>Inside 24 inches · counted as holed</span></div>', 2.4);
     setTimeout(() => { if (G.state === 'holed') showDone(false); }, 3000); updateHUD(); return;
