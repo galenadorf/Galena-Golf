@@ -1712,7 +1712,7 @@ function makeRealCourse(idx, pin) {
   if (G1.win) {
     const { i0, j0, ww, hh, sd } = G1.win; let mn = 0;
     for (let k = 0; k < ww * hh; k++) mn = Math.min(mn, sd[k]);
-    // four pin positions: front, back, left, right of the green as seen on the way in; the round picks one
+    // four pin positions: front, back, right, left of the green as seen on the way in (0-3; index 2 is the right side, 3 the left); the round picks one
     const L2 = H0.line, pa = L2.length > 2 ? loc(L2[L2.length - 2][0], L2[L2.length - 2][1]) : [0, 0];
     let ax = G1.cx - pa[0], az = G1.cz + pa[1]; const al = Math.hypot(ax, az) || 1; ax /= al; az /= al;
     const off = [[-.45, 0], [.45, 0], [0, .42], [0, -.42]][((pin | 0) % 4 + 4) % 4];
@@ -2765,7 +2765,7 @@ const COURSES = {
   woodbine: { key: 'woodbine', name: 'Woodbine Bend Golf Course', short: 'Woodbine Bend', defs: WOODBINE_DEFS, best: 'ssg-best-woodbine', board: 'ssg-board-woodbine', coll: 'rounds-woodbine' }
 };
 let COURSE = COURSES.woodbine;
-// each round sets a pin (0-3: front, back, left, right) per hole in G.pins
+// each round sets a pin (0-3: front, back, right, left) per hole in G.pins
 function courseFor(i) { if (G.pg) return makeRealCourse(G.pg.range ? RANGE : PRAC, 0); const pin = G.pins ? G.pins[i] | 0 : 0; return makeRealCourse(i, pin); }
 // switches everything that depends on the course in play; the round in progress is dropped
 function setCourse(key) {
