@@ -862,7 +862,7 @@ function simulateShot(C, o) {
           if (bounces === 0) land = { x, y, z, t, carry: Math.hypot(x - sx, z - sz), angle: Math.atan2(-vn, vt) / DEG, surf };
           bounces++;
           ev.push({ t, type: bounces === 1 ? 'land' : 'bounce', x, y, z, s: -vn, surf });
-          if (vnOut < .85 || bounces > 9) { mode = 1; vy = 0; }
+          if (vnOut < .85 || bounces > (sv.hard ? 24 : 9)) { mode = 1; vy = 0; } // (a hard surface keeps hopping until the hops die away; cutting it at 9 left a 2 m/s hop that snapped flat)
         }
       }
     } else {
