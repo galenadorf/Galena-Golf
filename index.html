@@ -7343,7 +7343,10 @@ function fillBoard(el, limit, key, pick) {
   }
   const list = document.createElement('div'); list.className = 'lb'; el.appendChild(list);
   const wr = tab === 'world' ? worldRows(key) : null;
-  const rows = sortRounds(tab === 'world' ? wr || [] : tab === 'all' ? (Board.shared[CO.coll] || []) : localRounds(key)).filter(r => !recent || r.at >= since).slice(0, limit || 25);
+  const all = sortRounds(tab === 'world' ? wr || [] : tab === 'all' ? (Board.shared[CO.coll] || []) : localRounds(key)).filter(r => !recent || r.at >= since);
+  const rank = all.map((r, i) => all.findIndex(x => x.toPar === r.toPar) + 1);   // equal scores share a rank (T4, T4, then 6)
+  let cut = Math.min(all.length, limit || 25); if (pick) while (cut < all.length && rank[cut] === rank[cut - 1]) cut++;   // the leaderboard sheet shows the top 25 plus everyone tied with the last
+  const rows = all.slice(0, cut);
   if (!rows.length) {
     const e = document.createElement('div'); e.className = 'empty';
     e.textContent = recent && ((tab === 'world' && wr) || tab !== 'world') ? 'No rounds in the last 45 days.' : tab === 'world' && wr == null ? (Board.gh[key] === null ? 'The world board could not be reached.' : 'Loading…') : tab === 'all' && !Board.ready[CO.coll] ? 'Loading…' : 'No rounds yet. Finish all ' + CO.defs.length + ' holes to post a score.';
@@ -7352,8 +7355,9 @@ function fillBoard(el, limit, key, pick) {
   rows.forEach((r, i) => {
     const row = document.createElement('div');
     const mine = own && (tab === 'all' ? (r.id && r.id === Board.lastShared) : r.at === Board.lastLocal);
-    row.className = 'row' + (mine ? ' me' : '') + (i === 0 ? ' top1' : '');
-    const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = i === 0 ? '★' : String(i + 1);
+    row.className = 'row' + (mine ? ' me' : '') + (rank[i] === 1 ? ' top1' : '');
+    const tie = (i > 0 && rank[i - 1] === rank[i]) || (i + 1 < all.length && rank[i + 1] === rank[i]);
+    const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = tie ? 'T' + rank[i] : rank[i] === 1 ? '★' : String(rank[i]);
     const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = r.name;
     const dt = document.createElement('small'); dt.textContent = new Date(r.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + (r.mu ? ' · ' + (r.mu > 1 ? r.mu + ' mulligans' : 'mulligan') : '') + (r.pending ? ' · posting…' : ''); nm.appendChild(dt);
     const tp = document.createElement('span'); tp.className = 'tp ' + (r.toPar < 0 ? 'good' : r.toPar > 0 ? '' : ''); tp.textContent = fmtToPar(r.toPar);
@@ -7395,10 +7399,10 @@ function fillRecords(el, key) {
   el.appendChild(mk('div', 'lbnote', 'Full 18-hole rounds by registered players. Tap a record for the top 5.'));
 }
 function refreshBoards() {
-  if ($('boardSheet').classList.contains('on')) fillBoard($('boardBody'), 50, Board.view, true);
+  if ($('boardSheet').classList.contains('on')) fillBoard($('boardBody'), 25, Board.view, true);
   const fb = $('finalBoard'); if (fb && $('cardSheet').classList.contains('on')) fillBoard(fb, 10);
 }
-function openBoard() { Board.view = COURSE.key; loadWorld(); loadRecords(Board.view).then(ch => { if (ch) refreshBoards(); }); fillBoard($('boardBody'), 50, Board.view, true); openSheet('boardSheet'); }
+function openBoard() { Board.view = COURSE.key; loadWorld(); loadRecords(Board.view).then(ch => { if (ch) refreshBoards(); }); fillBoard($('boardBody'), 25, Board.view, true); openSheet('boardSheet'); }
 
 /* ================= INPUT + LOOP ================= */
 function initInput() {
