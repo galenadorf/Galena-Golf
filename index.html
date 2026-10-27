@@ -564,10 +564,11 @@ const GRAV = 9.81, BALL_R = 0.02135, BALL_M = 0.04593, AIR_RHO = 1.2;
 const KAERO = 0.5 * AIR_RHO * Math.PI * BALL_R * BALL_R / BALL_M;
 const RPM = TAU / 60;
 const CD0 = 0.22, CD1 = 0.30, CL0 = 0.12, CL1 = 0.6, CLMAX = 0.42, SPIN_TAU = 25; // fitted to TrackMan tour averages
-const VIS_R = 0.11;      // drawn ball radius: oversized (~4x) so strikes read clearly
+const VIS_R = 0.055;     // ball radius (physics and drawing): ~2.6x real, half the old 0.11. Beyond a few metres the ball is drawn larger with distance anyway (frame), so only close views see it smaller
 const BALL_DRAW = .85;   // the ball is drawn at 85% of its size (the physics radius VIS_R is unchanged)
 const WET_HALF = VIS_R * BALL_DRAW;   // water this deep over the ground covers half of the drawn ball: an automatic water ball
-const CUP_VIS_R = 0.28;   // cup radius: 2.5 ball radii, the real proportion (108 mm hole, 42.7 mm ball)
+const CUP_VIS_R = 0.14;   // cup radius: 2.5 ball radii, the real proportion (108 mm hole, 42.7 mm ball); an 11 in hole, ~2.6x real.
+// It was 0.28 (22 in): simulated putts with tour-level aim and pace errors holed 92% from 8 ft and 36% from 30 ft (tour: 50% and 7%); at 0.14 it is 78% and 19%
 const CUP_RIM = CUP_VIS_R,
   PIN_HIT = .035 + VIS_R * .95; // stick radius + ball radius
 const PIN_H = 2.3;
@@ -653,7 +654,7 @@ const WIND_EFFECT = .7; // all wind pushes 30% less than its displayed speed wou
 // A real hole: a bucket CUP_RIM wide and CUP_DEPTH deep cut into the green with a sharp top edge, the flagstick standing
 // in the middle. Near the hole the ball is integrated as a rolling sphere against the green, the rim edge, the cup wall,
 // its floor and the stick, so drops, lip-outs, hops and stick hits all come out of the same physics.
-const CUP_DEPTH = .52, PIN_R = .035, CUP_G = GRAV * .35, CUP_IN = CUP_RIM + .03, CUP_OUT = CUP_RIM + VIS_R + .08, CUP_IMP = .35;
+const CUP_DEPTH = .52, PIN_R = .035, CUP_G = GRAV * .7, CUP_IN = CUP_RIM + .03, CUP_OUT = CUP_RIM + VIS_R + .08, CUP_IMP = .35;
 function cupZone(C, o, x, yb, z, vx, vy, vz, t, fr, ev, mu, air, w, cup) {
   cup = cup || C.cup; const R = CUP_RIM, rb = VIS_R, h = 1 / 2000, bot = cup.y - CUP_DEPTH, flag = !!o.flag;
   const s0 = Math.hypot(vx, vz), hx0 = vx, hz0 = vz;
@@ -683,7 +684,7 @@ function cupZone(C, o, x, yb, z, vx, vy, vz, t, fr, ev, mu, air, w, cup) {
   };
   for (let it = 0; it < 16000; it++) {
     // rolling on whatever holds it up: gravity along the surface at 5/7 (a rolling sphere), friction against the motion
-    // over the mouth of the hole gravity is scaled down: the drawn ball and cup are ~5x real size, so with full gravity
+    // over the mouth of the hole gravity is scaled down (CUP_G: x.35 when the cup was ~5x real size, x.7 at ~2.6x): the ball and cup are oversized, so with full gravity
     // a ball would drop in at speeds that fly straight over a real cup; this keeps drops, lips and hops at real speeds.
     // A ball that has lost its pace over the hole, or is below the rim, falls normally.
     const rr = Math.hypot(x - cup.x, z - cup.z), gE = (sup && onPlane) || Y < cup.y - rb * .5 ? GRAV : rr < R + .02 && Y < cup.y + 2.5 * rb ? Math.max(CUP_G, GRAV * (1 - Math.hypot(vx, vz) / 1.2)) : GRAV;
@@ -6909,7 +6910,7 @@ function nextRecord() {
   if (op.cls) el.classList.add(op.cls); el.classList.add('on'); try { SFX.chime(); buzz([30, 40, 30, 40, 60]); } catch (e) { } burstConfetti();
   setTimeout(() => { el.className = ''; setTimeout(nextRecord, 250); }, 3600);
 }
-// PALS Rules, the gimme: a ball at rest on the green or fringe inside 24 inches of the edge of the drawn hole (the cup is drawn ~5x real size, so measuring
+// PALS Rules, the gimme: a ball at rest on the green or fringe inside 24 inches of the edge of the drawn hole (the cup is drawn ~2.6x real size, so measuring
 // from its centre conceded far less than the eye expects), and always anything the distance readout shows as 2 ft or less (under 2.5 ft, centre to centre),
 // is conceded: the next stroke is added and the hole is over. The card shows
 // a cut length of speckled marine nylon rope (an SVG drawn here: white braid with green, black and red tracers and flecks, frayed ends), "Inside the rope!".
