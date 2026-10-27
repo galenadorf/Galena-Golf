@@ -2088,7 +2088,7 @@ function buildRealTrees(C, grp) {
     const gm = new THREE.InstancedMesh(m.geometry, ghostMat, 96); gm.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(96 * 3), 3);
     gm.count = 0; gm.renderOrder = 2; gm.userData.keep = true; grp.add(gm); ghosts.set(m, gm);
   }
-  W.treeOcc = { list: occ, hash: oh, cell: oc, hidden: new Set(), zero: new THREE.Matrix4().makeScale(0, 0, 0), tmp: new THREE.Matrix4(), mark: new Set(), ghosts };
+  W.treeOcc = { list: occ, hash: oh, cell: oc, hidden: new Set(), want: new Set(), seen: new Set(), zero: new THREE.Matrix4().makeScale(0, 0, 0), tmp: new THREE.Matrix4(), mark: new Set(), ghosts };
   W.trees = plan;
   C.colNames = {};
   realBuildingColliders(C, colliders);
@@ -2112,10 +2112,10 @@ const _oq = new THREE.Vector3(), _ogc = new THREE.Color(), _ogw = new THREE.Colo
 function updateTreeOcc() {
   const O = W.treeOcc; if (!O || !G.C) return;
   const cam = W.cam.position, tgt = G.state === 'title' ? _oq.set(G.C.cup.x, G.C.cup.y + 2, G.C.cup.z) : G.state === 'intro' ? null : W.ball.position;
-  const want = new Set();
+  const want = O.want; want.clear();   // (both sets are kept on O and reused: no garbage every frame)
   if (tgt) {
     const dx = tgt.x - cam.x, dy = tgt.y - cam.y, dz = tgt.z - cam.z, L = Math.hypot(dx, dy, dz) || 1e-6, ux = dx / L, uy = dy / L, uz = dz / L, Lm = Math.min(L, 45);
-    const seen = new Set(), hl2 = ux * ux + uz * uz;
+    const seen = O.seen, hl2 = ux * ux + uz * uz; seen.clear();
     for (let s = 0; s <= Lm + 6; s += 6) {
       const px = cam.x + ux * Math.min(s, Lm), pz = cam.z + uz * Math.min(s, Lm), gx0 = Math.floor(px / O.cell), gz0 = Math.floor(pz / O.cell);
       for (let gx = gx0 - 1; gx <= gx0 + 1; gx++) for (let gz = gz0 - 1; gz <= gz0 + 1; gz++) {
@@ -2849,7 +2849,7 @@ const SUN_OFF = [-118, 36, 82];
 // foreground and the far hills fall away into a miniature
 function initTiltShift() {
   const ren = W.ren, gl2 = ren.capabilities.isWebGL2, size = ren.getDrawingBufferSize(new THREE.Vector2());
-  const rt = gl2 ? new THREE.WebGLMultisampleRenderTarget(size.x || 2, size.y || 2, { samples: 4, stencilBuffer: true }) : new THREE.WebGLRenderTarget(size.x || 2, size.y || 2, { stencilBuffer: true });
+  const rt = gl2 ? new THREE.WebGLMultisampleRenderTarget(size.x || 2, size.y || 2, { samples: 2, stencilBuffer: true }) : new THREE.WebGLRenderTarget(size.x || 2, size.y || 2, { stencilBuffer: true });
   rt.texture.minFilter = rt.texture.magFilter = THREE.LinearFilter; rt.texture.generateMipmaps = false;
   const mat = new THREE.ShaderMaterial({
     uniforms: { tD: { value: rt.texture }, px: { value: new THREE.Vector2(1 / 2, 1 / 2) }, fy: { value: .55 }, band: { value: .11 }, fall: { value: .34 }, maxR: { value: 5 } },
@@ -2860,8 +2860,8 @@ function initTiltShift() {
         vec3 c = texture2D(tD, vUv).rgb;
         if (r > .35) {
           float wsum = 1.;
-          for (int i = 0; i < 32; i++) {
-            float a = float(i) * 2.39996, rr = sqrt((float(i) + .5) / 32.) * r;
+          for (int i = 0; i < 16; i++) {   // 16 reads on a golden-angle spiral (32 cost a sixth of the frame on a phone for little visible gain)
+            float a = float(i) * 2.39996, rr = sqrt((float(i) + .5) / 16.) * r;
             c += texture2D(tD, vUv + vec2(cos(a), sin(a)) * rr * px).rgb; wsum += 1.;
           }
           c /= wsum;
@@ -2997,7 +2997,7 @@ function updateRain(now, dt) {
 const _rv = new THREE.Vector2(), _rv2 = new THREE.Vector3(), _rv3 = new THREE.Vector3();
 function initThree() {
   const cv = document.getElementById('gl');
-  const ren = new THREE.WebGLRenderer({ canvas: cv, antialias: !window.WebGL2RenderingContext, powerPreference: 'default' }); // (the scene is drawn into a 4x multisampled target, so the screen buffer needs no antialiasing of its own)
+  const ren = new THREE.WebGLRenderer({ canvas: cv, antialias: !window.WebGL2RenderingContext, powerPreference: 'default' }); // (the scene is drawn into a 2x multisampled target, so the screen buffer needs no antialiasing of its own)
   ren.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5)); // battery: 1.5x is plenty on a phone
   ren.shadowMap.enabled = true; ren.shadowMap.type = THREE.PCFSoftShadowMap; ren.shadowMap.autoUpdate = false; ren.shadowMap.needsUpdate = true; // the shadow map is redrawn only when needed (see frame)
   const scene = new THREE.Scene();
@@ -5760,7 +5760,7 @@ function pgFinish(r) {
     placeBall(r.final.x, r.final.z, false); G.prev = { x: G.ball.x, z: G.ball.z, teed: false };
     big = SURF[G.surf].name; sub = fmtDistShort(r.total) + (CLUBS[G.club].type === 'putter' ? ' putt' : ' shot');
     const gd = Math.min(...C.cups.map(c => Math.hypot(c.x - G.ball.x, c.z - G.ball.z)));
-    if (pals() && (G.surf === S.GREEN || G.surf === S.FRINGE) && gd < GIMME_M) { pg.makes++; gimmeCard(gd); big = '<span class="good">Gimme</span>'; sub = 'Inside 24 inches · counted as made'; }   // PALS Rules: the gimme
+    if (pals() && (G.surf === S.GREEN || G.surf === S.FRINGE) && gd < GIMME_D) { pg.makes++; gimmeCard(gd); big = '<span class="good">Gimme</span>'; sub = 'Inside 24 inches · counted as made'; }   // PALS Rules: the gimme
   }
   readout(`<div class="r1">${big}</div><div class="r3"><span>${sub}</span><span>To pin <b>${fmtDistShort(distToPin())}</b></span></div>`, r.holed ? 2.4 : 3);
   G.state = 'settle'; G.settleT = 0; G.camFrom = W.cam.position.clone(); G.lookFrom = G.camLook.clone(); SW.phase = 'idle';
@@ -5843,7 +5843,7 @@ function finishShot() {
   }
   if (first && par >= 4 && G.fir[h] == null) G.fir[h] = false;
   if (G.surf === S.GREEN && G.gir[h] == null && G.strokes <= par - 2) G.gir[h] = true;
-  if (pals() && (G.surf === S.GREEN || G.surf === S.FRINGE) && distToPin() < GIMME_M) {   // PALS Rules: the gimme (in practice holes too, so it can be tried; nothing is scored there)
+  if (pals() && (G.surf === S.GREEN || G.surf === S.FRINGE) && distToPin() < GIMME_D) {   // PALS Rules: the gimme (in practice holes too, so it can be tried; nothing is scored there)
     const d = distToPin(); G.strokes++; G.putts[h]++; G.scores[h] = Math.min(G.strokes, maxScore(par)); G.state = 'holed'; G.holedT = 0; statsHole(h); saveRound(); mpState(true);
     gimmeCard(d); readout('<div class="r1 good">Gimme</div><div class="r3"><span>Inside 24 inches · counted as holed</span></div>', 2.4);
     setTimeout(() => { if (G.state === 'holed') showDone(false); }, 3000); updateHUD(); return;
@@ -6443,7 +6443,7 @@ function updateSwirl(dt) {
 function updateWindArrow() {
   if (Math.hypot(G.wind[0], G.wind[1]) < .01) return;
   const camYaw = Math.atan2(G.camLook.x - W.cam.position.x, -(G.camLook.z - W.cam.position.z)), windYaw = Math.atan2(G.wind[0], -G.wind[1]);
-  $('windArrow').style.transform = `rotate(${(windYaw - camYaw) / DEG}deg)`;
+  const tf = `rotate(${((windYaw - camYaw) / DEG).toFixed(1)}deg)`; if (UI.waTf !== tf) { UI.waTf = tf; $('windArrow').style.transform = tf; }   // written only when it changes: a style write every frame made the page recalculate its styles every frame
 }
 const _pv2 = new THREE.Vector3();
 // the bottom of the pin card, re-measured at most twice a second (and after a resize): reading it every frame forced a page layout every frame
@@ -6909,9 +6909,11 @@ function nextRecord() {
   if (op.cls) el.classList.add(op.cls); el.classList.add('on'); try { SFX.chime(); buzz([30, 40, 30, 40, 60]); } catch (e) { } burstConfetti();
   setTimeout(() => { el.className = ''; setTimeout(nextRecord, 250); }, 3600);
 }
-// PALS Rules, the gimme: a ball at rest on the green or fringe inside 24 inches of the hole is conceded: the next stroke is added and the hole is over. The card shows
+// PALS Rules, the gimme: a ball at rest on the green or fringe inside 24 inches of the edge of the drawn hole (the cup is drawn ~5x real size, so measuring
+// from its centre conceded far less than the eye expects), and always anything the distance readout shows as 2 ft or less (under 2.5 ft, centre to centre),
+// is conceded: the next stroke is added and the hole is over. The card shows
 // a cut length of speckled marine nylon rope (an SVG drawn here: white braid with green, black and red tracers and flecks, frayed ends), "Inside the rope!".
-const GIMME_M = 24 * .0254;
+const GIMME_M = 24 * .0254, GIMME_D = Math.max(CUP_RIM + GIMME_M, 2.5 * FT);   // GIMME_D: the limit measured from the centre of the hole
 function gimmeRope() {
   // a 22-inch length of braided marine rope laid in a loose serpentine, to scale: the path is 44 rope widths long (a half-inch rope), so the rope is 22 inches.
   // Colours from the photo: teal-green body (#0E9179, light #19CCB4, dark #0F5B4B) with yellow (#E2DA3E) and red (#D7283E) tracers and flecks.
@@ -6963,7 +6965,7 @@ function maxCard(score, par) {
   recordCard('Max score', "Max'd out!", '', score + ' strokes on a par ' + par + ' \u00b7 picked up', ['#c8966a', '#8a5a34', '#4e2f17', '#2a170a'], { img: sadFace(), cls: 'gimme' });
 }
 function gimmeCard(d) {
-  recordCard('Gimme', 'Inside the rope!', '', Math.max(1, Math.round(d / .0254)) + ' in from the cup \u00b7 one stroke added', ['#c8966a', '#8a5a34', '#4e2f17', '#2a170a'], { img: gimmeRope(), cls: 'gimme' });
+  recordCard('Gimme', 'Inside the rope!', '', Math.max(1, Math.round((d - CUP_RIM) / .0254)) + ' in from the cup \u00b7 one stroke added', ['#c8966a', '#8a5a34', '#4e2f17', '#2a170a'], { img: gimmeRope(), cls: 'gimme' });
 }
 // every finished shot (call once from finishShot)
 function statsShot(sh, r) {
@@ -7606,22 +7608,25 @@ function initInput() {
 }
 
 let lastT = performance.now(), dueT = 0;
-// battery: the scene is redrawn at 40 fps on the title screen and while standing over the ball with nothing moving; everything else (the flyover, a swing,
-// the ball in flight, the camera settling, any touch in the last 0.7 s) runs at the screen's full rate
-const REST_FPS = 40;
+// battery: the scene is redrawn at 30 fps on the title screen, while standing over the ball with nothing moving, and once a holed ball has dropped
+// (the hole-done card and the final scorecard); everything else (the flyover, a swing, the ball in flight, the camera settling, any touch in the
+// last 0.7 s) runs at 60 fps: a 90 or 120 Hz screen would otherwise draw twice as many frames for nothing anyone can see
+const REST_FPS = 30, ACTIVE_FPS = 60;
 function frameGap(now) {
-  if (G.state === 'title') return 1000 / REST_FPS;
-  if (G.state !== 'address') return 0;
-  if (SW.phase !== 'idle' || SW.id != null || SW.sid != null || SW.thumb || SW.mouseR || now - UI.touchT < 700) return 0;
-  const R = G.rig; if (R && (R.pv.length() > .03 || R.lv.length() > .03)) return 0;
-  return 1000 / REST_FPS;
+  const rest = 1000 / REST_FPS, active = 1000 / ACTIVE_FPS;
+  if (G.state === 'title') return rest;
+  if (G.state === 'holed') return G.holedT > 3 && now - UI.touchT >= 700 ? rest : active;
+  if (G.state !== 'address') return active;
+  if (SW.phase !== 'idle' || SW.id != null || SW.sid != null || SW.thumb || SW.mouseR || now - UI.touchT < 700) return active;
+  const R = G.rig; if (R && (R.pv.length() > .03 || R.lv.length() > .03)) return active;
+  return rest;
 }
 function frame(now) {
   requestAnimationFrame(frame);
   const gap = frameGap(now);
-  if (gap && now < dueT - 4) return;
+  if (now < dueT - 4) return;
   const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
-  dueT = gap ? Math.min(Math.max(dueT + gap, now - gap), now + gap) : 0; // carries the remainder over, so 40 fps on a 60 Hz screen is two frames in three
+  dueT = Math.min(Math.max(dueT + gap, now - gap), now + gap); // carries the remainder over, so 40 fps on a 60 Hz screen would be two frames in three
   if (G.state === 'intro') G.introT += dt;
   songTick(now); cartMusicTick(); birdTick(now);
   if (G.state === 'flight') { updateFlight(dt); if ((G.savedT = (G.savedT || 0) + dt) > 1.5) { G.savedT = 0; saveRound(); } } // the round, with how far the ball has flown
@@ -7661,7 +7666,8 @@ function frame(now) {
   }
   const tt = now / 1000;
   if (W.ring.visible) { const k = 1 + Math.sin(tt * 3) * .05; W.ringPulse.scale.set(k, k, 1); }
-  if (W.flags && C) for (const f of W.flags) { const pa = f.flag.geometry.attributes.position, b = f.base, ws = Math.hypot(G.wind[0], G.wind[1]); for (let i = 0; i < pa.count; i++) { const x0 = b[i * 3]; pa.array[i * 3 + 2] = Math.sin(x0 * 5 - tt * (3 + ws)) * .08 * x0; } pa.needsUpdate = true; f.flag.rotation.y = Math.atan2(-G.wind[1], G.wind[0]); }
+  // the flag cloth is re-sent to the GPU at most 30 times a second
+  if (W.flags && C && now - (W.flagT || 0) >= 33) for (const f of (W.flagT = now, W.flags)) { const pa = f.flag.geometry.attributes.position, b = f.base, ws = Math.hypot(G.wind[0], G.wind[1]); for (let i = 0; i < pa.count; i++) { const x0 = b[i * 3]; pa.array[i * 3 + 2] = Math.sin(x0 * 5 - tt * (3 + ws)) * .08 * x0; } pa.needsUpdate = true; f.flag.rotation.y = Math.atan2(-G.wind[1], G.wind[0]); }
   W.clouds.children.forEach(c => { c.position.x += c.userData.sp * dt; if (c.position.x > 1400) c.position.x = -1400; });
   if (UI.readT > 0) { UI.readT -= dt; if (UI.readT <= 0) { $('readout').classList.remove('on'); if ($('mpPanel').classList.contains('on')) mpPlace($('mpPanel')); } }
   if (C) { updateSeeThru(); updatePinTag(); updateWindArrow(); updateBallTag(); }
