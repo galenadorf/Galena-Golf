@@ -372,6 +372,22 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 .lb .row.me{background:linear-gradient(180deg,#4a9a4c,#2f6b35);color:#fff}.lb .row.me .rk,.lb .row.me .st,.lb .row.me small{color:rgba(255,255,255,.8)}
 .lb .row.top1 .rk{color:#c99a06}
 .lb .empty{padding:18px 12px;text-align:center;font:600 14px var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);background:var(--soft);border-radius:14px}
+.recGrp{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.recCard{background:var(--soft);border-radius:14px;padding:9px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.recCard .rh{display:flex;justify-content:space-between;align-items:center;font:600 11px var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.recCard .rt{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:3px;font:600 17px var(--cond);text-transform:uppercase;letter-spacing:.03em}
+.recCard .rt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recCard .rt b{font:700 21px var(--cond);font-variant-numeric:tabular-nums;text-transform:none;white-space:nowrap}
+.recCard small{display:block;font:600 10px var(--cond);letter-spacing:.1em;color:var(--ink3);text-transform:uppercase}
+.recCard .rl{display:none;margin-top:6px;border-top:1px solid var(--hair);padding-top:4px}
+.recCard.open .rl{display:block}
+.recCard .rr{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:8px;padding:3px 6px;border-radius:8px;font:600 15px var(--cond);font-variant-numeric:tabular-nums}
+.recCard .rr .rk{font:600 12px var(--cond);color:var(--ink3)}
+.recCard .rr span:nth-child(2){text-transform:uppercase;letter-spacing:.03em}
+.recCard .rr small{display:inline;margin-left:6px}
+.recCard .rr.me{background:rgba(74,154,76,.22)}
+.recCard.me{background:linear-gradient(180deg,#4a9a4c,#2f6b35);color:#fff}.recCard.me small,.recCard.me .rh,.recCard.me .rr .rk{color:rgba(255,255,255,.8)}.recCard.me .rr.me{background:rgba(255,255,255,.2)}
+.recYou{margin-top:4px;font:600 12px var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
 .lbnote{margin-top:8px;font:500 12.5px/1.35 var(--body);color:var(--ink3);text-align:center}
 .mapwrap{position:relative;height:min(62vh,560px);border-radius:18px;overflow:hidden;background:#cfe3c3;touch-action:none}
 #mapCv{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
@@ -5141,6 +5157,7 @@ function savedRound(course) {
 // the hole to go back to: the one being played, else the next one not yet finished
 function resumeHole(r) { if (r.scores[r.hole] == null) return r.hole; for (let k = 1; k <= r.scores.length; k++) { const i = (r.hole + k) % r.scores.length; if (r.scores[i] == null) return i; } return 0; }
 function refreshResume() {
+  recNoticeFlush();
   const b = $('btnResume'); if (!b) return; const r = savedRound();
   if (!r) { b.style.display = 'none'; $('btnPlay').textContent = 'Tee off'; return; }
   $('btnPlay').textContent = r.course === COURSE.key ? 'New round' : 'Tee off';
@@ -6774,15 +6791,42 @@ function roundMarks(e) {
   return c;
 }
 // the world records of a course (records/<course>.json: key -> the best 5 players), fetched when the Stats sheet opens and when a round ends; true when it changed
-const Rec = { gh: {}, at: {} };
+const Rec = { gh: {}, at: {}, err: {}, open: new Set() };
 async function loadRecords(key, force) {
   key = key || COURSE.key; if (!force && Rec.at[key] && Date.now() - Rec.at[key] < 60000) return false; Rec.at[key] = Date.now();
   try {
     const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/records/${key}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' });
     const old = JSON.stringify(Rec.gh[key]);
-    if (r.ok) { const a = await r.json(); Rec.gh[key] = a && a.rec && typeof a.rec === 'object' ? a : { rec: {} }; } else if (r.status === 404) Rec.gh[key] = { rec: {} };
+    if (r.ok) { const a = await r.json(); Rec.gh[key] = a && a.rec && typeof a.rec === 'object' ? a : { rec: {} }; } else if (r.status === 404) Rec.gh[key] = { rec: {} }; else throw new Error('http');
+    Rec.err[key] = false; recWatch(key); recNoticeFlush();
     return JSON.stringify(Rec.gh[key]) !== old;
-  } catch (e) { return false; }
+  } catch (e) { Rec.err[key] = true; return false; }
+}
+// A record I held (the best of the top 5, kept in localStorage) that someone has since beaten: a "Record beaten" card, once, the next time the title screen is up
+// (at once if it is up when the records arrive). Kept until it has been shown, so closing the game first does not lose it.
+const RECHELD_KEY = 'ssg-recheld', recPending = new Map();
+function recWatch(key) {
+  if (!isReg() || !Rec.gh[key]) return;
+  let held = {}; try { held = JSON.parse(localStorage.getItem(RECHELD_KEY) || '{}') || {}; } catch (e) { }
+  const me = PID.reg.pid; let ch = false;
+  for (const k of REC_KEYS) {
+    const top = (Rec.gh[key].rec[k] || [])[0], hk = key + ':' + k, d = REC[k];
+    if (top && top.pid === me) { recPending.delete(hk); if (held[hk] !== top.v) { held[hk] = top.v; ch = true; } }
+    else if (held[hk] != null) {
+      if (!top) { delete held[hk]; ch = true; }   // the board was emptied
+      else if (d.low ? top.v < held[hk] : top.v > held[hk]) recPending.set(hk, { key, k, by: top.name, v: top.v, mine: held[hk] });   // (an older copy of the file, with a worse mark, is ignored)
+    }
+  }
+  if (ch) { try { localStorage.setItem(RECHELD_KEY, JSON.stringify(held)); } catch (e) { } }
+}
+function recNoticeFlush() {
+  if (G.state !== 'title' || !recPending.size) return;
+  let held = {}; try { held = JSON.parse(localStorage.getItem(RECHELD_KEY) || '{}') || {}; } catch (e) { }
+  [...recPending.entries()].slice(0, 3).forEach(([hk, n], i) => {
+    const d = REC[n.k]; recPending.delete(hk); delete held[hk];
+    setTimeout(() => recordCard('Record beaten', d.t, d.f(n.v), n.by + ' took it from you \u00b7 yours was ' + d.f(n.mine), ['#ffb4a2', '#e5383b', '#7a0010', '#1a0005']), 900 + i * 400);
+  });
+  recPending.clear(); try { localStorage.setItem(RECHELD_KEY, JSON.stringify(held)); } catch (e) { }
 }
 const myRec = key => { const c = PID.stats && PID.stats.courses && PID.stats.courses[key]; return (c && c.rec) || {}; };
 // a finished round: cards for the marks that beat the world's or the player's own (the stats and records are fetched first; at most three cards, world first)
@@ -7152,9 +7196,16 @@ function fillBoard(el, limit, key, pick) {
     const cs = document.createElement('div'); cs.className = 'seg boardCourse';
     for (const c of Object.values(COURSES)) {
       const b = document.createElement('button'); b.textContent = c.short; if (c.key === key) b.className = 'sel';
-      b.onclick = () => { Board.view = c.key; loadWorld(false, c.key); refreshBoards(); }; cs.appendChild(b);
+      b.onclick = () => { Board.view = c.key; loadWorld(false, c.key); loadRecords(c.key).then(ch => { if (ch) refreshBoards(); }); refreshBoards(); }; cs.appendChild(b);
     }
     el.appendChild(cs);
+    const ms = document.createElement('div'); ms.className = 'seg boardCourse';
+    for (const [k, t] of [['rounds', 'Rounds'], ['records', 'Records']]) {
+      const b = document.createElement('button'); b.textContent = t; if ((Board.mode || 'rounds') === k) b.className = 'sel';
+      b.onclick = () => { Board.mode = k; if (k === 'records') loadRecords(key).then(ch => { if (ch) refreshBoards(); }); refreshBoards(); }; ms.appendChild(b);
+    }
+    el.appendChild(ms);
+    if (Board.mode === 'records') { fillRecords(el, key); return; }
   }
   const shared = !!Board.db, tab = Board.tab || 'world';
   const head = document.createElement('div'); head.className = 'sub';
@@ -7209,11 +7260,37 @@ function fillBoard(el, limit, key, pick) {
   } else if (own && !isReg() && tab !== 'all') { const n = document.createElement('div'); n.className = 'lbnote'; n.textContent = 'You are playing as a guest: rounds stay on this device. Get a Player ID in Settings to post to the world board.'; el.appendChild(n);
   } else if (tab === 'device' || (!shared && tab !== 'world')) { const n = document.createElement('div'); n.className = 'lbnote'; n.textContent = 'Rounds are kept on this device.'; el.appendChild(n); }
 }
+// the Records side of the leaderboard sheet: every record of the course with its holder; a tap opens the top 5 (the best mark of each player)
+const REC_GROUPS = [['Shots', ['drive', 'holed', 'putt']], ['Putting', ['roundPutts', 'mostPutts', 'lips']], ['Scoring', ['bestNine', 'birdies', 'birdStreak']], ['Ball-striking', ['gir', 'girStreak', 'fairways', 'fwStreak']]];
+function fillRecords(el, key) {
+  const D = Rec.gh[key], me = isReg() ? PID.reg.pid : null, mine = myRec(key), mk = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
+  if (!D) { el.appendChild(mk('div', 'lb', null)).appendChild(mk('div', 'empty', Rec.err[key] ? 'The records could not be reached.' : 'Loading…')); return; }
+  const dateOf = at => new Date(at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  for (const [gt, keys] of REC_GROUPS) {
+    el.appendChild(mk('div', 'sub')).appendChild(mk('span', null, gt));
+    const grp = el.appendChild(mk('div', 'recGrp'));
+    for (const k of keys) {
+      const d = REC[k], L = D.rec[k] || [], top = L[0], card = mk('div', 'recCard' + (top && me && top.pid === me ? ' me' : '') + (Rec.open.has(key + k) ? ' open' : ''));
+      const h = card.appendChild(mk('div', 'rh')); h.appendChild(mk('span', null, d.t)); h.appendChild(mk('span', null, d.e));
+      const t = card.appendChild(mk('div', 'rt'));
+      if (top) { t.appendChild(mk('span', null, top.name)); t.appendChild(mk('b', null, d.f(top.v))); const w = recWhere(k, top.hole); card.appendChild(mk('small', null, [w, dateOf(top.at)].filter(Boolean).join(' · '))); }
+      else { t.appendChild(mk('span', null, 'Be the first')); t.appendChild(mk('b', null, '—')); }
+      if (L.length) {
+        const rl = card.appendChild(mk('div', 'rl'));
+        L.forEach((x, i) => { const r = rl.appendChild(mk('div', 'rr' + (me && x.pid === me ? ' me' : ''))); r.appendChild(mk('span', 'rk', i + 1)); const nm = r.appendChild(mk('span', null, x.name)); nm.appendChild(mk('small', null, [recWhere(k, x.hole), dateOf(x.at)].filter(Boolean).join(' · '))); r.appendChild(mk('span', null, d.f(x.v))); });
+      }
+      if (me && mine[k] && !L.some(x => x.pid === me)) card.appendChild(mk('div', 'recYou', 'You: ' + d.f(mine[k][0])));
+      card.onclick = () => { card.classList.toggle('open'); const id = key + k; if (card.classList.contains('open')) Rec.open.add(id); else Rec.open.delete(id); };
+      grp.appendChild(card);
+    }
+  }
+  el.appendChild(mk('div', 'lbnote', 'Full 18-hole rounds by registered players. Tap a record for the top 5.'));
+}
 function refreshBoards() {
   if ($('boardSheet').classList.contains('on')) fillBoard($('boardBody'), 50, Board.view, true);
   const fb = $('finalBoard'); if (fb && $('cardSheet').classList.contains('on')) fillBoard(fb, 10);
 }
-function openBoard() { Board.view = COURSE.key; loadWorld(); fillBoard($('boardBody'), 50, Board.view, true); openSheet('boardSheet'); }
+function openBoard() { Board.view = COURSE.key; loadWorld(); loadRecords(Board.view).then(ch => { if (ch) refreshBoards(); }); fillBoard($('boardBody'), 50, Board.view, true); openSheet('boardSheet'); }
 
 /* ================= INPUT + LOOP ================= */
 function initInput() {
@@ -7488,7 +7565,7 @@ function boot(data) {
   calibrateClubs();
   initThree(); initInput(); syncMenu();
   // a round restored after an update stays on its course (rounds from before the course switch were on the Legacy Course)
-  setCourse(data && data.scores ? data.course || 'woodbine' : settings.course || 'woodbine'); initBoard(); pidSync(); refreshResume(); setTimeout(retryUnposted, 4000);
+  setCourse(data && data.scores ? data.course || 'woodbine' : settings.course || 'woodbine'); initBoard(); pidSync().then(() => { if (isReg()) Object.keys(COURSES).forEach(k => loadRecords(k)); }).catch(() => { }); refreshResume(); setTimeout(retryUnposted, 4000);
   showTitleHole();
   sizeCanvases();
   if (data && data.scores) { G.practice = !!data.practice; G.scores = data.scores; G.putts = data.putts || G.putts; if (data.pins) G.pins = data.pins; $('title').classList.remove('on'); startHole(data.hole || 0); }
