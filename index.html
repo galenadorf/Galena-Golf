@@ -5229,7 +5229,9 @@ function pinSheet(now) {
     return (h >>> 0) % 4;
   });
 }
-function startRound() {
+// a new round first asks the server for the latest build: when there is a newer one the page reloads into it (the round starts on the next tap), otherwise, offline or slow, the round starts at once
+function startRound() { newBuild(1500).then(reloading => { if (!reloading) beginRound(); }); }
+function beginRound() {
   UI.finalCard = false; clearRound();
   G.practice = false; G.pg = null; document.body.classList.remove('pg'); G.submitted = false; G.planes = [0, 0, 1, 1, 1, 2, 2][(Math.random() * 7) | 0];
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
@@ -7698,12 +7700,15 @@ function boot(data) {
 // writes version.txt; when the two differ the page reloads itself through a fresh URL.
 const BUILD = '__BUILD__';
 window.addEventListener('load', () => { const el = $('buildNo'); if (el) el.textContent = 'Build ' + (BUILD.startsWith('__') ? 'local' : BUILD.slice(0, 7)); }); // the commit this copy of the game was built from (Settings)
-function checkUpdate() {
-  if (BUILD.startsWith('__')) return;
-  fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(v => {
-    v = v.trim(); if (v && v !== BUILD && location.search !== '?v=' + v) location.replace(location.pathname + '?v=' + v);
-  }).catch(() => { });
+// true once the page is reloading into a newer build; waits at most `wait` ms for the server
+function newBuild(wait) {
+  if (BUILD.startsWith('__')) return Promise.resolve(false);
+  const f = fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(v => {
+    v = v.trim(); if (v && v !== BUILD && location.search !== '?v=' + v) { location.replace(location.pathname + '?v=' + v); return true; } return false;
+  }).catch(() => false);
+  return wait ? Promise.race([f, new Promise(res => setTimeout(() => res(false), wait))]) : f;
 }
+function checkUpdate() { newBuild(0); }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
 window.addEventListener('load', () => { checkUpdate(); });
 // Offline play: sw.js keeps every file solo play needs (see the comment there). Needs https or localhost.
