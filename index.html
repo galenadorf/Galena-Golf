@@ -4368,17 +4368,17 @@ function mergeStatic(grp) {
 
 /* ================= GAME ================= */
 const WOBBLE = .48; // strike wobble (the old "Calm" level was .6; cut by 20 % so the dot on the club face moves less quickly)
-const settings = { hand: 1, sound: true, coached: false, aimed: false, drama: true, reverse: false, zoom: true, song: 1, pals: false };
+const settings = { hand: 1, sound: true, coached: false, aimed: false, drama: true, reverse: false, zoom: true, song: 1, pals: true };
 try { const s = JSON.parse(localStorage.getItem('ssg-settings') || 'null'); if (s) Object.assign(settings, s); } catch (e) { }
-// PALS Rules was briefly on by default, and every device that saved a setting in that time stored pals: true: reset it once to the new default (off)
-if (settings.palsV !== 2) { settings.pals = false; settings.palsV = 2; try { localStorage.setItem('ssg-settings', JSON.stringify(settings)); } catch (e) { } }
+// PALS Rules is on by default (v1.0): bumping palsV sets it on once for every device (they can turn it off in Settings afterwards)
+if (settings.palsV !== 3) { settings.pals = true; settings.palsV = 3; try { localStorage.setItem('ssg-settings', JSON.stringify(settings)); } catch (e) { } }
 // Leaderboard reset: when LB_EPOCH changes, every device clears its own rounds, best scores and stats once (the name and settings stay).
 const LB_EPOCH = '2026-10-16-galena';
 try { if (localStorage.getItem('ssg-lb-epoch') !== LB_EPOCH) { Object.keys(localStorage).filter(k => /^ssg-(board|best)-|^ssg-stats$/.test(k)).forEach(k => localStorage.removeItem(k)); localStorage.setItem('ssg-lb-epoch', LB_EPOCH); } } catch (e) { }
 delete settings.wiggle;
 // "Dramatic bounce": hops drawn 2.2x as high, a ground trail and landing ring, a lower chase camera and a short slow-motion after the first landing
 const drama = () => settings.drama !== false, HOP_K = 2.2;
-// "PALS Rules" (Settings, off by default): house rules for play, so far the mulligan (mulliganOk). Test with pals().
+// "PALS Rules" (Settings, on by default): house rules for play, so far the mulligan (mulliganOk). Test with pals().
 const pals = () => settings.pals === true;
 const maxScore = par => pals() ? 2 * par + 1 : par + 5;   // the most a hole can cost: par + 5, or double par + 1 with PALS Rules on (par 3: 7, par 4: 9, par 5: 11)
 function saveSettings() { try { localStorage.setItem('ssg-settings', JSON.stringify(settings)); } catch (e) { } }
