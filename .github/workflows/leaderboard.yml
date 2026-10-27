@@ -39,6 +39,7 @@ jobs:
               if (!crypto.verify('sha256', Buffer.from(env.msg), { key: pub, dsaEncoding: 'ieee-p1363' }, Buffer.from(env.sig, 'base64'))) throw new Error('bad');
             } catch (e) { return finish(false, 'The signature does not match.'); }
             const COURSES = { woodbine: 72 };
+            const PARS = { woodbine: [4, 3, 4, 5, 4, 4, 3, 4, 5, 4, 3, 4, 4, 4, 3, 5, 4, 5] }; // per hole, for the records (keep in step with the course's holes in index.html)
             const int = v => Number.isInteger(v);
             if (!r || typeof r !== 'object' || !(r.course in COURSES)) return finish(false, 'Unknown course.');
             const name = String(pl.name).trim();
@@ -46,6 +47,13 @@ jobs:
             // per hole: [strokes, putts, fairway (-1/0/1), green in regulation (-1/0/1), penalties, pin (0-3)]
             const ok = Array.isArray(r.hs) && r.hs.length === 18 && r.hs.every(h => Array.isArray(h) && h.length === 6 && h.every(int) && h[0] >= 1 && h[0] <= 15 && h[1] >= 0 && h[1] <= h[0] && h[2] >= -1 && h[2] <= 1 && h[3] >= -1 && h[3] <= 1 && h[4] >= 0 && h[4] <= 10 && h[5] >= 0 && h[5] <= 3);
             if (!ok || r.hs.reduce((a, h) => a + h[0], 0) !== r.strokes) return finish(false, 'The hole-by-hole scores do not add up.');
+            // shot records of the round (version 3 messages): x = { d: drive, h: holed shot, p: holed putt, l: lipped-out putts }; d, h and p are [distance in decimetres, hole 1-18], l a count
+            if (r.x != null) {
+              const X = r.x, CAP = { d: 5000, h: 6000, p: 800 };
+              const xok = typeof X === 'object' && !Array.isArray(X) && Object.keys(X).every(k => k in CAP || k === 'l') && Object.entries(X).every(([k, a]) => k === 'l' ? int(a) && a >= 1 && a <= 60 : Array.isArray(a) && a.length === 2 && a.every(int) && a[0] >= 1 && a[0] <= CAP[k] && a[1] >= 1 && a[1] <= 18)
+                && (!X.d || PARS[r.course][X.d[1] - 1] >= 4) && (!X.p || (X.h && X.h[0] >= X.p[0]));
+              if (!xok) return finish(false, 'The shot records do not add up.');
+            }
             if (!int(r.at) || r.at > Date.now() + 10 * 60e3 || r.at < Date.now() - 3 * 864e5) return finish(false, 'The round is too old (or from the future).');
             const file = `leaderboard/${r.course}.json`; let rows = [];
             try { rows = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { rows = []; }
@@ -57,13 +65,34 @@ jobs:
             if (rows.some(x => x.by === by && x.at === r.at)) return finish(true, 'This round is already on the board.'); // a round is its player and its time; equal scores are separate rounds
             if (rows.filter(x => x.by === by && x.at > Date.now() - 864e5).length >= 15) return finish(false, 'Too many rounds posted today by this player.');
             if (rows.filter(x => x.at > Date.now() - 36e5).length >= 120) return finish(false, 'The board is busy; try again later.');
-            mine.push({ course: r.course, at: r.at, strokes: r.strokes, toPar: r.toPar, hs: r.hs }); mine.sort((a, b) => a.at - b.at);
+            mine.push(Object.assign({ course: r.course, at: r.at, strokes: r.strokes, toPar: r.toPar, hs: r.hs }, r.x ? { x: r.x } : {})); mine.sort((a, b) => a.at - b.at);
             fs.mkdirSync(`rounds/${r.pid}`, { recursive: true }); fs.writeFileSync(pfile, JSON.stringify(mine) + '\n');
             // summary: per course { rounds, best: {strokes, at}, holes: 18 x [rounds, strokes, putts, fairways hit, fairway chances, greens hit, green chances, penalties, best, histogram of strokes 1..9 and 10+] }
             let st; try { st = JSON.parse(fs.readFileSync(sfile, 'utf8')); } catch (e) { st = { v: 1, pid: r.pid, rounds: 0, first: r.at, last: r.at, years: [], courses: {} }; }
             const co = st.courses[r.course] || (st.courses[r.course] = { rounds: 0, best: null, holes: r.hs.map(() => [0, 0, 0, 0, 0, 0, 0, 0, 99, new Array(10).fill(0)]) });
             r.hs.forEach((h, i) => { const a = co.holes[i]; if (!a[9]) a[9] = new Array(10).fill(0); a[9][Math.min(h[0], 10) - 1]++; a[0]++; a[1] += h[0]; a[2] += h[1]; if (h[2] >= 0) { a[3] += h[2]; a[4]++; } if (h[3] >= 0) { a[5] += h[3]; a[6]++; } a[7] += h[4]; a[8] = Math.min(a[8], h[0]); });
             co.rounds++; if (!co.best || r.strokes < co.best.strokes) co.best = { strokes: r.strokes, at: r.at };
+            // records: only a full round of a registered player counts. The round's marks are compared with the player's own (co.rec: key -> [value, hole, at]), and a new
+            // personal best goes into the top 5 players of that record on this course (records/<course>.json). tools/players/stats.py rebuilds both from the rounds.
+            const par = PARS[r.course], cand = {}, low = { roundPutts: 1, bestNine: 1 };
+            const put = (k, v, hole) => { if (v > 0) cand[k] = [v, hole]; };
+            const run = f => { let best = 0, c = 0; r.hs.forEach((h, i) => { const q = f(h, i); if (q === null) return; if (q) { c++; best = Math.max(best, c); } else c = 0; }); return best; };
+            const sum = (a, b) => r.hs.slice(a, b).reduce((u, h) => u + h[0], 0), front = sum(0, 9), back = sum(9, 18);
+            put('roundPutts', r.hs.reduce((u, h) => u + h[1], 0), 0); put('mostPutts', r.hs.reduce((u, h) => u + h[1], 0), 0); put('bestNine', Math.min(front, back), front <= back ? 1 : 10);
+            put('birdies', r.hs.filter((h, i) => h[0] < par[i]).length, 0); put('birdStreak', run((h, i) => h[0] < par[i]), 0);
+            put('gir', r.hs.filter(h => h[3] === 1).length, 0); put('girStreak', run(h => h[3] === 1), 0);
+            put('fairways', r.hs.filter(h => h[2] === 1).length, 0); put('fwStreak', run((h, i) => par[i] >= 4 ? h[2] === 1 : null), 0);
+            if (r.x && r.x.l) put('lips', r.x.l, 0);
+            if (r.x) for (const [k, key] of [['d', 'drive'], ['h', 'holed'], ['p', 'putt']]) if (r.x[k]) put(key, r.x[k][0], r.x[k][1]);
+            const rfile = `records/${r.course}.json`; let rc; try { rc = JSON.parse(fs.readFileSync(rfile, 'utf8')); } catch (e) { rc = { v: 1, rec: {} }; }
+            co.rec = co.rec || {};
+            for (const [k, [v, hole]] of Object.entries(cand)) {
+              const cur = co.rec[k]; if (cur && (low[k] ? v >= cur[0] : v <= cur[0])) continue;
+              co.rec[k] = [v, hole, r.at];
+              const list = (rc.rec[k] || []).filter(x => x.pid !== r.pid); list.push({ pid: r.pid, name, v, hole, at: r.at });
+              list.sort((a, b) => (low[k] ? a.v - b.v : b.v - a.v) || a.at - b.at); rc.rec[k] = list.slice(0, 5);
+            }
+            fs.mkdirSync('records', { recursive: true }); fs.writeFileSync(rfile, JSON.stringify(rc) + '\n');
             st.rounds++; st.first = Math.min(st.first, r.at); st.last = Math.max(st.last, r.at); if (!st.years.includes(year)) st.years = st.years.concat(year).sort();
             fs.mkdirSync('stats', { recursive: true }); fs.writeFileSync(sfile, JSON.stringify(st) + '\n');
             rows.push({ name, pid: r.pid, strokes: r.strokes, toPar: r.toPar, holes: 18, at: r.at, by });
@@ -71,6 +100,6 @@ jobs:
             fs.writeFileSync(file, JSON.stringify(rows) + '\n');
             const rank = rows.findIndex(x => x.name === name && x.at === r.at) + 1;
             await exec.exec('git', ['config', 'user.name', 'github-actions[bot]']); await exec.exec('git', ['config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com']);
-            await exec.exec('git', ['add', file, pfile, sfile]); await exec.exec('git', ['commit', '-m', `Leaderboard: ${name} ${r.toPar >= 0 ? '+' : ''}${r.toPar} on ${r.course}`]);
+            await exec.exec('git', ['add', file, pfile, sfile, rfile]); await exec.exec('git', ['commit', '-m', `Leaderboard: ${name} ${r.toPar >= 0 ? '+' : ''}${r.toPar} on ${r.course}`]);
             for (let k = 0; k < 4; k++) { try { await exec.exec('git', ['push', 'origin', 'HEAD:main']); break; } catch (e) { await exec.exec('git', ['pull', '--rebase', 'origin', 'main']); } }
             await finish(true, `Posted. You are #${rank} of ${rows.length} on the ${r.course} board.`);

@@ -465,6 +465,7 @@ Golf Course
     <div class="mrow">Song volume<div class="seg" id="segSong"><button data-v="0">Off</button><button data-v="1">Low</button><button data-v="2">Med</button><button data-v="3">High</button></div></div>
     <div class="mrow">Short-game zoom<div class="seg" id="segZoom"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
     <div class="mrow">Dramatic bounce<div class="seg" id="segDrama"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
+    <div class="mrow">PALS Rules<div class="seg" id="segPals"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
     <div class="mrow" id="musRow" hidden>Music<div class="seg" id="segMus"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
     <div class="mrow">Build<span id="buildNo" style="opacity:.7;font-variant-numeric:tabular-nums;letter-spacing:.04em">…</span></div>
     <div class="mrow mpRow">Live room<div class="mpRoom"><input id="mpCode" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Code" enterkeyhint="go"><button class="mpb" id="mpJoin">Join</button></div></div>
@@ -4339,7 +4340,7 @@ function mergeStatic(grp) {
 
 /* ================= GAME ================= */
 const WOBBLE = .48; // strike wobble (the old "Calm" level was .6; cut by 20 % so the dot on the club face moves less quickly)
-const settings = { hand: 1, sound: true, coached: false, aimed: false, drama: true, reverse: false, zoom: true, song: 1 };
+const settings = { hand: 1, sound: true, coached: false, aimed: false, drama: true, reverse: false, zoom: true, song: 1, pals: true };
 try { const s = JSON.parse(localStorage.getItem('ssg-settings') || 'null'); if (s) Object.assign(settings, s); } catch (e) { }
 // Leaderboard reset: when LB_EPOCH changes, every device clears its own rounds, best scores and stats once (the name and settings stay).
 const LB_EPOCH = '2026-10-16-galena';
@@ -4347,6 +4348,8 @@ try { if (localStorage.getItem('ssg-lb-epoch') !== LB_EPOCH) { Object.keys(local
 delete settings.wiggle;
 // "Dramatic bounce": hops drawn 2.2x as high, a ground trail and landing ring, a lower chase camera and a short slow-motion after the first landing
 const drama = () => settings.drama !== false, HOP_K = 2.2;
+// "PALS Rules" (Settings, on by default): a set of house rules for play; nothing is in it yet. Test with pals().
+const pals = () => settings.pals !== false;
 function saveSettings() { try { localStorage.setItem('ssg-settings', JSON.stringify(settings)); } catch (e) { } }
 const $ = id => document.getElementById(id);
 
@@ -5062,7 +5065,7 @@ function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch 
 const G = {
   state: 'title', hole: 0, C: null, strokes: 0, scores: HOLE_DEFS.map(() => null), putts: HOLE_DEFS.map(() => 0), fir: HOLE_DEFS.map(() => null), gir: HOLE_DEFS.map(() => null), pens: HOLE_DEFS.map(() => 0),
   ball: { x: 0, y: 0, z: 0 }, prev: null, surf: S.TEE, teed: true, yaw: 0, club: 0, suggested: 0, wind: [0, 0], shot: null, puttRange: 10,
-  camLook: new THREE.Vector3(), introT: 0, holedT: 0, settleT: 0, playT: 0, carry: 0, carryKey: '', shake: 0, target: null
+  xr: {}, camLook: new THREE.Vector3(), introT: 0, holedT: 0, settleT: 0, playT: 0, carry: 0, carryKey: '', shake: 0, target: null
 };
 const SW = {
   phase: 'idle', p: 0, pMax: 0, t0: 0, tTop: 0, startY: 0, lastY: 0, lastT: 0, vel: 0, speedN: 0, id: null, sid: null,
@@ -5084,8 +5087,9 @@ function finishRound() {
   if (G.submitted) return; G.submitted = true;
   const tp = totalToPar();
   try { const best = +localStorage.getItem(BEST_KEY) || null; if (!best || tp.s < best) localStorage.setItem(BEST_KEY, tp.s); } catch (e) { }
-  statsRound(tp); const e = { name: playerName(), strokes: tp.s, toPar: tp.d, holes: HOLE_DEFS.length, course: COURSE.key, at: Date.now(), v: 1, hs: roundHoles() };
-  histAdd(e); submitRound(e);
+  statsRound(); const e = { name: playerName(), strokes: tp.s, toPar: tp.d, holes: HOLE_DEFS.length, course: COURSE.key, at: Date.now(), v: 1, hs: roundHoles() };
+  if (G.xr && Object.keys(G.xr).length) e.x = G.xr; // the round's longest drive, holed shot and putt, signed with it
+  histAdd(e); submitRound(e); recCheck(e);
 }
 function saveRound() {
   if (G.practice || !G.C || !G.scores || G.state === 'title') return;
@@ -5101,7 +5105,7 @@ function saveRound() {
     wx: G.weather ? { id: G.weather.id, left: G.wxLeft, n: G.wxN, k: G.wxK, next: G.wxNext ? G.wxNext.id : null, prev: G.wxPrev || null } : null,
     shot: flying ? { L: sh.L, x: G.prev.x, z: G.prev.z, teed: !!G.prev.teed, playT: Math.max(0, G.playT), summary: sh.summary } : null
   } : null;
-  const r = { v: 1, course: COURSE.key, hole: h, scores: G.scores, putts: G.putts, fir: G.fir, gir: G.gir, pens: G.pens, pins: G.pins, planes: G.planes, fh: G.fartHole, fd: !!G.fartDone, at: Date.now(), mid };
+  const r = { v: 1, course: COURSE.key, hole: h, scores: G.scores, putts: G.putts, fir: G.fir, gir: G.gir, pens: G.pens, pins: G.pins, planes: G.planes, fh: G.fartHole, fd: !!G.fartDone, xr: G.xr, at: Date.now(), mid };
   try { localStorage.setItem(saveKey(COURSE.key), JSON.stringify(r)); } catch (e) { }
   refreshResume();
 }
@@ -5143,7 +5147,9 @@ function resumeRound(course) {
   setCourse(r.course);
   const n = HOLE_DEFS.length, arr = (a, d) => Array.isArray(a) && a.length === n ? a : HOLE_DEFS.map(() => d);
   G.practice = false; G.pg = null; document.body.classList.remove('pg'); G.submitted = false; if (r.planes != null) G.planes = r.planes;
-  G.fartHole = Number.isInteger(r.fh) && r.fh >= 0 && r.fh < n ? r.fh : null; G.fartDone = !!r.fd; // (a round saved before this existed has none: it falls back to the plain chance)
+  G.fartHole = Number.isInteger(r.fh) && r.fh >= 0 && r.fh < n ? r.fh : null; G.xr = {}; for (const k of ['d', 'h', 'p']) { const a = r.xr && r.xr[k]; if (Array.isArray(a) && a.length === 2 && a.every(Number.isInteger)) G.xr[k] = a; }
+  if (r.xr && Number.isInteger(r.xr.l) && r.xr.l > 0) G.xr.l = Math.min(60, r.xr.l);
+  G.fartDone = !!r.fd; // (a round saved before this existed has none: it falls back to the plain chance)
   G.scores = arr(r.scores, null); G.putts = arr(r.putts, 0); G.fir = arr(r.fir, null); G.gir = arr(r.gir, null); G.pens = arr(r.pens, 0); G.pins = arr(r.pins, 0);
   const h = resumeHole(r), mid = r.mid && h === r.hole ? r.mid : null, pu = G.putts[h], pe = G.pens[h];
   startHole(h);
@@ -5194,7 +5200,7 @@ function startRound() {
   G.practice = false; G.pg = null; document.body.classList.remove('pg'); G.submitted = false; G.planes = [0, 0, 1, 1, 1, 2, 2][(Math.random() * 7) | 0];
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   G.pins = pinSheet(); // the day's pin sheet, the same for everyone in the same lobby
-  G.fartHole = Math.floor(Math.random() * HOLE_DEFS.length); G.fartDone = false; // the hole where this round's rare sound plays (fartSwing)
+  G.fartHole = Math.floor(Math.random() * HOLE_DEFS.length); G.fartDone = false; G.xr = {}; // the hole where this round's rare sound plays (fartSwing)
   startHole(0);
 }
 function startHole(i) {
@@ -6507,6 +6513,7 @@ function syncMenu() {
   document.querySelectorAll('#segSnd button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.sound ? 1 : 0)));
   document.querySelectorAll('#segSong button').forEach(b => b.classList.toggle('sel', +b.dataset.v === songLevel()));
   document.querySelectorAll('#segDrama button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (drama() ? 1 : 0)));
+  document.querySelectorAll('#segPals button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (pals() ? 1 : 0)));
   document.querySelectorAll('#segZoom button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.zoom !== false ? 1 : 0)));
   document.querySelectorAll('#segMus button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.music !== false ? 1 : 0)));
   mpSync();
@@ -6722,21 +6729,70 @@ function drawFx(now) {
 const STATS_KEY = 'ssg-stats';
 function defStats() {
   return { v: 1, rounds: 0, holes: 0, shots: 0, strokes: 0, putts: 0, dist: 0, aces: 0, eagles: 0, birdies: 0, pars: 0, bogeys: 0, doubles: 0, fwHit: 0, fwTry: 0, gir: 0, girTry: 0,
-    water: 0, ob: 0, lost: 0, trees: 0, chipins: 0, holedShots: 0, rainHoles: 0, cur: { gir: 0, fw: 0, bird: 0 },
-    rec: { holed: { v: 10 }, putt: { v: 3 }, drive: { v: 200 }, girStreak: { v: 2 }, fwStreak: { v: 3 }, birdStreak: { v: 1 }, round: { v: 10 }, roundPutts: { v: 40 } } };
+    water: 0, ob: 0, lost: 0, trees: 0, chipins: 0, holedShots: 0, rainHoles: 0, cur: { gir: 0, fw: 0, bird: 0 } };
 }
-let ST = (() => { try { const s = JSON.parse(localStorage.getItem(STATS_KEY) || 'null'); if (s && s.v === 1) { const d = defStats(); for (const k in d) if (s[k] === undefined) s[k] = d[k]; for (const k in d.rec) if (!s.rec[k]) s.rec[k] = d.rec[k]; return s; } } catch (e) { } return defStats(); })();
+let ST = (() => { try { const s = JSON.parse(localStorage.getItem(STATS_KEY) || 'null'); if (s && s.v === 1) { const d = defStats(); for (const k in d) if (s[k] === undefined) s[k] = d[k]; delete s.rec; return s; } } catch (e) { } return defStats(); })();
 function saveStats() { try { localStorage.setItem(STATS_KEY, JSON.stringify(ST)); } catch (e) { } }
+// Records belong to the player's account, not the device: only a full 18-hole round of a registered player counts. The round's best marks are signed with the
+// round (x: drive, holed shot, holed putt, in decimetres with the hole) or worked out from its hole rows, and the workflow keeps each player's best per course in
+// stats/<id>.json (rec) and the top 5 players in records/<course>.json. Values: distances in decimetres, the rest plain counts; `low` = smaller is better.
 const REC = {
-  holed: { c: ['#ffe85a', '#ffab1f', '#ff5d3a', '#2b1200'], t: 'Longest shot holed', e: '🎯', f: v => fmtDistShort(v) },
-  putt: { c: ['#c6ff7a', '#3ecf5a', '#0f9d6b', '#052a12'], t: 'Longest putt holed', e: '⛳', f: v => toFt(v) + ' ft' },
-  drive: { c: ['#8be9ff', '#2f9bff', '#5a4bff', '#06123a'], t: 'Longest drive', e: '🚀', f: v => toYd(v) + ' yd' },
-  girStreak: { c: ['#7dffc8', '#1fd1a1', '#0a8f7a', '#032a22'], t: 'Greens in a row', e: '🟢', f: v => v + ' in a row' },
-  fwStreak: { c: ['#f4ff7a', '#b6e63a', '#4fa81f', '#1b2a05'], t: 'Fairways in a row', e: '🛣️', f: v => v + ' in a row' },
-  birdStreak: { c: ['#ffb3f0', '#ff5fd0', '#b13cff', '#2a0536'], t: 'Birdie streak', e: '🐦', f: v => v + ' in a row' },
-  round: { c: ['#ffd86a', '#c48bff', '#6a3dff', '#1c0a4a'], t: 'Best round', e: '🏆', low: true, f: v => (v > 0 ? '+' + v : v === 0 ? 'E' : '' + v) },
-  roundPutts: { c: ['#ff9a9a', '#ff4d6d', '#c1121f', '#3a0008'], t: 'Fewest putts in a round', e: '🪄', low: true, f: v => v + ' putts' }
+  drive: { c: ['#8be9ff', '#2f9bff', '#5a4bff', '#06123a'], t: 'Longest drive', e: '🚀', f: v => toYd(v / 10) + ' yd' },
+  holed: { c: ['#ffe85a', '#ffab1f', '#ff5d3a', '#2b1200'], t: 'Longest holed shot', e: '🎯', f: v => fmtDistShort(v / 10) },
+  putt: { c: ['#c6ff7a', '#3ecf5a', '#0f9d6b', '#052a12'], t: 'Longest putt holed', e: '⛳', f: v => toFt(v / 10) + ' ft' },
+  roundPutts: { c: ['#ff9a9a', '#ff4d6d', '#c1121f', '#3a0008'], t: 'Fewest putts in a round', e: '🪄', low: true, f: v => v + ' putts' },
+  mostPutts: { c: ['#ffc9a0', '#ff8a4a', '#c24a12', '#3a1400'], t: 'Most putts in a round', e: '😬', f: v => v + ' putts' },
+  lips: { c: ['#d9c9ff', '#a98bff', '#6a3dff', '#1c0a4a'], t: 'Most lipped-out putts', e: '😤', f: v => v + (v === 1 ? ' lip-out' : ' lip-outs') },
+  bestNine: { c: ['#ffd86a', '#c48bff', '#6a3dff', '#1c0a4a'], t: 'Best nine holes', e: '🏆', low: true, f: v => v + ' strokes' },
+  birdies: { c: ['#ffb3f0', '#ff5fd0', '#b13cff', '#2a0536'], t: 'Most birdies in a round', e: '🐦', f: v => v + (v === 1 ? ' birdie' : ' birdies') },
+  birdStreak: { c: ['#ffb3f0', '#ff5fd0', '#b13cff', '#2a0536'], t: 'Birdie streak', e: '🔥', f: v => v + ' in a row' },
+  gir: { c: ['#7dffc8', '#1fd1a1', '#0a8f7a', '#032a22'], t: 'Most greens in a round', e: '🟢', f: v => v + ' greens' },
+  girStreak: { c: ['#7dffc8', '#1fd1a1', '#0a8f7a', '#032a22'], t: 'Greens in a row', e: '🎯', f: v => v + ' in a row' },
+  fairways: { c: ['#f4ff7a', '#b6e63a', '#4fa81f', '#1b2a05'], t: 'Most fairways in a round', e: '🛣️', f: v => v + ' fairways' },
+  fwStreak: { c: ['#f4ff7a', '#b6e63a', '#4fa81f', '#1b2a05'], t: 'Fairways in a row', e: '🌿', f: v => v + ' in a row' }
 };
+const REC_KEYS = ['drive', 'holed', 'putt', 'roundPutts', 'mostPutts', 'lips', 'bestNine', 'birdies', 'birdStreak', 'gir', 'girStreak', 'fairways', 'fwStreak'];
+const recWhere = (k, hole) => (k === 'drive' || k === 'holed' || k === 'putt') && hole > 0 ? 'Hole ' + hole : k === 'bestNine' ? (hole === 1 ? 'Front nine' : 'Back nine') : '';
+// the round's marks, worked out as the workflow does (tools/players/stats.py has the same rules): key -> [value, hole]
+function roundMarks(e) {
+  const hs = e.hs, par = HOLE_DEFS.map(d => d.par); if (!Array.isArray(hs) || hs.length !== par.length) return {};
+  const run = f => { let best = 0, c = 0; hs.forEach((h, i) => { const q = f(h, i); if (q === null) return; if (q) { c++; best = Math.max(best, c); } else c = 0; }); return best; };
+  const sum = (a, b) => hs.slice(a, b).reduce((u, h) => u + h[0], 0), front = sum(0, 9), back = sum(9, 18), c = {};
+  const put = (k, v, hole) => { if (v > 0) c[k] = [v, hole || 0]; };
+  put('roundPutts', hs.reduce((u, h) => u + h[1], 0)); put('mostPutts', hs.reduce((u, h) => u + h[1], 0)); put('bestNine', Math.min(front, back), front <= back ? 1 : 10);
+  put('birdies', hs.filter((h, i) => h[0] < par[i]).length); put('birdStreak', run((h, i) => h[0] < par[i]));
+  put('gir', hs.filter(h => h[3] === 1).length); put('girStreak', run(h => h[3] === 1));
+  put('fairways', hs.filter(h => h[2] === 1).length); put('fwStreak', run((h, i) => par[i] >= 4 ? h[2] === 1 : null));
+  const x = e.x || {}; if (x.l) put('lips', x.l);
+  for (const [k, key] of [['d', 'drive'], ['h', 'holed'], ['p', 'putt']]) if (x[k]) put(key, x[k][0], x[k][1]);
+  return c;
+}
+// the world records of a course (records/<course>.json: key -> the best 5 players), fetched when the Stats sheet opens and when a round ends; true when it changed
+const Rec = { gh: {}, at: {} };
+async function loadRecords(key, force) {
+  key = key || COURSE.key; if (!force && Rec.at[key] && Date.now() - Rec.at[key] < 60000) return false; Rec.at[key] = Date.now();
+  try {
+    const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/records/${key}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' });
+    const old = JSON.stringify(Rec.gh[key]);
+    if (r.ok) { const a = await r.json(); Rec.gh[key] = a && a.rec && typeof a.rec === 'object' ? a : { rec: {} }; } else if (r.status === 404) Rec.gh[key] = { rec: {} };
+    return JSON.stringify(Rec.gh[key]) !== old;
+  } catch (e) { return false; }
+}
+const myRec = key => { const c = PID.stats && PID.stats.courses && PID.stats.courses[key]; return (c && c.rec) || {}; };
+// a finished round: cards for the marks that beat the world's or the player's own (the stats and records are fetched first; at most three cards, world first)
+async function recCheck(e) {
+  if (!isReg() || !Array.isArray(e.hs)) return;
+  try {
+    await Promise.all([pidRounds(true), loadRecords(e.course, true)]);
+    const cand = roundMarks(e), mine = myRec(e.course), wr = Rec.gh[e.course] ? Rec.gh[e.course].rec : null, out = [];
+    for (const k of REC_KEYS) {
+      const c = cand[k]; if (!c) continue; const d = REC[k], beats = (a, b) => d.low ? a < b : a > b, w = wr && wr[k] && wr[k][0], m = mine[k];
+      if (wr && (!w || beats(c[0], w.v))) out.push([0, k, c, w ? 'Previous world record ' + d.f(w.v) + ' · ' + w.name : 'The first on the board']);
+      else if (m && beats(c[0], m[0])) out.push([1, k, c, 'Your previous best ' + d.f(m[0])]);
+    }
+    out.sort((a, b) => a[0] - b[0]).slice(0, 3).forEach(([lv, k, c, sub], i) => setTimeout(() => recordCard(lv ? 'New personal record!' : 'New world record!', REC[k].t, REC[k].f(c[0]), sub, REC[k].c), 1500 + i * 400));
+  } catch (er) { }
+}
 const recQueue = []; let recBusy = false;
 function recordCard(kicker, title, big, sub, theme) {
   recQueue.push({ kicker, title, big, sub, theme }); if (!recBusy) nextRecord();
@@ -6749,26 +6805,20 @@ function nextRecord() {
   el.classList.add('on'); try { SFX.chime(); buzz([30, 40, 30, 40, 60]); } catch (e) { } burstConfetti();
   setTimeout(() => { el.className = ''; setTimeout(nextRecord, 250); }, 3600);
 }
-// a record was beaten (low: smaller is better); returns true when it is a new one
-function beat(key, val, info, quiet) {
-  const R = ST.rec[key], d = REC[key], better = d.low ? val < R.v : val > R.v; if (!better) return false;
-  const prev = R.v, had = R.at != null; R.v = val; R.at = Date.now(); R.info = info || ''; saveStats();
-  if (!quiet) setTimeout(() => recordCard('New record!', d.t, d.f(val), had ? 'Previous best ' + d.f(prev) : 'The mark to beat was ' + d.f(prev), d.c), 500);
-  return true;
-}
 // every finished shot (call once from finishShot)
 function statsShot(sh, r) {
-  const C = G.C, par = C.def.par, pv = G.prev || { x: G.ball.x, z: G.ball.z, teed: false }, putt = !!sh.L.putt, club = CLUBS[G.club] ? CLUBS[G.club].name : '';
+  const C = G.C, par = C.def.par, pv = G.prev || { x: G.ball.x, z: G.ball.z, teed: false }, putt = !!sh.L.putt;
   ST.shots++; ST.dist += r.holed ? Math.hypot(C.cup.x - pv.x, C.cup.z - pv.z) : (r.total || 0);
   if (r.water) ST.water++; if (r.lost) ST.lost++; else if (r.ob) ST.ob++;
   if (r.events && r.events.some(e => e.type === 'tree')) ST.trees++;
-  const where = `Hole ${G.hole + 1} · ${COURSE.short}${G.practice ? ' · practice' : ''}`;
-  if (pv.teed && par >= 4 && !r.water && !r.ob && r.total > 0) beat('drive', r.total, where);
+  const mark = (k, m) => { const dm = Math.min({ d: 5000, h: 6000, p: 800 }[k], Math.round(m * 10)); if (dm >= 1 && (!G.xr[k] || dm > G.xr[k][0])) G.xr[k] = [dm, G.hole + 1]; }; // the round's longest drive, holed shot and holed putt (G.xr, signed with the round)
+  if (!G.practice && pv.teed && par >= 4 && !r.water && !r.ob && r.total > 0) mark('d', r.total);
+  if (!G.practice && putt && !r.holed && r.events && r.events.some(e => e.type === 'lip')) G.xr.l = Math.min(60, (G.xr.l || 0) + 1); // a putt that caught the lip and stayed out
   if (r.holed) {
     const d = Math.hypot(C.cup.x - pv.x, C.cup.z - pv.z); ST.holedShots++; if (!putt && G.strokes > 1) ST.chipins++;
-    const big = beat('holed', d, where + ' · ' + club);
-    if (putt) beat('putt', d, where, big); // a putt that is also the longest holed shot only shows one card
-    if (G.strokes === 1) setTimeout(() => recordCard('Unreal!', 'Hole in one', toYd(d) + ' yd', where, ['#ffffff', '#ffd166', '#ef476f', '#2b0a1a']), big ? 4300 : 500), ST.aces++;
+    if (!G.practice) { mark('h', d); if (putt) mark('p', d); }
+    const where = `Hole ${G.hole + 1} · ${COURSE.short}${G.practice ? ' · practice' : ''}`;
+    if (G.strokes === 1) setTimeout(() => recordCard('Unreal!', 'Hole in one', toYd(d) + ' yd', where, ['#ffffff', '#ffd166', '#ef476f', '#2b0a1a']), 500), ST.aces++;
   }
   saveStats();
 }
@@ -6777,15 +6827,12 @@ function statsHole(h) {
   if (G.practice) return; const par = G.C.def.par, sc = G.scores[h], d = sc - par, S = ST;
   S.holes++; S.strokes += sc; S.putts += G.putts[h] || 0; if (G.weather && G.weather.id === 'rain') S.rainHoles++;
   if (sc === 1 && par > 1) { /* counted as an ace in statsShot */ } else if (d <= -2) S.eagles++; else if (d === -1) S.birdies++; else if (d === 0) S.pars++; else if (d === 1) S.bogeys++; else S.doubles++;
-  S.girTry++; if (G.gir[h] === true) { S.gir++; S.cur.gir++; beat('girStreak', S.cur.gir, 'Streak running'); } else S.cur.gir = 0;
-  if (par >= 4) { S.fwTry++; if (G.fir[h] === true) { S.fwHit++; S.cur.fw++; beat('fwStreak', S.cur.fw, 'Streak running'); } else S.cur.fw = 0; }
-  if (d < 0) { S.cur.bird++; beat('birdStreak', S.cur.bird, 'Streak running'); } else S.cur.bird = 0;
+  S.girTry++; if (G.gir[h] === true) { S.gir++; S.cur.gir++; } else S.cur.gir = 0;
+  if (par >= 4) { S.fwTry++; if (G.fir[h] === true) { S.fwHit++; S.cur.fw++; } else S.cur.fw = 0; }
+  if (d < 0) S.cur.bird++; else S.cur.bird = 0;
   saveStats();
 }
-function statsRound(tp) {
-  ST.rounds++; saveStats(); const pu = G.putts.reduce((a, b) => a + b, 0), c = COURSE.short;
-  const b1 = beat('round', tp.d, c + ' · ' + tp.s + ' strokes'); setTimeout(() => beat('roundPutts', pu, c), b1 ? 4300 : 300);
-}
+function statsRound() { ST.rounds++; saveStats(); }
 const LEVELS = [[0, 'Rookie'], [18, 'Club Member'], [54, 'Fairway Regular'], [108, 'Scratch Hunter'], [216, 'Course Legend'], [432, 'Hall of Famer']];
 // per hole, lifetime: the filed summary plus this device's finished rounds newer than the last filed one (not filed yet), each counted once.
 // A hole is [rounds, strokes, putts, fairways hit, fairway chances, greens hit, green chances, penalties, best, histogram]; the histogram counts strokes 1..9 and 10+.
@@ -6843,11 +6890,18 @@ function openHoles() {
   pidRounds().then(() => pidRoundList(45)).then(R => { if ($('holeSheet').classList.contains('on')) draw(R); }).catch(() => { });
 }
 function openStats(again) {
-  if (isReg() && !again) pidRounds().then(fresh => { if (fresh && $('statsSheet').classList.contains('on')) openStats(true); }); // once, when my filed rounds have just arrived
+  if (isReg() && !again) Promise.all([pidRounds(), loadRecords()]).then(([a, b]) => { if ((a || b) && $('statsSheet').classList.contains('on')) openStats(true); }); // once, when my filed rounds or the world records have just arrived
   const S = ST, el = $('statsBody'), pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '–', mi = S.dist / 1609.34;
   let li = 0; LEVELS.forEach((l, i) => { if (S.holes >= l[0]) li = i; }); const nx = LEVELS[li + 1], lo = LEVELS[li][0];
   const card = (k, e, v, n, rec) => `<div class="stCard${rec ? ' rec' : ''}"><span class="em">${e}</span><div class="k">${k}</div><div class="v">${v}</div>${n ? `<div class="n">${n}</div>` : ''}</div>`;
-  const rc = k => { const R = S.rec[k], d = REC[k]; return card(d.t, d.e, R.at != null ? d.f(R.v) : '—', R.at != null ? (R.info || '') : 'Beat ' + d.f(R.v) + ' to set it', R.at != null); };
+  const recs = () => {   // my bests on this course (the account's, from stats/<id>.json) beside the world's
+    if (!isReg()) return '<div class="stFun"><div>Records belong to your Player ID: get one in Settings. Only full 18-hole rounds count.</div></div>';
+    const mine = myRec(COURSE.key), wr = Rec.gh[COURSE.key] ? Rec.gh[COURSE.key].rec : null;
+    return '<div class="stGrid">' + REC_KEYS.map(k => {
+      const d = REC[k], m = mine[k], w = wr && wr[k] && wr[k][0], at = m ? recWhere(k, m[1]) : '', wn = w ? 'World ' + d.f(w.v) + ' · ' + w.name : wr ? 'No world record yet' : '';
+      return card(d.t, d.e, m ? d.f(m[0]) : '—', [m ? at : 'Not set yet', wn].filter(Boolean).join(' · '), !!(m && w && w.pid === PID.reg.pid && w.v === m[0]));
+    }).join('') + '</div>';
+  };
   const pace = S.holes ? (S.strokes / S.holes).toFixed(2) : '–';
   const fun = [];
   if (S.dist > 0) fun.push(`Your shots have flown <b>${mi >= 1 ? mi.toFixed(2) + ' miles' : toYd(S.dist) + ' yd'}</b>, about <b>${(S.dist / 91.44).toFixed(1)}</b> football fields.`);
@@ -6860,15 +6914,15 @@ function openStats(again) {
   if (!fun.length) fun.push('Play a few holes and the fun facts will show up here.');
   el.innerHTML = `<div class="stLvl"><b>${LEVELS[li][1]}</b><span>${nx ? (nx[0] - S.holes) + (nx[0] - S.holes === 1 ? ' hole to ' : ' holes to ') + nx[1] : 'Top level reached'} · ${S.holes} hole${S.holes === 1 ? '' : 's'} · ${S.rounds} round${S.rounds === 1 ? '' : 's'}</span>${nx ? `<div class="stBar"><i style="width:${Math.min(100, 100 * (S.holes - lo) / (nx[0] - lo))}%"></i></div>` : ''}</div>
     <div class="mbtns"><button class="mbtn wide" id="stHoles">\u26f3 Hole by hole \u203a</button></div>
-    <div class="sub"><span>Records</span></div><div class="stGrid">${['holed', 'putt', 'drive', 'girStreak', 'fwStreak', 'birdStreak', 'round', 'roundPutts'].map(rc).join('')}</div>
-    <div class="sub"><span>Streaks running now</span></div><div class="stGrid">${card('Greens in a row', '🟢', S.cur.gir, 'best ' + S.rec.girStreak.v)}${card('Fairways in a row', '🛣️', S.cur.fw, 'best ' + S.rec.fwStreak.v)}${card('Birdie streak', '🐦', S.cur.bird, 'best ' + S.rec.birdStreak.v)}${card('Holes in one', '👑', S.aces)}</div>
+    <div class="sub"><span>Records · ${COURSE.short}</span></div>${recs()}
+    <div class="sub"><span>Streaks running now</span></div><div class="stGrid">${card('Greens in a row', '🟢', S.cur.gir)}${card('Fairways in a row', '🛣️', S.cur.fw)}${card('Birdie streak', '🐦', S.cur.bird)}${card('Holes in one', '👑', S.aces)}</div>
     <div class="sub"><span>Scoring</span></div>
     <div class="stRow"><span>Eagles or better</span><span>${S.eagles}</span></div><div class="stRow"><span>Birdies</span><span>${S.birdies}</span></div><div class="stRow"><span>Pars</span><span>${S.pars}</span></div><div class="stRow"><span>Bogeys</span><span>${S.bogeys}</span></div><div class="stRow"><span>Double or worse</span><span>${S.doubles}</span></div>
     <div class="stRow"><span>Fairways hit</span><span>${pct(S.fwHit, S.fwTry)}</span></div><div class="stRow"><span>Greens in regulation</span><span>${pct(S.gir, S.girTry)}</span></div><div class="stRow"><span>Putts per hole</span><span>${S.holes ? (S.putts / S.holes).toFixed(2) : '–'}</span></div><div class="stRow"><span>Strokes per hole</span><span>${pace}</span></div>
     <div class="sub"><span>Fun facts</span></div><div class="stFun">${fun.map(f => `<div>${f}</div>`).join('')}</div>
     <div class="mbtns"><button class="mbtn" id="stReset">Reset stats</button><button class="mbtn dark" id="stClose">Close</button></div>`;
   $('stSub').textContent = playerName(); $('stClose').onclick = () => closeSheets(); $('stHoles').onclick = openHoles;
-  $('stReset').onclick = () => { if (confirm('Reset all stats and records on this device?')) { ST = defStats(); saveStats(); openStats(); } };
+  $('stReset').onclick = () => { if (confirm('Reset the stats on this device? (Records belong to your Player ID and are not affected.)')) { ST = defStats(); saveStats(); openStats(); } };
   openSheet('statsSheet');
 }
 /* ================= PLAYER + LEADERBOARD ================= */
@@ -6977,7 +7031,7 @@ function pidCopy() {
 // the signed envelope the workflow checks: msg is the exact JSON text that was signed
 async function signRound(r) {
   await pidInit(); if (!isReg()) return null;
-  const msg = JSON.stringify({ v: 2, pid: PID.reg.pid, course: COURSES[r.course] ? r.course : COURSE.key, strokes: r.strokes, toPar: r.toPar, holes: r.holes || HOLE_DEFS.length, at: r.at, hs: r.hs });
+  const msg = JSON.stringify(Object.assign({ v: r.x ? 3 : 2, pid: PID.reg.pid, course: COURSES[r.course] ? r.course : COURSE.key, strokes: r.strokes, toPar: r.toPar, holes: r.holes || HOLE_DEFS.length, at: r.at, hs: r.hs }, r.x ? { x: r.x } : {}));
   const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, PID.key, new TextEncoder().encode(msg));
   return { msg, sig: b64(new Uint8Array(sig)), key: PID.pub };
 }
@@ -7302,6 +7356,7 @@ function initInput() {
   $('pidSend').onclick = pidSend; $('pidReq').onclick = pidCopy; $('pidChk').onclick = pidCheck;
   document.querySelectorAll('#segSong button').forEach(b => b.onclick = () => { settings.song = +b.dataset.v; saveSettings(); syncMenu(); songLevelApply(); });
   document.querySelectorAll('#segZoom button').forEach(b => b.onclick = () => { settings.zoom = b.dataset.v === '1'; saveSettings(); syncMenu(); });
+  document.querySelectorAll('#segPals button').forEach(b => b.onclick = () => { settings.pals = b.dataset.v === '1'; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segDrama button').forEach(b => b.onclick = () => { settings.drama = b.dataset.v === '1'; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segMus button').forEach(b => b.onclick = () => { settings.music = b.dataset.v === '1'; saveSettings(); syncMenu(); musicTick(); });
   $('skipBtn').onclick = e => { e.stopPropagation(); skipShot(); };
