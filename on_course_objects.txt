@@ -43,7 +43,7 @@ Gopher (Caddyshack-style: brown, buck teeth, pops out of a dirt mound with a dar
   - Can be hit while up: "A menace to the golfing industry...", with a squeak.
 
 Dancing hot dog (hole 10 only; a giant, 10 ft: red sausage in a bun with a mustard zigzag, a smiling face, stick arms with white gloves, red sneakers)
-  - 15% chance on hole 10 each time the hole loads (never on other holes). When it is there, from the moment the hole loads: about 100 yd down the line from the tee, on the fairway (it picks the nearest fairway spot if the
+  - Always on hole 10 (`HOTDOG_P` = 1), never on other holes. From the moment the hole loads: about 100 yd down the line from the tee, on the fairway (it picks the nearest fairway spot if the
     exact one is rough or a bunker).
   - Dances to a 100 bpm beat: bounces, sways, waves both arms, kicks alternate legs, and sidesteps slowly back and forth across the fairway (never into the
     rough), always facing the golfer.
@@ -101,17 +101,17 @@ MAN-MADE OBJECTS
     tail on the cart path north-east of the practice green, facing up the path toward the first hole. Always there; solid, so a ball hits them ("Off a golf cart!").
     Positions are `CART_PROPS` in index.html, not painted.
   - THE RAREST THING ON THE COURSE: a moving golf cart (same model) with two men in it (dark hair, grey trousers; the driver in a light blue #C4DCF0 shirt and cap, the
-    passenger in a salmon #F7A780 shirt and cap). Each par 4 or par 5 hole has a 1% chance of one (`CARTRIDE_P`), and only if the hole has a cart path on both sides
-    of the line of play, which today is holes 3, 5, 6, 10, 12, 13, 14, 16, 17 and 18: about one round in ten sees it, against one in seven for the hot dog. It sets off
+    passenger in a salmon #F7A780 shirt and cap). Each par 4 or par 5 hole has a 2.84% chance of one (`CARTRIDE_P`), and only if the hole has a cart path on both sides
+    of the line of play, which today is holes 3, 5, 6, 10, 12, 13, 14, 16, 17 and 18: about one round in four sees it (1 - (1 - .0284)^10 = 25%), while the hot dog is on every round. It sets off
     the moment the golfer presses Play Hole (`cartRideGo`, from `beginHole`): it appears on the cart path on one side (picked at random) at least 36 m out from the tee,
     drives down it at 25 mph, crosses the rough and fairway at about 200 yd (183 m) from the tee (shorter holes: 62% of the way; it shifts up to 36 m along the hole to
     find a clear crossing) and parks on the path on the far side, lined up with it, where it stays. Wheels turn, it follows the ground, and a ball can hit it. The route
-    is traced from the cart path surface by `cartRoute`. Not in the putting green or the range. Add `?cart` to the page address to force it on every such hole (testing).
+    is traced from the cart path surface by `cartRoute`. It has a radio: "Around the World" (`sounds/cartmusic.mp3`) starts when it sets off and plays from the cart (loud within 12 m, fading with distance to nothing by 260 m, duller and panned to the cart's side; scaled by the Song volume setting) until the next hole (`cartMusicTick`). Not in the putting green or the range. Add `?cart` to the page address to force it on every such hole (testing).
   - The big Woodbine Bend entrance sign (green board on posts, a golf ball on a red tee at each end, stone-edged flower bed) beside Route 20 on the west side of the course, facing in toward the course. Painted with paint_edit.py / paint_read.py; only seen from the holes nearest it.
   - The pump house: a small plain metal building (corrugated grey siding and roof, no doors) by the 8th tee, painted with paint_edit.py / paint_read.py; solid, so a ball hits it.
   - Hole 7 sign ("Andy Lewis / Hole in One / 9/10/2026", text from signs.txt), with its own fly-over intro.
 
-Cart paths (about 7.4 km, 2.4 m wide, dark asphalt): found on the aerial and corrected by hand. A hard surface, a ball bounces on it about twice as often as on the fairway and rolls fast. They cross the course between the holes, past the clubhouse and to the tees.
+Cart paths (about 7.4 km, 2.4 m wide, dark asphalt): found on the aerial and corrected by hand. A hard surface, a ball bounces on it several times (restitution .8, keeping its bounce at speed: a wedge shot hops 2 m or more, a drive 1 m, 7-9 hops before it rolls) and rolls fast. They cross the course between the holes, past the clubhouse and to the tees.
 
 Side roads (out of bounds, for looks only): East Center Road along the south of the course and South Brown Road (then Chicago Street into Stockton) along the east; plain two-lane chip-sealed roads with gravel shoulders, no centre line, no traffic. Both run out to the horizon and end on US 20; no trees stand on them.
 

@@ -5,6 +5,8 @@ above -48 dB of its peak; end: where the 5 ms envelope has dropped 60 dB below t
   Wedges.m4a -> wedge.mp3    Putter.m4a -> putter.mp3    Ball_in_hole.m4a -> cup.mp3
 Music: out/sounds/Hole_7_background_music.m4a -> sounds/hole7-q.mp3, mono at 80 kbps, the silence before and after cut (the last second
 holds the song's closing hit), a short fade at the end, the playing level is baked into the file (MUSIC_PEAK_DB), so it is quiet even where the browser ignores the game's volume setting (HOLE_SONGS vol is 1).
+Around_the_world.mp3 -> sounds/cartmusic.mp3: the radio on the moving golf cart (`cartMusic*` in index.html). Mono at 64 kbps, 44.1 kHz, peak
+-12 dBFS (the game scales it by distance from the cart and by the Song volume setting), leading and trailing silence cut, a short fade at the end.
 Fart_01..07.m4a and Penis.m4a -> sounds/fart1..8.mp3: trimmed like the strikes, mono at 96 kbps, the playing level baked in (FART_RMS_DB: the same loudness as the
 hole-7 song at its Med setting, measured as RMS over the trimmed clip), so the game plays them at gain 1 (a pool, one picked at random: `fartTick`).
 Truck_horn.m4a -> sounds/truckhorn.mp3, Truck_rumble.m4a -> sounds/truckrumble.mp3: trimmed like the strikes, mono at 96 kbps (the rumble at 64), peak -3 dBFS;
@@ -53,10 +55,10 @@ def trim_music(x, lead=.05, tail=.4):
     return y / np.abs(y).max() * 10 ** (MUSIC_PEAK_DB / 20), a / SR, b / SR
 
 
-def write(y, path, kbps=96):
+def write(y, path, kbps=96, sr=SR):
     c = av.open(path, 'w', format='mp3')
-    s = c.add_stream('libmp3lame', rate=SR); s.layout = 'mono'; s.bit_rate = kbps * 1000
-    fr = av.AudioFrame.from_ndarray(y.astype(np.float32)[None, :], format='fltp', layout='mono'); fr.sample_rate = SR
+    s = c.add_stream('libmp3lame', rate=sr); s.layout = 'mono'; s.bit_rate = kbps * 1000
+    fr = av.AudioFrame.from_ndarray(y.astype(np.float32)[None, :], format='fltp', layout='mono'); fr.sample_rate = sr
     for p in s.encode(fr): c.mux(p)
     for p in s.encode(None): c.mux(p)
     c.close()
@@ -68,6 +70,19 @@ def music():
         y, a, b = trim_music(load(p))
         write(y, os.path.join(DEST, 'hole7-q.mp3'), 80)
         print(f'Hole_7_background_music -> sounds/hole7-q.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / SR:.1f} s, {os.path.getsize(os.path.join(DEST, "hole7-q.mp3")) / 1048576:.2f} MB)')
+
+
+def cartmusic():
+    p = os.path.join(OUT, 'sounds', 'Around_the_world.mp3')
+    if not os.path.exists(p):
+        print('missing', p); return
+    c = av.open(p); r = av.AudioResampler(format='fltp', layout='mono', rate=44100)
+    x = np.concatenate([o.to_ndarray()[0] for fr in c.decode(audio=0) for o in r.resample(fr)])
+    env = np.sqrt(np.convolve(x ** 2, np.ones(2205) / 2205, 'same')); on = np.nonzero(env > env.max() * 10 ** (-45 / 20))[0]
+    y = x[max(0, int(on[0]) - 2205):min(len(x), int(on[-1]) + 17640)].copy(); f = int(.3 * 44100); y[-f:] *= np.linspace(1, 0, f) ** 2
+    y = y / np.abs(y).max() * 10 ** (-12 / 20)
+    d = os.path.join(DEST, 'cartmusic.mp3'); write(y, d, 64, 44100)
+    print(f'Around_the_world -> sounds/cartmusic.mp3  ({len(y) / 44100:.1f} s, {os.path.getsize(d) / 1048576:.2f} MB)')
 
 
 def farts():
@@ -93,6 +108,7 @@ def trucks():
 
 def main():
     music()
+    cartmusic()
     farts()
     trucks()
     os.makedirs(DEST, exist_ok=True)

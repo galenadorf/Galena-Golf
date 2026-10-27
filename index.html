@@ -562,7 +562,7 @@ SURF[S.FRINGE] = { name: 'Fringe', k: .006, e: .30, keep: .62, spinStop: 11500, 
 SURF[S.GREEN] = { name: 'Green', k: 0, e: .30, keep: .62, spinStop: 10500, mu: .056, lie: { speed: 1, spin: 1, launch: 0, wig: 1 } };
 SURF[S.SAND] = { name: 'Bunker', k: .12, e: .04, keep: .12, spinStop: 30000, mu: 1.4, lie: { speed: .64, spin: .7, launch: 2, wig: 1.25 } };
 SURF[S.WATER] = { name: 'Water', k: 0, e: 0, keep: 0, spinStop: 1, mu: 9, lie: { speed: .5, spin: .5, launch: 0, wig: 1.5 } };
-SURF[S.PATH] = { name: 'Cart path', k: .004, e: .55, keep: .84, spinStop: 30000, mu: .05, lie: { speed: .95, spin: .9, launch: 0, wig: 1.1 } };
+SURF[S.PATH] = { name: 'Cart path', hard: true, k: .004, e: .8, keep: .86, spinStop: 30000, mu: .05, lie: { speed: .95, spin: .9, launch: 0, wig: 1.1 } };
 
 /* ---------- weather ---------- */
 // Weather only changes how the ball rolls on the fairway: how hard it bounces, how much pace it keeps and how far it runs out.
@@ -622,7 +622,7 @@ function spinFrac(p) { return SPIN_BASE + (1 - SPIN_BASE) * p; }
 // how hard the ball lands decides how much it checks: a steep, fast landing digs in and lets the backspin bite,
 // a low, soft chip skids on, keeps more of its speed and releases. Full shots land hard enough to be unaffected.
 const BITE_VN = 12, BITE_MIN = .5, SOFT_KEEP = 1.6;
-const CROSS_WIND = .2; // crosswind strength relative to head/tail wind
+const CROSS_WIND = 1; // crosswind strength relative to head/tail wind (it was .2: a 10 mph crosswind moved a 7-iron 2 yd; now about 10 yd, the usual rule of a yard per mph)
 const WIND_EFFECT = .7; // all wind pushes 30% less than its displayed speed would
 
 /* ---------- the cup ---------- */
@@ -729,7 +729,7 @@ function simulateShot(C, o) {
   const dt = o.dt || 1 / 240, maxT = o.maxT || 40; // predictions may step coarser
   let x = o.x, y = o.y, z = o.z, vx = o.v[0], vy = o.v[1], vz = o.v[2];
   let wx = o.w ? o.w[0] : 0, wy = o.w ? o.w[1] : 0, wz = o.w ? o.w[2] : 0;
-  // head/tail wind pushes at WIND_EFFECT; the part blowing across the launch line only CROSS_WIND as hard again
+  // head/tail wind pushes at WIND_EFFECT; the part blowing across the launch line CROSS_WIND times that
   let windX = 0, windZ = 0;
   if (o.wind) {
     const hl = Math.hypot(o.v[0], o.v[2]), ux = hl > 1e-6 ? o.v[0] / hl : 0, uz = hl > 1e-6 ? o.v[2] / hl : 0;
@@ -855,7 +855,7 @@ function simulateShot(C, o) {
             tvx *= keep; tvy *= keep; tvz *= keep;
             const nb = b * .45; wx = axx * nb; wy = axy * nb; wz = axz * nb;
           } else { wx *= .4; wy *= .4; wz *= .4; }
-          const e = sv.e * clamp(1.12 - (-vn) / 38, .45, 1);
+          const e = sv.e * (sv.hard ? clamp(1.05 - (-vn) / 100, .7, 1) : clamp(1.12 - (-vn) / 38, .45, 1)); // asphalt keeps its bounce at speed (a golf ball off concrete: e about .6-.8)
           const vnOut = -vn * e;
           vx = tvx + nx * vnOut; vy = tvy + ny * vnOut; vz = tvz + nz * vnOut;
           if (bounces === 0) land = { x, y, z, t, carry: Math.hypot(x - sx, z - sz), angle: Math.atan2(-vn, vt) / DEG, surf };
@@ -3921,7 +3921,7 @@ function makeGopher(L) {
 }
 /* --- a giant dancing hot dog (hole 10 only): about 100 yd down the line from the tee it sidesteps back and forth across the fairway, facing the golfer, bouncing,
    swaying and waving its arms to a beat (HOTDOG_BPM). A ball can hit it. --- */
-const HOTDOG_HOLE = 9, HOTDOG_YD = 100, HOTDOG_BPM = 100, HOTDOG_P = .15, HOTDOG_K = 10 * .3048 / 4.05;   // the model is 4.05 m to the top of the sausage: scaled to 10 ft
+const HOTDOG_HOLE = 9, HOTDOG_YD = 100, HOTDOG_BPM = 100, HOTDOG_P = 1, HOTDOG_K = 10 * .3048 / 4.05;   // the model is 4.05 m to the top of the sausage: scaled to 10 ft
 function makeHotDog(L) {
   const mat = LIFE_MAT(), g = new THREE.Group(), body = new THREE.Group(); g.add(body);
   const wiener = 0xc0482c, bun = 0xe4b866, mustard = 0xf0cf1e, glove = 0xf7f7f2, shoe = 0xd23a2a, stick = 0x2a2a2e;
@@ -4153,11 +4153,11 @@ function makeFountain(L) {
   return e;
 }
 /* --- a golf cart with two men that drives down a cart path, crosses the fairway about 200 yd from the tee and parks on the path on the far side. The rarest thing
-   on the course: CARTRIDE_P per par 4 / par 5 hole (about one round in ten), and only on holes where cartRoute finds a cart path on both sides of the
+   on the course: CARTRIDE_P per par 4 / par 5 hole (about one round in four), and only on holes where cartRoute finds a cart path on both sides of the
    line of play. It sets off the moment the golfer presses Play Hole (cartRideGo, from beginHole). Add ?cart to the page address to force it on every
    such hole (for testing). The route is traced from the cart path surface (S.PATH) of the hole: along the near path from about 150 m back, then straight
    across to the far path. --- */
-const CARTRIDE_P = .01, CARTRIDE_V = 25 * .44704;
+const CARTRIDE_P = .0284, CARTRIDE_V = 25 * .44704;
 function cartRoute(C) {
   const Lc = C.center.L, isPath = (x, z) => C.inBounds(x, z) && C.surf(x, z) === S.PATH;
   const frame = s => { const f = fairHalfWidth2(C, s); return { x: f.p[0], z: f.p[1], nx: f.nx, nz: f.nz, tx: f.nz, tz: -f.nx }; };
@@ -4198,7 +4198,7 @@ function cartRoute(C) {
   return null;
 }
 function makeCartRide(L, R) {
-  const mat = LIFE_MAT(), g = makeGolfCart(true, mat); g.visible = false; g.traverse(o => { if (o.isMesh) o.userData.keep = true; }); L.grp.add(g);
+  cartMusicLoad(); const mat = LIFE_MAT(), g = makeGolfCart(true, mat); g.visible = false; g.traverse(o => { if (o.isMesh) o.userData.keep = true; }); L.grp.add(g);
   let P = R.route; for (let k = 0; k < 2; k++) { const Q = [P[0]]; for (let i = 0; i < P.length - 1; i++) { const a = P[i], b = P[i + 1]; Q.push([.75 * a[0] + .25 * b[0], .75 * a[1] + .25 * b[1]], [.25 * a[0] + .75 * b[0], .25 * a[1] + .75 * b[1]]); } Q.push(P[P.length - 1]); P = Q; } // corners rounded
   const cum = [0]; for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
   const len = cum[cum.length - 1], pt = { x: 0, z: 0 }, pa = { x: 0, z: 0 };
@@ -4473,6 +4473,49 @@ function songTick(now, force) {
   if (!d || G.state === 'title' || G.hole !== SONG.hole) { songStop(true); return; }
   const want = SONG.armed && settings.sound && !document.hidden;
   if (want && !SONG.on && now >= SONG.armAt && SONG.buf) songPlay(d); else if (!want && SONG.on) songPause(false);
+}
+// ---- the radio on the moving golf cart: sounds/cartmusic.mp3 (Around the World, mono) plays FROM the cart ----
+// It starts when the cart sets off (cartRideGo) and keeps playing while it is parked, looping, until the next hole or the title screen. The level follows the
+// distance from the camera to the cart (full within 12 m, then 12/d like a real source, fading to nothing by 260 m), the sound dulls with distance (low-pass), and
+// it is panned to the side of the screen the cart is on. The Song volume setting scales it. The decoded song (about 40 MB) is fetched only on a hole that has the
+// cart and dropped when the cart is gone. Checked every frame from the loop (cartMusicTick), a few Web Audio parameters only.
+const CARTM = { e: null, buf: null, fetching: false, ctx: null, src: null, lp: null, gain: null, pan: null, t0: 0, pos: 0, on: false };
+function cartMusicLoad() {
+  if (CARTM.buf || CARTM.fetching || !settings.sound) return; const a = audio(); if (!a) return;
+  CARTM.fetching = true;
+  fetch('sounds/cartmusic.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(ab => {
+    if (!ab) { CARTM.fetching = false; return; }
+    a.decodeAudioData(ab, b => { CARTM.fetching = false; CARTM.buf = b; }, () => { CARTM.fetching = false; });
+  }).catch(() => { CARTM.fetching = false; });
+}
+function cartMusicStop() {
+  if (CARTM.src) { try { CARTM.pos = (CARTM.pos + (CARTM.ctx.currentTime - CARTM.t0)) % CARTM.buf.duration; } catch (e) { } try { CARTM.src.stop(); } catch (e) { } try { CARTM.src.disconnect(); } catch (e) { } }
+  CARTM.src = null; CARTM.on = false;
+}
+function cartMusicTick() {
+  const L = W.life, e = L && L.cartRide && L.C === G.C ? L.cartRide : null;
+  if (e !== CARTM.e) { cartMusicStop(); CARTM.e = e; CARTM.pos = 0; if (!e) { CARTM.buf = null; return; } }
+  if (!e) return;
+  const want = e.st !== 'wait' && G.state !== 'title' && settings.sound && !document.hidden && songLevel() > 0;
+  if (!want) { if (CARTM.on) cartMusicStop(); return; }
+  if (!CARTM.buf) { cartMusicLoad(); return; }
+  const a = AC; if (!a || a.state !== 'running') { if (CARTM.on) cartMusicStop(); return; }
+  if (!CARTM.on || CARTM.ctx !== a) {
+    cartMusicStop();
+    if (CARTM.ctx !== a) {
+      CARTM.ctx = a; CARTM.lp = a.createBiquadFilter(); CARTM.lp.type = 'lowpass'; CARTM.gain = a.createGain(); CARTM.gain.gain.value = 0;
+      CARTM.lp.connect(CARTM.gain); let n = CARTM.gain; CARTM.pan = null;
+      if (a.createStereoPanner) { CARTM.pan = a.createStereoPanner(); n.connect(CARTM.pan); n = CARTM.pan; }
+      n.connect(a.destination);
+    }
+    const s = a.createBufferSource(); s.buffer = CARTM.buf; s.loop = true; s.connect(CARTM.lp); s.start(0, CARTM.pos % CARTM.buf.duration);
+    CARTM.src = s; CARTM.t0 = a.currentTime; CARTM.on = true;
+  }
+  const cam = W.cam.position, dx = e.x - cam.x, dy = e.y + 1 - cam.y, dz = e.z - cam.z, d = Math.hypot(dx, dy, dz), me = W.cam.matrixWorld.elements;
+  const k = Math.min(1, 12 / Math.max(d, 1)) * (1 - smooth(120, 260, d)), t = a.currentTime;
+  CARTM.gain.gain.setTargetAtTime(.55 * SONG_LEVELS[songLevel()] * k, t, .12);
+  CARTM.lp.frequency.setTargetAtTime(500 + 15500 * Math.min(1, 12 / Math.max(d, 12)) ** 1.5, t, .12);
+  if (CARTM.pan) CARTM.pan.pan.setTargetAtTime(clamp((dx * me[0] + dz * me[2]) / Math.max(d, 1), -1, 1) * Math.min(1, d / 12) * .85, t, .12);
 }
 // ---- an unseen, very rare sound: a pool of recordings (sounds/fart1-8.mp3), one picked at random ----
 // Their level is baked into the files (the same loudness as the hole-7 song at Med), so they play at gain 1. A round is dealt one hole where it is
@@ -5370,8 +5413,7 @@ function pathAngle() {
 function swingMove(y, t, x) {
   if (SW.phase === 'idle' || SW.phase === 'done') return;
   const dtm = Math.max(.001, (t - SW.lastT) / 1000), p = (y - SW.startY) / SW.fullPx;
-  SW.vel = lerp(SW.vel, Math.abs(y - SW.lastY) / dtm, .5);
-  advanceDrift(dtm);
+  SW.vel = lerp(SW.vel, Math.abs(y - SW.lastY) / dtm, 1 - Math.exp(-dtm / .03)); // smoothed over time, not per event: a phone that reports 120-240 touches a second (or twice with one timestamp) gave spikes
   if (x != null && SW.path && SW.path.length < 600 && (SW.phase === 'back' || SW.phase === 'down')) SW.path.push([x, y]);
   if (SW.phase === 'ready' && p > .03) { SW.phase = 'back'; SW.t0 = t; document.body.classList.add('swing'); $('aimHint').classList.remove('on'); fartSwing(); }
   if (SW.phase === 'back') {
@@ -5398,7 +5440,12 @@ function swingEnd(t) {
   if (SW.phase === 'down' && SW.p < SW.pMax * .7) { impact(t); return; }
   if (SW.phase !== 'done') { SW.phase = 'idle'; SW.p = 0; document.body.classList.remove('swing'); }
 }
+// The strike dot's wobble runs on frame time only (advanceDrift from the loop, never from touch events: a device that sends touches faster than the
+// frame rate used to advance it several times a frame, and the dot jumped about wildly just before impact).
+// (It used to run once per touch event and once per frame, about twice per frame on a phone; WOBBLE was tuned that way, so DRIFT_RATE keeps the pace.)
+const DRIFT_RATE = 2;
 function advanceDrift(dt) {
+  dt = Math.min(dt, .05) * DRIFT_RATE;
   const sN = clamp(SW.vel / (SW.fullPx / .3), 0, 2.2);
   SW.speedN = lerp(SW.speedN, sN, clamp(dt * 20, 0, 1));
   const k = WOBBLE * (isPutt() ? .35 : 1) * SURF[G.surf].lie.wig, s = SW.speedN;
@@ -7126,7 +7173,7 @@ function initInput() {
     if (left ? y > zoneY() : y > strikeTop()) {
       if (left) {
         if (SW.id == null && (SW.phase === 'idle' || SW.phase === 'done')) { SW.id = e.pointerId; swingBegin(x, y, e.timeStamp); }
-      } else if (SW.sid == null || SW.sid !== e.pointerId) { // a new touch on the strike dial always takes over (a stale one whose release was lost must not pin the ball where it was)
+      } else if (SW.sid == null || (SW.sid !== e.pointerId && SW.phase !== 'back' && SW.phase !== 'down')) { // a new touch on the strike dial takes over (a stale one whose release was lost must not pin the ball where it was), but not mid-swing: a palm or a second finger would throw the dot across the dial
         SW.sid = e.pointerId; SW.tx = x; SW.ty = Math.max(y, strikeTop()); SW.thumb = true;
       }
       try { tg.setPointerCapture && tg.setPointerCapture(e.pointerId); } catch (_) { }
@@ -7316,7 +7363,7 @@ function frame(now) {
   const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
   dueT = gap ? Math.min(Math.max(dueT + gap, now - gap), now + gap) : 0; // carries the remainder over, so 40 fps on a 60 Hz screen is two frames in three
   if (G.state === 'intro') G.introT += dt;
-  songTick(now); birdTick(now);
+  songTick(now); cartMusicTick(); birdTick(now);
   if (G.state === 'flight') { updateFlight(dt); if ((G.savedT = (G.savedT || 0) + dt) > 1.5) { G.savedT = 0; saveRound(); } } // the round, with how far the ball has flown
   else if (G.state === 'holed') { G.holedT += dt; if (G.shot && G.shot.res.holed && G.holedT < 3) updateFlight(dt); }
   refreshMapLive(now);
