@@ -4366,6 +4366,8 @@ function mergeStatic(grp) {
 const WOBBLE = .48; // strike wobble (the old "Calm" level was .6; cut by 20 % so the dot on the club face moves less quickly)
 const settings = { hand: 1, sound: true, coached: false, aimed: false, drama: true, reverse: false, zoom: true, song: 1, pals: false };
 try { const s = JSON.parse(localStorage.getItem('ssg-settings') || 'null'); if (s) Object.assign(settings, s); } catch (e) { }
+// PALS Rules was briefly on by default, and every device that saved a setting in that time stored pals: true: reset it once to the new default (off)
+if (settings.palsV !== 2) { settings.pals = false; settings.palsV = 2; try { localStorage.setItem('ssg-settings', JSON.stringify(settings)); } catch (e) { } }
 // Leaderboard reset: when LB_EPOCH changes, every device clears its own rounds, best scores and stats once (the name and settings stay).
 const LB_EPOCH = '2026-10-16-galena';
 try { if (localStorage.getItem('ssg-lb-epoch') !== LB_EPOCH) { Object.keys(localStorage).filter(k => /^ssg-(board|best)-|^ssg-stats$/.test(k)).forEach(k => localStorage.removeItem(k)); localStorage.setItem('ssg-lb-epoch', LB_EPOCH); } } catch (e) { }
