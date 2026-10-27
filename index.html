@@ -283,6 +283,8 @@ body.pg.swing #pgBar,body.pg.flight #pgBar{opacity:0;pointer-events:none}
 .rc-k{display:inline-block;font:700 14px/1 var(--cond);letter-spacing:.34em;text-transform:uppercase;padding:6px 12px 5px;border-radius:999px;background:var(--ink,#2b1200);color:var(--c1,#ffe85a);animation:recBlink .5s steps(2) 5}
 .rc-t{margin-top:10px;font:700 30px/1.02 var(--cond);text-transform:uppercase;font-style:italic;transform:skewX(-6deg);letter-spacing:.01em;text-shadow:0 2px 0 rgba(255,255,255,.5)}
 .rc-v{margin-top:4px;font:700 74px/1 var(--cond);font-style:italic;transform:skewX(-6deg);font-variant-numeric:tabular-nums;color:#fff;-webkit-text-stroke:2px var(--ink,#2b1200);paint-order:stroke fill;text-shadow:0 5px 0 rgba(0,0,0,.3)}
+.gimme .rc-rope{margin:6px auto 0;display:block;width:min(92%,330px);height:auto;filter:drop-shadow(0 6px 4px rgba(0,0,0,.35))}
+#recCard.gimme{color:#fff}#recCard.gimme .rc-t{color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.35)}#recCard.gimme .rc-s{opacity:1;color:#fff}#recCard.gimme:before{background:repeating-conic-gradient(rgba(255,230,190,.2) 0 7deg,transparent 7deg 20deg)}
 .rc-s{margin-top:6px;font:600 15px/1.2 var(--cond);letter-spacing:.1em;text-transform:uppercase;opacity:.85}
 @keyframes recPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(-10deg)}9%{opacity:1;transform:translate(-50%,-50%) scale(1.14) rotate(-1deg)}15%{transform:translate(-50%,-50%) scale(.97) rotate(-3deg)}21%{transform:translate(-50%,-50%) scale(1) rotate(-2deg)}86%{opacity:1;transform:translate(-50%,-50%) scale(1.02) rotate(-2deg)}100%{opacity:0;transform:translate(-50%,-64%) scale(.94) rotate(-2deg)}}
 @keyframes recSpin{to{transform:rotate(360deg)}}@keyframes recShine{from{left:-80px}to{left:110%}}@keyframes recBlink{50%{opacity:.35}}
@@ -5835,6 +5837,11 @@ function finishShot() {
   }
   if (first && par >= 4 && G.fir[h] == null) G.fir[h] = false;
   if (G.surf === S.GREEN && G.gir[h] == null && G.strokes <= par - 2) G.gir[h] = true;
+  if (pals() && !G.practice && (G.surf === S.GREEN || G.surf === S.FRINGE) && distToPin() < GIMME_M) {   // PALS Rules: the gimme
+    const d = distToPin(); G.strokes++; G.putts[h]++; G.scores[h] = Math.min(G.strokes, par + 5); G.state = 'holed'; G.holedT = 0; statsHole(h); saveRound(); mpState(true);
+    gimmeCard(d); readout('<div class="r1 good">Gimme</div><div class="r3"><span>Inside 24 inches · counted as holed</span></div>', 2.4);
+    setTimeout(() => { if (G.state === 'holed') showDone(false); }, 3000); updateHUD(); return;
+  }
   if (G.strokes >= par + 5) {
     G.scores[h] = par + 5; G.state = 'holed'; G.holedT = 0; statsHole(h); saveRound();
     readout('<div class="r1">Picked up <span class="r1s">Max score · par + 5</span></div>', 2);
@@ -6861,7 +6868,7 @@ function recNoticeFlush() {
   let held = {}; try { held = JSON.parse(localStorage.getItem(RECHELD_KEY) || '{}') || {}; } catch (e) { }
   [...recPending.entries()].slice(0, 3).forEach(([hk, n], i) => {
     const d = REC[n.k]; recPending.delete(hk); delete held[hk];
-    setTimeout(() => recordCard('Record beaten', d.t, d.f(n.v), n.by + ' took it from you \u00b7 yours was ' + d.f(n.mine), ['#ffb4a2', '#e5383b', '#7a0010', '#1a0005']), 900 + i * 400);
+    setTimeout(() => recordCard('Record beaten', d.t, d.f(n.v), (COURSES[n.key] || COURSE).short + ' \u00b7 ' + n.by + ' took it from you \u00b7 yours was ' + d.f(n.mine), ['#ffb4a2', '#e5383b', '#7a0010', '#1a0005']), 900 + i * 400);
   });
   recPending.clear(); try { localStorage.setItem(RECHELD_KEY, JSON.stringify(held)); } catch (e) { }
 }
@@ -6871,26 +6878,73 @@ async function recCheck(e) {
   if (!isReg() || !Array.isArray(e.hs)) return;
   try {
     await Promise.all([pidRounds(true), loadRecords(e.course, true)]);
-    const cand = roundMarks(e), mine = myRec(e.course), wr = Rec.gh[e.course] ? Rec.gh[e.course].rec : null, out = [];
+    const cn = (COURSES[e.course] || COURSE).short, cand = roundMarks(e), mine = myRec(e.course), wr = Rec.gh[e.course] ? Rec.gh[e.course].rec : null, out = [];
     for (const k of REC_KEYS) {
       const c = cand[k]; if (!c) continue; const d = REC[k], beats = (a, b) => d.low ? a < b : a > b, w = wr && wr[k] && wr[k][0], m = mine[k];
-      if (wr && (!w || beats(c[0], w.v))) out.push([0, k, c, w ? 'Previous world record ' + d.f(w.v) + ' · ' + w.name : 'The first on the board']);
-      else if (m && beats(c[0], m[0])) out.push([1, k, c, 'Your previous best ' + d.f(m[0])]);
+      if (wr && (!w || beats(c[0], w.v))) out.push([0, k, c, cn + ' · ' + (w ? 'Previous world record ' + d.f(w.v) + ' · ' + w.name : 'The first on the board')]);
+      else if (m && beats(c[0], m[0])) out.push([1, k, c, cn + ' · Your previous best ' + d.f(m[0])]);
     }
-    out.sort((a, b) => a[0] - b[0]).slice(0, 3).forEach(([lv, k, c, sub], i) => setTimeout(() => recordCard(lv ? 'New personal record!' : 'New world record!', REC[k].t, REC[k].f(c[0]), sub, REC[k].c), 1500 + i * 400));
+    out.sort((a, b) => a[0] - b[0]);
+    out.slice(0, 3).forEach(([lv, k, c, sub], i) => setTimeout(() => recordCard(lv ? 'New personal record!' : 'New world record!', REC[k].t, REC[k].f(c[0]), sub, REC[k].c), 1500 + i * 400));
+    const more = out.length - 3;   // the rest are not played one by one: a last card says how many there were
+    if (more > 0) setTimeout(() => recordCard('More records!', '\u2026and ' + more + ' more record' + (more > 1 ? 's' : ''), '+' + more, cn + ' \u00b7 See them on the Stats sheet', ['#e8e8ff', '#9aa8ff', '#4a55c8', '#10143a']), 1500 + 3 * 400);
   } catch (er) { }
 }
 const recQueue = []; let recBusy = false;
-function recordCard(kicker, title, big, sub, theme) {
-  recQueue.push({ kicker, title, big, sub, theme }); if (!recBusy) nextRecord();
+function recordCard(kicker, title, big, sub, theme, opt) {
+  recQueue.push({ kicker, title, big, sub, theme, opt }); if (!recBusy) nextRecord();
 }
 function nextRecord() {
   const q = recQueue.shift(), el = $('recCard'); if (!q) { recBusy = false; return; } recBusy = true;
-  el.className = ''; void el.offsetWidth; const th = q.theme || ['#ffe85a', '#ffab1f', '#ff5d3a', '#2b1200'];
+  el.className = ''; void el.offsetWidth; const th = q.theme || ['#ffe85a', '#ffab1f', '#ff5d3a', '#2b1200']; const op = q.opt || {};
   ['--c1', '--c2', '--c3', '--ink'].forEach((k, i) => el.style.setProperty(k, th[i]));
-  el.innerHTML = `<div class="rc-k">${q.kicker}</div><div class="rc-t">${q.title}</div><div class="rc-v" style="font-size:${String(q.big).length > 9 ? 40 : String(q.big).length > 6 ? 54 : 74}px">${q.big}</div>${q.sub ? `<div class="rc-s">${q.sub}</div>` : ''}`;
-  el.classList.add('on'); try { SFX.chime(); buzz([30, 40, 30, 40, 60]); } catch (e) { } burstConfetti();
+  el.innerHTML = `<div class="rc-k">${q.kicker}</div><div class="rc-t">${q.title}</div>${op.img || `<div class="rc-v" style="font-size:${String(q.big).length > 9 ? 40 : String(q.big).length > 6 ? 54 : 74}px">${q.big}</div>`}${q.sub ? `<div class="rc-s">${q.sub}</div>` : ''}`;
+  if (op.cls) el.classList.add(op.cls); el.classList.add('on'); try { SFX.chime(); buzz([30, 40, 30, 40, 60]); } catch (e) { } burstConfetti();
   setTimeout(() => { el.className = ''; setTimeout(nextRecord, 250); }, 3600);
+}
+// PALS Rules, the gimme: a ball at rest on the green or fringe inside 24 inches of the hole is conceded: the next stroke is added and the hole is over. The card shows
+// a cut length of speckled marine nylon rope (an SVG drawn here: white braid with green, black and red tracers and flecks, frayed ends), "Inside the rope!".
+const GIMME_M = 24 * .0254;
+function gimmeRope() {
+  // a 22-inch length of braided marine rope laid in a loose serpentine, to scale: the path is 44 rope widths long (a half-inch rope), so the rope is 22 inches.
+  // Colours from the photo: teal-green body (#0E9179, light #19CCB4, dark #0F5B4B) with yellow (#E2DA3E) and red (#D7283E) tracers and flecks.
+  let sd = 11; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  const raw = [], push = (x, y) => raw.push([x, y]), wob = x => 3.4 * Math.sin(3 * Math.PI * (x - 40) / 180), R = 19;
+  for (let x = 40; x <= 220; x += 2) push(x, 22 + wob(x));
+  for (let a = -90; a <= 90; a += 6) push(220 + R * Math.cos(a * Math.PI / 180), 41 + R * Math.sin(a * Math.PI / 180));
+  for (let x = 220; x >= 40; x -= 2) push(x, 60 + wob(x));
+  for (let a = -90; a >= -270; a -= 6) push(40 + R * Math.cos(a * Math.PI / 180), 79 + R * Math.sin(a * Math.PI / 180));
+  for (let x = 40; x <= 220; x += 2) push(x, 98 + wob(x));
+  let L = 0; const cum = [0]; for (let i = 1; i < raw.length; i++) { L += Math.hypot(raw[i][0] - raw[i - 1][0], raw[i][1] - raw[i - 1][1]); cum.push(L); }
+  const w = L / 44, step = 1.7, n = Math.floor(L / step), P = [];
+  for (let k = 0, i = 1; k <= n; k++) { const d = k * step; while (i < raw.length - 1 && cum[i] < d) i++; const u = (d - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1); P.push([raw[i - 1][0] + (raw[i][0] - raw[i - 1][0]) * u, raw[i - 1][1] + (raw[i][1] - raw[i - 1][1]) * u]); }
+  const f = v => v.toFixed(1), path = 'M' + P.map(q => f(q[0]) + ' ' + f(q[1])).join('L');
+  let lay = '', col = '', flk = '';
+  for (let k = 2; k < P.length - 2; k++) {
+    const a = P[k - 2], b = P[k + 2], tx = b[0] - a[0], ty = b[1] - a[1], tl = Math.hypot(tx, ty) || 1, T = [tx / tl, ty / tl], N = [-T[1], T[0]], c = P[k], h = w / 2 - .6, sl = w * .3;
+    const A = [c[0] + N[0] * h - T[0] * sl, c[1] + N[1] * h - T[1] * sl], B = [c[0] - N[0] * h + T[0] * sl, c[1] - N[1] * h + T[1] * sl], seg = `M${f(A[0])} ${f(A[1])}L${f(B[0])} ${f(B[1])}`;
+    lay += seg;                                                                                  // the lay of the braid
+    if (k % 13 === 4) col += `<path d="${seg}" stroke="#E2DA3E" stroke-width="2.6"/>`;          // yellow tracer
+    else if (k % 13 === 10) col += `<path d="${seg}" stroke="#D7283E" stroke-width="2.6"/>`;    // red tracer
+    else if (rnd() < .2) { const o = (rnd() - .5) * h * 1.4, cc = [c[0] + N[0] * o, c[1] + N[1] * o]; flk += `<path d="M${f(cc[0] - T[0] * 1.6 + N[0] * 1)} ${f(cc[1] - T[1] * 1.6 + N[1] * 1)}l${f(T[0] * 3.2)} ${f(T[1] * 3.2)}" stroke="${rnd() < .5 ? '#E2DA3E' : '#D7283E'}" stroke-width="1.5"/>`; }
+  }
+  const end = (q, r, sgn) => {   // a cut end: a pale face with the braid's colours, and a few loose strands
+    const t = [r[0] - q[0], r[1] - q[1]], tl = Math.hypot(t[0], t[1]) || 1, T = [sgn * t[0] / tl, sgn * t[1] / tl], ang = Math.atan2(T[1], T[0]) * 180 / Math.PI, N = [-T[1], T[0]];
+    let e = `<g transform="translate(${f(q[0])} ${f(q[1])}) rotate(${f(ang)})"><ellipse rx="${f(w * .2)}" ry="${f(w / 2)}" fill="#9be8d8" stroke="#0F5B4B" stroke-width="1"/><circle cx="-.5" cy="${f(-w * .2)}" r="1.5" fill="#E2DA3E"/><circle cx=".6" cy="${f(w * .12)}" r="1.5" fill="#D7283E"/><circle cx="-.3" cy="${f(w * .3)}" r="1.1" fill="#0E9179"/><circle cx=".4" cy="${f(-w * .05)}" r="1.1" fill="#0E9179"/></g>`;
+    for (let i = 0; i < 6; i++) { const o = (i - 2.5) * w * .15, c = ['#19CCB4', '#E2DA3E', '#D7283E', '#0E9179', '#19CCB4', '#E2DA3E'][i]; e += `<path d="M${f(q[0] + T[0] * 2 + N[0] * o)} ${f(q[1] + T[1] * 2 + N[1] * o)}q${f(T[0] * 5 + N[0] * (rnd() - .5) * 5)} ${f(T[1] * 5 + N[1] * (rnd() - .5) * 5)} ${f(T[0] * (6 + rnd() * 4))} ${f(T[1] * (6 + rnd() * 4) + (rnd() - .5) * 3)}" stroke="${c}" stroke-width="1.5" fill="none" stroke-linecap="round"/>`; }
+    return e;
+  };
+  return `<svg class="rc-rope" viewBox="0 0 260 122" role="img" aria-label="A 22 inch length of braided marine rope, wound in a loose S"><defs><filter id="ropeBlur"><feGaussianBlur stdDeviation="2.4"/></filter><mask id="ropeM"><path d="${path}" stroke="#fff" stroke-width="${f(w)}" fill="none" stroke-linejoin="round"/></mask></defs>
+<path d="${path}" transform="translate(3 5)" stroke="rgba(0,0,0,.4)" stroke-width="${f(w)}" fill="none" filter="url(#ropeBlur)"/>
+<path d="${path}" stroke="#0F5B4B" stroke-width="${f(w + 1.6)}" fill="none" stroke-linejoin="round"/>
+<path d="${path}" stroke="#0E9179" stroke-width="${f(w - .6)}" fill="none" stroke-linejoin="round"/>
+<g mask="url(#ropeM)"><path d="${lay}" stroke="rgba(15,91,75,.75)" stroke-width="1.1" fill="none"/>${col}${flk}
+<path d="${path}" transform="translate(0 ${f(-w * .24)})" stroke="#bff7ec" stroke-opacity=".4" stroke-width="${f(w * .34)}" fill="none" stroke-linejoin="round"/>
+<path d="${path}" transform="translate(0 ${f(w * .27)})" stroke="#042a20" stroke-opacity=".38" stroke-width="${f(w * .36)}" fill="none" stroke-linejoin="round"/></g>
+${end(P[0], P[3], -1)}${end(P[P.length - 1], P[P.length - 4], -1)}</svg>`;
+}
+function gimmeCard(d) {
+  recordCard('Gimme', 'Inside the rope!', '', Math.max(1, Math.round(d / .0254)) + ' in from the cup \u00b7 one stroke added', ['#c8966a', '#8a5a34', '#4e2f17', '#2a170a'], { img: gimmeRope(), cls: 'gimme' });
 }
 // every finished shot (call once from finishShot)
 function statsShot(sh, r) {
