@@ -623,6 +623,7 @@ function spinFrac(p) { return SPIN_BASE + (1 - SPIN_BASE) * p; }
 // how hard the ball lands decides how much it checks: a steep, fast landing digs in and lets the backspin bite,
 // a low, soft chip skids on, keeps more of its speed and releases. Full shots land hard enough to be unaffected.
 const BITE_VN = 12, BITE_MIN = .5, SOFT_KEEP = 1.6;
+const WEDGE_SPIN = 1.3, TAIL_NO_BACKSPIN = 1.2; // WEDGE_SPIN: extra landing spin of a pure full sand or lob wedge (x1 + this); TAIL_NO_BACKSPIN: m/s of tailwind that removes any spin-back
 const CROSS_WIND = 1; // crosswind strength relative to head/tail wind (it was .2: a 10 mph crosswind moved a 7-iron 2 yd; now about 10 yd, the usual rule of a yard per mph)
 const WIND_EFFECT = .7; // all wind pushes 30% less than its displayed speed would
 
@@ -849,7 +850,9 @@ function simulateShot(C, o) {
             const am = Math.hypot(axx, axy, axz) || 1; axx /= am; axy /= am; axz /= am;
             b = wx * axx + wy * axy + wz * axz;
             if (bounces === 0) bite = Math.min(1, BITE_MIN + (1 - BITE_MIN) * -vn / BITE_VN); // set by the first landing
-            const sf = clamp(1 - bite * (b / RPM) / sv.spinStop, -.35, 1);
+            const bs = bounces === 0 ? Math.max(1, o.bs || 1) : 1; // a pure sand/lob wedge: more spin at the first landing, and room to back up further
+            let sf = clamp(1 - bite * (b / RPM) * bs / sv.spinStop, -.35 * bs, 1);
+            if (sf < 0) { const vh = Math.hypot(vx, vz), tail = vh > .1 ? (windX * vx + windZ * vz) / vh : 0; if (tail > 0) sf *= clamp(1 - tail / TAIL_NO_BACKSPIN, 0, 1); } // spinning back needs no wind from behind: a tailwind (TAIL_NO_BACKSPIN m/s of it, about 6 mph shown) takes it away
             const sinA = -vn / vtot;
             let keep = clamp(sv.keep * (1.38 - .9 * sinA) * lerp(SOFT_KEEP, 1, bite), .04, .96);
             keep *= bounces === 0 ? sf : (.65 + .35 * Math.max(sf, 0));
@@ -979,13 +982,16 @@ function computeLaunch(ci, sw, st, surf, yaw, hand, teed, lieRoll) {
     if (c.id === 'Dr' && !teed) { lieSpeed *= .9; launch -= 2; }
     launch = clamp(launch, 1, 68);
     const ballSpeed = clubSpeed * c.smash * tempoMult * sm * lieSpeed;
-    const spin = Math.max(0, c.spin * spinFrac(p) * spinMul * lie.spin);
+    // a pure, full-speed, well-timed strike with a sand or lob wedge grips the green harder: more spin where it lands (biteSpin, used by simulateShot's first landing), enough to
+    // check and back up a little. Only the landing is affected, so the flight and the calibrated carry stay as they are, and the greens' own numbers are untouched.
+    const pure = c.type === 'wedge' && c.loft >= 56 ? smooth(.3, .1, off) * smooth(.88, .98, p) * smooth(.88, 1, downF) * smooth(.15, .54, q) : 0;
+    const spin = Math.max(0, c.spin * spinFrac(p) * spinMul * lie.spin), biteSpin = 1 + WEDGE_SPIN * pure;
     start = start * hand - (sw.pathDeg || 0); tilt *= hand; // (the downswing path is a screen direction, either hand; the ball starts the opposite way)
     const yy = yaw + start * DEG, dx = Math.sin(yy), dz = -Math.cos(yy);
     const cl = Math.cos(launch * DEG), sl = Math.sin(launch * DEG);
     const tr = tilt * DEG, ct = Math.cos(tr), st2 = Math.sin(tr), wr = spin * RPM;
     Object.assign(out, {
-      clubSpeed, ballSpeed, smash: ballSpeed / clubSpeed, launch, spin, startDeg: start, tilt, extra, tempoMult, downF,
+      clubSpeed, ballSpeed, smash: ballSpeed / clubSpeed, launch, spin, biteSpin, startDeg: start, tilt, extra, tempoMult, downF,
       v: [dx * cl * ballSpeed, sl * ballSpeed, dz * cl * ballSpeed],
       w: [-dz * ct * wr, -st2 * wr, dx * ct * wr]
     });
@@ -5163,7 +5169,7 @@ function resumeRound(course) {
   if (mid.shot && mid.shot.L) {
     const q = mid.shot, L = q.L;
     placeBall(q.x, q.z, q.teed); if (mid.club != null) G.club = mid.club; if (mid.yaw != null) G.yaw = mid.yaw;
-    const res = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, wind: L.putt ? null : G.wind, putt: !!L.putt, flag: !L.putt });
+    const res = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, wind: L.putt ? null : G.wind, putt: !!L.putt, flag: !L.putt });
     G.lastShot = { C: G.C, hole: G.hole, x: G.ball.x, z: G.ball.z, teed: G.teed, L, res }; SW.last = L; SW.phase = 'done';
     const t = Math.min(q.playT, Math.max(0, res.duration - .05)); let ei = 0; while (ei < res.events.length && res.events[ei].t <= t) ei++;
     G.shot = { L, res, ei, finished: false, summary: q.summary || '' };
@@ -5282,7 +5288,7 @@ function autoClubAndAim() {
   };
   // simulations allowed per caddie call (keeps mobile responsive); a real, wooded course gets more, at a coarser step
   let budget = 34;
-  const pure = (k, y2) => { budget--; const L = computeLaunch(k, { p: 1, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, y2, settings.hand, G.teed); return simulateShot(C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, maxT: 20, dt: C.real ? 1 / 120 : undefined }); };
+  const pure = (k, y2) => { budget--; const L = computeLaunch(k, { p: 1, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, y2, settings.hand, G.teed); return simulateShot(C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, maxT: 20, dt: C.real ? 1 / 120 : undefined }); };
   const fan = [3, -3, 6, -6, 10, -10, 15, -15, 21, -21, 28, -28];
   const wet = r => r.water || r.ob, timber = r => r.events.some(e => e.type === 'tree'), sandy = r => r.finalSurf === S.SAND;
   // longest club whose pure shot stays dry, in bounds and out of the sand; if a tree is on the line, thread a slightly different line past it
@@ -5350,7 +5356,7 @@ function chipPower() {
   let lo = null, hi = null, best = null; // latest tries that finished short of / past the target
   for (let it = 0; it < 5; it++) {
     const L = computeLaunch(G.club, { p, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, G.yaw, settings.hand, G.teed);
-    const r = simulateShot(C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, maxT: 20, noTrees: true, dt: 1 / 120, flag: true });
+    const r = simulateShot(C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, maxT: 20, noTrees: true, dt: 1 / 120, flag: true });
     const T = (r.final.x - G.ball.x) * ax + (r.final.z - G.ball.z) * az;
     if (r.ob || T < 1) break;
     if (!r.water) { // a wet try still tells us short or long, but is never the answer
@@ -5382,7 +5388,7 @@ function placeAimGeo() {
 }
 function predictCarry() {
   const L = computeLaunch(G.club, { p: 1, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, G.yaw, settings.hand, G.teed);
-  const r = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, maxT: 12, noTrees: true });
+  const r = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, maxT: 12, noTrees: true });
   return r.land ? r.land.carry : r.total;
 }
 
@@ -5507,7 +5513,7 @@ function impact(tImp) {
   G.strokes++;
   if (L.putt && (G.surf === S.GREEN || G.surf === S.FRINGE)) G.putts[G.hole]++;
   G.prev = { x: G.ball.x, z: G.ball.z, teed: G.teed };
-  const res = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, wind: L.putt ? null : G.wind, putt: !!L.putt, flag: !L.putt });
+  const res = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, wind: L.putt ? null : G.wind, putt: !!L.putt, flag: !L.putt });
   if (G.teed && !L.putt && W.life && W.life.plane) W.life.plane.maybeSpawn(res);
   G.lastShot = { C: G.C, hole: G.hole, x: G.ball.x, z: G.ball.z, teed: G.teed, L, res };
   G.shot = { L, res, ei: 0, finished: false, summary: `${L.quality} · ${L.shape} · Tempo ${L.ratio.toFixed(1)}:1` + (Math.abs(SW.pathDeg) >= .3 ? ` · Path ${SW.pathDeg > 0 ? '←' : '→'}${Math.abs(SW.pathDeg).toFixed(1)}°` : '') + (L.putt ? '' : ` · Smash ${L.smash.toFixed(2)}`) };
