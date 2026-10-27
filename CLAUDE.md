@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Galena!!! Golf**: a mobile, browser-based 3D golf game (installable PWA), forked from SweetSpot (https://github.com/nephlonor/SweetSpot). It has exactly one course, **Woodbine Bend Golf Course** (Stockton IL), built from public geodata. Repo: https://github.com/galenadorf/Galena-Golf, branch `main`, live at https://galenadorf.github.io/Galena-Golf/.
 
+**v1.0 (major milestone):** build `ce4c23d`, 2026-10-27 16:30 CDT (21:30 UTC), the commit that turned PALS Rules on by default. This is the first version of the game considered complete (also noted in `README.md`).
+
 ## Ground rules
 
 - **Offline rule.** Solo play must work fully offline with no CDN or third-party dependency. Everything the game needs lives in the repo and `sw.js` caches it. Only live multiplayer (public MQTT brokers), the world leaderboard and the Player ID roster (GitHub API, `raw.githubusercontent.com`) may use the network, and they must fail quietly offline. Never add an external script, font or asset: download it into `vendor/` or `fonts/` with its licence and add it to `CORE` in `sw.js`. Sounds are synthesised, embedded as base64, or short MP3 files in `sounds/` (trimmed by `tools/course/sounds_trim.py` from the raw recordings in `out/sounds/`; listed in `CORE` in `sw.js` and copied by `pages.yml`).
