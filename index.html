@@ -116,6 +116,7 @@ body.rev #tempo{left:auto;right:calc(var(--sr) + 10px)}
 body.rev #strike{right:auto;left:calc(var(--sl) + 38px)}
 #skipBtn,#mullBtn{position:absolute;z-index:6;transform:translate(-50%,6px) scale(.9);opacity:0;pointer-events:none;transition:opacity .25s,transform .3s var(--spring);padding:7px 16px 8px;border-radius:18px;color:#fff;font:600 15px Oswald,"Arial Narrow",sans-serif;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:5px;cursor:pointer}
 #skipBtn.on,#mullBtn.on{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1)}
+#hud #skipBtn:not(.on),#hud #mullBtn:not(.on){pointer-events:none}   /* `#hud button` makes every button tappable, so a hidden one kept catching taps; the two sit at the same spot over the tempo bar, and the later (Mulligan) covered Next */
 #mullBtn.ask{background:rgba(200,60,40,.82)}
 #skipBtn svg{width:15px;height:15px}
 #tempo,#strike{transition:opacity .4s}
