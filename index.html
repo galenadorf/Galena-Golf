@@ -7283,8 +7283,15 @@ function postWithStatus(entry) {
   setTimeout(() => { if (Board.post && Board.post.at === entry.at && Board.post.st === 'posting') note(['Posting your round…', '', 'World leaderboard'], 6); }, 2600);
   postAuto(entry).then(ok => {
     Board.post = { at: entry.at, st: ok ? 'posted' : 'failed' }; refreshBoards();
-    setTimeout(() => note(ok ? ['Round posted', 'good', 'On the world leaderboard within a minute'] : ["Couldn't post the round", 'bad', 'Kept on this device · tried again on the next start'], 4), 2700);
+    const pos = ok ? worldPlace(entry) : '';   // "#4" or "T4": where the round stands on the world board (the board file catches up within a minute)
+    setTimeout(() => note(ok ? (pos ? ["You're " + pos + ' on the leaderboard', 'good', 'Round posted · world leaderboard'] : ['Round posted', 'good', 'On the world leaderboard within a minute']) : ["Couldn't post the round", 'bad', 'Kept on this device · tried again on the next start'], 4), 2700);
   });
+}
+// where a just-posted round stands on its course's world board, all time: "#4", or "T4" when another round has the same score; '' when the board is not loaded
+function worldPlace(entry) {
+  const key = (COURSES[entry.course] || COURSE).key, w = worldRows(key); if (!w) return '';
+  const rows = sortRounds(w.filter(x => roundKey(x) !== roundKey(entry)).concat([entry])), n = rows.findIndex(x => x.toPar === entry.toPar) + 1;
+  return (rows.filter(x => x.toPar === entry.toPar).length > 1 ? 'T' : '#') + n;
 }
 // rounds of the course in play that never reached the world board (no network, app closed mid-post): tried again, quietly, at start
 async function retryUnposted() {
@@ -7345,7 +7352,7 @@ function fillBoard(el, limit, key, pick) {
   const wr = tab === 'world' ? worldRows(key) : null;
   const all = sortRounds(tab === 'world' ? wr || [] : tab === 'all' ? (Board.shared[CO.coll] || []) : localRounds(key)).filter(r => !recent || r.at >= since);
   const rank = all.map((r, i) => all.findIndex(x => x.toPar === r.toPar) + 1);   // equal scores share a rank (T4, T4, then 6)
-  let cut = Math.min(all.length, limit || 25); if (pick) while (cut < all.length && rank[cut] === rank[cut - 1]) cut++;   // the leaderboard sheet shows the top 25 plus everyone tied with the last
+  let cut = Math.min(all.length, limit || 25); if (pick) while (cut < all.length && rank[cut] === rank[cut - 1]) cut++;   // the leaderboard sheet shows the top 40 plus everyone tied with the last
   const rows = all.slice(0, cut);
   if (!rows.length) {
     const e = document.createElement('div'); e.className = 'empty';
@@ -7399,10 +7406,10 @@ function fillRecords(el, key) {
   el.appendChild(mk('div', 'lbnote', 'Full 18-hole rounds by registered players. Tap a record for the top 5.'));
 }
 function refreshBoards() {
-  if ($('boardSheet').classList.contains('on')) fillBoard($('boardBody'), 25, Board.view, true);
+  if ($('boardSheet').classList.contains('on')) fillBoard($('boardBody'), 40, Board.view, true);
   const fb = $('finalBoard'); if (fb && $('cardSheet').classList.contains('on')) fillBoard(fb, 10);
 }
-function openBoard() { Board.view = COURSE.key; loadWorld(); loadRecords(Board.view).then(ch => { if (ch) refreshBoards(); }); fillBoard($('boardBody'), 25, Board.view, true); openSheet('boardSheet'); }
+function openBoard() { Board.view = COURSE.key; loadWorld(); loadRecords(Board.view).then(ch => { if (ch) refreshBoards(); }); fillBoard($('boardBody'), 40, Board.view, true); openSheet('boardSheet'); }
 
 /* ================= INPUT + LOOP ================= */
 function initInput() {
