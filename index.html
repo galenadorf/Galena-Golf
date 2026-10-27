@@ -114,8 +114,9 @@ body.flight #tempo,body.flight #strike{opacity:.4;transition:opacity .4s}
 /* reverse controls: the tempo panel (swing thumb) on the right, the strike dial (contact thumb) on the left */
 body.rev #tempo{left:auto;right:calc(var(--sr) + 10px)}
 body.rev #strike{right:auto;left:calc(var(--sl) + 38px)}
-#skipBtn{position:absolute;z-index:6;transform:translate(-50%,6px) scale(.9);opacity:0;pointer-events:none;transition:opacity .25s,transform .3s var(--spring);padding:7px 16px 8px;border-radius:18px;color:#fff;font:600 15px Oswald,"Arial Narrow",sans-serif;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:5px;cursor:pointer}
-#skipBtn.on{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1)}
+#skipBtn,#mullBtn{position:absolute;z-index:6;transform:translate(-50%,6px) scale(.9);opacity:0;pointer-events:none;transition:opacity .25s,transform .3s var(--spring);padding:7px 16px 8px;border-radius:18px;color:#fff;font:600 15px Oswald,"Arial Narrow",sans-serif;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:5px;cursor:pointer}
+#skipBtn.on,#mullBtn.on{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1)}
+#mullBtn.ask{background:rgba(200,60,40,.82)}
 #skipBtn svg{width:15px;height:15px}
 #tempo,#strike{transition:opacity .4s}
 /* in motion, a panel the ball passes behind turns see-through */
@@ -328,7 +329,7 @@ body.pg.swing #pgBar,body.pg.flight #pgBar{opacity:0;pointer-events:none}
 #specBar .btn{height:44px;padding:0 16px;font-size:16px;flex:none}
 body.spec #specBar{display:flex}
 body.spec .tb-hole,body.spec #windCard,body.spec #pinCard{visibility:hidden}
-body.spec #pinTag,body.spec #ballTag,body.spec #aimHint,body.spec #skipBtn,body.spec #readout{display:none!important}
+body.spec #pinTag,body.spec #ballTag,body.spec #aimHint,body.spec #skipBtn,body.spec #mullBtn,body.spec #readout{display:none!important}
 body.spec #tempo,body.spec #strike{opacity:.55!important}body.spec #tempo *,body.spec #strike *{pointer-events:none!important}body.spec #fx{opacity:.7}
 #mpPanel .mptog{pointer-events:auto;display:block;width:100%;background:none;border:0;padding:0;margin:0 0 2px;font:inherit;color:inherit;text-shadow:inherit;text-align:left;cursor:pointer;white-space:nowrap}
 #mpPanel .mph{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.8;margin-bottom:2px}
@@ -426,6 +427,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
   <div id="aimHint" class="glass"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Drag to aim</div>
   <div class="card" id="readout"></div>
   <button class="glass" id="skipBtn" aria-label="Skip to the next shot">Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l6 6-6 6M13 6l6 6-6 6"/></svg></button>
+  <button class="glass" id="mullBtn" aria-label="Take a mulligan">Mulligan</button>
   <div class="card" id="tempo">
     <div class="ptitle" id="tTitle">Tempo (3:1)</div>
     <div class="clubSel">
@@ -4362,7 +4364,7 @@ function mergeStatic(grp) {
 
 /* ================= GAME ================= */
 const WOBBLE = .48; // strike wobble (the old "Calm" level was .6; cut by 20 % so the dot on the club face moves less quickly)
-const settings = { hand: 1, sound: true, coached: false, aimed: false, drama: true, reverse: false, zoom: true, song: 1, pals: true };
+const settings = { hand: 1, sound: true, coached: false, aimed: false, drama: true, reverse: false, zoom: true, song: 1, pals: false };
 try { const s = JSON.parse(localStorage.getItem('ssg-settings') || 'null'); if (s) Object.assign(settings, s); } catch (e) { }
 // Leaderboard reset: when LB_EPOCH changes, every device clears its own rounds, best scores and stats once (the name and settings stay).
 const LB_EPOCH = '2026-10-16-galena';
@@ -4370,8 +4372,8 @@ try { if (localStorage.getItem('ssg-lb-epoch') !== LB_EPOCH) { Object.keys(local
 delete settings.wiggle;
 // "Dramatic bounce": hops drawn 2.2x as high, a ground trail and landing ring, a lower chase camera and a short slow-motion after the first landing
 const drama = () => settings.drama !== false, HOP_K = 2.2;
-// "PALS Rules" (Settings, on by default): a set of house rules for play; nothing is in it yet. Test with pals().
-const pals = () => settings.pals !== false;
+// "PALS Rules" (Settings, off by default): house rules for play, so far the mulligan (mulliganOk). Test with pals().
+const pals = () => settings.pals === true;
 function saveSettings() { try { localStorage.setItem('ssg-settings', JSON.stringify(settings)); } catch (e) { } }
 const $ = id => document.getElementById(id);
 
@@ -5087,7 +5089,7 @@ function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch 
 const G = {
   state: 'title', hole: 0, C: null, strokes: 0, scores: HOLE_DEFS.map(() => null), putts: HOLE_DEFS.map(() => 0), fir: HOLE_DEFS.map(() => null), gir: HOLE_DEFS.map(() => null), pens: HOLE_DEFS.map(() => 0),
   ball: { x: 0, y: 0, z: 0 }, prev: null, surf: S.TEE, teed: true, yaw: 0, club: 0, suggested: 0, wind: [0, 0], shot: null, puttRange: 10,
-  xr: {}, camLook: new THREE.Vector3(), introT: 0, holedT: 0, settleT: 0, playT: 0, carry: 0, carryKey: '', shake: 0, target: null
+  xr: {}, mull: [0, 0], snap: null, camLook: new THREE.Vector3(), introT: 0, holedT: 0, settleT: 0, playT: 0, carry: 0, carryKey: '', shake: 0, target: null
 };
 const SW = {
   phase: 'idle', p: 0, pMax: 0, t0: 0, tTop: 0, startY: 0, lastY: 0, lastT: 0, vel: 0, speedN: 0, id: null, sid: null,
@@ -5110,6 +5112,7 @@ function finishRound() {
   const tp = totalToPar();
   try { const best = +localStorage.getItem(BEST_KEY) || null; if (!best || tp.s < best) localStorage.setItem(BEST_KEY, tp.s); } catch (e) { }
   statsRound(); const e = { name: playerName(), strokes: tp.s, toPar: tp.d, holes: HOLE_DEFS.length, course: COURSE.key, at: Date.now(), v: 1, hs: roundHoles() };
+  if (G.mull[0] + G.mull[1] > 0) e.mu = G.mull[0] + G.mull[1]; // mulligans taken (PALS Rules)
   if (G.xr && Object.keys(G.xr).length) e.x = G.xr; // the round's longest drive, holed shot and putt, signed with it
   histAdd(e); submitRound(e); recCheck(e);
 }
@@ -5127,7 +5130,7 @@ function saveRound() {
     wx: G.weather ? { id: G.weather.id, left: G.wxLeft, n: G.wxN, k: G.wxK, next: G.wxNext ? G.wxNext.id : null, prev: G.wxPrev || null } : null,
     shot: flying ? { L: sh.L, x: G.prev.x, z: G.prev.z, teed: !!G.prev.teed, playT: Math.max(0, G.playT), summary: sh.summary } : null
   } : null;
-  const r = { v: 1, course: COURSE.key, hole: h, scores: G.scores, putts: G.putts, fir: G.fir, gir: G.gir, pens: G.pens, pins: G.pins, planes: G.planes, fh: G.fartHole, fd: !!G.fartDone, xr: G.xr, at: Date.now(), mid };
+  const r = { v: 1, course: COURSE.key, hole: h, scores: G.scores, putts: G.putts, fir: G.fir, gir: G.gir, pens: G.pens, pins: G.pins, planes: G.planes, fh: G.fartHole, fd: !!G.fartDone, xr: G.xr, ml: G.mull, at: Date.now(), mid };
   try { localStorage.setItem(saveKey(COURSE.key), JSON.stringify(r)); } catch (e) { }
   refreshResume();
 }
@@ -5172,6 +5175,7 @@ function resumeRound(course) {
   G.practice = false; G.pg = null; document.body.classList.remove('pg'); G.submitted = false; if (r.planes != null) G.planes = r.planes;
   G.fartHole = Number.isInteger(r.fh) && r.fh >= 0 && r.fh < n ? r.fh : null; G.xr = {}; for (const k of ['d', 'h', 'p']) { const a = r.xr && r.xr[k]; if (Array.isArray(a) && a.length === 2 && a.every(Number.isInteger)) G.xr[k] = a; }
   if (r.xr && Number.isInteger(r.xr.l) && r.xr.l > 0) G.xr.l = Math.min(60, r.xr.l);
+  G.mull = Array.isArray(r.ml) && r.ml.length === 2 ? r.ml.map(v => v | 0) : [0, 0]; G.snap = null;
   G.fartDone = !!r.fd; // (a round saved before this existed has none: it falls back to the plain chance)
   G.scores = arr(r.scores, null); G.putts = arr(r.putts, 0); G.fir = arr(r.fir, null); G.gir = arr(r.gir, null); G.pens = arr(r.pens, 0); G.pins = arr(r.pins, 0);
   const h = resumeHole(r), mid = r.mid && h === r.hole ? r.mid : null, pu = G.putts[h], pe = G.pens[h];
@@ -5223,10 +5227,11 @@ function startRound() {
   G.practice = false; G.pg = null; document.body.classList.remove('pg'); G.submitted = false; G.planes = [0, 0, 1, 1, 1, 2, 2][(Math.random() * 7) | 0];
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   G.pins = pinSheet(); // the day's pin sheet, the same for everyone in the same lobby
-  G.fartHole = Math.floor(Math.random() * HOLE_DEFS.length); G.fartDone = false; G.xr = {}; // the hole where this round's rare sound plays (fartSwing)
+  G.fartHole = Math.floor(Math.random() * HOLE_DEFS.length); G.fartDone = false; G.xr = {}; G.mull = [0, 0]; G.snap = null; // the hole where this round's rare sound plays (fartSwing)
   startHole(0);
 }
 function startHole(i) {
+  G.snap = null;
   if (MP.spec) { const sp = MP.spec; MP.spec = null; MP.follow = null; document.body.classList.remove('spec'); mpWorld(sp.course); } // a new hole ends following (back on my own course)
   closeSheets(); $('done').classList.remove('on'); $('readout').classList.remove('on'); UI.readT = 0;
   document.body.classList.remove('flight', 'swing');
@@ -5518,6 +5523,9 @@ function strikeNow() {
 }
 function impact(tImp) {
   measureFace();
+  if (!G.practice && !G.pg) G.snap = { h: G.hole, strokes: G.strokes, putts: G.putts[G.hole], pens: G.pens[G.hole], fir: G.fir[G.hole], gir: G.gir[G.hole], xr: JSON.parse(JSON.stringify(G.xr || {})),
+    st: { shots: ST.shots, dist: ST.dist, water: ST.water, ob: ST.ob, lost: ST.lost, trees: ST.trees, holedShots: ST.holedShots, chipins: ST.chipins, aces: ST.aces },
+    ball: { x: G.ball.x, z: G.ball.z, teed: !!G.teed }, prev: G.prev, club: G.club, yaw: G.yaw, target: G.target }; // what a mulligan goes back to
   const Tb = Math.max(.05, (SW.tTop - SW.t0) / 1000), Td = Math.max(.03, (tImp - SW.tTop) / 1000);
   const st = strikeNow();
   SW.phase = 'done'; SW.mark = { x: st.x, y: st.y }; SW.resultT = performance.now(); SW.impactT = performance.now();
@@ -5563,6 +5571,32 @@ function updateSkipBtn() {
   const b = $('skipBtn'), sh = G.shot, want = G.state === 'flight' && sh && !sh.skipped && G.playT >= 2 && G.playT < sh.res.duration + .5 && !sheetOpen();
   if (want && !b.classList.contains('on')) { const r = $('tempo').getBoundingClientRect(); b.style.left = (r.left + r.width / 2) + 'px'; b.style.top = (r.top - 50) + 'px'; }
   b.classList.toggle('on', !!want);
+}
+// ---- PALS Rules: a mulligan. One per nine holes (use it or lose it), taken at address on the shot just played (any shot that did not hole out, a penalty stroke
+// with it): the ball goes back to where that shot was played from, the stroke and everything the shot counted (putts, flags, stats, the round's shot records)
+// are undone. The signed round carries how many were taken (`mu`) and the board marks it. Only with PALS Rules on.
+const nineOf = h => h < HOLE_DEFS.length / 2 ? 0 : 1;
+function mulliganOk() { const s = G.snap; return !!(pals() && !G.practice && !G.pg && !MP.spec && G.state === 'address' && s && s.h === G.hole && G.mull[nineOf(G.hole)] < 1 && SW.phase === 'idle'); }
+function updateMullBtn() {
+  const b = $('mullBtn'), want = mulliganOk() && !sheetOpen();
+  if (want && !b.classList.contains('on')) { const r = $('tempo').getBoundingClientRect(); b.style.left = (r.left + r.width / 2) + 'px'; b.style.top = (r.top - 50) + 'px'; }
+  if (!want) { b.classList.remove('ask'); b.textContent = 'Mulligan'; }
+  b.classList.toggle('on', want);
+}
+let mullAsk = 0;
+function mulliganTap() {
+  if (!mulliganOk()) return; const b = $('mullBtn'), now = performance.now();
+  if (now - mullAsk > 3000) { mullAsk = now; b.classList.add('ask'); b.textContent = 'Tap again: take it'; SFX.blip(); setTimeout(() => { if (performance.now() - mullAsk >= 2900) { b.classList.remove('ask'); b.textContent = 'Mulligan'; } }, 3000); return; }
+  mullAsk = 0; mulligan();
+}
+function mulligan() {
+  const s = G.snap, h = s.h; G.snap = null; G.mull[nineOf(h)]++;
+  G.strokes = s.strokes; G.putts[h] = s.putts; G.pens[h] = s.pens; G.fir[h] = s.fir; G.gir[h] = s.gir; G.xr = s.xr; Object.assign(ST, s.st); saveStats();
+  placeBall(s.ball.x, s.ball.z, s.ball.teed); G.prev = s.prev; G.club = s.club; G.yaw = s.yaw; G.target = s.target; G.carryKey = '';
+  SW.phase = 'idle'; SW.mark = null; SW.p = 0; document.body.classList.remove('flight', 'swing');
+  G.state = 'settle'; G.settleT = 0; G.camFrom = W.cam.position.clone(); G.lookFrom = G.camLook.clone(); // the camera travels back to the address view, as after any shot
+  readout('<div class="r1">Mulligan</div><div class="r3"><span>Shot undone · no stroke</span></div>', 2.6); SFX.blip();
+  updateAim(true); updateHUD(); drawMapThumb(); saveRound(); mpState(true);
 }
 function skipShot() {
   const sh = G.shot; if (G.state !== 'flight' || !sh || sh.skipped) return;
@@ -7081,7 +7115,7 @@ function pidCopy() {
 // the signed envelope the workflow checks: msg is the exact JSON text that was signed
 async function signRound(r) {
   await pidInit(); if (!isReg()) return null;
-  const msg = JSON.stringify(Object.assign({ v: r.x ? 3 : 2, pid: PID.reg.pid, course: COURSES[r.course] ? r.course : COURSE.key, strokes: r.strokes, toPar: r.toPar, holes: r.holes || HOLE_DEFS.length, at: r.at, hs: r.hs }, r.x ? { x: r.x } : {}));
+  const msg = JSON.stringify(Object.assign({ v: r.x || r.mu ? 3 : 2, pid: PID.reg.pid, course: COURSES[r.course] ? r.course : COURSE.key, strokes: r.strokes, toPar: r.toPar, holes: r.holes || HOLE_DEFS.length, at: r.at, hs: r.hs }, r.x ? { x: r.x } : {}, r.mu ? { mu: r.mu } : {}));
   const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, PID.key, new TextEncoder().encode(msg));
   return { msg, sig: b64(new Uint8Array(sig)), key: PID.pub };
 }
@@ -7121,7 +7155,7 @@ async function loadWorld(force, key) {
   key = key || COURSE.key; if (!force && Board.ghAt[key] && Date.now() - Board.ghAt[key] < 60000) return; Board.ghAt[key] = Date.now();
   try {
     const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/leaderboard/${key}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' }); if (!r.ok) throw new Error('http');
-    const a = await r.json(); Board.gh[key] = Array.isArray(a) ? a.filter(x => x && typeof x.name === 'string' && Number.isFinite(x.strokes) && Number.isFinite(x.toPar) && Number.isFinite(x.at) && x.holes === 18).map(x => ({ name: String(x.name).slice(0, 14), strokes: x.strokes, toPar: x.toPar, at: x.at, holes: 18, pid: x.pid })) : [];
+    const a = await r.json(); Board.gh[key] = Array.isArray(a) ? a.filter(x => x && typeof x.name === 'string' && Number.isFinite(x.strokes) && Number.isFinite(x.toPar) && Number.isFinite(x.at) && x.holes === 18).map(x => ({ name: String(x.name).slice(0, 14), strokes: x.strokes, toPar: x.toPar, at: x.at, holes: 18, pid: x.pid, mu: x.mu | 0 })) : [];
   } catch (e) { if (!Board.gh[key]) Board.gh[key] = null; }
   refreshBoards();
 }
@@ -7247,7 +7281,7 @@ function fillBoard(el, limit, key, pick) {
     row.className = 'row' + (mine ? ' me' : '') + (i === 0 ? ' top1' : '');
     const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = i === 0 ? '★' : String(i + 1);
     const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = r.name;
-    const dt = document.createElement('small'); dt.textContent = new Date(r.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + (r.pending ? ' · posting…' : ''); nm.appendChild(dt);
+    const dt = document.createElement('small'); dt.textContent = new Date(r.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + (r.mu ? ' · ' + (r.mu > 1 ? r.mu + ' mulligans' : 'mulligan') : '') + (r.pending ? ' · posting…' : ''); nm.appendChild(dt);
     const tp = document.createElement('span'); tp.className = 'tp ' + (r.toPar < 0 ? 'good' : r.toPar > 0 ? '' : ''); tp.textContent = fmtToPar(r.toPar);
     const st = document.createElement('span'); st.className = 'st'; st.textContent = r.strokes;
     row.append(rk, nm, tp, st); list.appendChild(row);
@@ -7443,6 +7477,7 @@ function initInput() {
   document.querySelectorAll('#segDrama button').forEach(b => b.onclick = () => { settings.drama = b.dataset.v === '1'; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segMus button').forEach(b => b.onclick = () => { settings.music = b.dataset.v === '1'; saveSettings(); syncMenu(); musicTick(); });
   $('skipBtn').onclick = e => { e.stopPropagation(); skipShot(); };
+  $('mullBtn').onclick = e => { e.stopPropagation(); mulliganTap(); };
   $('specResume').onclick = e => { e.stopPropagation(); mpResume(); };
   mpInit();
   // every sheet gets a close X at its top right (closes like a tap outside it)
@@ -7543,7 +7578,7 @@ function frame(now) {
   W.clouds.children.forEach(c => { c.position.x += c.userData.sp * dt; if (c.position.x > 1400) c.position.x = -1400; });
   if (UI.readT > 0) { UI.readT -= dt; if (UI.readT <= 0) { $('readout').classList.remove('on'); if ($('mpPanel').classList.contains('on')) mpPlace($('mpPanel')); } }
   if (C) { updateSeeThru(); updatePinTag(); updateWindArrow(); updateBallTag(); }
-  updateSkipBtn();
+  updateSkipBtn(); updateMullBtn();
   const hudOff = G.state === 'title' || G.state === 'intro';
   $('hud').classList.toggle('off', hudOff);
   if (!hudOff) {

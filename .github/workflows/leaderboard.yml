@@ -54,6 +54,7 @@ jobs:
                 && (!X.d || PARS[r.course][X.d[1] - 1] >= 4) && (!X.p || (X.h && X.h[0] >= X.p[0]));
               if (!xok) return finish(false, 'The shot records do not add up.');
             }
+            if (r.mu != null && !(int(r.mu) && r.mu >= 1 && r.mu <= 2)) return finish(false, 'The mulligan count is not valid.'); // PALS Rules: one per nine holes
             if (!int(r.at) || r.at > Date.now() + 10 * 60e3 || r.at < Date.now() - 3 * 864e5) return finish(false, 'The round is too old (or from the future).');
             const file = `leaderboard/${r.course}.json`; let rows = [];
             try { rows = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { rows = []; }
@@ -65,7 +66,7 @@ jobs:
             if (rows.some(x => x.by === by && x.at === r.at)) return finish(true, 'This round is already on the board.'); // a round is its player and its time; equal scores are separate rounds
             if (rows.filter(x => x.by === by && x.at > Date.now() - 864e5).length >= 15) return finish(false, 'Too many rounds posted today by this player.');
             if (rows.filter(x => x.at > Date.now() - 36e5).length >= 120) return finish(false, 'The board is busy; try again later.');
-            mine.push(Object.assign({ course: r.course, at: r.at, strokes: r.strokes, toPar: r.toPar, hs: r.hs }, r.x ? { x: r.x } : {})); mine.sort((a, b) => a.at - b.at);
+            mine.push(Object.assign({ course: r.course, at: r.at, strokes: r.strokes, toPar: r.toPar, hs: r.hs }, r.x ? { x: r.x } : {}, r.mu ? { mu: r.mu } : {})); mine.sort((a, b) => a.at - b.at);
             fs.mkdirSync(`rounds/${r.pid}`, { recursive: true }); fs.writeFileSync(pfile, JSON.stringify(mine) + '\n');
             // summary: per course { rounds, best: {strokes, at}, holes: 18 x [rounds, strokes, putts, fairways hit, fairway chances, greens hit, green chances, penalties, best, histogram of strokes 1..9 and 10+] }
             let st; try { st = JSON.parse(fs.readFileSync(sfile, 'utf8')); } catch (e) { st = { v: 1, pid: r.pid, rounds: 0, first: r.at, last: r.at, years: [], courses: {} }; }
@@ -95,7 +96,7 @@ jobs:
             fs.mkdirSync('records', { recursive: true }); fs.writeFileSync(rfile, JSON.stringify(rc) + '\n');
             st.rounds++; st.first = Math.min(st.first, r.at); st.last = Math.max(st.last, r.at); if (!st.years.includes(year)) st.years = st.years.concat(year).sort();
             fs.mkdirSync('stats', { recursive: true }); fs.writeFileSync(sfile, JSON.stringify(st) + '\n');
-            rows.push({ name, pid: r.pid, strokes: r.strokes, toPar: r.toPar, holes: 18, at: r.at, by });
+            rows.push(Object.assign({ name, pid: r.pid, strokes: r.strokes, toPar: r.toPar, holes: 18, at: r.at, by }, r.mu ? { mu: r.mu } : {}));
             rows.sort((a, b) => a.toPar - b.toPar || a.strokes - b.strokes || a.at - b.at); rows = rows.filter((x, i) => i < 500 || x.at > Date.now() - 46 * 864e5); // the best 500 rounds, plus every round of the last 46 days (the game's "Last 45 days" view)
             fs.writeFileSync(file, JSON.stringify(rows) + '\n');
             const rank = rows.findIndex(x => x.name === name && x.at === r.at) + 1;
