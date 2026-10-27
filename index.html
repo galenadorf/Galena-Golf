@@ -4373,8 +4373,8 @@ try { const s = JSON.parse(localStorage.getItem('ssg-settings') || 'null'); if (
 // PALS Rules is on by default (v1.0): bumping palsV sets it on once for every device (they can turn it off in Settings afterwards)
 if (settings.palsV !== 3) { settings.pals = true; settings.palsV = 3; try { localStorage.setItem('ssg-settings', JSON.stringify(settings)); } catch (e) { } }
 // Leaderboard reset: when LB_EPOCH changes, every device clears its own rounds, best scores and stats once (the name and settings stay).
-const LB_EPOCH = '2026-10-16-galena';
-try { if (localStorage.getItem('ssg-lb-epoch') !== LB_EPOCH) { Object.keys(localStorage).filter(k => /^ssg-(board|best)-|^ssg-stats$/.test(k)).forEach(k => localStorage.removeItem(k)); localStorage.setItem('ssg-lb-epoch', LB_EPOCH); } } catch (e) { }
+const LB_EPOCH = '2026-10-27-v1';
+try { if (localStorage.getItem('ssg-lb-epoch') !== LB_EPOCH) { Object.keys(localStorage).filter(k => /^ssg-(board|best)-|^ssg-(stats|hist|recheld)$/.test(k)).forEach(k => localStorage.removeItem(k)); localStorage.setItem('ssg-lb-epoch', LB_EPOCH); } } catch (e) { }
 delete settings.wiggle;
 // "Dramatic bounce": hops drawn 2.2x as high, a ground trail and landing ring, a lower chase camera and a short slow-motion after the first landing
 const drama = () => settings.drama !== false, HOP_K = 2.2;
