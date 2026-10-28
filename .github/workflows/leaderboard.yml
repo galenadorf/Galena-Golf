@@ -38,8 +38,10 @@ jobs:
               const pub = crypto.createPublicKey({ key: Buffer.from(env.key, 'base64'), format: 'der', type: 'spki' });
               if (!crypto.verify('sha256', Buffer.from(env.msg), { key: pub, dsaEncoding: 'ieee-p1363' }, Buffer.from(env.sig, 'base64'))) throw new Error('bad');
             } catch (e) { return finish(false, 'The signature does not match.'); }
-            const COURSES = { woodbine: 72 };
-            const PARS = { woodbine: [4, 3, 4, 5, 4, 4, 3, 4, 5, 4, 3, 4, 4, 4, 3, 5, 4, 5] }; // per hole, for the records (keep in step with the course's holes in index.html)
+            // the courses (courses/courses.json, the list the game reads): par per hole, the round's par, and the day its records start (UTC)
+            let REG = []; try { REG = JSON.parse(fs.readFileSync('courses/courses.json', 'utf8')).courses; } catch (e) { }
+            const PARS = Object.fromEntries(REG.map(c => [c.key, c.pars])), COURSES = Object.fromEntries(REG.map(c => [c.key, c.pars.reduce((a, p) => a + p, 0)]));
+            const REC_FROM = Object.fromEntries(REG.map(c => [c.key, c.recFrom ? Date.parse(c.recFrom + 'T00:00:00Z') : 0]));
             const int = v => Number.isInteger(v);
             if (!r || typeof r !== 'object' || !(r.course in COURSES)) return finish(false, 'Unknown course.');
             const name = String(pl.name).trim();
@@ -85,6 +87,7 @@ jobs:
             put('fairways', r.hs.filter(h => h[2] === 1).length, 0); put('fwStreak', run((h, i) => par[i] >= 4 ? h[2] === 1 : null), 0);
             if (r.x && r.x.l) put('lips', r.x.l, 0);
             if (r.x) for (const [k, key] of [['d', 'drive'], ['h', 'holed'], ['p', 'putt']]) if (r.x[k]) put(key, r.x[k][0], r.x[k][1]);
+            if (r.at < REC_FROM[r.course]) for (const k of Object.keys(cand)) delete cand[k]; // (records start on the course's recFrom day)
             const rfile = `records/${r.course}.json`; let rc; try { rc = JSON.parse(fs.readFileSync(rfile, 'utf8')); } catch (e) { rc = { v: 1, rec: {} }; }
             co.rec = co.rec || {};
             for (const [k, [v, hole]] of Object.entries(cand)) {

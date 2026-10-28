@@ -23,9 +23,12 @@ from datetime import datetime, timezone
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
 ROUNDS, STATS = os.path.join(ROOT, 'rounds'), os.path.join(ROOT, 'stats')
 HOLES = 18
-PARS = {'woodbine': [4, 3, 4, 5, 4, 4, 3, 4, 5, 4, 3, 4, 4, 4, 3, 5, 4, 5]}   # keep in step with the workflow and the course
+# the courses (courses/courses.json, the list the game and the workflow read): par per hole, and the day records start (recFrom, UTC);
+# earlier rounds are not scanned for records
+_REG = json.load(open(os.path.join(ROOT, 'courses', 'courses.json'), encoding='utf-8'))['courses']
+PARS = {c['key']: c['pars'] for c in _REG}
+REC_FROM = {c['key']: int(datetime.strptime(c['recFrom'], '%Y-%m-%d').replace(tzinfo=timezone.utc).timestamp() * 1000) if c.get('recFrom') else 0 for c in _REG}
 LOW = {'roundPutts', 'bestNine'}
-REC_FROM = 1793059200000   # records count from 2026-10-27 on (the day they started); earlier rounds are not scanned for them
 
 
 def dump(path, obj):
@@ -49,7 +52,7 @@ def run(hs, f):
 def marks(r):
     """The round's record candidates: key -> (value, hole); only values above 0 count. Rounds without per-hole data have none."""
     hs, par = r.get('hs'), PARS.get(r['course'])
-    if not hs or not par or len(hs) != HOLES or r['at'] < REC_FROM:
+    if not hs or not par or len(hs) != HOLES or r['at'] < REC_FROM[r['course']]:
         return {}
     front, back = sum(h[0] for h in hs[:9]), sum(h[0] for h in hs[9:])
     c = {'roundPutts': (sum(h[1] for h in hs), 0), 'mostPutts': (sum(h[1] for h in hs), 0), 'lips': ((r.get('x') or {}).get('l', 0), 0), 'bestNine': (min(front, back), 1 if front <= back else 10),

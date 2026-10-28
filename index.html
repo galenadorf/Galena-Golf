@@ -7303,8 +7303,8 @@ async function postAuto(r) {
 async function loadWorld(force, key) {
   key = key || COURSE.key; if (!force && Board.ghAt[key] && Date.now() - Board.ghAt[key] < 60000) return; Board.ghAt[key] = Date.now();
   try {
-    const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/leaderboard/${key}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' }); if (!r.ok) throw new Error('http');
-    const a = await r.json(); Board.gh[key] = Array.isArray(a) ? a.filter(x => x && typeof x.name === 'string' && Number.isFinite(x.strokes) && Number.isFinite(x.toPar) && Number.isFinite(x.at) && x.holes === 18).map(x => ({ name: String(x.name).slice(0, 14), strokes: x.strokes, toPar: x.toPar, at: x.at, holes: 18, pid: x.pid, mu: x.mu | 0 })) : [];
+    const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/leaderboard/${key}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' }); if (!r.ok && r.status !== 404) throw new Error('http');
+    const a = r.ok ? await r.json() : []; Board.gh[key] = Array.isArray(a) ? a.filter(x => x && typeof x.name === 'string' && Number.isFinite(x.strokes) && Number.isFinite(x.toPar) && Number.isFinite(x.at) && x.holes === 18).map(x => ({ name: String(x.name).slice(0, 14), strokes: x.strokes, toPar: x.toPar, at: x.at, holes: 18, pid: x.pid, mu: x.mu | 0 })) : []; // (a 404 is an empty board: no round posted on this course yet)
   } catch (e) { if (!Board.gh[key]) Board.gh[key] = null; }
   refreshBoards();
 }

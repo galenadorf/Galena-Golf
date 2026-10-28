@@ -1,22 +1,30 @@
 ON-COURSE OBJECTS: what a player can see in Galena!!! Golf right now
 =====================================================================
-Current state only. Keep this file in step with index.html (see CLAUDE.md).
+Current state only. Keep this file in step with index.html and courses/courses.json (see CLAUDE.md).
 Frequencies come from the code (buildLife / updateLife in index.html), not from watching a full round.
+Part 1 is the same on every course. Part 2 has a section per course: what only that course has (its `scene` settings in
+courses/courses.json, and what its painted data and OpenStreetMap give it). A new course adds its own section to part 2.
+
+
+PART 1: ON EVERY COURSE
+#######################
 
 ANIMALS
 -------
-Wild turkeys (a flock of four on about 4 holes in 10: one tom with a fanned tail, three hens; the other holes have none)
-  - First appear 4-24 s after arriving on a hole.
-  - Each walks across the line of play, stopping to peck, leaves the far side, and returns 14-54 s later.
-  - On a hole that has the flock, expect one or two at a time.
-  - They bolt (run for 4-6 s) if the ball lands within ~16 m or flies within ~32 m.
-  - Can be hit: "Clipped a turkey!", gobble sound, the ball ricochets.
-
 Bird flocks (2, high up, crossing the sky)
   - 11 gulls: first pass ~6-20 s into a hole.
   - 8 sparrows: first pass ~28-42 s into a hole.
   - Each returns 25-75 s after it passes, from a new direction. Most holes show at least one if you wait.
   - Can be hit in principle ("Birdie... literally!"), but they fly high.
+
+Gopher (Caddyshack-style: brown, buck teeth, pops out of a dirt mound with a dark hole)
+  - Appears only while the golfer stands over a full (non-putt) shot: 20-35 yd down the aim line (within a 15-degree wide cone, 7.5 either side) on
+    fairway or rough, and pops up ~1 s after its mound fades in. If the spot is unsuitable it retries 2 s later.
+  - Stays up 9-14 s, turning its head and watching the golfer, then ducks back down.
+  - Rare: per hole, 20% chance one is scheduled 10-65 s after arriving, 80% none at first;
+    after one leaves, the next is due 100-220 s later.
+  - Ducks instantly if the ball lands close by (within ~12 m, or flies within ~26 m).
+  - Can be hit while up: "A menace to the golfing industry...", with a squeak.
 
 AIRCRAFT
 --------
@@ -33,28 +41,10 @@ Hot air balloon (brown, red, orange and white stripes, wicker basket, burner fla
     after one leaves, the next is due 100-220 s later.
   - Cannot be hit: the ball passes through it.
 
-Gopher (Caddyshack-style: brown, buck teeth, pops out of a dirt mound with a dark hole)
-  - Appears only while the golfer stands over a full (non-putt) shot: 20-35 yd down the aim line (within a 15-degree wide cone, 7.5 either side) on
-    fairway or rough, and pops up ~1 s after its mound fades in. If the spot is unsuitable it retries 2 s later.
-  - Stays up 9-14 s, turning its head and watching the golfer, then ducks back down.
-  - Rare: per hole, 20% chance one is scheduled 10-65 s after arriving, 80% none at first;
-    after one leaves, the next is due 100-220 s later.
-  - Ducks instantly if the ball lands close by (within ~12 m, or flies within ~26 m).
-  - Can be hit while up: "A menace to the golfing industry...", with a squeak.
-
-Dancing hot dog (hole 10 only; a giant, 10 ft: red sausage in a bun with a mustard zigzag, a smiling face, stick arms with white gloves, red sneakers)
-  - Always on hole 10 (`HOTDOG_P` = 1), never on other holes. From the moment the hole loads: about 100 yd down the line from the tee, on the fairway (it picks the nearest fairway spot if the
-    exact one is rough or a bunker).
-  - Dances to a 100 bpm beat: bounces, sways, waves both arms, kicks alternate legs, and sidesteps slowly back and forth across the fairway (never into the
-    rough), always facing the golfer.
-  - Can be hit (it bounces the ball off and spins): "Revenge of The Choker!", with a squeak.
-
-HIGHWAY AND TRAFFIC
+HIGHWAY AND TRAFFIC (on a course whose data has a highway: `HIGHWAY` in its tools/course/courses/<key>/course.py)
 -------------------
-US 20 (two lanes, double yellow centre line, white edge lines, gravel shoulders; 9.7 m across)
-  - Runs past the north side of the course, a few metres outside the boundary, then east along the edge of Stockton; the whole
-    stretch inside the game's map (about 2.6 km) is drawn. Trees are kept clear of it. It is out of bounds.
-  - Speed limit 55 mph, 35 mph on the town stretch (east end).
+  - The road is two lanes, double yellow centre line, white edge lines, gravel shoulders; 9.7 m across. The whole stretch inside the
+    game's map is drawn. Trees are kept clear of it. It is out of bounds.
   - Traffic keeps to the right-hand lane, in either direction chosen at random, and drives the whole stretch end to end
     (about two minutes at 55 mph). A vehicle never drives through the one in front: it slows to follow.
   - Cannot be hit: the ball passes through the traffic.
@@ -91,34 +81,12 @@ MAN-MADE OBJECTS
   - Tee markers in four colours (white, yellow, blue, red), two per tee set, always standing inside the tee box (a narrow box gets a narrower gap).
   - White boundary stakes (out of bounds); red stakes round the ponds (penalty areas).
   - Distance posts at 200, 150 and 100 m.
-  - The clubhouse (the long building by the parking lot, after photos of its front): rust-brown vertical-board walls, green-framed windows, a grey-green shingle roof, a gabled entrance with two limestone columns, a brick-paver porch and a round "Woodbine Bend" sign in the gable, shrubs along the front. Solid, so a ball hits it.
   - Buildings from OpenStreetMap (houses, farm buildings, sheds) within ~240 m of each hole; the ball can hit them.
-  - Double washroom near hole 18 (MEN and WOMEN doors).
-  - Two blue porta-potties (the ball can hit them).
-  - The clubhouse parking lot (between holes 10 and 13): asphalt with painted stalls (violet area on site_mask.png, stalls laid out by site_paint.py) and 8 parked cars that are always the
-    same ones: sedans and SUVs in assorted colours, among them the Subaru and the Hyundai. Seen on holes 1, 7-10, 12, 13 and 16-18. Cars are solid, so a ball hits them (the lot itself is only paint).
-  - Two empty golf carts (Club Car Precedent: black roof on thin posts, off-white body, black bumpers and tyres, tan bench seat, two golf bags on the back) parked nose to
-    tail on the cart path north-east of the practice green, facing up the path toward the first hole. Always there; solid, so a ball hits them ("Off a golf cart!").
-    Positions are `CART_PROPS` in index.html, not painted.
-  - THE RAREST THING ON THE COURSE: a moving golf cart (same model) with two men in it (dark hair, grey trousers; the driver in a light blue #C4DCF0 shirt and cap, the
-    passenger in a salmon #F7A780 shirt and cap). Each par 4 or par 5 hole has a 2.84% chance of one (`CARTRIDE_P`), and only if the hole has a cart path on both sides of the
-    line of play, which is holes 3, 5, 6, 8, 10, 12, 13, 14, 16, 17 and 18 (checked in the browser; holes 1, 4 and 9 have no route): a bit over one round in four sees it (1 - (1 - .0284)^11 = 27%), while the hot dog is on every round. It sets off
-    the moment the golfer presses Play Hole (`cartRideGo`, from `beginHole`): it appears on the cart path point nearest a spot 14 m behind the tee box, by the back tees (found by a search along the path cells to the crossing point, so it follows the path round bends and over small gaps; on holes 8 and 16 no path reaches back to the tee, so it starts 117 m and 197 m out),
-    drives down the path at 22.5 mph, crosses the rough and fairway at about 262 yd (240 m) from the tee (shorter holes: 62% of the way; it shifts up to 36 m along the hole to
-    find a clear crossing) and parks on the path on the far side, lined up with it, where it stays. Wheels turn, it follows the ground, and a ball can hit it. The route
-    is traced from the cart path surface by `cartRoute`. It has a radio: "Around the World" (`sounds/cartmusic.mp3`) starts when it sets off and plays from the cart (loud within 20 m, fading with distance to nothing by 280 m, duller and panned to the cart's side; scaled by the Song volume setting) until the next hole (`cartMusicTick`). Not in the putting green or the range. Add `?cart` to the page address to force it on every such hole (testing).
-  - The big Woodbine Bend entrance sign (green board on posts, a golf ball on a red tee at each end, stone-edged flower bed) beside Route 20 on the west side of the course, facing in toward the course. Painted with paint_edit.py / paint_read.py; only seen from the holes nearest it.
-  - The pump house: a small plain metal building (corrugated grey siding and roof, no doors) by the 8th tee, painted with paint_edit.py / paint_read.py; solid, so a ball hits it.
-  - Hole 7 sign ("Andy Lewis / Hole in One / 9/10/2026", text from signs.txt), with its own fly-over intro.
+  - Cart paths (where the course's data has them: dark asphalt, 2.4 m wide). A hard surface, a ball bounces on it several times (restitution .8, keeping its bounce at speed: a wedge shot hops 2 m or more, a drive 1 m, 7-9 hops before it rolls) and rolls fast.
 
-Cart paths (about 7.4 km, 2.4 m wide, dark asphalt): found on the aerial and corrected by hand. A hard surface, a ball bounces on it several times (restitution .8, keeping its bounce at speed: a wedge shot hops 2 m or more, a drive 1 m, 7-9 hops before it rolls) and rolls fast. They cross the course between the holes, past the clubhouse and to the tees.
-
-Side roads (out of bounds, for looks only): East Center Road along the south of the course and South Brown Road (then Chicago Street into Stockton) along the east; plain two-lane chip-sealed roads with gravel shoulders, no centre line, no traffic. Both run out to the horizon and end on US 20; no trees stand on them.
-
-Practice putting green (southeast of the 1st tee, beside the parking lot): a green with four cups and flags (numbered 1-4), a collar, tall fescue joined to the course's own, and three large broadleaf trees round it. Visible from hole 1; played from Practice > Putting green.
-Driving range (the field south of the cart road, west of the clubhouse lot): played from Practice > Driving range. Mown striped grass with two sand bunkers (the big one near the road, one beside a target green), a small target green with a collar, tall fescue along the west edge and the creek side, large broadleaf trees along the creek, a long grey metal shed (the same corrugated model as the pump house, solid) beside the lot, and white boundary stakes. Four red flags on tall poles (numbered 1-4, nearest first, no cup: the ball cannot be holed) to aim at, and six hitting spots (two are in bunkers); the ball is teed on grass spots. All four flags stay up; the Flag button picks which one the aim snaps to. After each shot the camera follows the ball, rests on where it stopped for about a second, then returns to the hitting spot.
-
-Fountain (hole 1 only): a small spray in the middle of the pond right of the first tee, about 10 ft high, always running. The ball does not hit it.
+PRACTICE AREAS
+--------------
+  - The practice green and the driving range are Woodbine Bend's (see part 2), whichever course is picked.
 
 NOT IN THE GAME
 ---------------
@@ -126,4 +94,59 @@ NOT IN THE GAME
   - The paraglider is switched off (code kept; set PARAGLIDER_ON = true in index.html to bring it back).
   - The six small birds (pigeons and crows on the ground and in treetops) and the four gulls circling over the hole are switched off (SMALL_BIRDS_ON and CIRCLING_GULLS_ON in index.html).
   - No deer, squirrels, rabbits, butterflies or fish (the gopher is the only burrowing animal). Nothing else drives, and there are no bridges (the creek has none). (The stats screen only jokes "fed the fish" for balls in the water.)
-  - Benches, huts, golf carts and similar props exist in the engine from the removed courses but Woodbine does not use them.
+  - Benches, huts and similar props exist in the engine from the removed courses but no course uses them.
+
+
+PART 2: COURSE BY COURSE
+########################
+
+WOODBINE BEND (woodbine)
+========================
+
+Wild turkeys (a flock of four on about 4 holes in 10, `scene.turkeys` = .4: one tom with a fanned tail, three hens; the other holes have none)
+  - First appear 4-24 s after arriving on a hole.
+  - Each walks across the line of play, stopping to peck, leaves the far side, and returns 14-54 s later.
+  - On a hole that has the flock, expect one or two at a time.
+  - They bolt (run for 4-6 s) if the ball lands within ~16 m or flies within ~32 m.
+  - Can be hit: "Clipped a turkey!", gobble sound, the ball ricochets.
+
+Dancing hot dog (hole 10 only, `scene.hotdogHole`; a giant, 10 ft: red sausage in a bun with a mustard zigzag, a smiling face, stick arms with white gloves, red sneakers)
+  - Always on hole 10 (`HOTDOG_P` = 1), never on other holes. From the moment the hole loads: about 100 yd down the line from the tee, on the fairway (it picks the nearest fairway spot if the
+    exact one is rough or a bunker).
+  - Dances to a 100 bpm beat: bounces, sways, waves both arms, kicks alternate legs, and sidesteps slowly back and forth across the fairway (never into the
+    rough), always facing the golfer.
+  - Can be hit (it bounces the ball off and spins): "Revenge of The Choker!", with a squeak.
+
+US 20 (the highway, with the traffic in part 1)
+  - Runs past the north side of the course, a few metres outside the boundary, then east along the edge of Stockton; the stretch drawn is about 2.6 km.
+  - Speed limit 55 mph, 35 mph on the town stretch (east end).
+
+Side roads (out of bounds, for looks only): East Center Road along the south of the course and South Brown Road (then Chicago Street into Stockton) along the east; plain two-lane chip-sealed roads with gravel shoulders, no centre line, no traffic. Both run out to the horizon and end on US 20; no trees stand on them.
+
+Buildings and props
+  - The clubhouse (`scene.clubhouse`: the long building by the parking lot, after photos of its front): rust-brown vertical-board walls, green-framed windows, a grey-green shingle roof, a gabled entrance with two limestone columns, a brick-paver porch and a round "Woodbine Bend" sign in the gable, shrubs along the front. Solid, so a ball hits it.
+  - Double washroom near hole 18 (MEN and WOMEN doors).
+  - Two blue porta-potties (the ball can hit them).
+  - The clubhouse parking lot (between holes 10 and 13): asphalt with painted stalls (violet area on site_mask.png, stalls laid out by site_paint.py) and 8 parked cars that are always the
+    same ones: sedans and SUVs in assorted colours, among them the Subaru and the Hyundai. Seen on holes 1, 7-10, 12, 13 and 16-18. Cars are solid, so a ball hits them (the lot itself is only paint).
+  - Two empty golf carts (Club Car Precedent: black roof on thin posts, off-white body, black bumpers and tyres, tan bench seat, two golf bags on the back) parked nose to
+    tail on the cart path north-east of the practice green, facing up the path toward the first hole. Always there; solid, so a ball hits them ("Off a golf cart!").
+    Positions are `scene.parkedCarts` in courses/courses.json, not painted.
+  - The big Woodbine Bend entrance sign (green board on posts, a golf ball on a red tee at each end, stone-edged flower bed) beside Route 20 on the west side of the course, facing in toward the course. Painted with paint_edit.py / paint_read.py; only seen from the holes nearest it.
+  - The pump house: a small plain metal building (corrugated grey siding and roof, no doors) by the 8th tee, painted with paint_edit.py / paint_read.py; solid, so a ball hits it.
+  - Hole 7 sign ("Andy Lewis / Hole in One / 9/10/2026", text from signs.txt), with its own fly-over intro.
+
+THE RAREST THING ON THE COURSE: a moving golf cart (`scene.cartRide`; same model as the parked ones) with two men in it (dark hair, grey trousers; the driver in a light blue #C4DCF0 shirt and cap, the
+    passenger in a salmon #F7A780 shirt and cap). Each par 4 or par 5 hole has a 2.84% chance of one (`CARTRIDE_P`), and only if the hole has a cart path on both sides of the
+    line of play, which is holes 3, 5, 6, 8, 10, 12, 13, 14, 16, 17 and 18 (checked in the browser; holes 1, 4 and 9 have no route): a bit over one round in four sees it (1 - (1 - .0284)^11 = 27%), while the hot dog is on every round. It sets off
+    the moment the golfer presses Play Hole (`cartRideGo`, from `beginHole`): it appears on the cart path point nearest a spot 14 m behind the tee box, by the back tees (found by a search along the path cells to the crossing point, so it follows the path round bends and over small gaps; on holes 8 and 16 no path reaches back to the tee, so it starts 117 m and 197 m out),
+    drives down the path at 22.5 mph, crosses the rough and fairway at about 262 yd (240 m) from the tee (shorter holes: 62% of the way; it shifts up to 36 m along the hole to
+    find a clear crossing) and parks on the path on the far side, lined up with it, where it stays. Wheels turn, it follows the ground, and a ball can hit it. The route
+    is traced from the cart path surface by `cartRoute`. It has a radio: "Around the World" (`sounds/cartmusic.mp3`) starts when it sets off and plays from the cart (loud within 20 m, fading with distance to nothing by 280 m, duller and panned to the cart's side; scaled by the Song volume setting) until the next hole (`cartMusicTick`). Not in the putting green or the range. Add `?cart` to the page address to force it on every such hole (testing).
+
+Cart paths: about 7.4 km, found on the aerial and corrected by hand. They cross the course between the holes, past the clubhouse and to the tees.
+
+Fountain (hole 1 only, `scene.fountainHole`): a small spray in the middle of the pond right of the first tee, about 10 ft high, always running. The ball does not hit it.
+
+Practice putting green (southeast of the 1st tee, beside the parking lot): a green with four cups and flags (numbered 1-4), a collar, tall fescue joined to the course's own, and three large broadleaf trees round it. Visible from hole 1; played from Practice > Putting green.
+Driving range (the field south of the cart road, west of the clubhouse lot): played from Practice > Driving range. Mown striped grass with two sand bunkers (the big one near the road, one beside a target green), a small target green with a collar, tall fescue along the west edge and the creek side, large broadleaf trees along the creek, a long grey metal shed (the same corrugated model as the pump house, solid) beside the lot, and white boundary stakes. Four red flags on tall poles (numbered 1-4, nearest first, no cup: the ball cannot be holed) to aim at, and six hitting spots (two are in bunkers); the ball is teed on grass spots. All four flags stay up; the Flag button picks which one the aim snaps to. After each shot the camera follows the ball, rests on where it stopped for about a second, then returns to the hitting spot.
