@@ -567,8 +567,8 @@ const CD0 = 0.22, CD1 = 0.30, CL0 = 0.12, CL1 = 0.6, CLMAX = 0.42, SPIN_TAU = 25
 const VIS_R = 0.055;     // ball radius (physics and drawing): ~2.6x real, half the old 0.11. Beyond a few metres the ball is drawn larger with distance anyway (frame), so only close views see it smaller
 const BALL_DRAW = .85;   // the ball is drawn at 85% of its size (the physics radius VIS_R is unchanged)
 const WET_HALF = VIS_R * BALL_DRAW;   // water this deep over the ground covers half of the drawn ball: an automatic water ball
-const CUP_VIS_R = 0.14;   // cup radius: 2.5 ball radii, the real proportion (108 mm hole, 42.7 mm ball); an 11 in hole, ~2.6x real.
-// It was 0.28 (22 in): simulated putts with tour-level aim and pace errors holed 92% from 8 ft and 36% from 30 ft (tour: 50% and 7%); at 0.14 it is 78% and 19%
+const CUP_VIS_R = 0.16;   // cup radius: ~2.9 ball radii (real: 2.5, 108 mm hole, 42.7 mm ball), a 12.6 in hole; at 0.14 (11 in) the ball looked too big for it.
+// It was 0.28 (22 in): simulated putts with tour-level aim and pace errors holed 92% from 8 ft and 36% from 30 ft (tour: 50% and 7%); at 0.14 it was 78% and 19%
 const CUP_RIM = CUP_VIS_R,
   PIN_HIT = .0175 + VIS_R * .95; // stick radius (PIN_R) + ball radius
 const PIN_H = 2.3;
