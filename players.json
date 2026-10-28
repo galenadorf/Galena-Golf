@@ -60,7 +60,12 @@
  {
   "id": "P007",
   "name": "Kevin",
-  "keys": []
+  "keys": [
+   {
+    "k": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE0+dPpiZdFnXvHyGqSuwDiMs5yZsJodM1gb1xH7aqgY8q+RtZo5LHD5mjzqGxxmWpHqV3gM2aiE+FN5OYqadVZA==",
+    "label": "Android phone"
+   }
+  ]
  },
  {
   "id": "P008",
