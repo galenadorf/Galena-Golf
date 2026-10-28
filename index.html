@@ -4183,11 +4183,11 @@ function makeFountain(L) {
   };
   return e;
 }
-/* --- a golf cart with two men that drives down a cart path from the back tees to where the path meets the line of play about 200 yd from the tee and parks. The rarest thing
-   on the course: CARTRIDE_P per par 4 / par 5 hole (about one round in four), and only on holes where cartRoute finds a cart path beside the
+/* --- a golf cart with two men that drives down a cart path from the back tees, crosses the fairway about 200 yd from the tee and parks on the path on the far side. The rarest thing
+   on the course: CARTRIDE_P per par 4 / par 5 hole (about one round in four), and only on holes where cartRoute finds a cart path on both sides of the
    line of play. It sets off the moment the golfer presses Play Hole (cartRideGo, from beginHole). Add ?cart to the page address to force it on every
-   such hole (for testing). The route is traced from the cart path surface (S.PATH) of the hole: along the near path from about 150 m back to the crossing
-   point. --- */
+   such hole (for testing). The route is traced from the cart path surface (S.PATH) of the hole: along the near path from behind the tee to the crossing point, then straight
+   across to the far path. --- */
 const CARTRIDE_P = .0284, CARTRIDE_V = 22.5 * .44704;
 function cartRoute(C) {
   const Lc = C.center.L, isPath = (x, z) => C.inBounds(x, z) && C.surf(x, z) === S.PATH;
@@ -4203,6 +4203,11 @@ function cartRoute(C) {
   };
   const world = (s, sg, d) => { const f = frame(s); return [f.x + f.nx * sg * d, f.z + f.nz * sg * d]; };
   const trace = (sg, s0, s1, step, d0) => { const out = []; let d = d0, miss = 0; for (let s = s0; step > 0 ? s <= s1 : s >= s1; s += step) { const m = lat(s, sg, d - 5, d + 5, d); if (m === null) { if (++miss > 6) break; continue; } const q = world(s, sg, m); if (out.length && Math.hypot(q[0] - out[out.length - 1][0], q[1] - out[out.length - 1][1]) > 8 + 4 * miss) break; miss = 0; d = m; out.push(q); } return out; };   // a gap in the path of up to ~24 m (a bridge, a worn patch) is driven over
+  const clear = (a, b) => {   // nothing in the way across the rough and fairway: no water, sand, green or tree
+    const n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 2);
+    for (let i = 0; i <= n; i++) { const x = lerp(a[0], b[0], i / n), z = lerp(a[1], b[1], i / n), sf = C.surf(x, z); if (!C.inBounds(x, z) || sf === S.WATER || sf === S.SAND || sf === S.GREEN || (C.treeHit && C.treeHit(x, C.h(x, z) + .7, z, false) >= 0)) return false; }
+    return true;
+  };
   const pathYaw = (B, f) => {   // the way the path runs at B (the long axis of the path cells round it), pointing the way the line of play goes
     let n = 0, mx = 0, mz = 0; const pts = [];
     for (let dx = -7; dx <= 7; dx++) for (let dz = -7; dz <= 7; dz++) if (dx * dx + dz * dz <= 49 && isPath(B[0] + dx, B[1] + dz)) { pts.push([dx, dz]); mx += dx; mz += dz; n++; }
@@ -4239,10 +4244,10 @@ function cartRoute(C) {
   for (const off of [0, -12, 12, -24, 24, -36, 36]) {
     const sc = base + off; if (sc < 60 || sc > Lc - 40) continue;
     for (const sg of sides) {
-      const dA = lat(sc, sg, 6, 85, 6); if (dA === null) continue;
+      const dA = lat(sc, sg, 6, 85, 6), dB = lat(sc, -sg, 6, 85, 6); if (dA === null || dB === null) continue;
       const back = trace(sg, sc, 2, -4, dA);
-      const A = back[0] || world(sc, sg, dA), route = walk(behind(), A) || (back.length >= 12 ? back.reverse() : null); if (!route) continue;   // from the path behind the tee box along the path to the crossing
-      return { route, parkYaw: pathYaw(A, frame(sc)) };   // ends where the path meets the line of play
+      const A = back[0] || world(sc, sg, dA), route = walk(behind(), A) || (back.length >= 12 ? back.reverse() : null); if (!route) continue; const B = world(sc, -sg, dB); if (!clear(A, B)) continue; route.push(B);   // across the fairway to the far path; from the path behind the tee box along the path to the crossing
+      return { route, parkYaw: pathYaw(B, frame(sc)) };   // parks on the far path, lined up with it
     }
   }
   return null;
