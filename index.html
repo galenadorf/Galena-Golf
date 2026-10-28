@@ -4230,12 +4230,28 @@ function cartRoute(C) {
 }
 function makeCartRide(L, R) {
   cartMusicLoad(); const mat = LIFE_MAT(), g = makeGolfCart(true, mat); g.visible = false; g.traverse(o => { if (o.isMesh) o.userData.keep = true; }); L.grp.add(g);
-  let P = R.route; for (let k = 0; k < 2; k++) { const Q = [P[0]]; for (let i = 0; i < P.length - 1; i++) { const a = P[i], b = P[i + 1]; Q.push([.75 * a[0] + .25 * b[0], .75 * a[1] + .25 * b[1]], [.25 * a[0] + .75 * b[0], .25 * a[1] + .75 * b[1]]); } Q.push(P[P.length - 1]); P = Q; } // corners rounded
-  const cum = [0]; for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
-  const len = cum[cum.length - 1], pt = { x: 0, z: 0 }, pa = { x: 0, z: 0 };
+  let P, cum, len;
+  const setRoute = route => { P = route; for (let k = 0; k < 2; k++) { const Q = [P[0]]; for (let i = 0; i < P.length - 1; i++) { const a = P[i], b = P[i + 1]; Q.push([.75 * a[0] + .25 * b[0], .75 * a[1] + .25 * b[1]], [.25 * a[0] + .75 * b[0], .25 * a[1] + .75 * b[1]]); } Q.push(P[P.length - 1]); P = Q; } // corners rounded
+    cum = [0]; for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1])); len = cum[cum.length - 1]; };
+  setRoute(R.route); const pt = { x: 0, z: 0 }, pa = { x: 0, z: 0 };
   const at = (s, o) => { s = clamp(s, 0, len); let i = 1; while (i < P.length - 1 && cum[i] < s) i++; const u = (s - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1); o.x = lerp(P[i - 1][0], P[i][0], u); o.z = lerp(P[i - 1][1], P[i][1], u); return o; };
   const e = { kind: 'golfcart', mat, g, st: 'wait', s: 0, v: 0, x: P[0][0], y: 0, z: P[0][1], yaw: 0, tl: 0 };
-  e.start = () => { if (e.st !== 'wait') return; e.st = 'drive'; e.s = 0; e.v = 0; at(0, pt); at(2.5, pa); e.yaw = Math.atan2(pa.x - pt.x, pa.z - pt.z); e.pose(); g.visible = true; };
+  // The cart starts on the cart path point nearest the golfer (right beside them): the route is cut there, or begun there and joined to its nearest point
+  const nearStart = () => {
+    const C = L.C, bx = G.ball.x, bz = G.ball.z; let N = null, nd = 1e9;
+    for (let r = 0; r <= 80 && !N; r += 1.5) for (let a = 0; a < 360; a += r < 6 ? 45 : 12) {
+      const x = bx + Math.cos(a * Math.PI / 180) * r, z = bz + Math.sin(a * Math.PI / 180) * r;
+      if (C.inBounds(x, z) && C.surf(x, z) === S.PATH) { const d = Math.hypot(x - bx, z - bz); if (d < nd) { nd = d; N = [x, z]; } }
+    }
+    if (!N) return;
+    const R0 = R.route; let bi = 0, bd = 1e9, bp = null;   // nearest point of the planned route to N
+    for (let i = 0; i < R0.length - 1; i++) {
+      const a = R0[i], b = R0[i + 1], dx = b[0] - a[0], dz = b[1] - a[1], u = clamp(((N[0] - a[0]) * dx + (N[1] - a[1]) * dz) / (dx * dx + dz * dz || 1), 0, 1), q = [a[0] + dx * u, a[1] + dz * u], d = Math.hypot(q[0] - N[0], q[1] - N[1]);
+      if (d < bd) { bd = d; bi = i; bp = q; }
+    }
+    const rest = R0.slice(bi + 1); setRoute(bd < 3 ? [bp].concat(rest) : [N, bp].concat(rest));
+  };
+  e.start = () => { if (e.st !== 'wait') return; try { nearStart(); } catch (er) { } e.st = 'drive'; e.s = 0; e.v = 0; at(0, pt); at(2.5, pa); e.yaw = Math.atan2(pa.x - pt.x, pa.z - pt.z); e.pose(); g.visible = true; };
   e.pose = () => {
     at(e.s, pt); e.x = pt.x; e.z = pt.z; const sn = Math.sin(e.yaw), cs = Math.cos(e.yaw), yF = groundY(e.x + sn * .85, e.z + cs * .85), yR = groundY(e.x - sn * .8, e.z - cs * .8);
     e.y = (yF + yR) / 2; g.position.set(e.x, e.y, e.z); g.rotation.set(-Math.atan2(yF - yR, 1.65), e.yaw, 0, 'YXZ');
