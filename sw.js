@@ -9,8 +9,11 @@ const FONTS = ['barlow-latin', 'barlow-latin-ext', 'barlow-vietnamese'].flatMap(
 const CORE = ['./', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'crest.png',
   'sounds/driver.mp3', 'sounds/wood.mp3', 'sounds/iron.mp3', 'sounds/wedge.mp3', 'sounds/putter.mp3', 'sounds/cup.mp3', 'sounds/truckhorn.mp3', 'sounds/truckrumble.mp3', 'sounds/cartmusic.mp3', ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => `sounds/fart${i}.mp3`), 'vendor/three.r128.min.js', 'vendor/mqtt.5.10.1.min.js', 'fonts/fonts.css', ...FONTS];
 
+// every course in courses/courses.json is kept too (courses/<key>.js), so any course plays offline, not only the ones opened so far
+const COURSE_FILES = () => fetch(new Request('courses/courses.json', { cache: 'reload' })).then(r => r.json()).then(j => j.courses.map(c => `courses/${c.key}.js`));
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => COURSE_FILES().then(cf => c.addAll(CORE.concat('courses/courses.json', cf).map(u => new Request(u, { cache: 'reload' })))))
+    .then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('galena-') && k !== CACHE).map(k => caches.delete(k))))

@@ -1,0 +1,22 @@
+{
+  "courses": [
+    {
+      "key": "woodbine",
+      "name": "Woodbine Bend Golf Course",
+      "short": "Woodbine Bend",
+      "pars": [4, 3, 4, 5, 4, 4, 3, 4, 5, 4, 3, 4, 4, 4, 3, 5, 4, 5],
+      "recFrom": "2026-10-27",
+      "about": "Woodbine Bend Golf Course (Stockton, Illinois) is played from the gold tees. Hole lines, greens, tees, bunkers, ponds, buildings and the out-of-bounds line from © OpenStreetMap contributors (ODbL); fairways traced from USDA NAIP aerial imagery; trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
+      "engine": { "fescue": true, "z0": 200, "gr": { "e0": -1000, "n0": -1000, "res": 2, "W": 1000, "H": 1000 } },
+      "scene": {
+        "clubhouse": { "minArea": 800, "front": [100, -175], "sign": ["WOODBINE", "B E N D", "GOLF COURSE & RESTAURANT"] },
+        "parkedCarts": [[63.4, -160.2, 143], [65.8, -162.0, 143]],
+        "turkeys": 0.4,
+        "cartRide": true,
+        "hotdogHole": 10,
+        "fountainHole": 1,
+        "songs": { "7": { "src": "sounds/hole7-q.mp3", "vol": 1, "delay": 3 } }
+      }
+    }
+  ]
+}

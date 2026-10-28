@@ -1,6 +1,6 @@
 ---
 name: course-data
-description: Course data pipeline in tools/course/ (geodata, painted mask layers, build.py, install.py) and how to add another course to Galena Golf. Use when repainting a mask, regenerating RD_WOODBINE, or adding a course.
+description: Course data pipeline in tools/course/ (geodata, painted mask layers, build.py, install.py) and how to add another course to Galena Golf. Use when repainting a mask, regenerating a course's data (courses/<key>.js), or adding a course.
 ---
 
 # Course data pipeline (`tools/course/`)
@@ -29,7 +29,7 @@ Python venv `~/.venvs/galena` (numpy, scipy, rasterio, pyproj, shapely, pillow, 
 
    `bunkers_auto.py` found six bunkers OSM lacks (`bunkers_auto.json`); `bunkers_painted.json` replaces OSM and auto bunkers when present. Signs: `signs.txt` lines like `7: LINE ONE | LINE TWO`; a yellow dot whose nearest hole has no line is not built.
 3. `build.py` encodes everything into `out/rd_<key>.js` (`const RD_<KEY>` and `const GREEN_ALTI_<KEY>`); it prefers painted files over generated ones, clips fescue to the boundary, links each hole's fairway to its green by convex hull (`link_fairways`, so no gap of rough), and snaps the four tee sets (`course.MARKERS`: slot `w` is the set played; at Woodbine gold, then black, silver, bronze) to the tee boxes at their card yardages.
-4. `install.py` writes the data into `index.html` (it replaces the `RD_<KEY>` and `GREEN_ALTI_<KEY>` lines, which must already be there). Then `node --check` and a headless run.
+4. `install.py` writes the game's file `courses/<key>.js` (repo root; `COURSE_DATA.<key>.rd` and `.alti`). Then a headless run.
 
 The outlines are smoothed so painted pixel staircases do not show: `bunkers_paint.py`, `fairways.py` and `fescue.py` trace the sub-pixel contour of the blurred mask (`smooth_polys` in `common.py`; blur `SMOOTH` px, `TOL` m simplification, area kept within about 1%), and `paint_read.py` does the same for the painted tee boxes, and `build.py` rounds the OSM green outlines (`round_green`, Chaikin corner cutting), the OSM pond outlines (`round_pond`: the same, scaled back to the original area) and the creek's centre line (`round_line`, ends fixed) before it is cut into ribbons; `creek_paint.py` traces a painted creek mask with `smooth_polys` too. The raw pre-smoothing JSON is kept beside each (`*_raw_backup.json`).
 
@@ -39,4 +39,4 @@ The highway (`course.HIGHWAY`; at Woodbine US 20; `highway` and `hwSlow` in the 
 
 # Adding another course
 
-A course is an `RD_<KEY>` object (hole lines, par, hcp, tee sets, feature polygons, trees, coarse DEM plus relief; encoding in `tools/course/build.py`). Copy `courses/woodbine/course.py` to `courses/<key>/course.py` and fill it in (with `OSM_WAY` set, `osm.load` keeps only that course's outline and the holes inside it, so a resort's other courses can share the download), run the pipeline with `--course <key>`, then add: an `RDS` entry (data, alti, z0, grid, tweaks, optional `lush`/`dry`/`fescue`), a `<NAME>_DEFS` hole list, a `COURSES` entry (`key`, `name`, `short`, `defs`, `best`, `board`, `coll`, optional `music`), its key and par in the leaderboard workflow plus `leaderboard/<key>.json`. Show the hidden course pickers again (`#segCourse` on the title screen, `#segCourseM` in Settings: remove `hidden`) and update the credits text.
+A course is an `RD_<KEY>` object (hole lines, par, hcp, tee sets, feature polygons, trees, coarse DEM plus relief; encoding in `tools/course/build.py`). Copy `courses/woodbine/course.py` to `courses/<key>/course.py` and fill it in (with `OSM_WAY` set, `osm.load` keeps only that course's outline and the holes inside it, so a resort's other courses can share the download), run the pipeline with `--course <key>` (`install.py` writes `courses/<key>.js`), then add the course to `courses/courses.json` (name, short name, pars, `recFrom`, `about` credits text, `engine`, `scene`: see **Courses** in CLAUDE.md). The game, its course picker, `sw.js` and the deploy pick it up from there; nothing in `index.html` changes. Also add its key and pars to the leaderboard workflow and `tools/players/stats.py`, and its scenery to `on_course_objects.txt`.
