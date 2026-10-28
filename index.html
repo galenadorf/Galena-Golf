@@ -4183,12 +4183,12 @@ function makeFountain(L) {
   };
   return e;
 }
-/* --- a golf cart with two men that drives down a cart path, crosses the fairway about 200 yd from the tee and parks on the path on the far side. The rarest thing
-   on the course: CARTRIDE_P per par 4 / par 5 hole (about one round in four), and only on holes where cartRoute finds a cart path on both sides of the
+/* --- a golf cart with two men that drives down a cart path from the back tees to where the path meets the line of play about 200 yd from the tee and parks. The rarest thing
+   on the course: CARTRIDE_P per par 4 / par 5 hole (about one round in four), and only on holes where cartRoute finds a cart path beside the
    line of play. It sets off the moment the golfer presses Play Hole (cartRideGo, from beginHole). Add ?cart to the page address to force it on every
-   such hole (for testing). The route is traced from the cart path surface (S.PATH) of the hole: along the near path from about 150 m back, then straight
-   across to the far path. --- */
-const CARTRIDE_P = .0284, CARTRIDE_V = 25 * .44704;
+   such hole (for testing). The route is traced from the cart path surface (S.PATH) of the hole: along the near path from about 150 m back to the crossing
+   point. --- */
+const CARTRIDE_P = .0284, CARTRIDE_V = 22.5 * .44704;
 function cartRoute(C) {
   const Lc = C.center.L, isPath = (x, z) => C.inBounds(x, z) && C.surf(x, z) === S.PATH;
   const frame = s => { const f = fairHalfWidth2(C, s); return { x: f.p[0], z: f.p[1], nx: f.nx, nz: f.nz, tx: f.nz, tz: -f.nx }; };
@@ -4203,11 +4203,6 @@ function cartRoute(C) {
   };
   const world = (s, sg, d) => { const f = frame(s); return [f.x + f.nx * sg * d, f.z + f.nz * sg * d]; };
   const trace = (sg, s0, s1, step, d0) => { const out = []; let d = d0; for (let s = s0; step > 0 ? s <= s1 : s >= s1; s += step) { const m = lat(s, sg, d - 5, d + 5, d); if (m === null) break; const q = world(s, sg, m); if (out.length && Math.hypot(q[0] - out[out.length - 1][0], q[1] - out[out.length - 1][1]) > 8) break; d = m; out.push(q); } return out; };
-  const clear = (a, b) => {   // nothing in the way across the rough and fairway: no water, sand, green or tree
-    const n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 2);
-    for (let i = 0; i <= n; i++) { const x = lerp(a[0], b[0], i / n), z = lerp(a[1], b[1], i / n), sf = C.surf(x, z); if (!C.inBounds(x, z) || sf === S.WATER || sf === S.SAND || sf === S.GREEN || (C.treeHit && C.treeHit(x, C.h(x, z) + .7, z, false) >= 0)) return false; }
-    return true;
-  };
   const pathYaw = (B, f) => {   // the way the path runs at B (the long axis of the path cells round it), pointing the way the line of play goes
     let n = 0, mx = 0, mz = 0; const pts = [];
     for (let dx = -7; dx <= 7; dx++) for (let dz = -7; dz <= 7; dz++) if (dx * dx + dz * dz <= 49 && isPath(B[0] + dx, B[1] + dz)) { pts.push([dx, dz]); mx += dx; mz += dz; n++; }
@@ -4219,11 +4214,9 @@ function cartRoute(C) {
   for (const off of [0, -12, 12, -24, 24, -36, 36]) {
     const sc = base + off; if (sc < 60 || sc > Lc - 40) continue;
     for (const sg of sides) {
-      const dA = lat(sc, sg, 6, 85, 6), dB = lat(sc, -sg, 6, 85, 6); if (dA === null || dB === null) continue;
+      const dA = lat(sc, sg, 6, 85, 6); if (dA === null) continue;
       const back = trace(sg, sc, Math.max(36, sc - 150), -4, dA); if (back.length < 12) continue;   // at least ~45 m of path to drive down
-      const A = back[0], B = world(sc, -sg, dB);
-      if (!clear(A, B)) continue;
-      return { route: back.reverse().concat([B]), parkYaw: pathYaw(B, frame(sc)) };
+      const A = back[0]; return { route: back.reverse(), parkYaw: pathYaw(A, frame(sc)) };   // ends where the path meets the line of play
     }
   }
   return null;
@@ -4239,18 +4232,13 @@ function makeCartRide(L, R) {
   // The cart starts on the cart path point nearest a spot behind the tee box (by the back tees): the route is cut there, or begun there and joined to its nearest point
   const nearStart = () => {
     const C = L.C, f = polyAt(C.center, 14), fl = Math.hypot(f[0] - C.startPos.x, f[1] - C.startPos.z) || 1;   // behind the tee box, by the back tees: 14 m back from the tee, away from the hole
-    const bx = C.startPos.x + (C.startPos.x - f[0]) / fl * 14, bz = C.startPos.z + (C.startPos.z - f[1]) / fl * 14; let N = null, nd = 1e9;
-    for (let r = 0; r <= 80 && !N; r += 1.5) for (let a = 0; a < 360; a += r < 6 ? 45 : 12) {
-      const x = bx + Math.cos(a * Math.PI / 180) * r, z = bz + Math.sin(a * Math.PI / 180) * r;
-      if (C.inBounds(x, z) && C.surf(x, z) === S.PATH) { const d = Math.hypot(x - bx, z - bz); if (d < nd) { nd = d; N = [x, z]; } }
-    }
-    if (!N) return;
-    const R0 = R.route; let bi = 0, bd = 1e9, bp = null;   // nearest point of the planned route to N
+    const N = [C.startPos.x + (C.startPos.x - f[0]) / fl * 14, C.startPos.z + (C.startPos.z - f[1]) / fl * 14];
+    const R0 = R.route; let bi = 0, bd = 1e9, bp = R0[0];   // the point of the planned route (all on the path) nearest that spot
     for (let i = 0; i < R0.length - 1; i++) {
       const a = R0[i], b = R0[i + 1], dx = b[0] - a[0], dz = b[1] - a[1], u = clamp(((N[0] - a[0]) * dx + (N[1] - a[1]) * dz) / (dx * dx + dz * dz || 1), 0, 1), q = [a[0] + dx * u, a[1] + dz * u], d = Math.hypot(q[0] - N[0], q[1] - N[1]);
       if (d < bd) { bd = d; bi = i; bp = q; }
     }
-    const rest = R0.slice(bi + 1); setRoute(bd < 3 ? [bp].concat(rest) : [N, bp].concat(rest));
+    const rest = R0.slice(bi + 1); if (rest.length) setRoute([bp].concat(rest));
   };
   e.start = () => { if (e.st !== 'wait') return; try { nearStart(); } catch (er) { } e.st = 'drive'; e.s = 0; e.v = 0; at(0, pt); at(2.5, pa); e.yaw = Math.atan2(pa.x - pt.x, pa.z - pt.z); e.pose(); g.visible = true; };
   e.pose = () => {
