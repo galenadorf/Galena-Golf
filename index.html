@@ -4266,7 +4266,7 @@ function buildLife(C, grp) {
     initBirds(L, grp);
     L.plane = makePlane(L); L.gopher = makeGopher(L); L.balloon = makeBalloon(L); L.ents.push(L.plane, L.gopher, L.balloon);
     if (G.hole === HOTDOG_HOLE && Math.random() < HOTDOG_P) L.ents.push(makeHotDog(L));
-    if (C.def.par >= 4 && !G.pg && (Math.random() < CARTRIDE_P || /[?&]cart\b/.test(location.search))) { const R = cartRoute(C); if (R) { L.cartRide = makeCartRide(L, R); L.ents.push(L.cartRide); } }
+    if (C.def.par >= 4 && !G.pg && (Math.random() < CARTRIDE_P || /[?&]cart\b/.test(location.search) || (G.practice && G.hole === 17))) { const R = cartRoute(C); if (R) { L.cartRide = makeCartRide(L, R); L.ents.push(L.cartRide); } }
     if (G.hole === FOUNTAIN_HOLE) { const f = makeFountain(L); if (f) L.ents.push(f); }
     if (GC.hw) { const cg = carGeo(), sg = santaFeGeo(); L.traffic = [makeVehicle(L, 'car', cg, [2, 8], [6, 19]), makeVehicle(L, 'car', cg, [10, 16], [6, 19]), makeVehicle(L, 'car', sg, [4, 10], [6, 19]), makeVehicle(L, 'car', sg, [12, 16], [6, 19]), makeVehicle(L, 'truck', truckGeos(), [8, 25], [20, 40])]; L.ents.push(...L.traffic); } else L.traffic = [];
     if (PARAGLIDER_ON) { L.glider = makeGlider(L); L.ents.push(L.glider); }
