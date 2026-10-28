@@ -103,7 +103,7 @@ MAN-MADE OBJECTS
   - THE RAREST THING ON THE COURSE: a moving golf cart (same model) with two men in it (dark hair, grey trousers; the driver in a light blue #C4DCF0 shirt and cap, the
     passenger in a salmon #F7A780 shirt and cap). Each par 4 or par 5 hole has a 2.84% chance of one (`CARTRIDE_P`), and only if the hole has a cart path beside the
     line of play (not recounted since the cart stopped needing a path on both sides; it was holes 3, 5, 6, 10, 12, 13, 14, 16, 17 and 18, about one round in four, while the hot dog is on every round). It sets off
-    the moment the golfer presses Play Hole (`cartRideGo`, from `beginHole`): it appears on the cart path point nearest a spot 14 m behind the tee box, by the back tees,
+    the moment the golfer presses Play Hole (`cartRideGo`, from `beginHole`): it appears on the cart path at least 36 m out from the tee (about 150 m back from the crossing),
     drives down the path at 22.5 mph and parks where the path meets the line of play about 200 yd (183 m) from the tee (shorter holes: 62% of the way; it shifts up to 36 m along the hole
     to find a path there), lined up with the path, where it stays. It does not cross the fairway. Wheels turn, it follows the ground, and a ball can hit it. The route
     is traced from the cart path surface by `cartRoute`. It has a radio: "Around the World" (`sounds/cartmusic.mp3`) starts when it sets off and plays from the cart (loud within 20 m, fading with distance to nothing by 280 m, duller and panned to the cart's side; scaled by the Song volume setting) until the next hole (`cartMusicTick`). Not in the putting green or the range. Add `?cart` to the page address to force it on every such hole (testing).

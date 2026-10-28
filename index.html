@@ -4229,18 +4229,7 @@ function makeCartRide(L, R) {
   setRoute(R.route); const pt = { x: 0, z: 0 }, pa = { x: 0, z: 0 };
   const at = (s, o) => { s = clamp(s, 0, len); let i = 1; while (i < P.length - 1 && cum[i] < s) i++; const u = (s - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1); o.x = lerp(P[i - 1][0], P[i][0], u); o.z = lerp(P[i - 1][1], P[i][1], u); return o; };
   const e = { kind: 'golfcart', mat, g, st: 'wait', s: 0, v: 0, x: P[0][0], y: 0, z: P[0][1], yaw: 0, tl: 0 };
-  // The cart starts on the cart path point nearest a spot behind the tee box (by the back tees): the route is cut there, or begun there and joined to its nearest point
-  const nearStart = () => {
-    const C = L.C, f = polyAt(C.center, 14), fl = Math.hypot(f[0] - C.startPos.x, f[1] - C.startPos.z) || 1;   // behind the tee box, by the back tees: 14 m back from the tee, away from the hole
-    const N = [C.startPos.x + (C.startPos.x - f[0]) / fl * 14, C.startPos.z + (C.startPos.z - f[1]) / fl * 14];
-    const R0 = R.route; let bi = 0, bd = 1e9, bp = R0[0];   // the point of the planned route (all on the path) nearest that spot
-    for (let i = 0; i < R0.length - 1; i++) {
-      const a = R0[i], b = R0[i + 1], dx = b[0] - a[0], dz = b[1] - a[1], u = clamp(((N[0] - a[0]) * dx + (N[1] - a[1]) * dz) / (dx * dx + dz * dz || 1), 0, 1), q = [a[0] + dx * u, a[1] + dz * u], d = Math.hypot(q[0] - N[0], q[1] - N[1]);
-      if (d < bd) { bd = d; bi = i; bp = q; }
-    }
-    const rest = R0.slice(bi + 1); if (rest.length) setRoute([bp].concat(rest));
-  };
-  e.start = () => { if (e.st !== 'wait') return; try { nearStart(); } catch (er) { } e.st = 'drive'; e.s = 0; e.v = 0; at(0, pt); at(2.5, pa); e.yaw = Math.atan2(pa.x - pt.x, pa.z - pt.z); e.pose(); g.visible = true; };
+  e.start = () => { if (e.st !== 'wait') return; e.st = 'drive'; e.s = 0; e.v = 0; at(0, pt); at(2.5, pa); e.yaw = Math.atan2(pa.x - pt.x, pa.z - pt.z); e.pose(); g.visible = true; };
   e.pose = () => {
     at(e.s, pt); e.x = pt.x; e.z = pt.z; const sn = Math.sin(e.yaw), cs = Math.cos(e.yaw), yF = groundY(e.x + sn * .85, e.z + cs * .85), yR = groundY(e.x - sn * .8, e.z - cs * .8);
     e.y = (yF + yR) / 2; g.position.set(e.x, e.y, e.z); g.rotation.set(-Math.atan2(yF - yR, 1.65), e.yaw, 0, 'YXZ');
