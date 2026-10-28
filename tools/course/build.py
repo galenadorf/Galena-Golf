@@ -372,7 +372,7 @@ def side_roads(F, hw, area=course.ROAD_AREA):
         c = line.intersection(box(*area))
         if c.geom_type != 'LineString':
             c = max(c.geoms, key=lambda g: g.length)
-        pts = list(c.simplify(.4).coords)
+        pts = list((LineString(round_line(c.coords)) if getattr(course, 'ROUND_ROADS', False) else c).simplify(.4).coords)   # Eagle Ridge: its winding resort road
         if pts[0][0] + pts[0][1] > pts[-1][0] + pts[-1][1]:
             pts = pts[::-1]
         out.append(LineString(pts))
@@ -390,6 +390,24 @@ def round_green(p, iters=3):
             q += [(.75 * x0 + .25 * x1, .75 * y0 + .25 * y1), (.25 * x0 + .75 * x1, .25 * y0 + .75 * y1)]
         pts = q
     return Polygon(pts).simplify(.04)
+
+
+def round_osm(p, iters=3, step=None):
+    """An outline straight from OSM, where nothing was painted over it (Eagle Ridge South's fairways, bunkers, tees and course outline):
+    the same corner cutting as round_green on every ring, then grown back to the original area by an even offset (not scaled, so a long
+    fairway's ends stay put). `step` m first adds points along long edges, so only the corners round and a long edge is not pulled in."""
+    if p.geom_type == 'MultiPolygon':
+        return unary_union([round_osm(g, iters, step) for g in p.geoms])
+
+    def cut(ring):
+        r = LineString(ring.coords)
+        if step:
+            r = LineString([r.interpolate(d) for d in np.linspace(0, r.length, max(4, int(math.ceil(r.length / step))) + 1)])
+        return Polygon(list(r.coords)[:-1])
+    q = Polygon(round_green(cut(p.exterior), iters).exterior, [round_green(cut(h), iters).exterior for h in p.interiors]).buffer(0)
+    for _ in range(2):
+        q = q.buffer((p.area - q.area) / q.length, join_style=1, quad_segs=4)
+    return q.simplify(.04)
 
 
 def round_pond(p, iters=3):
@@ -424,15 +442,23 @@ def main():
     ba = os.path.join(OUT, 'bunkers_auto.json')  # bunkers the aerial shows but OSM lacks (bunkers_auto.py)
     if os.path.exists(ba):
         F['bunker'] += [dict(poly=shape(g), tags={'auto': 'yes'}) for g in json.load(open(ba))]
+    for k in ('bunker', 'tee', 'fairway'):   # OSM outlines (painted ones replace them below, already smoothed)
+        for f in F[k]:
+            f['poly'] = round_osm(f['poly'])
     bpn = os.path.join(OUT, 'bunkers_painted.json')  # hand-refined bunkers (bunkers_paint.py) replace the OSM and automatic ones
     if os.path.exists(bpn):
         F['bunker'] = [dict(poly=shape(g), tags={'painted': 'yes'}) for g in json.load(open(bpn))]
     tpn = os.path.join(OUT, 'tees_painted.json')  # hand-edited tee boxes (tee_boxes_paint.py) replace the OSM ones
     if os.path.exists(tpn):
         F['tee'] = [dict(poly=shape(g), tags={'painted': 'yes'}) for g in json.load(open(tpn))]
-    fp0 = os.path.join(OUT, 'fairways_painted.json')  # hand-corrected fairways (fairways.py) win over trace.py's
-    fair = [shape(g) for g in json.load(open(fp0 if os.path.exists(fp0) else os.path.join(OUT, 'fairways.json')))]
+    fp0 = os.path.join(OUT, 'fairways_painted.json')  # hand-corrected fairways (fairways.py) win over OSM's (Eagle Ridge), then trace.py's (Woodbine: OSM has none)
+    if os.path.exists(fp0) or not F['fairway']:
+        fair = [shape(g) for g in json.load(open(fp0 if os.path.exists(fp0) else os.path.join(OUT, 'fairways.json')))]
+    else:
+        fair = [f['poly'] for f in F['fairway']]
     fair, rep = link_fairways(fair, F)
+    if not os.path.exists(fp0) and F['fairway']:   # OSM fairways: round the inside corners where the link to the green meets the fairway's edge
+        fair = [q.buffer(5, quad_segs=8).buffer(-5, quad_segs=8).simplify(.04) for q in fair]
     print('fairway -> green links (hole, gap m, area added m2):', rep)
     cp = os.path.join(OUT, 'cartpaths.json')   # the cart paths: found on the aerial and corrected by hand (cartpaths_edit.py, cartpaths_read.py); trace.py's paths.json was only fragments
     paths = [shape(g) for g in json.load(open(cp))] if os.path.exists(cp) else []
@@ -488,7 +514,7 @@ def main():
     fp = os.path.join(OUT, 'fescue.json')
     fescue = [shape(g) for g in json.load(open(fp))] if os.path.exists(fp) else []
     bp = os.path.join(OUT, 'boundary.json')  # the hand-painted boundary (boundary.py) replaces the OSM outline as the out-of-bounds line
-    bound = shape(json.load(open(bp))) if os.path.exists(bp) else Polygon(course_poly.exterior)
+    bound = shape(json.load(open(bp))) if os.path.exists(bp) else round_osm(Polygon(course_poly.exterior), step=12)
     if os.path.exists(ppn):
         fescue = practice_read.merge_fescue(fescue, pr)
     fescue = [g for f in fescue for g in getattr(f.intersection(bound), 'geoms', [f.intersection(bound)]) if g.geom_type == 'Polygon' and not g.is_empty]

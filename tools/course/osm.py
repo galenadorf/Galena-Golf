@@ -87,6 +87,12 @@ def load():
         assert len(F['course']) == 1, f'OSM way {course.OSM_WAY} (course.OSM_WAY) is not a leisure=golf_course in osm.json'
         cp = F['course'][0]['poly'].buffer(30)
         F['hole'] = [h for h in F['hole'] if cp.contains(h['line'].interpolate(.5, normalized=True))]
+        for k in ('green', 'tee', 'bunker', 'fairway', 'rough', 'water_hazard', 'lateral_water_hazard', 'pin'):   # and only its own golf features
+            F[k] = [f for f in F[k] if cp.intersects(f.get('poly', f.get('pt')))]
+    # ponds tagged only as golf=water_hazard / lateral_water_hazard (Eagle Ridge) are water too, unless natural=water already covers them
+    for f in F['water_hazard'] + F['lateral_water_hazard']:
+        if not any(w['poly'].intersection(f['poly']).area > .5 * f['poly'].area for w in F['water']):
+            F['water'].append(dict(poly=f['poly'], tags=f['tags']))
     F['hole'].sort(key=lambda h: h['ref'])
     return F
 

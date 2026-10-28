@@ -2,7 +2,11 @@
 
 OSM has the creek only outside the course, so this finds the channel that runs past the clubhouse and behind the 16th
 green. Writes out/creek.json (a GeoJSON-like line in local metres); build.py cuts it into short ribbon pieces.
+
+`creek.py osm` takes the OSM streams instead (Eagle Ridge South: mapped streams cross 11 holes, too many channels for the DEM
+trace, which keeps only the longest), each clipped to the same distance from the course.
 """
+import sys
 import json
 import os
 
@@ -56,5 +60,16 @@ def main():
     print('creek pieces', len(parts), 'length', [round(g.length) for g in parts], 'm')
 
 
+def from_osm():
+    F = osm.load()
+    near = F['course'][0]['poly'].buffer(KEEP_NEAR)
+    parts = []
+    for s in F['stream']:
+        seg = s['line'].intersection(near)
+        parts += [g for g in getattr(seg, 'geoms', [seg]) if g.geom_type == 'LineString' and g.length > 20]
+    json.dump([mapping(g) for g in parts], open(os.path.join(OUT, 'creek.json'), 'w'))
+    print('creek pieces (OSM)', len(parts), 'length', [round(g.length) for g in parts], 'm')
+
+
 if __name__ == '__main__':
-    main()
+    from_osm() if sys.argv[1:] == ['osm'] else main()

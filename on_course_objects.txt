@@ -150,3 +150,22 @@ Fountain (hole 1 only, `scene.fountainHole`): a small spray in the middle of the
 
 Practice putting green (southeast of the 1st tee, beside the parking lot): a green with four cups and flags (numbered 1-4), a collar, tall fescue joined to the course's own, and three large broadleaf trees round it. Visible from hole 1; played from Practice > Putting green.
 Driving range (the field south of the cart road, west of the clubhouse lot): played from Practice > Driving range. Mown striped grass with two sand bunkers (the big one near the road, one beside a target green), a small target green with a collar, tall fescue along the west edge and the creek side, large broadleaf trees along the creek, a long grey metal shed (the same corrugated model as the pump house, solid) beside the lot, and white boundary stakes. Four red flags on tall poles (numbered 1-4, nearest first, no cup: the ball cannot be holed) to aim at, and six hitting spots (two are in bunkers); the ball is teed on grass spots. All four flags stay up; the Flag button picks which one the aim snaps to. After each shot the camera follows the ball, rests on where it stopped for about a second, then returns to the hitting spot.
+
+EAGLE RIDGE SOUTH (eagle_south)
+===============================
+
+Early build: the OSM and lidar data only, nothing painted yet (no fescue, painted boundary, cart paths, tee boxes or site props).
+
+Wild turkeys (a flock of four on about 4 holes in 10, `scene.turkeys` = .4): the same flock and behaviour as at Woodbine Bend.
+
+No highway: US 20 runs about 2 km south of the course, off the map, so there is no traffic.
+
+Side road (out of bounds, for looks only): Eagle Ridge Drive, the resort road past the clubhouse. No traffic.
+
+Water: three ponds (OSM golf=water_hazard; the big one between holes 9 and 18) and the streams OSM maps through the valley (about 3.5 km in 10 pieces, from `creek.py osm`), drawn as creek water.
+
+Trees: about 9,900 from the lidar (6,100 broadleaf, 3,750 conifer, a few shrubs), the wooded valley the holes run through.
+
+Buildings: the 10 OSM buildings on and beside the course, drawn as plain buildings. No clubhouse model, parked carts, cart ride, hot dog, fountain, signs or songs yet (none of those `scene` settings are set).
+
+Practice green and driving range: Woodbine Bend's, as for every course.

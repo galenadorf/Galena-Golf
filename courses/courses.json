@@ -17,6 +17,18 @@
         "fountainHole": 1,
         "songs": { "7": { "src": "sounds/hole7-q.mp3", "vol": 1, "delay": 3 } }
       }
+    },
+    {
+      "key": "eagle_south",
+      "name": "Eagle Ridge South Course",
+      "short": "ER South (Beta)",
+      "pars": [4, 5, 3, 4, 4, 5, 3, 4, 4, 4, 5, 4, 3, 4, 4, 5, 3, 4],
+      "recFrom": "2026-10-28",
+      "about": "The South Course at Eagle Ridge Resort & Spa (Galena, Illinois; Roger Packard, 1984) is played from the gold tees. Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
+      "engine": { "fescue": true, "z0": 200, "gr": { "e0": -1000, "n0": -1000, "res": 2, "W": 1000, "H": 1000 } },
+      "scene": {
+        "turkeys": 0.4
+      }
     }
   ]
 }
