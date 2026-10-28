@@ -16,7 +16,7 @@ from rasterio.enums import Resampling
 from rasterio.transform import from_origin
 from rasterio.vrt import WarpedVRT
 
-from common import DETAIL, LOCAL, UA, WIDE, bbox_lonlat, cache
+from common import DETAIL, LOCAL, UA, WIDE, bbox_lonlat, cache, course
 
 
 def overpass():
@@ -108,7 +108,7 @@ def dem_tiles():
     items = requests.get('https://tnmaccess.nationalmap.gov/api/v1/products',
                          params={'bbox': f'{w},{s},{e},{n}', 'datasets': 'Digital Elevation Model (DEM) 1 meter', 'outputFormat': 'JSON', 'max': 200},
                          headers=UA, timeout=120).json()['items']
-    proj = 'IL_8County_PlusChampaign_2019_B19'
+    proj = course.DEM_PROJECT
     return sorted({i['downloadURL'] for i in items if proj in i['downloadURL']})
 
 

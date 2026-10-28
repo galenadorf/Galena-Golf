@@ -20,7 +20,7 @@ from shapely.geometry import shape
 
 import build
 import osm
-from common import OUT
+from common import OUT, load_rd
 from preview import E0, N1, load_rgb
 
 YD = .9144
@@ -66,8 +66,7 @@ def main():
     d.line([px(*q) for q in hw.coords], fill=(60, 200, 255, 200), width=3)
     x, y = px(*hw.interpolate(hw.project(shape({'type': 'Point', 'coordinates': (200, 541)}))).coords[0])
     d.text((x, y - 40), 'ROUTE 20 (US 20)', fill=(60, 200, 255, 255), font=f1, stroke_width=3, stroke_fill=(0, 0, 0, 255))
-    js = open(os.path.join(OUT, 'rd_woodbine.js')).read()
-    rd = json.loads(js[js.index('{'):js.rindex('};\nconst GREEN_ALTI') + 1])
+    rd = load_rd()
     cols = {'w': (217, 178, 58, 255), 'y': (20, 20, 20, 255), 'b': (235, 240, 245, 255), 'r': (176, 112, 69, 255)}
     for h in rd['holes']:   # where each tee set plays from now
         for kk, col in cols.items():

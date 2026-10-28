@@ -17,9 +17,9 @@ from pyproj import Transformer
 from rasterio.transform import from_origin
 from scipy import ndimage as ndi
 
-from common import DETAIL, LOCAL, UA, bbox_lonlat, cache
+from common import DETAIL, LOCAL, UA, bbox_lonlat, cache, course
 
-EPT = 'https://s3-us-west-2.amazonaws.com/usgs-lidar-public/IL_8County_PlusChampaign_B2_2019'
+EPT = 'https://s3-us-west-2.amazonaws.com/usgs-lidar-public/' + course.LIDAR_EPT
 os.makedirs(cache('ept'), exist_ok=True)
 
 

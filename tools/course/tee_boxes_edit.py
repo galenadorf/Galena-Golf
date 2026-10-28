@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 from shapely.geometry import shape
 
 import osm
-from common import OUT
+from common import OUT, load_rd
 from preview import E0, N1, load_rgb
 
 YD = .9144
@@ -54,8 +54,7 @@ def main(pad=40):
         for q in getattr(f['poly'], 'geoms', [f['poly']]):
             d.polygon([px(*c) for c in q.exterior.coords], fill=MAGENTA)
     # where each tee set plays from now (from the data build.py wrote)
-    js = open(os.path.join(OUT, 'rd_woodbine.js')).read()
-    rd = json.loads(js[js.index('{'):js.rindex('};\nconst GREEN_ALTI') + 1])
+    rd = load_rd()
     cols = {'w': (217, 178, 58, 255), 'y': (20, 20, 20, 255), 'b': (235, 240, 245, 255), 'r': (176, 112, 69, 255)}
     for h in rd['holes']:
         for k, c in cols.items():

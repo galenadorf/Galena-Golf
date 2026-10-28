@@ -1,10 +1,10 @@
-"""Put out/rd_woodbine.js into index.html: replaces the RD_WOODBINE and GREEN_ALTI_WOODBINE lines."""
+"""Put the course's out/rd_<key>.js (build.py) into index.html: replaces its RD_<KEY> and GREEN_ALTI_<KEY> lines."""
 import os
 
-from common import HERE, OUT
+from common import ALTI_VAR, HERE, RD_JS, RD_VAR
 
 INDEX = os.path.join(HERE, '..', '..', 'index.html')
-rd, alti = open(os.path.join(OUT, 'rd_woodbine.js'), encoding='utf-8').read().splitlines()
+rd, alti = open(RD_JS, encoding='utf-8').read().splitlines()
 lines = open(INDEX, encoding='utf-8').read().split('\n')
 
 
@@ -14,7 +14,7 @@ def put(prefix, new):
     lines[hit[0]] = new
 
 
-put('const RD_WOODBINE = ', rd)
-put('const GREEN_ALTI_WOODBINE = ', alti)
+put(f'const {RD_VAR} = ', rd)
+put(f'const {ALTI_VAR} = ', alti)
 print('installed')
 open(INDEX, 'w', encoding='utf-8').write('\n'.join(lines))

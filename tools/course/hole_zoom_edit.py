@@ -14,7 +14,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 import osm
-from common import OUT
+from common import OUT, course, load_rd
 from preview import E0, N1, load_rgb
 
 YD = .9144
@@ -58,9 +58,8 @@ def main(ref=7, box=(-312, -128, -178, -58)):
     h = next(x for x in F['hole'] if x['ref'] == ref)
     d.line([px(*q) for q in h['line'].coords], fill=(0, 220, 255, 200), width=2)
     # where each tee set plays from now, and the sign now
-    js = open(os.path.join(OUT, 'rd_woodbine.js')).read()
-    rd = json.loads(js[js.index('{'):js.rindex('};\nconst GREEN_ALTI') + 1])
-    cols = {'w': ((217, 178, 58, 255), 'gold'), 'y': ((20, 20, 20, 255), 'black'), 'b': ((235, 240, 245, 255), 'silver'), 'r': ((176, 112, 69, 255), 'bronze')}
+    rd = load_rd()
+    cols = {m: (c, course.MARKERS[m][0]) for m, c in {'w': (217, 178, 58, 255), 'y': (20, 20, 20, 255), 'b': (235, 240, 245, 255), 'r': (176, 112, 69, 255)}.items()}
     for kk, (col, name) in cols.items():
         x, y = px(*rd['holes'][ref - 1]['mk'][kk])
         d.ellipse([x - 14, y - 14, x + 14, y + 14], outline=col, width=4)

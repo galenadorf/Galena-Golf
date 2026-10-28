@@ -1,6 +1,6 @@
-"""Build the game's course data for Woodbine Bend from the cached sources.
+"""Build the game's course data for the course picked (--course <key>, see common.py) from its cached sources.
 
-  out/rd_woodbine.js   `const RD_WOODBINE = {...};` and `const GREEN_ALTI_WOODBINE = {...};`, ready to paste into index.html
+  out/rd_<key>.js   `const RD_<KEY> = {...};` and `const GREEN_ALTI_<KEY> = {...};`, which install.py puts into the game
 
 The shapes follow RD_GCCB (see the REAL COURSE section of index.html): east/north metres around `origin`, polygons and
 lines delta-coded in decimetres as little-endian int16 base64, the terrain as a coarse grid (`dem`) plus a 2 m relief
@@ -18,13 +18,12 @@ from shapely import affinity
 from shapely.geometry import LineString, Point, Polygon, box, shape
 from shapely.ops import linemerge, substring, unary_union
 
-import card
 import osm
 import practice_read
-from common import NAME, ORIGIN, OUT, cache, to_local
+from common import ALTI_VAR, DETAIL, NAME, ORIGIN, OUT, RD_JS, RD_VAR, YD, cache, course, to_local
 
-YD = card.YD
-DEM_RES, DEM_AREA = 15, (-1200, -1200, 1200, 1200)
+card = course   # the scorecard: PAR, HCP, TEES, MARKERS
+DEM_RES, DEM_AREA = 15, course.DEM_AREA
 Z_DEM, Z_ALTI = 200.0, 200   # metres the dem and the green lattices are stored above
 RELIEF_RES = 2
 
@@ -262,7 +261,9 @@ def build_holes(F, demZ1):
         c[-1] = (gc.x, gc.y)
         L = LineString(c)
         pos, gap = {}, {}
-        for k in ('gold', 'black', 'silver', 'bronze'):
+        sets = [card.MARKERS[m][0] for m in 'wybr']   # the set played, then the other three
+        play = sets[0]
+        for k in sets:
             yd = card.TEES[k][2][i]
             raw = point_at_remaining(L, yd * YD)
             p, gap[k] = snap_to_tee(raw, tees, L)
@@ -270,21 +271,21 @@ def build_holes(F, demZ1):
                 print(f'  hole {hh["ref"]} {k}: {yd} yd is {p.distance(raw):.0f} m from the nearest tee box; placed in the box')
             pos[k] = (round(p.x, 2), round(p.y, 2))
         if i in starts:
-            pos['gold'] = starts[i]
-            q, gap['gold'] = snap_to_tee(Point(starts[i]), tees, L, marks[str(hh['ref'])]['half'] if str(hh['ref']) in marks else 2.6)
+            pos[play] = starts[i]
+            q, gap[play] = snap_to_tee(Point(starts[i]), tees, L, marks[str(hh['ref'])]['half'] if str(hh['ref']) in marks else 2.6)
             if q.distance(Point(starts[i])) > .05:
                 print(f'  hole {hh["ref"]}: the painted start moved {q.distance(Point(starts[i])):.1f} m to keep its markers inside the tee box')
-            pos['gold'] = (round(q.x, 2), round(q.y, 2))
-        tee = pos['gold']
-        # the line of play starts at the played (gold) tee
+            pos[play] = (round(q.x, 2), round(q.y, 2))
+        tee = pos[play]
+        # the line of play starts at the played tee
         s = L.project(Point(tee))
         rest = [q for q in L.coords if L.project(Point(q)) > s + 15]
         line = [tee] + [(round(x, 2), round(y, 2)) for x, y in rest]
-        h = dict(par=card.PAR[i], hcp=card.HCP[i], len=round(card.TEES['gold'][2][i] * YD, 1), yd=card.TEES['gold'][2][i],
-                 lens=[round(card.TEES[k][2][i] * YD, 1) for k in ('gold', 'black', 'silver', 'bronze')],
+        h = dict(par=card.PAR[i], hcp=card.HCP[i], len=round(card.TEES[play][2][i] * YD, 1), yd=card.TEES[play][2][i],
+                 lens=[round(card.TEES[k][2][i] * YD, 1) for k in sets],
                  tee=list(tee), green=[round(gc.x, 2), round(gc.y, 2)], line=[list(p) for p in line],
-                 mk={'w': list(pos['gold']), 'y': list(pos['black']), 'b': list(pos['silver']), 'r': list(pos['bronze'])})
-        h['mkh'] = {'w': round(gap['gold'], 2) if 'gold' in gap else 2.6, 'y': round(gap['black'], 2), 'b': round(gap['silver'], 2), 'r': round(gap['bronze'], 2)}   # the half-gap between a set's two markers: as wide as its box allows, up to 2.6 m
+                 mk={m: list(pos[k]) for m, k in zip('wybr', sets)})
+        h['mkh'] = {m: round(gap[k], 2) if k in gap else 2.6 for m, k in zip('wybr', sets)}   # the half-gap between a set's two markers: as wide as its box allows, up to 2.6 m
         h['desc'] = describe(dict(tee=tee, green=(gc.x, gc.y), L=LineString(line), par=h['par']), demZ1, None, F, None)
         h['_green_poly'] = g
         out.append(h)
@@ -332,19 +333,20 @@ def creek_pieces(hw=2.0, step=14.0):
     return out
 
 
-def highway(area=(-1250, -720, 1250, 720)):
-    """US 20, the highway past the north edge of the course, as one west-to-east line clipped to the game's 2 m class grid, and the
+def highway(area=course.ROAD_AREA):
+    """The highway with traffic (course.HIGHWAY; at Woodbine US 20, past the north edge of the course), as one west-to-east line clipped to the game's 2 m class grid, and the
     distance along it where the 55 mph road becomes Woodbine Street (35 mph) at the edge of Stockton. Read from the raw OSM file: osm.load
     keeps the tag-less duplicate of a way that Overpass lists twice, which loses these two ways."""
     els = json.load(open(cache('osm.json')))['elements']
     nodes = {e['id']: to_local(e['lon'], e['lat']) for e in els if e['type'] == 'node'}
-    ways = {e['id']: e for e in els if e['type'] == 'way' and e.get('tags', {}).get('ref') == 'US 20'}
-    assert len(ways) == 2, ways.keys()
+    H = course.HIGHWAY
+    ways = {e['id']: e for e in els if e['type'] == 'way' and e.get('tags', {}).get('ref') == H['ref']}
+    assert len(ways) == H['ways'], ways.keys()
     line = linemerge([LineString([nodes[i] for i in w['nodes']]) for w in ways.values()])
     assert line.geom_type == 'LineString'
     if line.coords[0][0] > line.coords[-1][0]:
         line = LineString(list(line.coords)[::-1])
-    fast = [w for w in ways.values() if w['tags'].get('maxspeed') == '55 mph'][0]  # the stretch that meets the town street
+    fast = [w for w in ways.values() if w['tags'].get('maxspeed') == H['fast']][0]  # the stretch that meets the town street
     slow = line.project(Point(*[nodes[i] for i in fast['nodes']][-1]))
     clipped = line.intersection(box(*area))
     if clipped.geom_type != 'LineString':
@@ -353,16 +355,16 @@ def highway(area=(-1250, -720, 1250, 720)):
     return clipped.simplify(.4), round(slow - cut)
 
 
-def side_roads(F, hw, area=(-1250, -720, 1250, 720)):
-    """The two public roads that border the course, drawn for looks only (the ball does not touch them): East Center Road along the south
+def side_roads(F, hw, area=course.ROAD_AREA):
+    """The public roads beside the course (course.SIDE_ROADS), drawn for looks only (the ball does not touch them). At Woodbine: East Center Road along the south
     side and South Brown Road (with Chicago Street, its stretch through Stockton) along the east side. Each runs out past the map and
     stops at the middle of US 20, which both meet. Lines from OSM, ordered west to east / south to north."""
     out = []
-    for names in (('East Center Road',), ('South Brown Road', 'Chicago Street')):
+    for names in course.SIDE_ROADS or []:
         line = linemerge([r['line'] for r in F['road'] if r['tags'].get('name') in names])
         assert line.geom_type == 'LineString', names
         x = line.intersection(hw)
-        if not x.is_empty:   # the road meets US 20: keep the long side of it, ending on the highway's centre line
+        if hw is not None and not x.is_empty:   # the road meets the highway: keep the long side of it, ending on the highway's centre line
             p = x if x.geom_type == 'Point' else list(x.geoms)[0]
             d = line.project(p)
             a, b = substring(line, 0, d), substring(line, d, line.length)
@@ -434,11 +436,11 @@ def main():
     print('fairway -> green links (hole, gap m, area added m2):', rep)
     cp = os.path.join(OUT, 'cartpaths.json')   # the cart paths: found on the aerial and corrected by hand (cartpaths_edit.py, cartpaths_read.py); trace.py's paths.json was only fragments
     paths = [shape(g) for g in json.load(open(cp))] if os.path.exists(cp) else []
-    course = F['course'][0]['poly']
+    course_poly = F['course'][0]['poly']
     dem, demZ = build_dem()
     d1, tr1 = read(cache('dem1m.tif'))
     demZ1 = lambda e, n: float(sample(d1, tr1, [e], [n])[0])
-    relief = build_relief(demZ, course.buffer(40).bounds, course.buffer(30))
+    relief = build_relief(demZ, course_poly.buffer(40).bounds, course_poly.buffer(30))
     holes = build_holes(F, demZ1)
     alti = {i: green_alti(h.pop('_green_poly')) for i, h in enumerate(holes)}
     prac = None   # the practice green (practice_read.py): a scene of its own, not one of the 18 holes
@@ -467,7 +469,7 @@ def main():
                    feat=dict(fair=enc_polys([shape(g) for g in rr['fair']]), green=enc_polys([shape(g) for g in rr['greens']]), sand=enc_polys([shape(g) for g in rr['bunkers']]),
                              fescue=enc_polys([shape(g) for g in rr['fescue']])),
                    boundary=enc_polys([shape(rr['boundary'])]), box=rr['box'])
-    area = box(-700, -700, 700, 700)
+    area = box(*DETAIL)
     clip = lambda ps: [p.intersection(area) for p in ps if p.intersects(area)]
     trees_path = os.path.join(OUT, 'trees.json')
     trees = json.load(open(trees_path)) if os.path.exists(trees_path) else []
@@ -486,11 +488,11 @@ def main():
     fp = os.path.join(OUT, 'fescue.json')
     fescue = [shape(g) for g in json.load(open(fp))] if os.path.exists(fp) else []
     bp = os.path.join(OUT, 'boundary.json')  # the hand-painted boundary (boundary.py) replaces the OSM outline as the out-of-bounds line
-    bound = shape(json.load(open(bp))) if os.path.exists(bp) else Polygon(course.exterior)
+    bound = shape(json.load(open(bp))) if os.path.exists(bp) else Polygon(course_poly.exterior)
     if os.path.exists(ppn):
         fescue = practice_read.merge_fescue(fescue, pr)
     fescue = [g for f in fescue for g in getattr(f.intersection(bound), 'geoms', [f.intersection(bound)]) if g.geom_type == 'Polygon' and not g.is_empty]
-    hw, hw_slow = highway()
+    hw, hw_slow = highway() if course.HIGHWAY else (None, None)
     roads = side_roads(F, hw)
     rd = dict(
         name=NAME, origin=list(ORIGIN), dem=dem, holes=holes,
@@ -505,16 +507,16 @@ def main():
         # the lidar trees cover the whole detail area: OSM woods only count beyond it
         cover=enc_polys([area] if trees else []),
         streams=enc_lines([f['line'] for f in F['stream']]),
-        highway=enc_lines([hw]), hwSlow=hw_slow,  # US 20 past the north edge of the course; hwSlow = metres from its west end where the limit drops from 55 to 35 mph
+        highway=enc_lines([hw] if hw else []), hwSlow=hw_slow,  # the highway with traffic (Woodbine: US 20 past the north edge); hwSlow = metres from its west end where the limit drops from 55 to 35 mph
         relief=relief, prac=prac, drv=drv, roads=[enc_lines([r]) for r in roads],
         props=(json.load(open(os.path.join(OUT, 'site_props.json'))) if os.path.exists(os.path.join(OUT, 'site_props.json')) else []) + ([rr['shed']] if drv and rr.get('shed') else []),  # washrooms, porta-potties and signposts painted on the aerial (site_paint.py)
-        # tee marker colours: w is the tee played (gold), y/b/r the other sets (black, silver, bronze)
-        mkc=dict(w=0xd9b23a, y=0x26282b, b=0xc9ced3, r=0xb07045),
+        # tee marker colours: w is the tee played, y/b/r the other sets (course.MARKERS)
+        mkc={m: c for m, (_, c) in card.MARKERS.items()},
     )
-    js = 'const RD_WOODBINE = ' + json.dumps(rd, separators=(',', ':')) + ';\n'
-    js += 'const GREEN_ALTI_WOODBINE = {' + ','.join(f'{i}:' + json.dumps(a, separators=(',', ':')).replace('"', '') for i, a in alti.items()) + '};\n'
-    open(os.path.join(OUT, 'rd_woodbine.js'), 'w').write(js)
-    print(f'rd_woodbine.js {len(js) / 1024:.0f} KB (relief {len(relief["d"]) / 1024:.0f} KB, dem {len(dem["data"]) / 1024:.0f} KB, trees {len(trees)})')
+    js = f'const {RD_VAR} = ' + json.dumps(rd, separators=(',', ':')) + ';\n'
+    js += f'const {ALTI_VAR} = {{' + ','.join(f'{i}:' + json.dumps(a, separators=(',', ':')).replace('"', '') for i, a in alti.items()) + '};\n'
+    open(RD_JS, 'w').write(js)
+    print(f'{os.path.basename(RD_JS)} {len(js) / 1024:.0f} KB (relief {len(relief["d"]) / 1024:.0f} KB, dem {len(dem["data"]) / 1024:.0f} KB, trees {len(trees)})')
     for i, h in enumerate(holes):
         print(f"{i + 1:2d} par {h['par']} {h['yd']} yd  tee {h['tee']}  {h['desc']}")
 

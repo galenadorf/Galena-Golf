@@ -5,7 +5,7 @@ from collections import defaultdict
 from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import unary_union, polygonize
 
-from common import cache, to_local
+from common import cache, course, to_local
 
 
 def load():
@@ -40,7 +40,7 @@ def load():
                 F['cartpath_line'].append(dict(line=LineString(coords(w)), tags=t))
             continue
         if t.get('leisure') == 'golf_course':
-            F['course'].append(dict(poly=area(w), tags=t))
+            F['course'].append(dict(poly=area(w), tags=t, id=w['id']))
         elif t.get('natural') == 'water' or t.get('water') or t.get('landuse') in ('reservoir', 'basin'):
             p = area(w)
             if p is not None:
@@ -82,6 +82,11 @@ def load():
         key = 'water' if (t.get('natural') == 'water' or t.get('water')) else 'wood' if (t.get('natural') == 'wood' or t.get('landuse') == 'forest') else None
         if key:
             F[key].append(dict(poly=p, tags=t))
+    if course.OSM_WAY:   # the course's own outline, and only its holes (a resort's other courses may be in the download too)
+        F['course'] = [c for c in F['course'] if c['id'] == course.OSM_WAY]
+        assert len(F['course']) == 1, f'OSM way {course.OSM_WAY} (course.OSM_WAY) is not a leisure=golf_course in osm.json'
+        cp = F['course'][0]['poly'].buffer(30)
+        F['hole'] = [h for h in F['hole'] if cp.contains(h['line'].interpolate(.5, normalized=True))]
     F['hole'].sort(key=lambda h: h['ref'])
     return F
 

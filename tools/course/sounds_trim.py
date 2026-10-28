@@ -1,9 +1,9 @@
-"""Trim the raw recordings in out/sounds/*.m4a to just the sound and write the game's files into ../../sounds/ (mono MP3, 96 kbps,
+"""Trim the raw recordings in sounds_raw/*.m4a to just the sound and write the game's files into ../../sounds/ (mono MP3, 96 kbps,
 peak-normalised to -3 dBFS; the game sets each one's level). Needs PyAV (pip install av). Start: 12 ms before the sound first rises
 above -48 dB of its peak; end: where the 5 ms envelope has dropped 60 dB below the peak, plus a short fade.
-  out/sounds/Driver.m4a -> sounds/driver.mp3    3-wood.m4a -> wood.mp3    Irons.m4a -> iron.mp3 (Iron.m4a is a duplicate)
+  sounds_raw/Driver.m4a -> sounds/driver.mp3    3-wood.m4a -> wood.mp3    Irons.m4a -> iron.mp3 (Iron.m4a is a duplicate)
   Wedges.m4a -> wedge.mp3    Putter.m4a -> putter.mp3    Ball_in_hole.m4a -> cup.mp3
-Music: out/sounds/Hole_7_background_music.m4a -> sounds/hole7-q.mp3, mono at 80 kbps, the silence before and after cut (the last second
+Music: sounds_raw/Hole_7_background_music.m4a -> sounds/hole7-q.mp3, mono at 80 kbps, the silence before and after cut (the last second
 holds the song's closing hit), a short fade at the end, the playing level is baked into the file (MUSIC_PEAK_DB), so it is quiet even where the browser ignores the game's volume setting (HOLE_SONGS vol is 1).
 Around_the_world.mp3 -> sounds/cartmusic.mp3: the radio on the moving golf cart (`cartMusic*` in index.html). Mono at 64 kbps, 44.1 kHz, peak
 -12 dBFS (the game scales it by distance from the cart and by the Song volume setting), leading and trailing silence cut, a short fade at the end.
@@ -18,7 +18,7 @@ import sys
 import av
 import numpy as np
 
-from common import OUT, HERE
+from common import HERE, SOUNDS_RAW
 
 SR = 48000
 MUSIC_PEAK_DB = -15.5   # the song's loudest peak: -1.5 dBFS at full scale, 14 dB (a factor of .2) down
@@ -65,7 +65,7 @@ def write(y, path, kbps=96, sr=SR):
 
 
 def music():
-    p = os.path.join(OUT, 'sounds', 'Hole_7_background_music.m4a')
+    p = os.path.join(SOUNDS_RAW, 'Hole_7_background_music.m4a')
     if os.path.exists(p):
         y, a, b = trim_music(load(p))
         write(y, os.path.join(DEST, 'hole7-q.mp3'), 80)
@@ -73,7 +73,7 @@ def music():
 
 
 def cartmusic():
-    p = os.path.join(OUT, 'sounds', 'Around_the_world.mp3')
+    p = os.path.join(SOUNDS_RAW, 'Around_the_world.mp3')
     if not os.path.exists(p):
         print('missing', p); return
     c = av.open(p); r = av.AudioResampler(format='fltp', layout='mono', rate=44100)
@@ -87,7 +87,7 @@ def cartmusic():
 
 def farts():
     for i, nm in enumerate(FARTS, 1):
-        p = os.path.join(OUT, 'sounds', nm + '.m4a')
+        p = os.path.join(SOUNDS_RAW, nm + '.m4a')
         if not os.path.exists(p):
             print('missing', p); continue
         y, a, b = trim(load(p))
@@ -99,7 +99,7 @@ def farts():
 
 def trucks():
     for nm, dst, kbps in (('Truck_horn', 'truckhorn', 96), ('Truck_rumble', 'truckrumble', 64)):
-        p = os.path.join(OUT, 'sounds', nm + '.m4a')
+        p = os.path.join(SOUNDS_RAW, nm + '.m4a')
         if not os.path.exists(p):
             print('missing', p); continue
         y, a, b = trim(load(p)); d = os.path.join(DEST, dst + '.mp3'); write(y, d, kbps)
@@ -113,7 +113,7 @@ def main():
     trucks()
     os.makedirs(DEST, exist_ok=True)
     for src, dst in MAP.items():
-        p = os.path.join(OUT, 'sounds', src + '.m4a')
+        p = os.path.join(SOUNDS_RAW, src + '.m4a')
         if not os.path.exists(p):
             print('missing', p); continue
         y, a, b = trim(load(p))
