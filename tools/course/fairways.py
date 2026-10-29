@@ -18,23 +18,27 @@ LEVEL = 0.5
 TOL = 0.2
 
 
+def from_mask(m, fr, min_area=MIN_AREA, smooth=SMOOTH, tol=TOL):
+    """The fairway polygons from a boolean mask on the grid `fr` (all_read.py also reads its putting greens and ponds with it)."""
+    px = fr['res'] ** 2
+    m = ndi.binary_closing(m, iterations=2)
+    lab, n = ndi.label(m)
+    sizes = ndi.sum(m, lab, range(1, n + 1))
+    m = np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s * px >= min_area])
+    inv, n = ndi.label(~m)
+    sizes = ndi.sum(~m, inv, range(1, n + 1))
+    for i, s in enumerate(sizes):
+        if s * px < min_area:
+            m |= inv == i + 1
+    return smooth_polys(m, fr, smooth, LEVEL, min_area, tol)
+
+
 def main():
     fr = json.load(open(os.path.join(OUT, 'fescue_base.json')))
     a = np.array(Image.open(os.path.join(OUT, 'fairway_mask.png')).convert('RGB')).astype(int)
     assert a.shape[1] == fr['w'] and a.shape[0] == fr['h'], 'the mask must have the base map\'s size'
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
-    m = (g >= 215) & (r <= 45) & (b <= 45)  # pure green (60,255,60 outline pixels of other layers do not count)
-    px = fr['res'] ** 2
-    m = ndi.binary_closing(m, iterations=2)
-    lab, n = ndi.label(m)
-    sizes = ndi.sum(m, lab, range(1, n + 1))
-    m = np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s * px >= MIN_AREA])
-    inv, n = ndi.label(~m)
-    sizes = ndi.sum(~m, inv, range(1, n + 1))
-    for i, s in enumerate(sizes):
-        if s * px < MIN_AREA:
-            m |= inv == i + 1
-    polys = smooth_polys(m, fr, SMOOTH, LEVEL, MIN_AREA, TOL)
+    polys = from_mask((g >= 215) & (r <= 45) & (b <= 45), fr)  # pure green (60,255,60 outline pixels of other layers do not count)
     json.dump([mapping(p) for p in polys], open(os.path.join(OUT, 'fairways_painted.json'), 'w'))
     old = unary_union([shape(gg) for gg in json.load(open(os.path.join(OUT, 'fairways.json')))])
     new = unary_union(polys)

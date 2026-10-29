@@ -24,16 +24,12 @@ def height(kind, d):
     return round(3 + 1.1 * d if kind == 0 else 1 + .35 * d if kind == 1 else 2.4 * d, 1)  # a shrub stays under 4 m
 
 
-def main():
-    fr = json.load(open(os.path.join(OUT, 'trees_edit.json')))
-    a = np.array(Image.open(os.path.join(OUT, 'trees_mask.png')).convert('RGB')).astype(int)
-    assert a.shape[1] == fr['w'] and a.shape[0] == fr['h'], 'the mask must have the base map\'s size'
+def from_masks(masks, fr, old):
+    """Trees from boolean masks {kind: mask} on the grid `fr`, kept off the lidar trees `old` (also used by all_read.py)."""
     tr = Affine(fr['res'], 0, fr['e0'], 0, -fr['res'], fr['n1'])
-    old = json.load(open(os.path.join(OUT, 'trees.json')))
     rng = np.random.default_rng(7)
     out = []
-    for kind, (rgb, name) in KINDS.items():
-        m = (np.abs(a - np.array(rgb)).max(2) <= 40)
+    for kind, m in masks.items():
         m = ndi.binary_closing(m, iterations=1)
         lab, n = ndi.label(m)
         sizes = ndi.sum(m, lab, range(1, n + 1))
@@ -61,6 +57,14 @@ def main():
                     if any(np.hypot(q.x - t['e'], q.y - t['n']) < .6 * (d + t['d']) / 2 for t in old):
                         continue
                     out.append(dict(e=round(q.x, 1), n=round(q.y, 1), d=round(d, 1), h=height(kind, d), kind=kind))
+    return out
+
+
+def main():
+    fr = json.load(open(os.path.join(OUT, 'trees_edit.json')))
+    a = np.array(Image.open(os.path.join(OUT, 'trees_mask.png')).convert('RGB')).astype(int)
+    assert a.shape[1] == fr['w'] and a.shape[0] == fr['h'], 'the mask must have the base map\'s size'
+    out = from_masks({kind: np.abs(a - np.array(rgb)).max(2) <= 40 for kind, (rgb, name) in KINDS.items()}, fr, json.load(open(os.path.join(OUT, 'trees.json'))))
     json.dump(out, open(os.path.join(OUT, 'trees_painted.json'), 'w'))
     print(len(out), 'trees added:', sum(t['kind'] == 0 for t in out), 'broadleaf,', sum(t['kind'] == 2 for t in out), 'conifer,', sum(t['kind'] == 1 for t in out), 'shrubs')
 

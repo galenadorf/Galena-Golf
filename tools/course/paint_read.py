@@ -33,41 +33,26 @@ def mask(a, rgb, closing=2):
     return ndi.binary_closing(np.abs(a - np.array(rgb)).max(2) <= 40, iterations=closing)
 
 
-def main():
-    fr = json.load(open(os.path.join(OUT, 'paint_edit.json')))
-    a = np.array(Image.open(os.path.join(OUT, 'paint_mask.png')).convert('RGB')).astype(int)
-    assert a.shape[1] == fr['w'] and a.shape[0] == fr['h'], 'the mask must have the map\'s size'
-    a[KEY_BOX[1]:KEY_BOX[3] + 80, KEY_BOX[0]:KEY_BOX[2]] = 0
+def blob_polys(m, fr, min_area, fill, smooth=False):
+    """Polygons of the blobs of a (closed) boolean mask on a map of fr['ppm'] px per metre (also used by all_read.py)."""
     ppm = fr['ppm']
-    tr = Affine(1 / ppm, 0, fr['e0'], 0, -1 / ppm, fr['n1'])
+    if fill:
+        m = ndi.binary_fill_holes(m)
+    lab, n = ndi.label(m)
+    sizes = ndi.sum(m, lab, range(1, n + 1))
+    m = np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s / ppm ** 2 >= min_area])
+    if smooth:
+        return smooth_polys(m, dict(e0=fr['e0'], n1=fr['n1'], res=1 / ppm), SMOOTH * ppm / 4, .46, min_area, .05)   # SMOOTH is in px of the 4 px/m map
+    return [shape(g).buffer(0) for g, v in features.shapes(m.astype(np.uint8), mask=m, transform=Affine(1 / ppm, 0, fr['e0'], 0, -1 / ppm, fr['n1'])) if v]
+
+
+def sheds(m, fr):
+    """'shed' prop rows for the solid rectangles of a boolean mask (also used by all_read.py)."""
+    ppm = fr['ppm']
     loc = lambda ys, xs: [(fr['e0'] + x / ppm, fr['n1'] - y / ppm) for y, x in zip(ys, xs)]
-    F = osm.load()
-
-    def polys(rgb, min_area, fill, smooth=False):
-        m = mask(a, rgb)
-        if fill:
-            m = ndi.binary_fill_holes(m)
-        lab, n = ndi.label(m)
-        sizes = ndi.sum(m, lab, range(1, n + 1))
-        m = np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s / ppm ** 2 >= min_area])
-        if smooth:
-            return smooth_polys(m, dict(e0=fr['e0'], n1=fr['n1'], res=1 / ppm), SMOOTH, .46, min_area, .05)
-        return [shape(g).buffer(0) for g, v in features.shapes(m.astype(np.uint8), mask=m, transform=tr) if v]
-
-    boxes = polys((255, 0, 255), MIN_TEE, True, True)
-    assert boxes, 'no magenta tee boxes found'
-    keep = [t['poly'] for t in F['tee'] if '--keep' in sys.argv and not any(p.distance(t['poly']) < KEEP_NEAR for p in boxes)]
-    json.dump([mapping(p) for p in keep + boxes], open(os.path.join(OUT, 'tees_painted.json'), 'w'))
-    starts = [[round(p.centroid.x, 2), round(p.centroid.y, 2)] for p in polys((255, 255, 0), .2, False)]
-    json.dump(starts, open(os.path.join(OUT, 'tee_starts.json'), 'w'))
-    print(len(boxes), 'painted tee boxes (', round(sum(p.area for p in boxes)), 'm2 ) +', len(keep), 'current boxes kept;', len(starts), 'start dots')
-    for p in starts:
-        h = min(F['hole'], key=lambda hh: hh['line'].distance(shape({'type': 'Point', 'coordinates': p})))
-        print('  start dot', p, '-> hole', h['ref'])
-    # the entrance sign
     rows = []
-    lab, n = ndi.label(mask(a, (255, 128, 0)))
-    for i in range(1, n + 1):   # sheds
+    lab, n = ndi.label(m)
+    for i in range(1, n + 1):
         ys, xs = np.nonzero(lab == i)
         if not 3 <= len(ys) / ppm ** 2 <= 200 or max(np.ptp(xs), np.ptp(ys)) / ppm > 30:
             continue
@@ -80,6 +65,33 @@ def main():
             continue
         rows.append(['shed', round(r.centroid.x, 1), round(r.centroid.y, 1), round(math.degrees(math.atan2(long_[0], -long_[1])) % 360), round(w, 1), round(dep, 1), ''])
         print('shed', rows[-1])
+    return rows
+
+
+def main():
+    fr = json.load(open(os.path.join(OUT, 'paint_edit.json')))
+    a = np.array(Image.open(os.path.join(OUT, 'paint_mask.png')).convert('RGB')).astype(int)
+    assert a.shape[1] == fr['w'] and a.shape[0] == fr['h'], 'the mask must have the map\'s size'
+    a[KEY_BOX[1]:KEY_BOX[3] + 80, KEY_BOX[0]:KEY_BOX[2]] = 0
+    ppm = fr['ppm']
+    loc = lambda ys, xs: [(fr['e0'] + x / ppm, fr['n1'] - y / ppm) for y, x in zip(ys, xs)]
+    F = osm.load()
+
+    def polys(rgb, min_area, fill, smooth=False):
+        return blob_polys(mask(a, rgb), fr, min_area, fill, smooth)
+
+    boxes = polys((255, 0, 255), MIN_TEE, True, True)
+    assert boxes, 'no magenta tee boxes found'
+    keep = [t['poly'] for t in F['tee'] if '--keep' in sys.argv and not any(p.distance(t['poly']) < KEEP_NEAR for p in boxes)]
+    json.dump([mapping(p) for p in keep + boxes], open(os.path.join(OUT, 'tees_painted.json'), 'w'))
+    starts = [[round(p.centroid.x, 2), round(p.centroid.y, 2)] for p in polys((255, 255, 0), .2, False)]
+    json.dump(starts, open(os.path.join(OUT, 'tee_starts.json'), 'w'))
+    print(len(boxes), 'painted tee boxes (', round(sum(p.area for p in boxes)), 'm2 ) +', len(keep), 'current boxes kept;', len(starts), 'start dots')
+    for p in starts:
+        h = min(F['hole'], key=lambda hh: hh['line'].distance(shape({'type': 'Point', 'coordinates': p})))
+        print('  start dot', p, '-> hole', h['ref'])
+    # the entrance sign
+    rows = sheds(mask(a, (255, 128, 0)), fr)
     out = os.path.join(OUT, 'paint_props.json')
     lab, n = ndi.label(mask(a, (128, 0, 255)))
     if not n:

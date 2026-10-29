@@ -442,6 +442,14 @@ def main():
     ba = os.path.join(OUT, 'bunkers_auto.json')  # bunkers the aerial shows but OSM lacks (bunkers_auto.py)
     if os.path.exists(ba):
         F['bunker'] += [dict(poly=shape(g), tags={'auto': 'yes'}) for g in json.load(open(ba))]
+    for k, name in (('green', 'greens_painted.json'), ('water', 'water_painted.json')):   # painted on the all-in-one map (all_read.py): replace OSM's
+        pp = os.path.join(OUT, name)
+        if os.path.exists(pp):
+            F[k] = [dict(poly=shape(g), tags={'painted': 'yes'}) for g in json.load(open(pp))]
+    bdp = os.path.join(OUT, 'buildings_painted.json')   # buildings painted on the all-in-one map join OSM's (an OSM one mostly under a painted one gives way)
+    if os.path.exists(bdp):
+        nb = [shape(g) for g in json.load(open(bdp))]
+        F['building'] = [b for b in F['building'] if not any(b['poly'].intersection(q).area > .5 * b['poly'].area for q in nb)] + [dict(poly=q, tags={'painted': 'yes'}) for q in nb]
     for k in ('bunker', 'tee', 'fairway'):   # OSM outlines (painted ones replace them below, already smoothed)
         for f in F[k]:
             f['poly'] = round_osm(f['poly'])
@@ -499,6 +507,12 @@ def main():
     clip = lambda ps: [p.intersection(area) for p in ps if p.intersects(area)]
     trees_path = os.path.join(OUT, 'trees.json')
     trees = json.load(open(trees_path)) if os.path.exists(trees_path) else []
+    trp = os.path.join(OUT, 'trees_removed.json')   # areas painted clear of lidar trees on the all-in-one map (all_read.py)
+    if os.path.exists(trp):
+        clear = unary_union([shape(g) for g in json.load(open(trp))])
+        n0 = len(trees)
+        trees = [t for t in trees if not clear.contains(Point(t['e'], t['n']))]
+        print(n0 - len(trees), 'lidar trees cleared by trees_removed.json')
     tp = os.path.join(OUT, 'trees_painted.json')  # trees added by hand-painting (trees_paint.py) on top of the lidar ones
     if os.path.exists(tp):
         trees += json.load(open(tp))

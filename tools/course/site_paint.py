@@ -35,8 +35,7 @@ CARS = 8                                    # parked cars in the lot; models: 'c
 CAR_LOOKS = [('car', 0x7b92ac), ('suv', 0x1a1b1e), ('car', 0xb3282d), ('suv', 0xe6e6e2), ('car', 0xc9ccd0), ('suv', 0x3d5a45), ('car', 0x1f2e4a), ('suv', 0x9a8c72)]
 
 
-def blobs(a, rgb, fr, tr, min_area):
-    m = (np.abs(a - np.array(rgb)).max(2) <= 40)
+def blobs(m, fr, tr, min_area):
     m = ndi.binary_closing(m, iterations=1)
     lab, n = ndi.label(m)
     sizes = ndi.sum(m, lab, range(1, n + 1))
@@ -99,13 +98,9 @@ def lot_rows(poly, F, seed=8):
     return out
 
 
-def main():
-    fr = json.load(open(os.path.join(OUT, 'fescue_base.json')))
-    a = np.array(Image.open(os.path.join(OUT, 'site_mask.png')).convert('RGB')).astype(int)
-    assert a.shape[1] == fr['w'] and a.shape[0] == fr['h'], 'the mask must have the base map\'s size'
-    a[LEGEND[1]:LEGEND[3], LEGEND[0]:LEGEND[2]] = 0
+def rows_from(masks, fr, F):
+    """Prop rows from boolean masks {'wash', 'door', 'potty', 'sign', 'lot'} on the grid `fr` (also used by all_read.py)."""
     tr = Affine(fr['res'], 0, fr['e0'], 0, -fr['res'], fr['n1'])
-    F = osm.load()
     tees = [f['poly'].centroid for f in F['tee']]
     nearest_tee = lambda p: min(tees, key=lambda t: t.distance(p))
     sp = os.path.join(OUT, 'signs.txt')
@@ -116,8 +111,8 @@ def main():
     rd_ = lambda n: json.load(open(os.path.join(OUT, n))) if os.path.exists(os.path.join(OUT, n)) else {}
     spos, tmarks = rd_('sign_pos.json'), rd_('tee_marks.json')
     out = []
-    doors = blobs(a, COLS['door'], fr, tr, 1.0)
-    for p in blobs(a, COLS['wash'], fr, tr, 6.0):
+    doors = blobs(masks['door'], fr, tr, 1.0)
+    for p in blobs(masks['wash'], fr, tr, 6.0):
         r = p.minimum_rotated_rectangle
         c = list(r.exterior.coords)[:4]
         e1 = (c[1][0] - c[0][0], c[1][1] - c[0][1]); e2 = (c[2][0] - c[1][0], c[2][1] - c[1][1])
@@ -130,12 +125,12 @@ def main():
         tgt = strip[0].centroid if strip else nearest_tee(cen)
         sgn = 1 if ((tgt.x - cen.x) * n1[0] + (tgt.y - cen.y) * n1[1]) >= 0 else -1
         out.append(['wash', round(cen.x, 1), round(cen.y, 1), round(deg(sgn * n1[0], sgn * n1[1])), round(float(np.clip(w, 3, 12)), 1), round(float(np.clip(d, 2, 6)), 1), ''])
-    for p in blobs(a, COLS['potty'], fr, tr, 1.0):
+    for p in blobs(masks['potty'], fr, tr, 1.0):
         t = nearest_tee(p.centroid)
         out.append(['potty', round(p.centroid.x, 1), round(p.centroid.y, 1), round(deg(t.x - p.centroid.x, t.y - p.centroid.y)), POTTY, POTTY, ''])
     holes = F['hole']
     skipped = []
-    for p in blobs(a, COLS['sign'], fr, tr, 1.0):
+    for p in blobs(masks['sign'], fr, tr, 1.0):
         q = p.centroid
         h = min(holes, key=lambda hh: Point(hh['line'].coords[0]).distance(q))
         t = nearest_tee(q)
@@ -148,14 +143,23 @@ def main():
             if str(h['ref']) in tmarks:
                 t = Point(*tmarks[str(h['ref'])]['mid'])
         out.append(['sign', round(q.x, 1), round(q.y, 1), round(deg(t.x - q.x, t.y - q.y)), 1.5, .1, text, h['ref']])   # the 8th value is the hole it belongs to (the fly-over reads the sign)
-    for p in blobs(a, COLS['lot'], fr, tr, 150.0):
+    for p in blobs(masks['lot'], fr, tr, 150.0):
         out += lot_rows(p, F)
+    for ref, e, n in skipped:
+        print(f'  sign dot near hole {ref} (e {e}, n {n}) skipped: no line for hole {ref} in signs.txt')
+    return out
+
+
+def main():
+    fr = json.load(open(os.path.join(OUT, 'fescue_base.json')))
+    a = np.array(Image.open(os.path.join(OUT, 'site_mask.png')).convert('RGB')).astype(int)
+    assert a.shape[1] == fr['w'] and a.shape[0] == fr['h'], 'the mask must have the base map\'s size'
+    a[LEGEND[1]:LEGEND[3], LEGEND[0]:LEGEND[2]] = 0
+    out = rows_from({k: np.abs(a - np.array(rgb)).max(2) <= 40 for k, rgb in COLS.items()}, fr, osm.load())
     ep = os.path.join(OUT, 'paint_props.json')   # the entrance sign and the shed painted on the combined map (paint_read.py)
     if os.path.exists(ep):
         out += json.load(open(ep))
     json.dump(out, open(os.path.join(OUT, 'site_props.json'), 'w'))
-    for ref, e, n in skipped:
-        print(f'  sign dot near hole {ref} (e {e}, n {n}) skipped: no line for hole {ref} in signs.txt')
     k = {x: sum(1 for r in out if r[0] == x) for x in ('wash', 'potty', 'sign', 'entry', 'shed', 'lot', 'car')}
     print(len(out), 'props:', k)
     for r in out:

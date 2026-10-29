@@ -1383,8 +1383,12 @@ function realGreen(RA, sd, ww, hh, i0, j0, cx, cz) {
   mh /= n || 1; let Sxx = 0, Szz = 0, Sxz = 0, Sxh = 0, Szh = 0;
   for (const p of pts) { Sxx += p[0] * p[0]; Szz += p[1] * p[1]; Sxz += p[0] * p[1]; Sxh += p[0] * (p[2] - mh); Szh += p[1] * (p[2] - mh); }
   const det = Sxx * Szz - Sxz * Sxz, gx = det > 1e-6 ? (Sxh * Szz - Szh * Sxz) / det : 0, gz = det > 1e-6 ? (Szh * Sxx - Sxh * Sxz) / det : 0;
-  const k = RDC.greenK || .5; return { h: (X, Z) => { const pl = mh + gx * (X - cx) + gz * (Z - cz); return pl + k * (sm(X, Z) - pl); } };
+  const k = RDC.greenK || .5; return { h: (X, Z) => { const pl = mh + gx * (X - cx) + gz * (Z - cz); return pl + k * (sm(X, Z) - pl); }, g: [gx, gz] };
 }
+// how steep a green may be, roll included: its 90th-percentile grade just over Woodbine Bend's steepest (hole 5, 4.39 %) and its mean grade
+// just over Woodbine's steepest (hole 17, 3.26 %). Woodbine is the standard every course is held to, and none of its greens reach these; a
+// steeper green elsewhere keeps its contours and loses just enough of its overall tilt (platform in makeRealCourse)
+const GREEN_P90_MAX = .044, GREEN_MEAN_MAX = .033;
 // where the step sits, as the share of the green below it, per hole index (RDS[key].tierCut)
 let TIER_CUT = {};
 function tierGreen(RA, sd, ww, hh, i0, j0, cx, cz, maxS, fixCut) {
@@ -1538,6 +1542,13 @@ function makeRealCourse(idx, pin) {
       };
       // the hole's own green follows the real elevation lattice; the double-plateau ones are rebuilt as two levels
       if (GREEN_ALTI[idx] && Math.hypot(cx - gX0, cz - gZ0) < 30) tier = TIER_HOLES.includes(idx) ? tierGreen(GREEN_ALTI[idx], sd, ww, hh, i0, j0, cx, cz, maxS, TIER_CUT[idx]) : realGreen(GREEN_ALTI[idx], sd, ww, hh, i0, j0, cx, cz);
+    }
+    if (tier && tier.g) { // no green steeper than Woodbine Bend's steepest: over GREEN_P90_MAX, part of the green's overall tilt is taken out (its contours stay)
+      const h1 = tier.h, roll = (X, Z) => amp ? .4 * amp * Math.sin((X - cx) * .19 + p0) * Math.cos((Z - cz) * .15 + p1) : 0, [tx, tz] = tier.g, d = .5;
+      const stat = t => { const g = []; for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) if (sd[j * ww + i] < 0) { const X = x0 + (i + i0) * res, Z = z0 + (j + j0) * res, f = (A, B) => h1(A, B) + roll(A, B);
+        g.push(Math.hypot((f(X + d, Z) - f(X - d, Z)) / (2 * d) - (1 - t) * tx, (f(X, Z + d) - f(X, Z - d)) / (2 * d) - (1 - t) * tz)); } g.sort((a, b) => a - b); return [g.reduce((a, b) => a + b, 0) / (g.length || 1), g[Math.floor(.9 * (g.length - 1))] || 0]; };
+      const steep = t => { const [mn, p9] = stat(t); return mn > GREEN_MEAN_MAX || p9 > GREEN_P90_MAX; };
+      if (steep(1)) { let lo = 0, hi = 1; for (let b = 0; b < 14; b++) { const m = (lo + hi) / 2; if (steep(m)) hi = m; else lo = m; } tier.tilt = lo; tier.h = (X, Z) => h1(X, Z) - (1 - lo) * (tx * (X - cx) + tz * (Z - cz)); }
     }
     const top = (X, Z) => {
       if (tier) return tier.h(X, Z) + (amp ? .4 * amp * Math.sin((X - cx) * .19 + p0) * Math.cos((Z - cz) * .15 + p1) : 0);
@@ -2784,6 +2795,8 @@ function courseReady(c, D) {
   RDS[c.key] = Object.assign({ z0: 200, gr: { e0: -1000, n0: -1000, res: 2, W: 1000, H: 1000 }, tweak: {}, tiers: [], tierCut: {} }, c.engine, { data: rd, alti: D.alti, scene: c.scene });
   c.defs = rd.holes.map((h, i) => ({ par: h.par, hcp: h.hcp, name: 'Hole ' + (i + 1), inspo: h.desc, seed: 9001 + i * 37, windMax: 5.5, rh: h, len: h.len, real: true, teeCam: null }));
   if (c.pars.length !== c.defs.length || c.defs.some((d, i) => d.par !== c.pars[i])) console.warn(c.key + ': the pars in courses.json differ from the course data');
+  const off = ['greenK', 'tiers', 'tierCut'].filter(k => c.engine && c.engine[k] != null); // Woodbine Bend sets none of these: it is the standard every course's greens are held to
+  if (off.length) console.warn(c.key + ': courses.json engine sets ' + off.join(', ') + ', so its greens differ from the Woodbine standard');
   if (c.key === PRACTICE_COURSE) {
     RANGE_DEF = rd.drv ? { par: 3, hcp: 1, name: 'Driving range', inspo: '', seed: 7777, windMax: 3, rh: rd.drv, len: 200, real: true, teeCam: null } : null;
     PRAC_DEF = rd.prac ? { par: 2, hcp: 1, name: 'Practice green', inspo: '', seed: 9999, windMax: 3, rh: rd.prac, len: 25, real: true, teeCam: null } : null;

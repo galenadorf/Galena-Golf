@@ -150,6 +150,12 @@ def main():
         cen = cen & ~ndi.binary_dilation(blue, iterations=1)
         cen |= skeletonize(ndi.binary_closing(red, iterations=1))
         print(f'mask read: {int(red.sum() * fr["res"] ** 2)} m2 of red, {int(blue.sum() * fr["res"] ** 2)} m2 of blue')
+    write_network(cen, fr)
+
+
+def write_network(cen, fr):
+    """The thin centre-line mask `cen` on the grid `fr` as smoothed path lines, gaps closed, drawn PATH_W wide; writes out/cartpaths.json
+    and out/cartpaths_links.json (also used by all_read.py)."""
     # join what the painting touched into one thin network, drop bits shorter than 6 m, then widen to the path width
     cen = skeletonize(ndi.binary_closing(band(cen, fr['res'], 1.2), iterations=1))
     lab, n = ndi.label(cen, structure=np.ones((3, 3)))

@@ -19,11 +19,8 @@ SMOOTH = 1.4    # px of Gaussian blur before the outline is traced (1 px = 0.5 m
 PAD = 4
 
 
-def main():
-    fr = json.load(open(os.path.join(OUT, 'fescue_base.json')))
-    a = np.array(Image.open(os.path.join(OUT, 'bunkers_mask.png')).convert('RGB')).astype(int)
-    assert a.shape[1] == fr['w'] and a.shape[0] == fr['h'], 'the mask must have the base map\'s size'
-    m = (np.abs(a - np.array((255, 128, 0))).max(2) <= 40)
+def from_mask(m, fr):
+    """The bunker polygons from a boolean mask on the grid `fr` (also used by all_read.py)."""
     m = ndi.binary_closing(m, iterations=1)
     lab, n = ndi.label(m)
     sizes = ndi.sum(m, lab, range(1, n + 1))
@@ -47,7 +44,14 @@ def main():
                 polys[i] = q.symmetric_difference(r); break
         else:
             polys.append(r)
-    polys = [q.simplify(.06) for q in polys if q.area >= MIN_AREA]
+    return [q.simplify(.06) for q in polys if q.area >= MIN_AREA]
+
+
+def main():
+    fr = json.load(open(os.path.join(OUT, 'fescue_base.json')))
+    a = np.array(Image.open(os.path.join(OUT, 'bunkers_mask.png')).convert('RGB')).astype(int)
+    assert a.shape[1] == fr['w'] and a.shape[0] == fr['h'], 'the mask must have the base map\'s size'
+    polys = from_mask(np.abs(a - np.array((255, 128, 0))).max(2) <= 40, fr)
     json.dump([mapping(p) for p in polys], open(os.path.join(OUT, 'bunkers_painted.json'), 'w'))
     print(len(polys), 'bunkers,', round(sum(p.area for p in polys)), 'm2')
 

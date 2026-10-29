@@ -19,11 +19,8 @@ LEVEL = .46
 TOL = .1
 
 
-def main():
-    fr = json.load(open(os.path.join(OUT, 'creek_edit.json')))
-    a = np.array(Image.open(os.path.join(OUT, 'creek_mask.png')).convert('RGB')).astype(int)
-    assert a.shape[1] == fr['w'] and a.shape[0] == fr['h'], 'the mask must have the base map\'s size'
-    m = (np.abs(a - np.array((0, 0, 255))).max(2) <= 40)
+def from_mask(m, fr):
+    """The creek areas and their ~CELL m pieces from a boolean mask on the grid `fr` (also used by all_read.py)."""
     m = ndi.binary_closing(m, iterations=2)
     lab, n = ndi.label(m)
     sizes = ndi.sum(m, lab, range(1, n + 1))
@@ -38,6 +35,14 @@ def main():
                 for g in getattr(q, 'geoms', [q]):
                     if g.geom_type == 'Polygon' and g.area >= MIN_AREA:
                         pieces.append(g.simplify(.1))
+    return polys, pieces
+
+
+def main():
+    fr = json.load(open(os.path.join(OUT, 'creek_edit.json')))
+    a = np.array(Image.open(os.path.join(OUT, 'creek_mask.png')).convert('RGB')).astype(int)
+    assert a.shape[1] == fr['w'] and a.shape[0] == fr['h'], 'the mask must have the base map\'s size'
+    polys, pieces = from_mask(np.abs(a - np.array((0, 0, 255))).max(2) <= 40, fr)
     json.dump([mapping(p) for p in pieces], open(os.path.join(OUT, 'creek_painted.json'), 'w'))
     print(len(polys), 'creek areas,', len(pieces), 'pieces,', round(sum(p.area for p in polys)), 'm2 of water')
 

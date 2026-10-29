@@ -17,12 +17,8 @@ LEVEL = 0.5
 TOL = 0.3
 
 
-def main():
-    fr = json.load(open(os.path.join(OUT, 'fescue_base.json')))
-    a = np.array(Image.open(os.path.join(OUT, 'fescue_mask.png')).convert('RGB')).astype(int)
-    assert a.shape[1] == fr['w'] and a.shape[0] == fr['h'], 'the mask must have the base map\'s size'
-    r, g, b = a[..., 0], a[..., 1], a[..., 2]
-    m = (r > 170) & (b > 170) & (g < 120) & (r - g > 90) & (b - g > 90)  # magenta, also its anti-aliased edge pixels
+def from_mask(m, fr):
+    """The fescue polygons from a boolean mask on the grid `fr` (also used by all_read.py)."""
     px = fr['res'] ** 2
     m = ndi.binary_closing(m, iterations=2)
     lab, n = ndi.label(m)
@@ -33,7 +29,15 @@ def main():
     for i, s in enumerate(sizes):
         if s * px < MIN_AREA and not (inv == i + 1)[0, :].any() and not (inv == i + 1)[-1, :].any():
             m |= inv == i + 1
-    polys = smooth_polys(m, fr, SMOOTH, LEVEL, MIN_AREA, TOL)
+    return smooth_polys(m, fr, SMOOTH, LEVEL, MIN_AREA, TOL)
+
+
+def main():
+    fr = json.load(open(os.path.join(OUT, 'fescue_base.json')))
+    a = np.array(Image.open(os.path.join(OUT, 'fescue_mask.png')).convert('RGB')).astype(int)
+    assert a.shape[1] == fr['w'] and a.shape[0] == fr['h'], 'the mask must have the base map\'s size'
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    polys = from_mask((r > 170) & (b > 170) & (g < 120) & (r - g > 90) & (b - g > 90), fr)  # magenta, also its anti-aliased edge pixels
     json.dump([mapping(p) for p in polys], open(os.path.join(OUT, 'fescue.json'), 'w'))
     print(len(polys), 'areas,', round(sum(p.area for p in polys) / 10000, 1), 'ha,', sum(len(p.exterior.coords) for p in polys), 'vertices')
 
