@@ -1934,7 +1934,7 @@ function realTerrainMat(C) {
   }
   const f = C.frame, r = GR.res;
   const far = { tex: realFarTex(), A: new THREE.Vector4(f.rx / r, -f.ux / r, f.ry / r, -f.uy / r), B: new THREE.Vector4((f.e - GR.e0) / r, (f.n - GR.n0) / r, GR.W, GR.H) };
-  return terrainMatFrom({ A, B, T, w, h, x0: FG.x0, z0: FG.z0, res: FG.res, R, wlo, whi, far, dry: RDC.dry, lush: RDC.lush, fescue: RDC.fescue, straw: !!SM });
+  return terrainMatFrom({ A, B, T, w, h, x0: FG.x0, z0: FG.z0, res: FG.res, R, wlo, whi, far, dry: RDC.dry, lush: RDC.lush, fescue: RDC.fescue, longRough: RDC.longRough, straw: !!SM });
 }
 function buildRealWater(C, grp) {
   W.waterMeshes = []; W.sea = null;
@@ -2292,7 +2292,7 @@ function buildRealDecor(C, grp) {
     const x = lerp(I.minX, I.maxX, r()), z = lerp(I.minZ, I.maxZ, r());
     if (C.surf(x, z) !== S.DEEP || strawAt(C, x, z) > .3) continue;
     const y = C.h(x, z), s2 = .8 + r() * .9; Mt.makeRotationY(r() * TAU); Mt.scale(SV.set(s2, s2 * 1.5, s2)); Mt.setPosition(x, y, z);
-    tufts.setMatrixAt(tufts.count, Mt); if (RDC.fescue) cc.setHex(FESCUE_COLS[(r() * FESCUE_COLS.length) | 0]); else cc.setHex(LEAF_COLS[(r() * LEAF_COLS.length) | 0]).offsetHSL(RDC.dry ? -.04 : 0, RDC.dry ? -.08 : -.05, RDC.dry ? .06 : -.01); tufts.setColorAt(tufts.count, cc); tufts.count++;
+    tufts.setMatrixAt(tufts.count, Mt); if (RDC.fescue) cc.setHex((RDC.longRough ? LONG_COLS : FESCUE_COLS)[(r() * 9) | 0]); else cc.setHex(LEAF_COLS[(r() * LEAF_COLS.length) | 0]).offsetHSL(RDC.dry ? -.04 : 0, RDC.dry ? -.08 : -.05, RDC.dry ? .06 : -.01); tufts.setColorAt(tufts.count, cc); tufts.count++;
   }
   tufts.instanceMatrix.needsUpdate = true; tufts.instanceColor.needsUpdate = true; grp.add(tufts);
   // timber fairway bridges (real-course data): a raised plank deck (the terrain is lifted under it), rails and posts along both sides, abutment beams on the banks
@@ -3246,7 +3246,7 @@ function terrainMatFrom(o) {
     wLo: { value: wlo }, wHi: { value: whi }, seaLv: { value: o.sea != null ? o.sea : -1e4 }, hasCoast: { value: o.sea != null ? 1 : 0 }, isLinks: { value: o.links ? 1 : 0 }, isRocky: { value: o.rocky ? 1 : 0 },
     tFar: { value: far ? far.tex : NO_FAR.tex }, hasFar: { value: far ? 1 : 0 }, farA: { value: far ? far.A : new THREE.Vector4() }, farB: { value: far ? far.B : new THREE.Vector4(0, 0, 1, 1) }, cupP: CUP_U,
     // dry = a links-style course: sun-bleached, more olive and straw in the rough, a touch drier on the fairways (greens stay healthy)
-    cRough: { value: pc(S.ROUGH, dr * .035, -dr * .05, -dr * .04) }, cDeep: { value: o.fescue ? v3(hslToRgb(...FESCUE_HSL)) : pc(S.DEEP, dr * .045, -dr * .06, -dr * .052) }, cFirst: { value: pc(S.FIRST, dr * .03, -dr * .035, -dr * .036) }, cFairA: { value: pc(S.FAIR, .045 + dr * .035, -dr * .03, -dr * .04) }, cFairB: { value: pc(S.FAIR, -.025 + dr * .025, -dr * .03, -dr * .04) },
+    cRough: { value: pc(S.ROUGH, dr * .035, -dr * .05, -dr * .04) }, cDeep: { value: o.fescue ? v3(hslToRgb(...(o.longRough ? LONG_HSL : FESCUE_HSL))) : pc(S.DEEP, dr * .045, -dr * .06, -dr * .052) }, cFirst: { value: pc(S.FIRST, dr * .03, -dr * .035, -dr * .036) }, cFairA: { value: pc(S.FAIR, .045 + dr * .035, -dr * .03, -dr * .04) }, cFairB: { value: pc(S.FAIR, -.025 + dr * .025, -dr * .03, -dr * .04) },
     cGreenA: { value: pc(S.GREEN, .02 + dr * .008, -dr * .012, -dr * .026) }, cGreenB: { value: pc(S.GREEN, -.008 + dr * .008, -dr * .012, -dr * .026) }, cFringe: { value: pc(S.FRINGE, dr * .012, -dr * .025, -dr * .032) }, cSand: { value: pc(S.SAND) }, cWaste: { value: pc(S.SAND, -.05, -.08, .012) },
     cTee: { value: o.dry ? pc(S.FRINGE, dr * .012, -dr * .025, -dr * .032) : o.lush ? pc(S.FRINGE, -.02, .04, .02) : pc(S.TEE) }, // links (Alsace): tee boxes are cut like the fringe, the same colour
     cPath: { value: o.dry ? v3(hslToRgb(.125, .30, .84)) : pc(S.PATH) }, // links: sandy paths
@@ -3370,7 +3370,7 @@ function renderPlan(C) {
   const colOf = {}; for (const k in PAL) colOf[k] = hexToRgb(PAL[k]);
   { // the yardage map uses the same colour scheme as the ground (links courses are drier and yellower)
     const dr = RDC.dry ? 1.7 : RDC.lush ? -.7 : 0, pcc = (k, dl, ds, dh) => { const c = PAL_HSL[k]; return hslToRgb(c[0] + (dh || 0), c[1] + (ds || 0), c[2] + (dl || 0)); };
-    colOf[S.ROUGH] = pcc(S.ROUGH, dr * .035, -dr * .05, -dr * .04); colOf[S.DEEP] = RDC.fescue ? hslToRgb(...FESCUE_HSL) : pcc(S.DEEP, dr * .045, -dr * .06, -dr * .052); colOf[S.FIRST] = pcc(S.FIRST, dr * .03, -dr * .035, -dr * .036);
+    colOf[S.ROUGH] = pcc(S.ROUGH, dr * .035, -dr * .05, -dr * .04); colOf[S.DEEP] = RDC.fescue ? hslToRgb(...(RDC.longRough ? LONG_HSL : FESCUE_HSL)) : pcc(S.DEEP, dr * .045, -dr * .06, -dr * .052); colOf[S.FIRST] = pcc(S.FIRST, dr * .03, -dr * .035, -dr * .036);
     colOf[S.FAIR] = pcc(S.FAIR, .01 + dr * .03, -dr * .03, -dr * .04); colOf[S.GREEN] = pcc(S.GREEN, .006 + dr * .008, -dr * .012, -dr * .026); colOf[S.FRINGE] = pcc(S.FRINGE, dr * .012, -dr * .025, -dr * .032);
     colOf[S.TEE] = RDC.dry ? colOf[S.FRINGE] : RDC.lush ? pcc(S.FRINGE, -.02, .04, .02) : pcc(S.TEE); colOf[S.PATH] = RDC.dry ? hslToRgb(.125, .30, .84) : pcc(S.PATH);
   }
@@ -3555,6 +3555,8 @@ function initGround(L, grp) {
 }
 // fescue (a course with feat.fescue, where the deep rough is the painted fescue): tan and amber, the ground colour and the blades and tufts standing on it
 const FESCUE_HSL = [.155, .36, .64], FESCUE_COLS = [0xb9a95c, 0xc4b46a, 0xaa9c52, 0xcdbd78, 0x9d9448, 0xbcad5e, 0xc0ad5e, 0x969048, 0xd0c07c];
+// long rough (engine longRough, ER South): the same deep rough drawn as dark green long grass instead of the golden fescue (9 colours, like FESCUE_COLS)
+const LONG_HSL = [.29, .40, .33], LONG_COLS = [0x3f7a2c, 0x4a8534, 0x356d27, 0x55903a, 0x3c7530, 0x2f6424, 0x4d8a3c, 0x44802f, 0x52883a];
 const GRASS_COLS_DRY = [0xa4b848, 0xb2c04c, 0x98ae40, 0xbfc858, 0x8aa844, 0xcad266, 0xa6b84c, 0xb8c254, 0xd2d46e];
 const GRASS_COLS = [0x5f9a36, 0x72ad3f, 0x4f8a30, 0x84b447, 0x6aa33a, 0x8db84e, 0x5a9440, 0x9aaa45, 0xb7b565];
 const FLOWER_COLS = [0xffffff, 0xffffff, 0xfff3a6, 0xffd23f, 0xff9fb8, 0xd9b8ff, 0xffffff, 0xff7a3d, 0xb9d7ff];
@@ -3580,7 +3582,7 @@ function* groundJob(L, fx, fz) {
       const patch = hash2(Math.floor(gi * cell / 13), Math.floor(gj * cell / 13), 5), dens = (deep ? .55 + patch * .45 : .22 + patch * .4) * ring.dm; if (h1 > dens) continue;
       const y = groundY(x, z), s = (deep ? .85 + hash2(gi, gj, 49) * .6 : .55 + hash2(gi, gj, 49) * .45) * cl * ring.mul; if (s < .05) continue;
       M.makeRotationY(hash2(gi, gj, 51) * TAU); M.scale(sc.set(s, s * (.9 + patch * .6), s)); M.setPosition(x, y - .02, z); M.toArray(ST.gM, ng * 16);
-      const GC2 = RDC.dry ? GRASS_COLS_DRY : GRASS_COLS; if (deep && RDC.fescue) col.setHex(FESCUE_COLS[(hash2(gi, gj, 53) * FESCUE_COLS.length) | 0]); else { col.setHex(GC2[(hash2(gi, gj, 53) * GC2.length) | 0]); if (deep) col.offsetHSL(0, -.05, 0); } col.multiplyScalar(.85 + hash2(gi, gj, 55) * .3);
+      const GC2 = RDC.dry ? GRASS_COLS_DRY : GRASS_COLS; if (deep && RDC.fescue) col.setHex((RDC.longRough ? LONG_COLS : FESCUE_COLS)[(hash2(gi, gj, 53) * 9) | 0]); else { col.setHex(GC2[(hash2(gi, gj, 53) * GC2.length) | 0]); if (deep) col.offsetHSL(0, -.05, 0); } col.multiplyScalar(.85 + hash2(gi, gj, 55) * .3);
       ST.gC[ng * 3] = col.r; ST.gC[ng * 3 + 1] = col.g; ST.gC[ng * 3 + 2] = col.b; ng++;
       // wildflowers in drifts, mostly where the rough is lush
       if (!ring.tag && nf < L.NF - 3 && patch > .5 && hash2(gi, gj, 57) < (deep ? .38 : .24) * (patch - .3) * 2) {

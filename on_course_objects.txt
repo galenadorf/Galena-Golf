@@ -70,7 +70,7 @@ SKY AND WEATHER
 
 GROUND-LEVEL SCENERY
 --------------------
-  - Grass blades and tufts around the camera; tan and amber fescue in the deep rough.
+  - Grass blades and tufts around the camera; in the deep rough, tan and amber fescue or dark green long rough, per course (see part 2).
   - Wildflowers: small daisies in drifts (white, yellow, pink, lilac, orange, pale blue).
   - Tall reeds round ponds, the creek and ditches.
   - Trees from the lidar data; they block the ball. Broadleaf: the bigger half oaks (broad, deep green), the smaller half maples (compact, livelier green). Conifer: the bigger half northern pines (tall bare trunk, tufted crown), the smaller half blue Norwegian spruces (blue-green cones). Shrubs as before.
@@ -155,6 +155,8 @@ EAGLE RIDGE SOUTH (eagle_south)
 ===============================
 
 Early build: the OSM and lidar data only, nothing painted yet (no fescue, painted boundary, cart paths, tee boxes or site props).
+
+Deep rough: dark green long rough (engine `longRough`), not the golden fescue of Woodbine Bend: the ground, the tall blades and the tufts in it are dark greens (`LONG_HSL`, `LONG_COLS`). It plays the same as any deep rough.
 
 Wild turkeys (a flock of four on about 4 holes in 10, `scene.turkeys` = .4): the same flock and behaviour as at Woodbine Bend.
 
