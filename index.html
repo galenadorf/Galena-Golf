@@ -560,9 +560,12 @@ function hslToRgb(h, s, l) {
 // units: the game works in metres and m/s; the player sees yards, feet on and around the green (under 10 m), and mph
 const YD = .9144, FT = .3048;
 const toYd = m => Math.round(m / YD), toFt = m => Math.round(m / FT), toMph = ms => Math.round(ms * 2.23694);
-function fmtDistShort(m) { return m < 10 ? toFt(m) + ' ft' : toYd(m) + ' yd'; }
+// distances on a disc golf course are in feet, as disc golfers give them; elsewhere yards (feet near the hole)
+const toLen = m => isDisc() ? toFt(m) : toYd(m), lenU = () => isDisc() ? 'ft' : 'yd';
+function fmtDistShort(m) { return m < 10 || isDisc() ? toFt(m) + ' ft' : toYd(m) + ' yd'; }
 // a hole's length as the card gives it (real courses carry their yardage), else measured
-function holeYd(d) { return d.rh.yd; }
+function holeYd(d) { return d.disc ? Math.round(d.len / FT) : d.rh.yd; }   // (a disc golf hole: in feet)
+function holeU(d) { return d.disc ? 'ft' : 'yd'; }
 
 /* ================= PHYSICS ================= */
 const GRAV = 9.81, BALL_R = 0.02135, BALL_M = 0.04593, AIR_RHO = 1.2;
@@ -2420,7 +2423,7 @@ function buildRealDecor(C, grp) {
   const TEE_SIGNS_ON = false;
   const sc = document.createElement('canvas'); sc.width = 256; sc.height = 160; const sx = sc.getContext('2d');
   sx.fillStyle = '#fdf8ee'; sx.fillRect(0, 0, 256, 160); sx.fillStyle = '#2f5d4a'; sx.font = '700 44px Fredoka, sans-serif'; sx.textAlign = 'center'; sx.fillText('Nr. ' + (C.idx + 1), 128, 58);
-  sx.font = '30px Fredoka, sans-serif'; sx.fillText('Par ' + def.par + ' · ' + holeYd(def) + ' yd', 128, 100); sx.font = '22px Fredoka, sans-serif'; sx.fillText(H0.nm ? H0.nm : 'Hcp ' + def.hcp + ' · ' + COURSE.short, 128, 138);
+  sx.font = '30px Fredoka, sans-serif'; sx.fillText('Par ' + def.par + ' · ' + holeYd(def) + ' ' + holeU(def), 128, 100); sx.font = '22px Fredoka, sans-serif'; sx.fillText(H0.nm ? H0.nm : 'Hcp ' + def.hcp + ' · ' + COURSE.short, 128, 138);
   const side = TEE_SIGNS_ON ? spotBeside(C, C.startPos.x, C.startPos.z, 6.5, 2) : null;
   if (side) {
     const sign = new THREE.Mesh(new THREE.BoxGeometry(2, 1.25, .08), [0, 0, 0, 0, 1, 1].map(i => i ? new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(sc) }) : lambert(0xd9b99b)));
@@ -2982,7 +2985,7 @@ function courseReady(c, D) {
   if (!D || !D.rd || !D.alti) throw new Error('courses/' + c.key + '.js has no data');
   const rd = D.rd;
   RDS[c.key] = Object.assign({ z0: 200, gr: { e0: -1000, n0: -1000, res: 2, W: 1000, H: 1000 }, tweak: {}, tiers: [], tierCut: {} }, c.engine, { data: rd, alti: D.alti, scene: c.scene });
-  c.defs = rd.holes.map((h, i) => ({ par: h.par, hcp: h.hcp, name: 'Hole ' + (i + 1), inspo: h.desc, seed: 9001 + i * 37, windMax: 5.5, rh: h, len: h.len, real: true, teeCam: null }));
+  c.defs = rd.holes.map((h, i) => ({ disc: !!(c.engine && c.engine.disc), par: h.par, hcp: h.hcp, name: 'Hole ' + (i + 1), inspo: h.desc, seed: 9001 + i * 37, windMax: 5.5, rh: h, len: h.len, real: true, teeCam: null }));
   if (c.pars.length !== c.defs.length || c.defs.some((d, i) => d.par !== c.pars[i])) console.warn(c.key + ': the pars in courses.json differ from the course data');
   const off = ['greenK', 'tiers', 'tierCut'].filter(k => c.engine && c.engine[k] != null); // Woodbine Bend sets none of these: it is the standard every course's greens are held to
   if (off.length) console.warn(c.key + ': courses.json engine sets ' + off.join(', ') + ', so its greens differ from the Woodbine standard');
@@ -6178,7 +6181,7 @@ function finishShot() {
     placeBall(G.prev.x, G.prev.z, G.prev.teed); big = `<span class="bad">${r.lost ? 'Ball not found' : 'Out of bounds'}</span>`; sub = 'Stroke and distance';
   } else {
     placeBall(r.final.x, r.final.z, false);
-    big = SURF[G.surf].name; sub = sh.L.putt ? fmtDistShort(r.total) + ' putt' : `Total ${toYd(r.total)} yd · carry ${toYd(r.carry)} yd`;
+    big = SURF[G.surf].name; sub = sh.L.putt ? fmtDistShort(r.total) + ' putt' : `Total ${toLen(r.total)} ${lenU()} · carry ${toLen(r.carry)} ${lenU()}`;
     if (first && par >= 4) G.fir[h] = G.surf === S.FAIR;
   }
   if (first && par >= 4 && G.fir[h] == null) G.fir[h] = false;
@@ -6448,7 +6451,7 @@ function drawTempo(now) {
   const M = (SW.phase === 'back' || SW.phase === 'down' || SW.phase === 'ready') && SW.map ? SW.map : curMap(), zoomed = !putt && M.pz > 0;
   for (const p of [.25, .5, .75, 1]) {
     const y = top + H * p;
-    const lab = putt ? toFt(G.puttRange * p) + ' FT' : toYd(carryForPower(c, trackToPower(p, M))) + ' YD';
+    const lab = putt ? toFt(G.puttRange * p) + ' FT' : toLen(carryForPower(c, trackToPower(p, M))) + ' ' + lenU().toUpperCase();
     x.save(); x.shadowColor = 'rgba(0,30,12,.45)'; x.shadowBlur = 2; x.shadowOffsetY = 1;
     x.fillStyle = '#fff'; x.font = FONT(600, 13); x.textAlign = 'right'; x.fillText(lab, tx - 21, y); x.restore();
     x.fillStyle = 'rgba(255,255,255,.6)'; x.fillRect(tx - 18, y - 1, 4, 2);
@@ -6499,7 +6502,7 @@ function drawTempo(now) {
     let rt;
     if (putt) rt = toFt(G.puttRange * s) + ' FT';
     else if (ch) rt = fmtDistShort(ch.d * carryForPower(c, pw) / Math.max(.1, carryForPower(c, ch.p))).replace(' ', '').toUpperCase();
-    else rt = toYd(carryForPower(c, pw)) + ' YD';
+    else rt = toLen(carryForPower(c, pw)) + ' ' + lenU().toUpperCase();
     const y = top + H * clamp(s, 0, 1.04);
     x.font = FONT(700, 12); x.textAlign = 'right'; x.textBaseline = 'middle';
     const tw2 = x.measureText(rt).width + 10, ry = clamp(y, top + 9, bot - 9);
@@ -6760,12 +6763,12 @@ function updateHUD() {
   const sn = G.state === 'flight' || G.state === 'holed' ? Math.max(1, G.strokes) : G.strokes + 1;
   $('hl2').innerHTML = G.pg ? `${G.pg.shots} shot${G.pg.shots === 1 ? '' : 's'} <span class="lie" data-s="${G.surf}">${lieTxt}</span>` : `Stroke ${Math.min(sn, maxScore(def.par))} <span class="lie" data-s="${G.surf}">${lieTxt}</span>`;
   if (G.pg) pgSync();
-  const d = distToPin(); $('dNum').textContent = d < 10 ? toFt(d) : toYd(d); $('dUnit').textContent = d < 10 ? 'ft' : 'yd';
+  const d = distToPin(); $('dNum').textContent = d < 10 || isDisc() ? toFt(d) : toYd(d); $('dUnit').textContent = d < 10 || isDisc() ? 'ft' : 'yd';
   const dh = G.C.cup.y - G.ball.y;
   $('dSub').textContent = c.type === 'putter' && Math.abs(puttEquiv() - d) > .4 ? `Plays ${toFt(puttEquiv())} ft` : Math.abs(dh) > .5 ? `${dh > 0 ? '↑' : '↓'} ${toFt(Math.abs(dh))} ft` : isDisc() ? 'To basket' : 'To pin';
   $('windTxt').textContent = toMph(Math.hypot(G.wind[0], G.wind[1]));
   $('clubName').textContent = c.type === 'putter' ? 'Putter' : c.name.replace('Pitching wedge', 'P-wedge').replace('Sand wedge', 'S-wedge').replace('Lob wedge', 'L-wedge').replace('Gap wedge', 'G-wedge');
-  $('clubSub').textContent = c.type === 'putter' ? `↻ ${toFt(G.puttRange)} ft` : `${toYd(G.carry || c.carry)} yd`;
+  $('clubSub').textContent = c.type === 'putter' ? `↻ ${toFt(G.puttRange)} ft` : `${toLen(G.carry || c.carry)} ${lenU()}`;
   $('tTitle').textContent = c.type === 'putter' ? 'Tempo (2:1)' : 'Tempo (3:1)';
   const tp = totalToPar(), ps = $('pScore'), pn = playerName();
   if ($('pName').textContent !== pn) $('pName').textContent = pn;
@@ -6816,7 +6819,7 @@ function updatePinTag() {
   // (the tag's size is measured only when its text changes, and its style is written only when it changes, so standing still costs no layout)
   const tag = $('pinTag'), P = UI.pt || (UI.pt = { op: '', tf: '', txt: '', w: 0, h: 0 }), setOp = o => { if (P.op !== o) { P.op = o; tag.style.opacity = o; } };
   if (!G.C || G.state === 'title' || G.state === 'intro' || G.state === 'flight' || sheetOpen()) { setOp(0); return; }
-  const t = toYd(distToPin()) + ' YD'; if (P.txt !== t || !P.w) { P.txt = t; tag.textContent = t; P.w = tag.offsetWidth; P.h = tag.offsetHeight; }
+  const t = toLen(distToPin()) + ' ' + lenU().toUpperCase(); if (P.txt !== t || !P.w) { P.txt = t; tag.textContent = t; P.w = tag.offsetWidth; P.h = tag.offsetHeight; }
   _pv2.set(G.C.cup.x, G.C.cup.y + PIN_H + .5, G.C.cup.z).project(W.cam);
   const vis = _pv2.z < 1 && Math.abs(_pv2.x) < 1.05 && _pv2.y < .98 && _pv2.y > -1;
   const tx = (_pv2.x * .5 + .5) * window.innerWidth, ty = (-_pv2.y * .5 + .5) * SH(), hudBottom = pinCardBottom() + 30;
@@ -6852,11 +6855,11 @@ function updateBallTag() {
   const on = !!(G.C && sh && !sh.L.putt && G.state === 'flight' && G.playT > .08 && !sheetOpen());
   if (!on) { if (UI.btOn) { UI.btOn = false; tag.classList.remove('on'); } return; }
   const r = sh.res, b = W.ball.position;
-  if (UI.btShot !== sh) { UI.btShot = sh; UI.btD = -1; UI.btFlip = false; UI.btWH = null; tag.classList.remove('landed', 'flip'); }
+  if (UI.btShot !== sh) { UI.btShot = sh; $('btD').nextElementSibling.textContent = lenU().toUpperCase(); UI.btD = -1; UI.btFlip = false; UI.btWH = null; tag.classList.remove('landed', 'flip'); }
   // horizontal distance from the strike point, same measure as res.carry / res.total
-  const d = toYd(Math.hypot(b.x - G.prev.x, b.z - G.prev.z));
+  const d = toLen(Math.hypot(b.x - G.prev.x, b.z - G.prev.z));
   if (d !== UI.btD) { UI.btD = d; $('btD').textContent = d; UI.btWH = null; }
-  if (r.land && G.playT >= r.land.t && !tag.classList.contains('landed')) { $('btC').textContent = `Carry ${toYd(r.carry)} yd`; tag.classList.add('landed'); UI.btWH = null; }
+  if (r.land && G.playT >= r.land.t && !tag.classList.contains('landed')) { $('btC').textContent = `Carry ${toLen(r.carry)} ${lenU()}`; tag.classList.add('landed'); UI.btWH = null; }
   W.cam.updateMatrixWorld();
   _bt.copy(b).project(W.cam);
   if (_bt.z > 1) { UI.btOn = false; tag.classList.remove('on'); return; }
@@ -6918,7 +6921,7 @@ function openBag() {
   $('bagLie').textContent = 'From the ' + (G.teed ? 'tee' : SURF[G.surf].name.toLowerCase()) + ' · ' + fmtDistShort(distToPin()) + ' to pin';
   CLUBS.forEach((c, i) => {
     const bt = document.createElement('button'); if (i === G.club) bt.className = 'sel';
-    bt.innerHTML = `<div class="bi">${({ Dr: 'DR', Pt: 'PUTT' })[c.id] || c.id}</div><div class="bn">${c.name}</div><div class="bd">${c.type === 'putter' ? 'On the green' : toYd(c.carry) + ' yd'}</div>${i === G.suggested ? '<span class="tip">TIP</span>' : ''}`;
+    bt.innerHTML = `<div class="bi">${({ Dr: 'DR', Pt: 'PUTT' })[c.id] || c.id}</div><div class="bn">${c.name}</div><div class="bd">${c.type === 'putter' ? 'On the green' : toLen(c.carry) + ' ' + lenU()}</div>${i === G.suggested ? '<span class="tip">TIP</span>' : ''}`;
     bt.onclick = () => { G.club = i; if (c.type === 'putter') pickPuttRange(); G.carryKey = ''; updateAim(true); closeSheets(); SFX.blip(); if (W.slope) W.slope.mesh.visible = c.type === 'putter' && (G.surf === S.GREEN || G.surf === S.FRINGE); setFlags(c.type !== 'putter'); };
     b.appendChild(bt);
   });
@@ -6972,7 +6975,7 @@ function leaveShot() {   // switching practice in the middle of play: whatever w
 }
 function pracFill() {
   const g = $('pracGrid'), defs = COURSES[pracKey].defs; g.innerHTML = '';
-  defs.forEach((d, i) => { const b = document.createElement('button'); b.innerHTML = `${i + 1}<small>Par ${d.par} · ${holeYd(d)} yd</small>`; b.onclick = () => pracHole(i); g.appendChild(b); });
+  defs.forEach((d, i) => { const b = document.createElement('button'); b.innerHTML = `${i + 1}<small>Par ${d.par} · ${holeYd(d)} ${holeU(d)}</small>`; b.onclick = () => pracHole(i); g.appendChild(b); });
   [...g.children].forEach((b, i) => b.classList.toggle('cur', pracKey === COURSE.key && !G.pg && G.practice && G.state !== 'title' && G.hole === i));
 }
 // a hole tapped on the Practice sheet: on another course, a round in progress here is kept for when you come back (as the menu's course picker does)
@@ -7009,7 +7012,7 @@ let HOLE_LEN = HOLE_DEFS.map(holeYd), BEST_KEY = 'ssg-best-' + HOLE_DEFS.length;
 function showScorecard(final) {
   const tp = totalToPar();
   // one row per hole: reads naturally in portrait, however many holes
-  let rows = '<tr><th>Hole</th><th>Yds</th><th>Par</th><th>Hcp</th><th>Score</th><th>Putts</th></tr>';
+  let rows = '<tr><th>Hole</th><th>' + (isDisc() ? 'Ft' : 'Yds') + '</th><th>Par</th><th>Hcp</th><th>Score</th><th>Putts</th></tr>';
   // a subtotal row for holes a..b-1 (Out, In) and the round total
   const sub = (label, a, b, cls) => {
     let m = 0, par = 0, sc = 0, pu = 0, n = 0;
@@ -7039,7 +7042,7 @@ function showBest() { const ni = $('nameIn'); if (ni && document.activeElement !
 function showIntro() {
   const C = G.C, d = C.def;
   $('icK').textContent = `Hole ${G.hole + 1} of ${HOLE_DEFS.length} · HCP ${d.hcp}`; $('icN').textContent = d.name; $('icI').textContent = d.inspo || '';
-  $('icPar').textContent = d.par; $('icLen').textContent = holeYd(d) + ' yd'; $('icWind').textContent = toMph(Math.hypot(G.wind[0], G.wind[1])) + ' mph'; $('icWx').textContent = WX.name; $('icWx').title = WX.note;
+  $('icPar').textContent = d.par; $('icLen').textContent = holeYd(d) + ' ' + holeU(d); $('icWind').textContent = toMph(Math.hypot(G.wind[0], G.wind[1])) + ' mph'; $('icWx').textContent = WX.name; $('icWx').title = WX.note;
   drawPlan($('introMap'), { line: true });
   $('intro').classList.add('on');
 }
@@ -7092,8 +7095,8 @@ function drawPlan(cv, opt) {
     x.fillStyle = 'rgba(255,255,255,.35)'; x.strokeStyle = '#fff'; x.lineWidth = 2; x.beginPath(); x.arc(tm[0], tm[1], 9, 0, TAU); x.fill(); x.stroke();
     const d1 = Math.hypot(t[0] - G.ball.x, t[1] - G.ball.z), d2 = Math.hypot(C.cup.x - t[0], C.cup.z - t[1]);
     const tag = (txt, mx, my) => { x.font = FONT(600, 13); const w = x.measureText(txt).width + 12; x.fillStyle = '#fff'; x.beginPath(); x.roundRect ? x.roundRect(mx - w / 2, my - 10, w, 20, 6) : x.rect(mx - w / 2, my - 10, w, 20); x.fill(); x.fillStyle = '#16211c'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(txt, mx, my + .5); };
-    tag(toYd(d1) + ' YD', (b[0] + tm[0]) / 2 - 26, (b[1] + tm[1]) / 2);
-    if (d2 > 3 && Math.hypot(tm[0] - p[0], tm[1] - p[1]) > 34) tag(toYd(d2) + ' YD', (tm[0] + p[0]) / 2 + 26, (tm[1] + p[1]) / 2);
+    tag(toLen(d1) + ' ' + lenU().toUpperCase(), (b[0] + tm[0]) / 2 - 26, (b[1] + tm[1]) / 2);
+    if (d2 > 3 && Math.hypot(tm[0] - p[0], tm[1] - p[1]) > 34) tag(toLen(d2) + ' ' + lenU().toUpperCase(), (tm[0] + p[0]) / 2 + 26, (tm[1] + p[1]) / 2);
   }
   // pin flag (the practice green has four)
   for (const cp of C.cups || [C.cup]) {
@@ -7354,7 +7357,7 @@ function statsShot(sh, r) {
     const d = Math.hypot(C.cup.x - pv.x, C.cup.z - pv.z); ST.holedShots++; if (!putt && G.strokes > 1) ST.chipins++;
     if (!G.practice) { mark('h', d); if (putt) mark('p', d); }
     const where = `Hole ${G.hole + 1} · ${COURSE.short}${G.practice ? ' · practice' : ''}`;
-    if (G.strokes === 1) setTimeout(() => recordCard('Unreal!', 'Hole in one', toYd(d) + ' yd', where, ['#ffffff', '#ffd166', '#ef476f', '#2b0a1a']), 500), ST.aces++;
+    if (G.strokes === 1) setTimeout(() => recordCard('Unreal!', isDisc() ? 'Ace' : 'Hole in one', toLen(d) + ' ' + lenU(), where, ['#ffffff', '#ffd166', '#ef476f', '#2b0a1a']), 500), ST.aces++;
   }
   saveStats();
 }
@@ -7414,7 +7417,7 @@ function openHoles() {
       h.forEach((c, k) => { const dlt = k + 1 - d.par; seg[dlt <= -2 ? 0 : dlt === -1 ? 1 : dlt === 0 ? 2 : dlt === 1 ? 3 : 4] += c; });
       const tot = seg.reduce((u, v) => u + v, 0), cls = ['e', 'b', 'p', 'g', 'd'];
       const bar = tot ? '<div class="hbhBar">' + seg.map((c, k) => c ? `<i class="${cls[k]}" style="flex:${c} 1 0">${c / tot >= .07 ? c : ''}</i>` : '').join('') + '</div>' : '<div class="hbhNone">no rounds yet</div>';
-      return `<div class="hbhRow"><div class="hn">${i + 1}</div><div><b>PAR ${d.par}</b><small>${HOLE_LEN[i]} YD</small></div><div><b>${n ? a[8] : '–'}</b><small>Best</small></div><div><b>${n ? (a[1] / n).toFixed(1) : '–'}</b><small>Avg</small></div>${bar}</div>`;
+      return `<div class="hbhRow"><div class="hn">${i + 1}</div><div><b>PAR ${d.par}</b><small>${HOLE_LEN[i]} ${holeU(d).toUpperCase()}</small></div><div><b>${n ? a[8] : '–'}</b><small>Best</small></div><div><b>${n ? (a[1] / n).toFixed(1) : '–'}</b><small>Avg</small></div>${bar}</div>`;
     });
     el.innerHTML = `<div class="hbhSum">${COURSE.name} · ${nr} round${nr === 1 ? '' : 's'}${pc ? ' · ' + pc + ' with hole scores' : ''}</div>` + (R.length ? holeChart(R) : '') + rows.join('');
     el.querySelectorAll('.bar').forEach(b => b.onclick = () => {
@@ -8073,7 +8076,7 @@ function frame(now) {
 function showTitleHole() {
   G.C = courseFor(0); buildHole(G.C); placeBall(G.C.startPos.x, G.C.startPos.z, true);
   G.state = 'title'; W.aim.visible = W.ring.visible = false; W.peg.visible = false;
-  HOLE_LEN[0] = toYd(G.C.length);
+  HOLE_LEN[0] = toLen(G.C.length);
 }
 function boot(data) {
   calibrateClubs(); calibrateDiscs();
