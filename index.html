@@ -639,7 +639,7 @@ const CLUBS = [
   { id: 'LW', name: 'Lob wedge', type: 'wedge', loft: 60, launch: 33.5, spin: 9300, carry: 91.4, smash: 1.085, gear: .58 },
   { id: 'Pt', name: 'Putter', type: 'putter', loft: 3, launch: 1, spin: 0, carry: 0, smash: 1.0, gear: 0 },
 ];
-const PUTTER = CLUBS.length - 1;
+let PUTTER = CLUBS.length - 1;   // (the last item in the bag: setBag swaps the golf clubs for the discs on a disc golf course)
 const POW_EXP = .78;
 const DOWN_FULL = .35; // seconds
 const DOWN_STEP = .2, DOWN_STEP_LOSS = .2; // each 0.2 s the downswing is slower than DOWN_FULL cuts the ball speed by a further 20 % (compounding)
@@ -757,6 +757,7 @@ function cupZone(C, o, x, yb, z, vx, vy, vz, t, fr, ev, mu, air, w, cup) {
 const HIT = { kind: '', x: 0, z: 0, r: 0 };
 const _g2 = [0, 0], _w3 = [0, 0, 0];
 function simulateShot(C, o) {
+  if (o.disc) return simulateDisc(C, o);
   const dt = o.dt || 1 / 240, maxT = o.maxT || 40; // predictions may step coarser
   let x = o.x, y = o.y, z = o.z, vx = o.v[0], vy = o.v[1], vz = o.v[2];
   let wx = o.w ? o.w[0] : 0, wy = o.w ? o.w[1] : 0, wz = o.w ? o.w[2] : 0;
@@ -961,6 +962,7 @@ function simulateShot(C, o) {
 
 // Turn swing + strike into launch conditions
 function computeLaunch(ci, sw, st, surf, yaw, hand, teed, lieRoll) {
+  if (CLUBS[ci].type === 'disc') return discLaunch(ci, sw, st, surf, yaw, hand);
   const c = CLUBS[ci], lie = SURF[surf].lie;
   const Rstar = c.type === 'putter' ? 2 : 3;
   const ratio = sw.Tb / Math.max(.03, sw.Td);
@@ -1106,6 +1108,188 @@ function powerForCarry(c, d) {
   if (!c.table) return 1;
   for (let i = 1; i <= 20; i++) if (c.table[i] >= d) { const a = c.table[i - 1], b = c.table[i]; return (i - 1 + (d - a) / (b - a)) / 20; }
   return 1;
+}
+
+/* ---------- disc golf (a course whose courses.json engine sets disc: true) ---------- */
+// On a disc golf course the bag holds four discs instead of the clubs (setBag swaps CLUBS' contents; the practice green and range stay golf).
+// A disc flies on lift and drag (a 175 g, 21 cm golf disc; lift and drag after Hummel's frisbee model, less drag for a golf disc's rim) and leans as
+// it slows: its turn rating rolls it over (to the right for a right-handed backhand) while it is near full speed, its fade rolls it back (to the
+// left) as it slows. carry: a full, clean, flat throw's distance on flat ground (calibrateDiscs solves the release speed for it); glide scales
+// the lift; gl is the glide rating as printed on a real disc (shown on the strike dial with speed, turn and fade).
+const DISC_BAG = [
+  { id: 'DD', name: 'Distance driver', type: 'disc', speed: 11, gl: 5, glide: 1.05, turn: -1, fade: 2, carry: 110, col: 0xff6a2a },
+  { id: 'FD', name: 'Fairway driver', type: 'disc', speed: 7, gl: 5, glide: 1.05, turn: -1, fade: 1, carry: 95, col: 0x2fb7e8 },
+  { id: 'MR', name: 'Midrange', type: 'disc', speed: 5, gl: 4, glide: 1, turn: 0, fade: 1, carry: 78, col: 0xffd23a },
+  { id: 'PT', name: 'Putter', type: 'disc', speed: 3, gl: 3, glide: .95, turn: 0, fade: 1, carry: 60, col: 0xf04a9a },
+];
+const GOLF_BAG = CLUBS.slice();
+const DISC_KD = .5 * AIR_RHO * Math.PI * .1065 * .1065 / .175, DISC_CL0 = .12, DISC_CLA = 1.6, DISC_CD0 = .045, DISC_CDA = 2.5, DISC_A0 = -.052;
+const DISC_LAUNCH = 12, DISC_NOSE = 6, DISC_PUTT_LAUNCH = 5, DISC_PUTT_NOSE = 4, DISC_REL = 1, DISC_TURN = 10, DISC_FADE = 12;   // release: path and nose angles (deg) of a full throw and a putt, and height (m); turn and fade: deg/s of roll per rating point
+// the basket (a DISCatcher, drawn and caught at BASKET_K x real size, as the golf ball and cup are larger than life): a disc whose centre passes inside
+// the chains, between the tray and the top band, slower than DISC_CATCH_V is caught; faster it rattles through and drops out; the cage and pole knock it down
+const BASKET_K = 1.3, BASKET_R = .3 * BASKET_K, BASKET_LO = .58 * BASKET_K, BASKET_HI = 1.36 * BASKET_K, BASKET_CAGE = BASKET_R + .1, DISC_CATCH_V = 16;
+const DISC_DROP = 1;   // PALS Rules on a disc course: a disc at rest within 1 m (3 ft) of the basket is a drop-in (one more throw, in)
+// how a disc meets the ground: the share of its speed it skips on with, and how hard it then slides to a stop (m/s^2)
+const DISC_GROUND = { [S.TEE]: [.45, 5], [S.FAIR]: [.45, 5], [S.FIRST]: [.35, 6.5], [S.ROUGH]: [.25, 8], [S.DEEP]: [.1, 14], [S.FRINGE]: [.45, 5], [S.GREEN]: [.45, 5], [S.SAND]: [0, 30], [S.PATH]: [.6, 3.5] };
+// a soft throw (a putt, an approach) is released flatter than a drive, so it comes in at basket height instead of sailing over it
+function discRelease(p) { const u = smooth(.2, .75, p); return { launch: lerp(DISC_PUTT_LAUNCH, DISC_LAUNCH, u), nose: lerp(DISC_PUTT_NOSE, DISC_NOSE, u) }; }
+let BAG_DISC = false, BALL_LIFT = VIS_R;   // BALL_LIFT: how far the drawn ball's (or disc's) centre sits above the ground, per unit of its drawn scale
+function isDisc() { return BAG_DISC; }
+function setBag(disc) {
+  if (disc === BAG_DISC) return; BAG_DISC = disc;
+  CLUBS.length = 0; CLUBS.push(...(disc ? DISC_BAG : GOLF_BAG)); PUTTER = CLUBS.length - 1;
+  if (typeof G !== 'undefined' && G) { G.club = clamp(G.club | 0, 0, PUTTER); G.suggested = null; G.carryKey = ''; }
+  if (typeof UI !== 'undefined') UI.head = null;
+  discLook();
+}
+// the ball's mesh: the golf ball, or a disc (in the colour of the disc in hand, set each frame) on a disc course
+function discLook() {
+  if (!W.ball) return;
+  if (!W.golfLook) W.golfLook = { g: W.ball.geometry, m: W.ball.material };
+  if (BAG_DISC) {
+    if (!W.discLook) W.discLook = { g: new THREE.CylinderGeometry(.07, .064, .017, 32), m: new THREE.MeshPhongMaterial({ color: 0xff6a2a, shininess: 60, specular: 0x333333, emissive: 0xff6a2a, emissiveIntensity: .15 }) };
+    W.ball.geometry = W.discLook.g; W.ball.material = W.discLook.m; BALL_LIFT = .012;
+  } else { W.ball.geometry = W.golfLook.g; W.ball.material = W.golfLook.m; BALL_LIFT = VIS_R; }
+  W.ball.rotation.set(0, 0, 0);
+}
+// a throw: the release (strike dot across = release angle, a hyzer one way and an anhyzer the other; up and down = the nose angle; off the middle
+// a throw also loses speed and wobbles, which costs it more drag), the power and tempo as for a golf swing
+function discLaunch(ci, sw, st, surf, yaw, hand) {
+  const c = CLUBS[ci], ratio = sw.Tb / Math.max(.03, sw.Td), q = Math.exp(-TEMPO_K * Math.pow(ratio - 3, 2));
+  const tempoGrade = q >= .54 ? 'good' : q >= .15 ? 'ok' : 'bad', h = st.h, v = st.v, off = Math.hypot(h, v * .85);
+  const p = clamp(sw.p, .03, 1), downF = sw.Td <= DOWN_FULL ? 1 : Math.pow(1 - DOWN_STEP_LOSS, (sw.Td - DOWN_FULL) / DOWN_STEP);
+  const sm = Math.max(.4, 1 - .16 * h * h - .1 * v * v), lie = surf === S.SAND ? .85 : surf === S.DEEP ? .95 : 1;
+  const speed = c.ballSpeed * Math.pow(p, POW_EXP) * downF * (.85 + .15 * q) * sm * lie, vc = clamp(v, -1.5, 1.5);
+  const rel = discRelease(p), bank = clamp(h * 30, -45, 45), nose = rel.nose + vc * 7, launch = rel.launch + vc * 4;
+  const start = 1.2 * h * hand - (sw.pathDeg || 0), yy = yaw + start * DEG, dx = Math.sin(yy), dz = -Math.cos(yy), cl = Math.cos(launch * DEG), sl = Math.sin(launch * DEG);
+  const out = { ci, ratio, Rstar: 3, q, tempoGrade, h, v, p: sw.p, clubSpeed: speed, ballSpeed: speed, smash: 1, launch, spin: 0, biteSpin: 1, startDeg: start, tilt: 0, extra: null, tempoMult: .85 + .15 * q, downF,
+    v: [dx * cl * speed, sl * speed, dz * cl * speed], w: [0, 0, 0],
+    disc: { glide: c.glide, turn: c.turn, fade: c.fade, vr: c.ballSpeed * .9, nose, bank, s: hand, wob: Math.min(1.5, off * off * 1.5) } };
+  out.loc = v > .3 ? 'Nose up' : v < -.3 ? 'Nose down' : 'Flat nose';
+  out.quality = off < .12 ? 'Clean' : off < .3 ? 'Smooth' : off < .6 ? 'Wobbly' : 'Off the grip';
+  out.qualityLevel = off < .12 ? 0 : off < .3 ? 1 : off < .6 ? 2 : 3;
+  const ab = Math.abs(bank); out.shape = ab < 4 ? 'Flat' : bank > 0 ? (ab < 18 ? 'Hyzer' : 'Big hyzer') : (ab < 18 ? 'Anhyzer' : 'Big anhyzer');
+  return out;
+}
+// a disc's flight, landing, skid and the basket; the result has simulateShot's shape plus att, the disc's bank (rad) at each frame
+function simulateDisc(C, o) {
+  const dt = o.dt || 1 / 240, maxT = o.maxT || 30, d = o.disc, sg = d.s || 1;
+  let x = o.x, y = o.y + (o.rel == null ? DISC_REL : o.rel), z = o.z, vx = o.v[0], vy = o.v[1], vz = o.v[2], phi = d.bank * DEG, th = d.nose * DEG;
+  const windX = o.wind ? o.wind[0] * WIND_EFFECT : 0, windZ = o.wind ? o.wind[1] * WIND_EFFECT : 0;
+  const fr = [0, x, y, z, 0], att = [phi], ev = [], res = { holed: false, water: false, ob: false }, sx = x, sz = z, y0 = y;
+  let t = 0, step = 0, mode = 0, apex = y, land = null, lastDry = [x, z], lastTree = -1, lastTreeT = -9, cageT = -9;
+  const cup = C.cup && !C.noCup ? C.cup : null;
+  const splash = () => { res.water = true; y = C.wl(x, z); ev.push({ t, type: 'splash', x, y, z, s: Math.hypot(vx, vy, vz) }); fr.push(t, x, y, z, 2); att.push(phi); };
+  while (t < maxT) {
+    if (mode === 0) {
+      const gy = C.h(x, z), ws = clamp((y - gy) / 10, .3, 1.15);
+      const rvx = vx - windX * ws, rvy = vy, rvz = vz - windZ * ws, V = Math.hypot(rvx, rvy, rvz) || 1e-6, ux = rvx / V, uy = rvy / V, uz = rvz / V;
+      const gam = Math.atan2(rvy, Math.hypot(rvx, rvz)), al = th - gam;
+      // lift: square to the flight, in the plane of the disc's up (rolled by the bank); 'left' is up x travel
+      let px = -uy * ux, py = 1 - uy * uy, pz = -uy * uz; const pl = Math.hypot(px, py, pz) || 1; px /= pl; py /= pl; pz /= pl;
+      const lx = py * uz - pz * uy, ly = pz * ux - px * uz, lz = px * uy - py * ux;
+      const cl = (DISC_CL0 + DISC_CLA * Math.min(al, .35)) * d.glide * (al > .35 ? Math.max(0, 1 - (al - .35) * 2.5) : 1);   // (stalls past 20 degrees)
+      const cd = DISC_CD0 * (1 + d.wob) + DISC_CDA * (al - DISC_A0) ** 2, q = DISC_KD * V * V, c = Math.cos(phi), sn = Math.sin(phi) * sg;
+      const ax = q * cl * (px * c + lx * sn) - q * cd * ux, ay = q * cl * (py * c + ly * sn) - q * cd * uy - GRAV, az = q * cl * (pz * c + lz * sn) - q * cd * uz;
+      // turn near full speed, fade as it slows (never past 70 degrees of bank); slowing down, the nose drops toward the flight path
+      const r = V / d.vr, rate = DISC_TURN * d.turn * smooth(.75, 1, r) + DISC_FADE * d.fade * (1 - smooth(.45, .85, r));
+      phi += rate * Math.max(0, 1 - Math.abs(phi) / (70 * DEG)) * DEG * dt;
+      if (r < .7) th += (gam - th) * Math.min(1, 2.4 * (.7 - r) * dt);
+      vx += ax * dt; vy += ay * dt; vz += az * dt; x += vx * dt; y += vy * dt; z += vz * dt;
+      if (y > apex) apex = y;
+      if (C.treeHit && !o.noTrees) {
+        const tid = C.treeHit(x, y, z, (x - sx) ** 2 + (y - y0) ** 2 + (z - sz) ** 2 < 4);
+        if (tid >= 0 && !(tid === lastTree && t - lastTreeT < 1.2)) {
+          lastTree = tid; lastTreeT = t; const sp = Math.hypot(vx, vy, vz), kind = HIT.kind;
+          if (kind === 'trunk') {   // off the trunk: back the way it came, most of its pace gone
+            let nx = x - HIT.x, nz = z - HIT.z; const nl = Math.hypot(nx, nz) || 1; nx /= nl; nz /= nl;
+            const vn = vx * nx + vz * nz; if (vn < 0) { vx -= 2 * vn * nx; vz -= 2 * vn * nz; }
+            vx *= .35; vy *= .35; vz *= .35; x = HIT.x + nx * (HIT.r + .1); z = HIT.z + nz * (HIT.r + .1); phi = (hash2(step, tid, 5) - .5) * 1.6;
+            ev.push({ t, type: 'tree', x, y, z, s: sp, id: tid, trunk: true });
+          } else if (kind === 'crown' && hash2(step, tid, 21) < .3) {   // a gap in the leaves: through, slower and a little off line
+            const k = .78 + .1 * hash2(tid, step, 23), a = (hash2(step, tid, 25) - .5) * 14 * DEG, ca = Math.cos(a), sa = Math.sin(a), qx = vx * ca - vz * sa, qz = vx * sa + vz * ca;
+            vx = qx * k; vz = qz * k; vy *= k; phi += (hash2(tid, step, 27) - .5) * .5;
+            ev.push({ t, type: 'tree', x, y, z, s: sp, id: tid, pass: true });
+          } else {   // knocked down by the branches: it flutters out of the tree, off to one side
+            const hl = Math.hypot(vx, vz) || 1e-6, side = hash2(step, tid, 9) < .5 ? -1 : 1, a = side * (40 + 120 * hash2(tid, step, 3)) * DEG, ca = Math.cos(a), sa = Math.sin(a);
+            const ns = sp * (.08 + .14 * hash2(tid, step, 29)), hx = (vx * ca - vz * sa) / hl, hz = (vx * sa + vz * ca) / hl;
+            vx = hx * ns; vz = hz * ns; vy = -ns * .5; phi = (hash2(step, tid, 31) - .5) * 2; th = -.4;
+            ev.push({ t, type: 'tree', x, y, z, s: sp, id: tid });
+          }
+        }
+      }
+      if (cup) {
+        const bx = x - cup.x, bz = z - cup.z, rr = Math.hypot(bx, bz), hy = y - cup.y, sp = Math.hypot(vx, vy, vz);
+        const band = hy >= BASKET_LO && hy <= BASKET_HI;
+        if (band && rr < BASKET_R && sp < DISC_CATCH_V) {   // in the chains: it drops into the tray
+          ev.push({ t, type: 'chains', x, y, z, s: sp });
+          const ex = cup.x + bx * .45, ez = cup.z + bz * .45, ey = cup.y + BASKET_LO - .04;
+          for (let k = 1; k <= 14; k++) { const u = k / 14, e2 = u * u; fr.push(t + u * .4, lerp(x, ex, u), lerp(y, ey, e2), lerp(z, ez, u), 3); att.push(phi * (1 - u)); }
+          t += .4; x = ex; y = ey; z = ez; res.holed = true; res.cup = cup; break;
+        }
+        if (rr < BASKET_CAGE && hy > BASKET_LO - .12 && hy < BASKET_HI + .06 && t - cageT > .3) {
+          cageT = t; const nx = rr > 1e-3 ? bx / rr : 1, nz = rr > 1e-3 ? bz / rr : 0;
+          if (band && rr < BASKET_R) {   // too fast: it rattles through the chains and drops out the back
+            ev.push({ t, type: 'spit', x, y, z, s: sp }); vx *= .22; vz *= .22; vy = Math.min(vy, 0) * .3;
+          } else if (band) {   // the outside of the chains: a glancing blow, it carries on slower and wide
+            ev.push({ t, type: 'graze', x, y, z, s: sp * .4 }); const vn = vx * nx + vz * nz; vx += (Math.abs(vn) * .5) * nx; vz += (Math.abs(vn) * .5) * nz; vx *= .6; vz *= .6; vy *= .6;
+          } else {   // the tray's rim or the top band: knocked down
+            ev.push({ t, type: 'cage', x, y, z, s: sp }); const vn = vx * nx + vz * nz; if (vn < 0) { vx -= 2 * vn * nx; vz -= 2 * vn * nz; } vx *= .28; vz *= .28; vy = Math.min(vy, 0) * .3;
+          }
+          phi = (hash2(step, 7, 3) - .5) * 1.4; th = -.3;
+        } else if (rr < .03 * BASKET_K + .1 && hy > 0 && hy < BASKET_LO && t - cageT > .3) {   // the pole under the tray
+          cageT = t; ev.push({ t, type: 'cage', x, y, z, s: sp }); vx *= -.25; vz *= -.25; vy = Math.min(vy, 0); th = -.3;
+        }
+      }
+      const gy2 = C.h(x, z), wl = C.wl ? C.wl(x, z) : -1e9;
+      if (wl > gy2 && y <= wl) { splash(); break; }
+      if (y <= gy2 && vy < 0) {   // down: it skips on a little (less on a steep landing, a disc on its edge or in long grass), then slides
+        y = gy2; const surf = C.surf(x, z), g = DISC_GROUND[surf] || DISC_GROUND[S.ROUGH], vh = Math.hypot(vx, vz);
+        if (!land) land = { x, y, z, t, carry: Math.hypot(x - sx, z - sz), angle: Math.atan2(-vy, vh) / DEG, surf };
+        ev.push({ t, type: 'land', x, y, z, s: -vy, surf });
+        const keep = g[0] * clamp(1.2 - (-vy / Math.max(.1, vh)) * .6, 0, 1) * (Math.abs(phi) > 50 * DEG ? .5 : 1);
+        vx *= keep; vz *= keep; vy = 0; mode = 1;
+      }
+    } else {
+      const surf = C.surf(x, z); if (surf === S.WATER) { splash(); break; }
+      const g = DISC_GROUND[surf] || DISC_GROUND[S.ROUGH]; C.grad(x, z, _g2);
+      const gx = -GRAV * .5 * _g2[0], gz = -GRAV * .5 * _g2[1], sp = Math.hypot(vx, vz);   // (a sliding disc: half of gravity along the slope against the friction)
+      if (sp < .05 && Math.hypot(gx, gz) < g[1]) { vx = vz = 0; ev.push({ t, type: 'stop', x, y, z }); fr.push(t, x, y, z, 1); att.push(0); break; }
+      let ax = gx, az = gz; if (sp > 1e-4) { ax -= g[1] * vx / sp; az -= g[1] * vz / sp; }
+      const nvx = vx + ax * dt, nvz = vz + az * dt;
+      if (nvx * vx + nvz * vz < 0 && Math.hypot(gx, gz) < g[1]) { vx = vz = 0; } else { vx = nvx; vz = nvz; }
+      x += vx * dt; z += vz * dt; y = C.h(x, z); phi *= Math.exp(-dt * 6);
+      if (cup && Math.hypot(x - cup.x, z - cup.z) < .03 * BASKET_K + .1 && t - cageT > .3) { cageT = t; ev.push({ t, type: 'cage', x, y, z, s: sp }); vx *= -.3; vz *= -.3; }
+      if (!C.inBounds(x, z)) { res.ob = true; fr.push(t, x, y, z, 1); att.push(phi); break; }
+    }
+    t += dt; step++;
+    if (mode === 0 && !C.inBounds(x, z)) { res.ob = true; fr.push(t, x, y, z, 0); att.push(phi); break; }
+    if ((step & 3) === 0) { fr.push(t, x, y, z, mode); att.push(phi); if (C.surf(x, z) !== S.WATER) { lastDry[0] = x; lastDry[1] = z; } }
+  }
+  const n = fr.length / 5, fx = fr[(n - 1) * 5 + 1], fz = fr[(n - 1) * 5 + 3];
+  if (!res.holed && !res.ob && !res.water && C.surf(fx, fz) === S.WATER) res.water = true;
+  if (!res.holed && !res.water && !res.ob && C.isOB(fx, fz)) res.ob = true;
+  if (!res.holed && !res.water && !res.ob && C.lost && C.lost(fx, fz)) { res.ob = true; res.lost = true; }
+  res.frames = Float32Array.from(fr); res.att = Float32Array.from(att); res.n = n; res.events = ev; res.apex = apex - y0; res.land = land;
+  res.final = { x: fx, y: fr[(n - 1) * 5 + 2], z: fz }; res.finalSurf = res.water ? S.WATER : C.surf(fx, fz);
+  res.total = Math.hypot(fx - sx, fz - sz); res.carry = land ? land.carry : res.total; res.lastDry = lastDry; res.duration = fr[(n - 1) * 5];
+  return res;
+}
+// a clean, flat throw of disc c at release speed V on flat ground
+function discFlat(c, V, p) {
+  const rl = discRelease(p == null ? 1 : p);
+  return simulateDisc(FLAT, { x: 0, y: 0, z: 0, v: [0, Math.sin(rl.launch * DEG) * V, -Math.cos(rl.launch * DEG) * V], disc: { glide: c.glide, turn: c.turn, fade: c.fade, vr: (c.ballSpeed || V) * .9, nose: rl.nose, bank: 0, s: 1, wob: 0 } });
+}
+// each disc's release speed for its carry, and its power -> carry table (as calibrateClubs does for the clubs)
+function calibrateDiscs() {
+  for (const c of DISC_BAG) {
+    let lo = 8, hi = 45;
+    for (let i = 0; i < 26; i++) { const m = (lo + hi) / 2; c.ballSpeed = 0; if (discFlat(c, m).carry < c.carry) lo = m; else hi = m; }
+    Object.assign(c, { ballSpeed: (lo + hi) / 2, smash: 1, launch: DISC_LAUNCH, spin: 0, loft: 0 }); c.clubSpeed = c.ballSpeed;
+    c.table = []; for (let k = 0; k <= 20; k++) c.table.push(k ? discFlat(c, c.ballSpeed * Math.pow(k / 20, POW_EXP), k / 20).carry : 0);
+    const full = discFlat(c, c.ballSpeed), ch = discFlat(c, c.ballSpeed * Math.pow(.25, POW_EXP), .25);
+    c.total = full.total; c.roll = full.total - full.carry; c.chipCarry = ch.carry / ch.total;
+  }
 }
 
  // broad rolling ground (m), faded out around creeks and ponds
@@ -2206,7 +2390,7 @@ function buildRealDecor(C, grp) {
   const fc = document.createElement('canvas'); fc.width = 128; fc.height = 80; const fx = fc.getContext('2d'); fx.fillStyle = '#e8303a'; fx.fillRect(0, 0, 128, 80); fx.fillStyle = '#fff'; fx.font = '700 54px Fredoka, sans-serif'; fx.textAlign = 'center'; fx.textBaseline = 'middle'; fx.fillText(String(C.cups ? ci + 1 : C.idx + 1), 64, 44);
   const fg = new THREE.PlaneGeometry(1.1, .7, 8, 2); fg.translate(.55, 0, 0);
   const flag = new THREE.Mesh(fg, new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(fc), side: THREE.DoubleSide }));
-  if (C.noCup) flag.scale.setScalar(RANGE_K); flag.position.set(cp.x, cp.y + (PIN_H - .38) * (C.noCup ? RANGE_K : 1), cp.z); flag.castShadow = true; grp.add(flag); pole.userData.keep = true;
+  if (C.noCup) flag.scale.setScalar(RANGE_K); else if (isDisc()) flag.scale.setScalar(.45); flag.position.set(cp.x, cp.y + (isDisc() ? BASKET_HI + .62 : (PIN_H - .38) * (C.noCup ? RANGE_K : 1)), cp.z); flag.castShadow = true; grp.add(flag); pole.userData.keep = true;
   W.flags.push({ flag, pole, base: fg.attributes.position.array.slice() });
   });
   W.flag = W.flags[0].flag; W.flagBase = W.flags[0].base; W.pole = W.flags[0].pole;
@@ -2221,7 +2405,7 @@ function buildRealDecor(C, grp) {
     return out;
   };
   const markers = [];
-  for (const k of C.noCup ? [] : ['w', 'y', 'b', 'r']) {
+  for (const k of C.noCup || isDisc() ? [] : ['w', 'y', 'b', 'r']) {
     let p;
     if (k === 'w') p = [C.startPos.x, C.startPos.z];
     else { const m = H0.mk[k]; if (!m) continue; const q = C.loc(m[0], m[1]); p = snapTee(q[0], -q[1]); }
@@ -2778,7 +2962,7 @@ let RDC = null, COURSE = null;
 function courseList(reg) {
   for (const c of reg.courses) {
     const k = c.key;
-    COURSES[k] = { key: k, name: c.name, short: c.short, pars: c.pars, recFrom: c.recFrom, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: !!c.music,
+    COURSES[k] = { key: k, name: c.name, short: c.short, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: !!c.music,
       defs: null, best: 'ssg-best-' + k, board: 'ssg-board-' + k, coll: 'rounds-' + k };
   }
 }
@@ -2818,6 +3002,7 @@ async function courseInit(data) {
 }
 function useRealData(key) {
   RDC = RDS[key] || RDS[PRACTICE_COURSE]; if (RD_CUR === RDC.data) return;
+  setBag(!!RDC.disc);
   RD_CUR = RDC.data; GREEN_ALTI = RDC.alti; Object.assign(GR, RDC.gr); TREE_TWEAK = RDC.tweak; TIER_CUT = RDC.tierCut;
   for (const k of Object.keys(GC)) delete GC[k]; GC.ready = false;
   W.life = null; // the old hole's scenery belongs to the old course's data
@@ -3089,7 +3274,7 @@ function initThree() {
   // ball (oversized, faceted)
   const bt = makeBallTextures();
   W.ball = new THREE.Mesh(new THREE.SphereGeometry(VIS_R, 48, 32), new THREE.MeshPhongMaterial({ color: 0xffffff, map: bt.map, bumpMap: bt.bump, bumpScale: .004, specular: 0x2c2c2c, shininess: 38, emissive: 0xffffff, emissiveIntensity: .17 }));
-  W.ball.castShadow = true; scene.add(W.ball);
+  W.ball.castShadow = true; scene.add(W.ball); discLook();
   // tee peg
   W.peg = new THREE.Mesh(new THREE.CylinderGeometry(.025, .012, .12, 6), lambert(0xffd1dc)); scene.add(W.peg);
   // soft contact shadow
@@ -3299,6 +3484,7 @@ function groundY(x, z) {
 const CUP_U = { value: [0, 1, 2, 3].map(() => new THREE.Vector4(0, 0, 0, 0)) };
 const RANGE_K = 2;   // driving-range flags stand twice as tall, to be seen from 200 yd
 function buildCup(C, grp, cup, ci) {
+  if (isDisc()) return buildBasket(grp, cup);
   if (C.noCup) {   // a driving-range flag: just a taller stick
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(.0525, .0525, PIN_H * RANGE_K, 8), lambert(0xffffff)); pole.position.set(cup.x, cup.y + PIN_H * RANGE_K / 2, cup.z); pole.castShadow = true; grp.add(pole); return pole;
   }
@@ -3317,6 +3503,27 @@ function buildCup(C, grp, cup, ci) {
   floor.rotation.x = -Math.PI / 2; floor.position.set(cup.x, cup.y - D + .002, cup.z); floor.userData.keep = true; grp.add(floor);
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(PIN_R, PIN_R, PIN_H + D, 8), lambert(0xffffff)); pole.position.set(cup.x, cup.y + (PIN_H - D) / 2, cup.z); pole.castShadow = true; grp.add(pole);
   return pole;
+}
+// a disc golf basket (a DISCatcher, BASKET_K x real size): the pole, the yellow tray and top band, two rings of chains, and a mast above for the hole flag
+function buildBasket(grp, cup) {
+  const b = new THREE.Group(), K = BASKET_K, steel = lambert(0xc4c9cf), yel = lambert(0xf2c230), top = BASKET_HI + .8;
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(.03 * K, .03 * K, top, 8), steel); pole.position.y = top / 2; pole.castShadow = true; b.add(pole);
+  const tray = new THREE.Mesh(new THREE.CylinderGeometry(.34 * K, .31 * K, .2 * K, 28, 1, true), new THREE.MeshLambertMaterial({ color: 0xf2c230, side: THREE.DoubleSide })); tray.position.y = BASKET_LO - .06 * K; tray.castShadow = true; b.add(tray);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(.31 * K, 28), steel); floor.rotation.x = -Math.PI / 2; floor.position.y = BASKET_LO - .16 * K; b.add(floor);
+  const band = new THREE.Mesh(new THREE.TorusGeometry(.3 * K, .025 * K, 6, 28), yel); band.rotation.x = Math.PI / 2; band.position.y = BASKET_HI; band.castShadow = true; b.add(band);
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(.3 * K, .1 * K, 28, 1, true), yel); cap.position.y = BASKET_HI + .06 * K; b.add(cap);
+  const pts = [];
+  for (const [n, r0, r1] of [[18, .29, .1], [12, .17, .06]]) for (let i = 0; i < n; i++) {
+    const a = (i + (r0 < .2 ? .5 : 0)) / n * TAU, a2 = a + .5;
+    for (let k = 0; k < 6; k++) {   // each chain sags in a slight curve from the band down to the collar over the tray
+      const u0 = k / 6, u1 = (k + 1) / 6, at = (u, aa) => { const rr = lerp(r0, r1, u) * K + Math.sin(Math.PI * u) * .02 * K, yy = lerp(BASKET_HI - .02 * K, BASKET_LO + .1 * K, u); return [Math.cos(aa) * rr, yy, Math.sin(aa) * rr]; };
+      pts.push(...at(u0, lerp(a, a2, u0)), ...at(u1, lerp(a, a2, u1)));
+    }
+  }
+  const cg = new THREE.BufferGeometry(); cg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  b.add(new THREE.LineSegments(cg, new THREE.LineBasicMaterial({ color: 0xe6e9ec })));
+  b.position.set(cup.x, cup.y, cup.z); grp.add(b);
+  return b;
 }
 function gableRoof(w, d, h, over) {
   const x = w / 2 + over, z = d / 2 + over, g = new THREE.BufferGeometry();
@@ -4401,11 +4608,12 @@ function deflectShot(sh, tt, hit) {
   vx += (Math.random() - .5) * 1.2; vz += (Math.random() - .5) * 1.2; if (vy < -1 && hit.y - groundY(hit.x, hit.z) < .4) vy = Math.abs(vy) * .4;
   const mode = fr[a + 4], rolling = mode === 1, sx = fr[1], sz = fr[3];
   const x = hit.x + h.nx * .15, y = Math.max(hit.y + h.ny * .15, groundY(hit.x, hit.z) + .05), z = hit.z + h.nz * .15;
-  const sim = simulateShot(G.C, { x, y, z, v: [vx, vy, vz], w: [0, 0, 0], wind: sh.L.putt ? null : G.wind, putt: rolling && sh.L.putt, flag: !sh.L.putt });
+  const sim = simulateShot(G.C, { x, y, z, v: [vx, vy, vz], w: [0, 0, 0], wind: sh.L.putt ? null : G.wind, putt: rolling && sh.L.putt, flag: !sh.L.putt, disc: sh.L.disc ? Object.assign({}, sh.L.disc, { bank: 0, nose: 0 }) : null, rel: 0 });
   const out = Array.from(fr.subarray(0, a + 5)); out.push(tt, hit.x, hit.y, hit.z, 0);
   const sf = sim.frames; for (let k = 1; k < sim.n; k++) out.push(sf[k * 5] + tt, sf[k * 5 + 1], sf[k * 5 + 2], sf[k * 5 + 3], sf[k * 5 + 4]);
   const keepEv = r.events.filter(ev => ev.t <= tt), ev = keepEv.concat(sim.events.map(q => Object.assign({}, q, { t: q.t + tt })));
-  const nr = Object.assign({}, sim); nr.frames = Float32Array.from(out); nr.n = out.length / 5; nr.events = ev; nr.duration = tt + sim.duration;
+  const nr = Object.assign({}, sim); nr.frames = Float32Array.from(out); nr.n = out.length / 5;
+  if (r.att && sim.att) nr.att = Float32Array.from([...r.att.subarray(0, i + 1), sim.att[0], ...sim.att.subarray(1)]); nr.events = ev; nr.duration = tt + sim.duration;
   const n = nr.n, fx = out[(n - 1) * 5 + 1], fz = out[(n - 1) * 5 + 3]; nr.final = { x: fx, y: out[(n - 1) * 5 + 2], z: fz }; nr.total = Math.hypot(fx - sx, fz - sz);
   nr.land = r.land && r.land.t <= tt ? r.land : sim.land ? Object.assign({}, sim.land, { carry: Math.hypot(sim.land.x - sx, sim.land.z - sz), t: (sim.land.t || 0) + tt }) : null; nr.carry = nr.land ? nr.land.carry : nr.total; nr.apex = r.apex;
   sh.res = nr; sh.ei = keepEv.length; sh.calm = false; if (G.lastShot && G.lastShot.res === r) G.lastShot.res = nr;
@@ -5134,6 +5342,7 @@ const SFX = {
     tone(430 * r, .05, 'sine', .11 * k, 250 * r); tone(1250 * r, .022, 'triangle', .022 * k); noiseBurst(.02, .06 * k, 2200, 1.4);
   },
   hit(q, putt, speed) {
+    if (BAG_DISC) { SFX.release(q); return; }
     if (putt) { SFX.tap(speed); return; }
     const ct = CLUBS[G.club] ? CLUBS[G.club].type : 'iron', r = (Math.random() - .5) * .06;
     const fk = G.club === 0 ? 'driver' : ct === 'wood' ? 'wood' : ct === 'wedge' ? 'wedge' : 'iron', fv = { driver: .85, wood: .8, iron: .75, wedge: .7 }[fk]; // the recorded strike of this club type (hybrids use the irons)
@@ -5144,6 +5353,10 @@ const SFX = {
     }
     if (putt) { tone(1100, .07, 'sine', .22); tone(2200, .04, 'triangle', .06); return; } tone(q < 1 ? 1500 : 650, .14, 'triangle', .3, q < 1 ? 950 : 280); noiseBurst(.07, .35, q < 1 ? 3800 : 1100, 1); },
   land(s) { noiseBurst(.07, clamp(s / 30, .03, .25), 320, .7); },
+  // disc golf: the release (a soft whoosh), the chains (a shower of bright metallic ticks) and the cage (a dull steel clank)
+  release(q) { noiseBurst(.22, q < 2 ? .09 : .06, 900, .6); tone(180, .08, 'sine', .05, 120); },
+  chains(k) { k = k == null ? 1 : k; for (let i = 0; i < 12 * k; i++) { const d = Math.pow(Math.random(), 1.6) * .55; tone(2400 + Math.random() * 2600, .12 + Math.random() * .25, 'triangle', .03, null, d); tone(5600 + Math.random() * 2400, .06, 'sine', .012, null, d + .01); } noiseBurst(.45 * k, .05, 5200, 1.5); },
+  clank() { tone(720, .3, 'triangle', .1, 560); tone(1880, .2, 'sine', .04, null, .01); noiseBurst(.06, .1, 2800, 2); },
   cup() { if (play('s_cup', 1, .9) || play('cup', 1, .95)) return; [0, .07, .12].forEach((d, i) => tone(1500 - i * 220, .045, 'square', .05, null, d)); tone(230, .28, 'sine', .3, 130, .17); },
   splash() { noiseBurst(.55, .3, 650, .5); },
   // the truck's recorded sound (sounds/truckhorn.mp3 or truckrumble.mp3, one picked at random); k = loudness 0..1
@@ -5288,7 +5501,7 @@ function resumeRound(course) {
   if (mid.shot && mid.shot.L) {
     const q = mid.shot, L = q.L;
     placeBall(q.x, q.z, q.teed); if (mid.club != null) G.club = mid.club; if (mid.yaw != null) G.yaw = mid.yaw;
-    const res = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, wind: L.putt ? null : G.wind, putt: !!L.putt, flag: !L.putt });
+    const res = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, disc: L.disc, wind: L.putt ? null : G.wind, putt: !!L.putt, flag: !L.putt });
     G.lastShot = { C: G.C, hole: G.hole, x: G.ball.x, z: G.ball.z, teed: G.teed, L, res }; SW.last = L; SW.phase = 'done';
     const t = Math.min(q.playT, Math.max(0, res.duration - .05)); let ei = 0; while (ei < res.events.length && res.events[ei].t <= t) ei++;
     G.shot = { L, res, ei, finished: false, summary: q.summary || '' };
@@ -5367,7 +5580,7 @@ function startHole(i) {
   showIntro(); drawMapThumb(); updateHUD();
 }
 function placeBall(x, z, teed) {
-  const C = G.C; G.ball.x = x; G.ball.z = z; G.ball.y = C.h(x, z); G.surf = C.surf(x, z); G.teed = !!teed && G.surf === S.TEE;
+  const C = G.C; if (BAG_DISC && W.ball) W.ball.rotation.set(0, 0, 0); G.ball.x = x; G.ball.z = z; G.ball.y = C.h(x, z); G.surf = C.surf(x, z); G.teed = !!teed && G.surf === S.TEE;
 }
 function distToPin() { return Math.hypot(G.C.cup.x - G.ball.x, G.C.cup.z - G.ball.z); }
 function onGreenish() { return G.surf === S.GREEN || (G.surf === S.FRINGE && distToPin() < 14); }
@@ -5389,7 +5602,16 @@ function backThird() {
   const t = clamp(l + g.R * .62, tFlag - along, tFlag + along); // (the flag off the line by 5 m or more: the point of the line nearest to it)
   return { x: G.ball.x + ux * t, z: G.ball.z + uz * t };
 }
+// disc golf: the shortest disc whose clean full throw reaches the basket, aimed straight at it; a tree on that line swings the line round it
+function autoDiscAndAim() {
+  const C = G.C, d = distToPin(); G.target = null;
+  let pick = 0; for (let k = PUTTER; k >= 0; k--) if (CLUBS[k].total >= d + 3) { pick = k; break; }
+  let yaw = Math.atan2(C.cup.x - G.ball.x, -(C.cup.z - G.ball.z)); const reach = Math.min(d - 2, CLUBS[pick].total);
+  if (treeOnLine(yaw, reach)) for (let a = 1; a <= 40; a++) { const y2 = yaw + Math.ceil(a / 2) * 1.5 * DEG * (a & 1 ? 1 : -1); if (!treeOnLine(y2, reach)) { yaw = y2; break; } }
+  G.club = pick; G.suggested = pick; G.yaw = yaw; G.carryKey = ''; updateAim(true);
+}
 function autoClubAndAim() {
+  if (isDisc()) { autoDiscAndAim(); return; }
   const C = G.C, d = distToPin(), lw = CLUBS[PUTTER - 1];
   // a partial shot (closer than the lob wedge's full reach, or from a bunker close in) goes straight for the flag; everything else for the back third
   const partial = d < lw.carry + lw.roll * .6 + 4 || (G.surf === S.SAND && d < 90);
@@ -5410,7 +5632,7 @@ function autoClubAndAim() {
   };
   // simulations allowed per caddie call (keeps mobile responsive); a real, wooded course gets more, at a coarser step
   let budget = 34;
-  const pure = (k, y2) => { budget--; const L = computeLaunch(k, { p: 1, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, y2, settings.hand, G.teed); return simulateShot(C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, maxT: 20, dt: C.real ? 1 / 120 : undefined }); };
+  const pure = (k, y2) => { budget--; const L = computeLaunch(k, { p: 1, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, y2, settings.hand, G.teed); return simulateShot(C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, disc: L.disc, maxT: 20, dt: C.real ? 1 / 120 : undefined }); };
   const fan = [3, -3, 6, -6, 10, -10, 15, -15, 21, -21, 28, -28];
   const wet = r => r.water || r.ob, timber = r => r.events.some(e => e.type === 'tree'), sandy = r => r.finalSurf === S.SAND;
   // longest club whose pure shot stays dry, in bounds and out of the sand; if a tree is on the line, thread a slightly different line past it
@@ -5461,6 +5683,7 @@ function updateAim(full) {
 // part shots: how far up the left thumb should go for a pure 3:1 strike to finish at the target (null for a full swing)
 function chipPower() {
   const C = G.C, c = CLUBS[G.club];
+  if (c.type === 'disc') return discChip(c);
   if (c.type === 'putter') {
     const br = Math.atan2(C.cup.x - G.ball.x, -(C.cup.z - G.ball.z)); if (Math.abs(angWrap(br - G.yaw)) > 20 * DEG) return null;
     const p = puttEquiv() / G.puttRange; return p < 1.02 ? { p: clamp(p, .02, 1), d: distToPin() } : null;
@@ -5478,7 +5701,7 @@ function chipPower() {
   let lo = null, hi = null, best = null; // latest tries that finished short of / past the target
   for (let it = 0; it < 5; it++) {
     const L = computeLaunch(G.club, { p, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, G.yaw, settings.hand, G.teed);
-    const r = simulateShot(C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, maxT: 20, noTrees: true, dt: 1 / 120, flag: true });
+    const r = simulateShot(C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, disc: L.disc, maxT: 20, noTrees: true, dt: 1 / 120, flag: true });
     const T = (r.final.x - G.ball.x) * ax + (r.final.z - G.ball.z) * az;
     if (r.ob || T < 1) break;
     if (!r.water) { // a wet try still tells us short or long, but is never the answer
@@ -5495,6 +5718,22 @@ function chipPower() {
   if (!best || best.err > Math.max(2.5, .1 * d) || best.roll > 25 + .6 * best.carry || best.p > .85) return null;
   return { p: best.p, d };
 }
+// disc golf: the power that brings a clean throw to the basket at the height of the middle of the chains (null for a full throw or off line)
+function discChip(c) {
+  const C = G.C, cup = C.cup, d = distToPin(), br = Math.atan2(cup.x - G.ball.x, -(cup.z - G.ball.z));
+  if (Math.abs(angWrap(br - G.yaw)) > 25 * DEG || d > .85 * c.total) return null;
+  const ax = Math.sin(G.yaw), az = -Math.cos(G.yaw), mid = cup.y + (BASKET_LO + BASKET_HI) / 2;
+  const at = p => {   // how far over (+) or under (-) the middle of the chains a clean throw at power p passes the basket (0: caught)
+    const L = computeLaunch(G.club, { p, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, G.yaw, settings.hand, G.teed);
+    const r = simulateShot(C, { x: G.ball.x, y: G.ball.y, z: G.ball.z, v: L.v, w: L.w, disc: L.disc, maxT: 8, noTrees: true, dt: 1 / 120 });
+    if (r.holed) return 0; const f = r.frames;
+    for (let k = 1; k < r.n; k++) if ((f[k * 5 + 1] - G.ball.x) * ax + (f[k * 5 + 3] - G.ball.z) * az >= d) return f[k * 5 + 2] - mid;
+    return -9;
+  };
+  let lo = .03, hi = 1; if (at(hi) < 0) return null;
+  for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2, v = at(m); if (v === 0) { lo = hi = m; break; } if (v < 0) lo = m; else hi = m; }
+  return { p: (lo + hi) / 2, d };
+}
 function placeAimGeo() {
   const C = G.C, c = CLUBS[G.club], d = aimDir(), L = G.carry, putt = c.type === 'putter';
   const pa = W.aim.geometry.attributes.position.array, n = W.aimN;
@@ -5510,7 +5749,7 @@ function placeAimGeo() {
 }
 function predictCarry() {
   const L = computeLaunch(G.club, { p: 1, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, G.yaw, settings.hand, G.teed);
-  const r = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, maxT: 12, noTrees: true });
+  const r = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, disc: L.disc, maxT: 12, noTrees: true });
   return r.land ? r.land.carry : r.total;
 }
 
@@ -5638,7 +5877,7 @@ function impact(tImp) {
   G.strokes++;
   if (L.putt && (G.surf === S.GREEN || G.surf === S.FRINGE)) G.putts[G.hole]++;
   G.prev = { x: G.ball.x, z: G.ball.z, teed: G.teed };
-  const res = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, wind: L.putt ? null : G.wind, putt: !!L.putt, flag: !L.putt });
+  const res = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, disc: L.disc, wind: L.putt ? null : G.wind, putt: !!L.putt, flag: !L.putt });
   if (G.teed && !L.putt && W.life && W.life.plane) W.life.plane.maybeSpawn(res);
   G.lastShot = { C: G.C, hole: G.hole, x: G.ball.x, z: G.ball.z, teed: G.teed, L, res };
   G.shot = { L, res, ei: 0, finished: false, summary: `${L.quality} · ${L.shape} · Tempo ${L.ratio.toFixed(1)}:1` + (Math.abs(SW.pathDeg) >= .3 ? ` · Path ${SW.pathDeg > 0 ? '←' : '→'}${Math.abs(SW.pathDeg).toFixed(1)}°` : '') + (L.putt ? '' : ` · Smash ${L.smash.toFixed(2)}`) };
@@ -5647,19 +5886,19 @@ function impact(tImp) {
   W.aim.visible = W.ring.visible = false; W.peg.visible = false; if (W.slope) W.slope.mesh.visible = false; G.chip = null;
   $('aimHint').classList.remove('on');
   W.tracer.geometry.setDrawRange(0, 0);
-  if (!L.putt) {
+  if (!L.putt && !L.disc) {
     const d = aimDir(), sand = G.surf === S.SAND, colors = sand ? [0xf2e3bf, 0xe9d6a8, 0xfff3dc] : G.teed ? [0xffffff, 0xf7dc2e, 0x8dce69] : [0x8dce69, 0x6ab353, 0xa5d987, 0x7a5c45];
     burst(G.ball.x, G.ball.y + .05, G.ball.z, d[0], d[1], colors, sand ? 26 : 14, sand ? 4 : 6, sand ? 3.5 : 2);
   }
   const qq = ['good', 'good', 'ok', 'bad'][L.qualityLevel], tq = L.tempoGrade;
-  const chips = L.putt
+  const chips = L.disc ? [`Tempo <b class="${tq}">${L.ratio.toFixed(1)}:1</b>`, `Down <b class="${L.downF >= .995 ? 'good' : 'ok'}">${L.Td.toFixed(2)}s</b>`, `<b>${toMph(L.ballSpeed)}</b> mph`, `Release <b>${Math.abs(L.disc.bank).toFixed(0)}°</b>`] : L.putt
     ? [`Tempo <b class="${tq}">${L.ratio.toFixed(1)}:1</b>`, `Speed <b>${L.ballSpeed.toFixed(1)} m/s</b>`]
     : [`Tempo <b class="${tq}">${L.ratio.toFixed(1)}:1</b>`, `Down <b class="${L.downF >= .995 ? 'good' : 'ok'}">${L.Td.toFixed(2)}s</b>`, `Smash <b>${L.smash.toFixed(2)}</b>`, `<b>${toMph(L.ballSpeed)}</b> mph`, `<b>${(L.spin / 1000).toFixed(1)}k</b> rpm`];
   if (!L.putt && L.downF < .995) chips.push(`Slow <b class="ok">\u2212${Math.round((1 - L.downF) * 100)}%</b>`);
   if (!L.putt && L.lieF != null) { const lp = Math.round((L.lieF - 1) * 100); chips.push(`Lie <b class="${lp >= 0 ? 'good' : 'ok'}">${lp >= 0 ? '+' : '\u2212'}${Math.abs(lp)}%</b>`); }
   if (L.loose) chips.unshift(`Right thumb <b class="bad">not on the dial</b>`);
   // two lines: the verdict with where it hit and how it curved, then the numbers
-  readout(`<div class="r1 ${qq}">${L.quality}${L.extra ? '' : ' strike'} <span class="r1s">${L.loc} · ${L.shape}</span></div><div class="r3">${chips.map(c => '<span>' + c + '</span>').join('')}</div>`, Infinity);
+  readout(`<div class="r1 ${qq}">${L.quality}${L.extra ? '' : L.disc ? ' release' : ' strike'} <span class="r1s">${L.loc} · ${L.shape}</span></div><div class="r3">${chips.map(c => '<span>' + c + '</span>').join('')}</div>`, Infinity);
   updateHUD();
 }
 
@@ -5711,6 +5950,12 @@ function hopY(sh, t, x, y, z) {
   const L = sh.res.land; if (!drama() || sh.L.putt || !L || t <= L.t) return y;
   const g = G.C.h(x, z); return y > g ? g + (y - g) * HOP_K : y;
 }
+// the disc in flight: square to its travel, rolled by its bank (frame att), flat once it is down
+function discPose(r, i, u, dx, dz, md, sg) {
+  const bank = r.att ? lerp(r.att[i], r.att[Math.min(i + 1, r.att.length - 1)], u) : 0;
+  if (Math.hypot(dx, dz) > 1e-5) W.ball.userData.hd = Math.atan2(-dx, -dz);
+  W.ball.rotation.set(md === 0 ? .1 : 0, W.ball.userData.hd || 0, md === 0 ? bank * (sg || 1) : 0, 'YXZ');
+}
 function updateFlight(dt) {
   const sh = G.shot, r = sh.res, fr = r.frames;
   // one playback rate for the whole shot: switching rate mid-roll made the ball visibly speed up after landing
@@ -5729,9 +5974,9 @@ function updateFlight(dt) {
   const px = W.ball.position.x, pz = W.ball.position.z, py0 = W.ball.position.y, md = fr[b + 4];
   // near the ground, follow the drawn facets rather than the smooth physics surface
   let corr = 0; if (md !== 2) { const gH = G.C.h(x, z), above = y - gH; if (above < 1.5) corr = (groundY(x, z) - gH) * (1 - Math.max(0, above) / 1.5); }
-  W.ball.position.set(x, y + corr + VIS_R * W.ball.scale.x, z); G.ballRoll = md === 1 && !sh.L.putt;
+  W.ball.position.set(x, y + corr + BALL_LIFT * W.ball.scale.x, z); G.ballRoll = md === 1 && !sh.L.putt;
   // axis = up x travel: a positive angle rolls the ball forward on the ground; in the air it spins backwards (backspin)
-  const mv = Math.hypot(x - px, z - pz); if (mv > 1e-4 && mv < 5 && md !== 2) W.ball.rotateOnWorldAxis(_ax.set(z - pz, 0, -(x - px)).normalize(), (md === 0 ? -1 : 1) * mv / (VIS_R * W.ball.scale.x));
+  const mv = Math.hypot(x - px, z - pz); if (sh.L.disc) discPose(r, i, u, fr[b + 1] - fr[a + 1], fr[b + 3] - fr[a + 3], md, sh.L.disc.s); else if (mv > 1e-4 && mv < 5 && md !== 2) W.ball.rotateOnWorldAxis(_ax.set(z - pz, 0, -(x - px)).normalize(), (md === 0 ? -1 : 1) * mv / (VIS_R * W.ball.scale.x));
   // wildlife, birds, the plane and the paraglider can be hit: the ball bounces off and the rest of the flight is played from there
   if (!sh.replay && W.life && G.playT > .05 && md !== 3) {
     const bp = W.ball.position, hit = lifeCollide(px, py0 - VIS_R, pz, bp.x, bp.y - VIS_R, bp.z);
@@ -5758,6 +6003,10 @@ function updateFlight(dt) {
     else if (e.type === 'lipin') { readoutNote('Lipped in!', 'good'); }
     else if (e.type === 'hop') readoutNote('Too hot · hopped the cup', 'ok');
     else if (e.type === 'cup') { SFX.cup(); buzz([20, 40, 20]); }
+    else if (e.type === 'chains') { SFX.chains(); buzz([20, 40, 20]); }
+    else if (e.type === 'spit') { SFX.chains(.5); SFX.clank(); readoutNote('Through the chains · spit out', 'bad'); }
+    else if (e.type === 'graze') SFX.chains(.3);
+    else if (e.type === 'cage') { SFX.clank(); readoutNote(e.s > 6 ? 'Off the cage!' : 'Clanked the basket', 'ok'); }
   }
   if (!sh.L.putt) {
     const pa = W.tracer.geometry.attributes.position.array, cam = W.cam.position; let n = 0;
@@ -5904,7 +6153,7 @@ function finishShot() {
     G.state = 'holed'; G.holedT = 0; G.scores[h] = G.strokes;
     if (G.gir[h] == null) G.gir[h] = G.strokes - 1 <= par - 2;
     if (first && par >= 4) G.fir[h] = false;
-    statsHole(h); saveRound(); mpState(true); SFX.chime(); readout(`<div class="r1 good">In the hole!</div><div class="r3"><span>${sh.summary}</span></div>`, 2.2);
+    statsHole(h); saveRound(); mpState(true); SFX.chime(); readout(`<div class="r1 good">${isDisc() ? 'In the chains!' : 'In the hole!'}</div><div class="r3"><span>${sh.summary}</span></div>`, 2.2);
     setTimeout(() => { if (G.state === 'holed') showDone(false); }, 1300); updateHUD(); return;
   }
   let big = '', sub = '';
@@ -5934,6 +6183,11 @@ function finishShot() {
   }
   if (first && par >= 4 && G.fir[h] == null) G.fir[h] = false;
   if (G.surf === S.GREEN && G.gir[h] == null && G.strokes <= par - 2) G.gir[h] = true;
+  if (pals() && isDisc() && distToPin() < DISC_DROP) {   // PALS Rules on a disc course: a drop-in (inside 3 ft of the basket: one more throw, in)
+    G.strokes++; G.putts[h]++; G.scores[h] = Math.min(G.strokes, maxScore(par)); G.state = 'holed'; G.holedT = 0; statsHole(h); saveRound(); mpState(true);
+    readout('<div class="r1 good">Drop-in</div><div class="r3"><span>Inside 3 ft of the basket · counted as in</span></div>', 2.4);
+    setTimeout(() => { if (G.state === 'holed') showDone(false); }, 2400); updateHUD(); return;
+  }
   if (pals() && (G.surf === S.GREEN || G.surf === S.FRINGE) && distToPin() < GIMME_D) {   // PALS Rules: the gimme (in practice holes too, so it can be tried; nothing is scored there)
     const d = distToPin(); G.strokes++; G.putts[h]++; G.scores[h] = Math.min(G.strokes, maxScore(par)); G.state = 'holed'; G.holedT = 0; statsHole(h); saveRound(); mpState(true);
     gimmeCard(d); readout('<div class="r1 good">Gimme</div><div class="r3"><span>Inside 24 inches · counted as holed</span></div>', 2.4);
@@ -6293,8 +6547,8 @@ function drawTempo(now) {
     t1 = 'Back ' + tb.toFixed(2) + ' s'; t2 = SW.phase === 'down' ? 'Down ' + ((now - SW.tTop) / 1000).toFixed(2) + ' s' : 'Target ' + R + ':1';
   } else if (SW.last && (G.state === 'flight' || G.state === 'settle' || G.state === 'holed' || (G.state === 'address' && now - SW.resultT < 9000))) {
     const L = SW.last; cls = L.tempoGrade;
-    t1 = 'Your tempo: ' + L.ratio.toFixed(1) + ':1'; t2 = L.putt ? 'Speed: ' + L.ballSpeed.toFixed(1) + ' m/s' : 'Smash factor: ' + L.smash.toFixed(2);
-  } else { t1 = 'Ideal tempo: ' + R + ':1'; t2 = putt ? 'Range: ' + toFt(G.puttRange) + ' ft' : 'Smash factor: ' + c.smash.toFixed(2); }
+    t1 = 'Your tempo: ' + L.ratio.toFixed(1) + ':1'; t2 = L.putt ? 'Speed: ' + L.ballSpeed.toFixed(1) + ' m/s' : L.disc ? 'Release speed: ' + toMph(L.ballSpeed) + ' mph' : 'Smash factor: ' + L.smash.toFixed(2);
+  } else { t1 = 'Ideal tempo: ' + R + ':1'; t2 = putt ? 'Range: ' + toFt(G.puttRange) + ' ft' : c.type === 'disc' ? `Flight: ${c.speed} | ${c.gl} | ${c.turn} | ${c.fade}` : 'Smash factor: ' + c.smash.toFixed(2); }
   if (f1.textContent !== t1) f1.textContent = t1; if (f2.textContent !== t2) f2.textContent = t2;
   if (f1.className !== cls) f1.className = cls;
 }
@@ -6317,10 +6571,15 @@ function drawStrike(now) {
   // labels
   const k = S0 / 210;
   const lab = (t1, t2, lx, ly) => { x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#123a1c'; x.font = FONT(600, 14 * k); x.fillText(t1, lx, ly); x.font = FONT(500, 9.5 * k); x.fillStyle = 'rgba(18,58,28,.78)'; x.fillText(t2, lx, ly + 12 * k); };
-  lab('HIGH', '(LOW SPIN/DISTANCE)', cx, cy - R * .72);
-  lab('LOW', '(HIGH SPIN)', cx, cy + R * .6);
   const toeX = cx - hand * R * .77, heelX = cx + hand * R * .77;
-  lab('TOE', '(HOOK)', toeX, cy - 4 * k); lab('HEEL', '(FADE/SLICE)', heelX, cy - 4 * k);
+  if (c.type === 'disc') {   // a throw: across the dial is the release angle, up and down the nose
+    lab('NOSE UP', '(FLOATS, STALLS)', cx, cy - R * .72); lab('NOSE DOWN', '(DIVES)', cx, cy + R * .6);
+    lab('HYZER', hand > 0 ? '(CURVES LEFT)' : '(CURVES RIGHT)', toeX, cy - 4 * k); lab('ANHYZER', hand > 0 ? '(CURVES RIGHT)' : '(CURVES LEFT)', heelX, cy - 4 * k);
+  } else {
+    lab('HIGH', '(LOW SPIN/DISTANCE)', cx, cy - R * .72);
+    lab('LOW', '(HIGH SPIN)', cx, cy + R * .6);
+    lab('TOE', '(HOOK)', toeX, cy - 4 * k); lab('HEEL', '(FADE/SLICE)', heelX, cy - 4 * k);
+  }
   // club head, face-on as the ball sees it (drawn once per club and size, then reused every frame)
   x.drawImage(headCanvas(c, S0, hand), 0, 0, S0, S0);
 }
@@ -6331,9 +6590,10 @@ const CLUB_SPR = {wood:{src:'data:image/webp;base64,UklGRgA3AABXRUJQVlA4WAoAAAAQ
 function loadClubSprites() {
   for (const k in CLUB_SPR) { const o = CLUB_SPR[k]; if (o.img) continue; const im = new Image(); im.onload = () => { o.ok = true; UI.head = null; if (G.C) sizeCanvases(); }; im.src = o.src; o.img = im; }
 }
-function clubSprite(c) { const o = CLUB_SPR[c.type === 'putter' ? 'putter' : c.type === 'wood' || c.type === 'hybrid' ? 'wood' : 'iron']; return o && o.ok ? o : null; }
+function clubSprite(c) { if (c.type === 'disc') return null; const o = CLUB_SPR[c.type === 'putter' ? 'putter' : c.type === 'wood' || c.type === 'hybrid' ? 'wood' : 'iron']; return o && o.ok ? o : null; }
 // the face (hitting area) of the club as drawn on the dial: width by club type, height from the sprite when there is one
 function faceFor(c, R) {
+  if (c.type === 'disc') { const fw = R * 1.1; return { hw: fw / 2, hh: fw / 2, fw, fh: fw }; }
   const fw = c.type === 'putter' ? R * 1.0 : c.type === 'wood' ? R * .92 : R * .84, sp = clubSprite(c), fh = sp ? fw * sp.fh / sp.fw : fw * (c.type === 'putter' ? .27 : c.type === 'wood' ? .5 : .44);
   return { hw: fw / 2, hh: fh / 2, fw, fh };
 }
@@ -6350,7 +6610,8 @@ function headCanvas(c, S0, hand) {
   const spr = clubSprite(c);
   if (spr) { // the illustrated head, its face centred on the dial (mirrored for a left-handed golfer)
     const sc = F.fw / spr.fw; x.translate(cx, cy); x.scale(hand, 1); x.drawImage(spr.img, -spr.fx * sc, -spr.fy * sc, spr.w * sc, spr.h * sc);
-  } else if (c.type === 'putter') drawPutterHead(x, cx, cy, F, hand, k, R);
+  } else if (c.type === 'disc') drawDiscFace(x, cx, cy, F, k, c);
+  else if (c.type === 'putter') drawPutterHead(x, cx, cy, F, hand, k, R);
   else if (c.type === 'wood' || c.type === 'hybrid') drawWoodHead(x, cx, cy, F, hand, k, R, c.type === 'hybrid');
   else drawIronHead(x, cx, cy, F, hand, k, R, c);
   x.restore();
@@ -6462,7 +6723,16 @@ function drawPutterHead(x, cx, cy, F, side, k, R) {
   x.strokeStyle = 'rgba(255,255,255,.95)'; x.lineWidth = 1 * k; x.beginPath(); x.moveTo(X(-.86), Y(.93)); x.lineTo(X(.86), Y(.93)); x.stroke();
 }
 // the ball at the sweet spot, with hexagon dimples like the one on the course
-function dialBallR(c, F) { return c.type === 'putter' ? F.fh * .66 : Math.min(F.fh * .5, F.fw * .24); }
+// a disc on the strike dial, seen from above: its colour, the flight plate and its flight numbers (speed | glide | turn | fade)
+function drawDiscFace(x, cx, cy, F, k, c) {
+  const r = F.hw, col = '#' + c.col.toString(16).padStart(6, '0');
+  x.fillStyle = col; x.beginPath(); x.arc(cx, cy, r, 0, TAU); x.fill();
+  x.lineWidth = 7 * k; x.strokeStyle = 'rgba(0,0,0,.22)'; x.beginPath(); x.arc(cx, cy, r - 4 * k, 0, TAU); x.stroke();
+  x.lineWidth = 2 * k; x.strokeStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.arc(cx, cy, r * .62, 0, TAU); x.stroke();
+  x.fillStyle = 'rgba(0,0,0,.6)'; x.font = `700 ${Math.round(15 * k)}px Fredoka, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText(`${c.speed} | ${c.gl} | ${c.turn} | ${c.fade}`, cx, cy + r * .4);
+}
+function dialBallR(c, F) { if (c.type === 'disc') return F.fh * .1; return c.type === 'putter' ? F.fh * .66 : Math.min(F.fh * .5, F.fw * .24); }
 function drawDialBall(x, cx, cy, c, F, k) {
   const rb = dialBallR(c, F);
   x.save(); x.shadowColor = 'rgba(0,0,0,.28)'; x.shadowBlur = 5 * k; x.shadowOffsetY = 1.5 * k;
@@ -6492,7 +6762,7 @@ function updateHUD() {
   if (G.pg) pgSync();
   const d = distToPin(); $('dNum').textContent = d < 10 ? toFt(d) : toYd(d); $('dUnit').textContent = d < 10 ? 'ft' : 'yd';
   const dh = G.C.cup.y - G.ball.y;
-  $('dSub').textContent = c.type === 'putter' && Math.abs(puttEquiv() - d) > .4 ? `Plays ${toFt(puttEquiv())} ft` : Math.abs(dh) > .5 ? `${dh > 0 ? '↑' : '↓'} ${toFt(Math.abs(dh))} ft` : 'To pin';
+  $('dSub').textContent = c.type === 'putter' && Math.abs(puttEquiv() - d) > .4 ? `Plays ${toFt(puttEquiv())} ft` : Math.abs(dh) > .5 ? `${dh > 0 ? '↑' : '↓'} ${toFt(Math.abs(dh))} ft` : isDisc() ? 'To basket' : 'To pin';
   $('windTxt').textContent = toMph(Math.hypot(G.wind[0], G.wind[1]));
   $('clubName').textContent = c.type === 'putter' ? 'Putter' : c.name.replace('Pitching wedge', 'P-wedge').replace('Sand wedge', 'S-wedge').replace('Lob wedge', 'L-wedge').replace('Gap wedge', 'G-wedge');
   $('clubSub').textContent = c.type === 'putter' ? `↻ ${toFt(G.puttRange)} ft` : `${toYd(G.carry || c.carry)} yd`;
@@ -6985,7 +7255,7 @@ function recNoticeFlush() {
 const myRec = key => { const c = PID.stats && PID.stats.courses && PID.stats.courses[key]; return (c && c.rec) || {}; };
 // a finished round: cards for the marks that beat the world's or the player's own (the stats and records are fetched first; at most three cards, world first)
 async function recCheck(e) {
-  if (!isReg() || !Array.isArray(e.hs)) return;
+  if (!isReg() || !Array.isArray(e.hs) || (COURSES[e.course] || {}).alpha) return;
   const rf = (COURSES[e.course] || {}).recFrom; if (rf && e.at < Date.parse(rf + 'T00:00:00Z')) return; // records start on the course's recFrom day (as in the workflow)
   try {
     await Promise.all([pidRounds(true), loadRecords(e.course, true)]);
@@ -7321,6 +7591,7 @@ async function pidRounds(force) {
 async function postAuto(r) {
   const k = ghKey(); if (!k || !isReg() || !Array.isArray(r.hs)) return false; // guests (and rounds from before per-hole data) stay on this device
   const CO = COURSES[r.course] || COURSE; // the round's own course (a retry may run while another course is in play)
+  if (CO.alpha) return false;   // a course in alpha (courses.json) posts no rounds
   const markPosted = () => { const loc = localRounds(CO.key), q = loc.find(x => x.at === r.at && x.name === r.name); if (q) { q.posted = true; try { localStorage.setItem(CO.board, JSON.stringify(sortRounds(loc).slice(0, 60))); } catch (e) { } } };
   // a round is its player and its time: one already on the world board is not posted again (equal scores are separate rounds)
   const wb = Board.gh[CO.key]; if (wb && PID.reg && wb.some(x => x.pid === PID.reg.pid && x.at === r.at)) { markPosted(); refreshBoards(); return true; }
@@ -7385,7 +7656,7 @@ async function submitRound(entry) {
 }
 // world posting, out loud: "Posting your round…", then posted or not (the round stays on this device and is retried on the next start)
 function postWithStatus(entry) {
-  if (!ghKey() || !isReg()) return;
+  if (!ghKey() || !isReg() || (COURSES[entry.course] || COURSE).alpha) return;
   Board.post = { at: entry.at, st: 'posting' }; refreshBoards();
   const note = (h, sec) => readout(`<div class="r1 ${h[1] || ''}">${h[0]}</div><div class="r3"><span>${h[2] || ''}</span></div>`, sec);
   setTimeout(() => { if (Board.post && Board.post.at === entry.at && Board.post.st === 'posting') note(['Posting your round…', '', 'World leaderboard'], 6); }, 2600);
@@ -7755,10 +8026,11 @@ function frame(now) {
   const C = G.C;
   // at rest the ball sits on the drawn facets (groundY), not the smooth physics surface, so it never floats over a hummock
   const restY = C && G.state !== 'flight' && G.state !== 'holed' && G.state !== 'spec' ? groundY(G.ball.x, G.ball.z) : 0;
-  if (C && G.state !== 'flight' && G.state !== 'holed' && G.state !== 'spec') W.ball.position.set(G.ball.x, restY + VIS_R * W.ball.scale.x + (G.teed ? .06 : 0), G.ball.z);
-  if (C) { W.peg.visible = G.teed && G.state !== 'flight' && G.state !== 'holed' && G.state !== 'spec'; if (W.peg.visible) W.peg.position.set(G.ball.x, restY + .04, G.ball.z); }
+  if (C && G.state !== 'flight' && G.state !== 'holed' && G.state !== 'spec') W.ball.position.set(G.ball.x, restY + BALL_LIFT * W.ball.scale.x + (G.teed ? .06 : 0), G.ball.z);
+  if (C) { W.peg.visible = !BAG_DISC && G.teed && G.state !== 'flight' && G.state !== 'holed' && G.state !== 'spec'; if (W.peg.visible) W.peg.position.set(G.ball.x, restY + .04, G.ball.z); }
   const capT = drama() && G.state === 'flight' && G.ballRoll ? 4 : 7; BALL_CAP += (capT - BALL_CAP) * (1 - Math.exp(-dt * 5)); // while it rolls out the ball is drawn smaller, so the run is not hidden under it
-  const bd = W.cam.position.distanceTo(W.ball.position), bs = clamp(.02 * bd / VIS_R, 1, BALL_CAP) * BALL_DRAW; W.ball.scale.setScalar(bs); W.ball.material.bumpScale = BALL_BUMP * VIS_R * bs;
+  const bd = W.cam.position.distanceTo(W.ball.position), bs = clamp(.02 * bd / VIS_R, 1, BALL_CAP) * BALL_DRAW; W.ball.scale.setScalar(bs);
+  if (BAG_DISC && W.discLook) { const dc = CLUBS[(G.shot && G.state === 'flight' ? G.shot.L.ci : G.club) | 0] || CLUBS[0]; W.discLook.m.color.setHex(dc.col); W.discLook.m.emissive.setHex(dc.col); } W.ball.material.bumpScale = BALL_BUMP * VIS_R * bs;
   if (C) {
     const gy = Math.max(groundY(W.ball.position.x, W.ball.position.z), C.wl(W.ball.position.x, W.ball.position.z)), hh = W.ball.position.y - gy - VIS_R * bs;
     W.blob.position.set(W.ball.position.x, gy + .03, W.ball.position.z); W.blob.scale.setScalar(VIS_R * 3.2 * bs * (1 + hh * .02));
@@ -7804,7 +8076,7 @@ function showTitleHole() {
   HOLE_LEN[0] = toYd(G.C.length);
 }
 function boot(data) {
-  calibrateClubs();
+  calibrateClubs(); calibrateDiscs();
   initThree(); initInput(); syncMenu();
   // a round restored after an update stays on its course (rounds from before the course switch were on the Legacy Course)
   setCourse(courseStartKey(data)); initBoard(); pidSync().then(() => { if (isReg()) Object.keys(COURSES).forEach(k => loadRecords(k)); }).catch(() => { }); refreshResume(); setTimeout(retryUnposted, 4000);

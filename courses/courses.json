@@ -41,6 +41,19 @@
       "scene": {
         "turkeys": 0.4
       }
+    },
+    {
+      "key": "cmdg",
+      "name": "Chestnut Mountain Disc Golf",
+      "short": "CMDG (alpha)",
+      "alpha": true,
+      "pars": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+      "recFrom": "2026-10-30",
+      "about": "Disc golf (alpha) on the ski hill at Chestnut Mountain Resort (Galena, Illinois; 9 holes, 2010): the nine played twice, from the long tees and then the short ones. Throw with the tempo bar as for a golf swing; the strike dot sets the release angle (hyzer or anhyzer) and the nose. Rounds here are not posted to the world leaderboard. Hole lengths from UDisc; the ground from the USGS 3DEP 1 m elevation model, trees from USGS 3DEP lidar, buildings, ponds and roads from \u00a9 OpenStreetMap contributors (ODbL).",
+      "engine": { "disc": true, "z0": 200, "gr": { "e0": -600, "n0": -600, "res": 2, "W": 600, "H": 600 } },
+      "scene": {
+        "turkeys": 0.4
+      }
     }
   ]
 }

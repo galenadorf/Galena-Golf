@@ -77,8 +77,8 @@ GROUND-LEVEL SCENERY
 
 MAN-MADE OBJECTS
 ----------------
-  - Flagstick, flag and cup on every green.
-  - Tee markers in four colours (white, yellow, blue, red), two per tee set, always standing inside the tee box (a narrow box gets a narrower gap).
+  - Flagstick, flag and cup on every green (on a disc golf course a basket instead: see CMDG in part 2).
+  - Tee markers in four colours (white, yellow, blue, red), two per tee set, always standing inside the tee box (a narrow box gets a narrower gap). None on a disc golf course.
   - White boundary stakes (out of bounds); red stakes round the ponds (penalty areas).
   - Distance posts at 200, 150 and 100 m.
   - Buildings from OpenStreetMap (houses, farm buildings, sheds) within ~240 m of each hole; the ball can hit them.
@@ -197,3 +197,28 @@ Trees: about 11,600 from the lidar (6,900 broadleaf, 4,500 conifer, 150 shrubs).
 Buildings: the 7 OSM buildings on and beside the course, drawn as plain buildings. No clubhouse model, parked carts, cart ride, hot dog, fountain, signs or songs yet (none of those `scene` settings are set).
 
 Practice green and driving range: Woodbine Bend's, as for every course.
+
+CHESTNUT MOUNTAIN DISC GOLF (cmdg)
+==================================
+
+Listed as "CMDG (alpha)": a disc golf course (engine `disc`), in alpha (`alpha` in courses.json: no round is posted to the world leaderboard and no record cards). The 9 holes on the ski hill at Chestnut Mountain Resort, all par 3, played twice: holes 1-9 from the long tees (2,972 ft), 10-18 from the short ones.
+
+The disc: thrown instead of a ball, drawn as a flat disc in the colour of the disc in hand (distance driver orange, fairway driver blue, midrange yellow, putter pink), tilted to its bank in flight and lying flat once down. No tee peg.
+
+Baskets (one per hole, in place of the cup and flagstick; 1.3x real size): a steel pole, a yellow tray and top band, two rings of chains, and a small red hole flag on a mast above. A disc that flies into the chains slowly enough is caught (chain jingle); faster it rattles through and drops out; the tray rim, top band and pole knock it down (a clank).
+
+Tee pads: a 1.6 x 3.6 m mat at each tee, square to the basket. No tee markers.
+
+Fairways: the open, mown ground within 9 m of each hole's line (no canopy over 2 m in the lidar). Everything else is rough, and deep rough well away from play.
+
+Wild turkeys (a flock of four on about 4 holes in 10, `scene.turkeys` = .4): the same flock and behaviour as at Woodbine Bend.
+
+No highway. Side road (out of bounds, for looks only): West Chestnut Mountain Road, the resort road up to the lodge. No traffic.
+
+Water: the OSM ponds by the lodge (the Mississippi's backwaters on the map's western edge are left off).
+
+Trees: about 6,000 from the lidar (almost all broadleaf: oaks and hickories on the bluff; a few conifers).
+
+Buildings: the 6 OSM buildings (the lodge and the resort's buildings), drawn as plain buildings. No ski lifts, alpine slide or other resort props yet.
+
+Practice green and driving range: Woodbine Bend's, as for every course (with golf clubs).

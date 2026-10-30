@@ -438,6 +438,9 @@ def round_line(coords, iters=3):
 
 
 def main():
+    if getattr(course, 'DISC', False):   # a disc golf course: tees and baskets, no greens (disc_build.py)
+        import disc_build
+        return disc_build.main()
     F = osm.load()
     for w in F['water']:
         a0 = w['poly'].area

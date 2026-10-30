@@ -16,7 +16,11 @@ from rasterio import features as rfeat
 from scipy import ndimage as ndi
 from skimage.segmentation import watershed
 
-from common import OUT, cache
+from common import OUT, cache, course
+
+# a closed forest of tall oaks and hickories (Chestnut Mountain) has narrow watershed crowns and other NAIP tiles: the course can set its own NIR
+# threshold for conifers and turn the narrow-for-its-height rule off (course.CONIFER_NIR, course.CONIFER_SHAPE)
+NIR_DARK, SHAPE = getattr(course, 'CONIFER_NIR', 112), getattr(course, 'CONIFER_SHAPE', True)
 import osm
 
 
@@ -55,8 +59,8 @@ def main():
         c, r = ~trn * (e, nn)
         k2 = max(1, int(d / 2 / trn.a * .6))
         win = nir[max(0, int(r) - k2):int(r) + k2 + 1, max(0, int(c) - k2):int(c) + k2 + 1]
-        dark = win.size > 0 and win.mean() < 112
-        kind = 1 if h < 4 else 2 if (d < .65 * h and h > 5) or dark else 0
+        dark = win.size > 0 and win.mean() < NIR_DARK
+        kind = 1 if h < 4 else 2 if (SHAPE and d < .65 * h and h > 5) or dark else 0
         out.append(dict(e=round(e, 1), n=round(nn, 1), d=round(float(min(d, 21)), 1), h=round(h, 1), kind=kind))
     json.dump(out, open(os.path.join(OUT, 'trees.json'), 'w'))
     ks = np.bincount([t['kind'] for t in out], minlength=3)
