@@ -518,6 +518,7 @@ Golf Course
 <div id="confetti"></div>
 <script src="vendor/three.r128.min.js"></script>
 <script>
+/* global THREE */
 'use strict';
 /* ================= UTIL ================= */
 const TAU = Math.PI * 2, DEG = Math.PI / 180;
@@ -1457,13 +1458,14 @@ function realPrep() {
   let sum = 0; for (let i = 0; i < zz.length; i++) { Z[i] = dm.zb + zz[i] / 100; sum += Z[i]; }
   GC.dem = { e0: dm.e0, n0: dm.n0, de: dm.de, dn: dm.dn, nx: dm.nx, ny: dm.ny, Z, mean: sum / Z.length };
   GC.feat = {}; for (const k in D.feat) GC.feat[k] = decPolys(D.feat[k]);
-  GC.forest = decPolys(D.forest); GC.orchard = decPolys(D.orchard); GC.boundary = decPolys(D.boundary)[0][0];
+  GC.forest = decPolys(D.forest); GC.orchard = decPolys(D.orchard); const bp = decPolys(D.boundary)[0]; GC.boundary = bp[0]; GC.obIn = bp.slice(1);   // the boundary's holes are out of bounds too (Adler Park: the fenced pool)
   GC.buildings = decPolys(D.buildings); GC.cover = decPolys(D.cover); GC.props = (D.props || []).concat((RDC.scene.parkedCarts || []).map(([e, n, rot]) => ['cart', e, n, rot, 1.25, 2.45, '']));   // scene.parkedCarts: [east, north, heading]
   const ta = b64i16(D.trees); GC.trees = [];
   for (let i = 0; i < ta.length; i += 4) GC.trees.push({ e: ta[i] / 10, n: ta[i + 1] / 10, d: ta[i + 2] / 10, kind: Math.floor(ta[i + 3] / 1000), H: (ta[i + 3] % 1000) / 10 });
   const W = GR.W, H = GR.H, cls = new Uint8Array(W * H), cov = new Uint8Array(W * H), wood = new Uint8Array(W * H);
   const toG = rings => rings.map(r => { const o = new Float64Array(r.length); for (let i = 0; i < r.length; i += 2) { o[i] = (r[i] - GR.e0) / GR.res; o[i + 1] = (r[i + 1] - GR.n0) / GR.res; } return o; });
   scanFill(cls, W, H, toG([GC.boundary]), GCL.ROUGH);
+  for (const r of GC.obIn) scanFill(cls, W, H, toG([r]), GCL.OUT);
   for (const p of GC.cover) scanFill(cov, W, H, toG(p), 1);
   for (const p of GC.forest) scanFill(wood, W, H, toG(p), 1);
   // inside the maps the drawn trees are the wood; OSM woods only count beyond them
@@ -1674,7 +1676,7 @@ function makeRealCourse(idx, pin) {
   }
   C.F = F;
   const BND = RS ? RS.bnd : GC.boundary; C.bnd = BND;
-  const inB = new Uint8Array(N); scanFill(inB, w, h, [toPx(BND)], 1); C.inB = inB;
+  const inB = new Uint8Array(N), obIn = RS ? [] : GC.obIn; scanFill(inB, w, h, [toPx(BND)], 1); for (const r of obIn) scanFill(inB, w, h, [toPx(r)], 0); C.inB = inB;
   // deep rough: well away from fairways, tees and greens (and everything outside the course); within ~22 m it's rough
   const play = new Uint8Array(N); for (let k = 0; k < N; k++) play[k] = F.fair[k] < 0 || F.tee[k] < 0 || F.green[k] < 4 ? 1 : 0;
   const dP = edtSq(play, w, h), deepF = new Float32Array(N), hasFescue = !!(GC.feat.fescue && GC.feat.fescue.length);
@@ -1896,7 +1898,7 @@ function makeRealCourse(idx, pin) {
   C.surf = (x, z) => surfInfo(x, z).surf;
   C.isOB = (X, Z) => {
     const u = Math.round((X - x0) / res), v = Math.round((Z - z0) / res);
-    return u >= 0 && v >= 0 && u < w && v < h ? !inB[v * w + u] : !inRings([BND], enuE(X, Z), enuN(X, Z));
+    return u >= 0 && v >= 0 && u < w && v < h ? !inB[v * w + u] : !inRings([BND], enuE(X, Z), enuN(X, Z)) || inRings(obIn, enuE(X, Z), enuN(X, Z));
   };
   // holes whose neighbour plays alongside in the opposite direction: the neighbour's side of the midline is out of bounds
   // (Alsace 10 and 18); white stakes mark that line
@@ -3338,7 +3340,7 @@ function updateRainbow(dt) {
   B.grp.visible = B.v > .005; if (!B.grp.visible) return;
   B.mat.uniforms.uOp.value = B.v; B.grp.position.copy(W.cam.position);
 }
-function updateRain(now, dt) {
+function updateRain(now) {
   const R = W.rain; if (!R) return; const L = G.rainLvl || 0, on = L > .015 && !!G.C; R.mesh.visible = on; if (!on) return;
   const U = R.U, cam = W.cam.position, C = G.C;
   U.uTime.value = (now / 1000) % 600; U.uCam.value.copy(cam); U.uLevel.value = L; U.uAlpha.value = .62 * (.45 + .55 * L); U.uFall.value = 9 + 7 * L;
@@ -7144,7 +7146,7 @@ function showScorecard(final) {
     if (HOLE_DEFS.length === 18 && i === 17) rows += sub('In', 9, 18, 'subt');
   });
   rows += sub('Total', 0, HOLE_DEFS.length, 'tot');
-  const played = G.scores.filter(s => s != null).length, firH = G.fir.filter((f, i) => f === true).length, firN = HOLE_DEFS.filter((d, i) => d.par >= 4 && G.fir[i] != null).length, girH = G.gir.filter(g => g === true).length;
+  const played = G.scores.filter(s => s != null).length, firH = G.fir.filter(f => f === true).length, firN = HOLE_DEFS.filter((d, i) => d.par >= 4 && G.fir[i] != null).length, girH = G.gir.filter(g => g === true).length;
   if (final) finishRound();
   let best = null; try { best = +localStorage.getItem(BEST_KEY) || null; } catch (e) { }
   $('cardBody').innerHTML = `<div class="sht">${final ? 'Round complete' : 'Scorecard'} <small>${final ? playerName() + ' · ' + COURSE.short : COURSE.name}</small></div>${final ? '<div id="finalBoard"></div><div class="sub">Scorecard</div>' : ''}<div class="scw"><table class="vcard">${rows}</table></div>
@@ -7850,7 +7852,7 @@ function fillBoard(el, limit, key, pick) {
   const list = document.createElement('div'); list.className = 'lb'; el.appendChild(list);
   const wr = tab === 'world' ? worldRows(key) : null;
   const all = sortRounds(tab === 'world' ? wr || [] : tab === 'all' ? (Board.shared[CO.coll] || []) : localRounds(key)).filter(r => !recent || r.at >= since);
-  const rank = all.map((r, i) => all.findIndex(x => x.toPar === r.toPar) + 1);   // equal scores share a rank (T4, T4, then 6)
+  const rank = all.map(r => all.findIndex(x => x.toPar === r.toPar) + 1);   // equal scores share a rank (T4, T4, then 6)
   let cut = Math.min(all.length, limit || 25); if (pick) while (cut < all.length && rank[cut] === rank[cut - 1]) cut++;   // the leaderboard sheet shows the top 40 plus everyone tied with the last
   const rows = all.slice(0, cut);
   if (!rows.length) {

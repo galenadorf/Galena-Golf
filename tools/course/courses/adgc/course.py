@@ -38,7 +38,7 @@ WATER_CLIP = True   # disc_build.py: OSM's Des Plaines River is one 16 km2 area 
 # joined to it (lanes along its first edge), the side pool and the kiddie pool; the blue water slide (its tower, then the tube's path down:
 # east, north, height above the tower's foot); the shade canopies over the deck.
 POOL = dict(
-    fence_way=61511555, water_way=369025489,
+    fence_way=61511555, water_way=369025489, ob=True,   # ob: the fenced lot is out of bounds (the sign's dashed line round it)
     pools=[dict(ring=[(-60.3, -236.7), (-37.5, -234.2), (-35.0, -257.5), (-58.0, -260.0)], lanes=8),
            dict(ring=[(-100.3, -223.3), (-87.0, -227.5), (-90.3, -240.8), (-103.7, -236.7)]),
            dict(ring=[(-84.2, -237.5), (-74.2, -240.0), (-76.3, -249.7), (-86.3, -247.0)])],

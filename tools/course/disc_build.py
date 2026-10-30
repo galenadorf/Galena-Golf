@@ -13,7 +13,7 @@ boundary is every hole's corridor, 70 m round its line; trees, water, buildings 
   out/rd_<key>.js   the same shape as build.py writes (install.py puts it into the game)
 
 A course.py may also list park props (Adler Park): POOL, a fenced pool complex, becomes a 'pool' row and PLAYGROUND a 'play' row in
-props (see park_props; the game draws them in realSiteMeshes).
+props (see park_props; the game draws them in realSiteMeshes). POOL['ob'] cuts the fenced lot out of the boundary, as a hole in it.
 """
 import json
 import math
@@ -139,6 +139,9 @@ def main():
     bound = round_osm(unary_union([L.buffer(BOUND) for L in lines]).buffer(10).buffer(-10).simplify(2), step=12)
     if bound.geom_type != 'Polygon':
         bound = max(bound.geoms, key=lambda g: g.area)
+    P = getattr(course, 'POOL', None)
+    if P and P.get('ob'):   # a fenced pool out of bounds: a hole in the boundary (the game treats the boundary's holes as out of bounds)
+        bound = Polygon(bound.exterior).difference(Polygon(osm_way(P['fence_way'])))   # (any gap the corridors enclose stays in bounds, as before)
     relief = build_relief(demZ, bound.buffer(40).bounds, bound.buffer(30))
     area = box(*DETAIL)
     clip = lambda ps: [p.intersection(area) for p in ps if p.intersects(area)]
