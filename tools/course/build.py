@@ -341,6 +341,15 @@ def creek_pieces(hw=2.0, step=14.0):
     return out
 
 
+def clip_lines(lines, area):
+    """The pieces of each line inside the area (a line that runs far off the map would overflow the encoding)."""
+    out = []
+    for L in lines:
+        c = L.intersection(area)
+        out += [g for g in getattr(c, 'geoms', [c]) if g.geom_type == 'LineString' and g.length > 5]
+    return out
+
+
 def highway(area=course.ROAD_AREA):
     """The highway with traffic (course.HIGHWAY; at Woodbine US 20, past the north edge of the course), as one west-to-east line clipped to the game's 2 m class grid, and the
     distance along it where the 55 mph road becomes Woodbine Street (35 mph) at the edge of Stockton. Read from the raw OSM file (osm.load
@@ -354,13 +363,15 @@ def highway(area=course.ROAD_AREA):
     assert line.geom_type == 'LineString'
     if line.coords[0][0] > line.coords[-1][0]:
         line = LineString(list(line.coords)[::-1])
-    fast = [w for w in ways.values() if w['tags'].get('maxspeed') == H['fast']][0]  # the stretch that meets the town street
-    slow = line.project(Point(*[nodes[i] for i in fast['nodes']][-1]))
+    slow = None   # no slower stretch (Stonehenge: IL 22 is 50 mph all along)
+    if H.get('fast'):
+        fast = [w for w in ways.values() if w['tags'].get('maxspeed') == H['fast']][0]  # the stretch that meets the town street
+        slow = line.project(Point(*[nodes[i] for i in fast['nodes']][-1]))
     clipped = line.intersection(box(*area))
     if clipped.geom_type != 'LineString':
         clipped = max(clipped.geoms, key=lambda g: g.length)
     cut = line.project(Point(*clipped.coords[0]))
-    return clipped.simplify(.4), round(slow - cut)
+    return clipped.simplify(.4), None if slow is None else round(slow - cut)
 
 
 def side_roads(F, hw, area=course.ROAD_AREA):
@@ -575,7 +586,7 @@ def main():
         buildings=enc_polys(clip([f['poly'] for f in F['building']])),
         # the lidar trees cover the whole detail area: OSM woods only count beyond it
         cover=enc_polys([area] if trees else []),
-        streams=enc_lines([f['line'] for f in F['stream']]),
+        streams=enc_lines(clip_lines([f['line'] for f in F['stream']], box(*DETAIL))),   # clipped: a stream may run on for km (Stonehenge's Flint Creek)
         highway=enc_lines([hw] if hw else []), hwSlow=hw_slow,  # the highway with traffic (Woodbine: US 20 past the north edge); hwSlow = metres from its west end where the limit drops from 55 to 35 mph
         relief=relief, prac=prac, drv=drv, roads=[enc_lines([r]) for r in roads],
         props=(json.load(open(os.path.join(OUT, 'site_props.json'))) if os.path.exists(os.path.join(OUT, 'site_props.json')) else []) + ([rr['shed']] if drv and rr.get('shed') else []),  # washrooms, porta-potties and signposts painted on the aerial (site_paint.py)

@@ -17,24 +17,8 @@ Bird flocks (2, high up, crossing the sky)
   - Each returns 25-75 s after it passes, from a new direction. Most holes show at least one if you wait.
   - Can be hit in principle ("Birdie... literally!"), but they fly high.
 
-Gopher (Caddyshack-style: brown, buck teeth, pops out of a dirt mound with a dark hole)
-  - Appears only while the golfer stands over a full (non-putt) shot: 20-35 yd down the aim line (within a 15-degree wide cone, 7.5 either side) on
-    fairway or rough, and pops up ~1 s after its mound fades in. If the spot is unsuitable it retries 2 s later.
-  - Stays up 9-14 s, turning its head and watching the golfer, then ducks back down.
-  - Rare: per hole, 20% chance one is scheduled 10-65 s after arriving, 80% none at first;
-    after one leaves, the next is due 100-220 s later.
-  - Ducks instantly if the ball lands close by (within ~12 m, or flies within ~26 m).
-  - Can be hit while up: "A menace to the golfing industry...", with a squeak.
-
 AIRCRAFT
 --------
-Small plane (white and red prop plane, low flyby)
-  - Tows a rippling banner on a rope (its length follows the text: letters a fixed 1.5 m tall) behind the tail, reading "Hot tubbbbbb!!!" from both sides (text is PLANE_BANNER in index.html).
-  - The ball passes through the banner and rope; only the plane itself can be hit.
-  - Only appears right after a tee shot; sometimes crosses straight through the ball's path.
-  - Each round is dealt 0, 1 or 2 planes (2/7 none, 3/7 one, 2/7 two; ~1.1 average), spread over the holes left.
-  - Can be hit: "Hit the plane!"
-
 Hot air balloon (brown, red, orange and white stripes, wicker basket, burner flame; ~18 m across)
   - Drifts slowly downwind across the sky at 38-60 m up, taking ~80-130 s to cross, bobbing and turning gently.
   - Rare: per hole, 60% chance one is scheduled 10-65 s after arriving, 40% none at first;
@@ -93,7 +77,7 @@ NOT IN THE GAME
   - The hole-info tee signs (Nr., par, yards) are switched off (code kept; set TEE_SIGNS_ON = true in index.html). Only signs listed in signs.txt are shown.
   - The paraglider is switched off (code kept; set PARAGLIDER_ON = true in index.html to bring it back).
   - The six small birds (pigeons and crows on the ground and in treetops) and the four gulls circling over the hole are switched off (SMALL_BIRDS_ON and CIRCLING_GULLS_ON in index.html).
-  - No deer, squirrels, rabbits, butterflies or fish (the gopher is the only burrowing animal). Nothing else drives, and there are no bridges (the creek has none). (The stats screen only jokes "fed the fish" for balls in the water.)
+  - No rabbits, butterflies or fish. Deer and squirrels only at Stonehenge; the gopher, the banner plane and wild turkeys only at Woodbine Bend and Eagle Ridge South and North. Nothing else drives, and there are no bridges (the creek has none). (The stats screen only jokes "fed the fish" for balls in the water.)
   - Benches, huts and similar props exist in the engine from the removed courses but no course uses them.
 
 
@@ -109,6 +93,22 @@ Wild turkeys (a flock of four on about 4 holes in 10, `scene.turkeys` = .4: one 
   - On a hole that has the flock, expect one or two at a time.
   - They bolt (run for 4-6 s) if the ball lands within ~16 m or flies within ~32 m.
   - Can be hit: "Clipped a turkey!", gobble sound, the ball ricochets.
+
+Gopher, the groundhog (`scene.groundhog`; Caddyshack-style: brown, buck teeth, pops out of a dirt mound with a dark hole)
+  - Appears only while the golfer stands over a full (non-putt) shot: 20-35 yd down the aim line (within a 15-degree wide cone, 7.5 either side) on
+    fairway or rough, and pops up ~1 s after its mound fades in. If the spot is unsuitable it retries 2 s later.
+  - Stays up 9-14 s, turning its head and watching the golfer, then ducks back down.
+  - Rare: per hole, 20% chance one is scheduled 10-65 s after arriving, 80% none at first;
+    after one leaves, the next is due 100-220 s later.
+  - Ducks instantly if the ball lands close by (within ~12 m, or flies within ~26 m).
+  - Can be hit while up: "A menace to the golfing industry...", with a squeak.
+
+Banner plane (`scene.bannerPlane`; white and red prop plane, low flyby)
+  - Tows a rippling banner on a rope (its length follows the text: letters a fixed 1.5 m tall) behind the tail, reading "Hot tubbbbbb!!!" from both sides (text is PLANE_BANNER in index.html).
+  - The ball passes through the banner and rope; only the plane itself can be hit.
+  - Only appears right after a tee shot; sometimes crosses straight through the ball's path.
+  - Each round is dealt 0, 1 or 2 planes (2/7 none, 3/7 one, 2/7 two; ~1.1 average), spread over the holes left.
+  - Can be hit: "Hit the plane!"
 
 Dancing hot dog (hole 10 only, `scene.hotdogHole`; a giant, 10 ft: red sausage in a bun with a mustard zigzag, a smiling face, stick arms with white gloves, red sneakers)
   - Always on hole 10 (`HOTDOG_P` = 1), never on other holes. From the moment the hole loads: about 100 yd down the line from the tee, on the fairway (it picks the nearest fairway spot if the
@@ -165,6 +165,8 @@ Deep rough: dark green long rough (engine `longRough`), not the golden fescue of
 
 Wild turkeys (a flock of four on about 4 holes in 10, `scene.turkeys` = .4): the same flock and behaviour as at Woodbine Bend.
 
+Gopher (`scene.groundhog`) and banner plane (`scene.bannerPlane`): as at Woodbine Bend.
+
 No highway: US 20 runs about 2 km south of the course, off the map, so there is no traffic.
 
 Side road (out of bounds, for looks only): Eagle Ridge Drive, the resort road past the clubhouse. No traffic.
@@ -186,6 +188,8 @@ Deep rough: dark green long rough (engine `longRough`), as at Eagle Ridge South.
 
 Wild turkeys (a flock of four on about 4 holes in 10, `scene.turkeys` = .4): the same flock and behaviour as at Woodbine Bend.
 
+Gopher (`scene.groundhog`) and banner plane (`scene.bannerPlane`): as at Woodbine Bend.
+
 No highway: US 20 is south of the resort, off the map, so there is no traffic.
 
 Side roads (out of bounds, for looks only): Eagle Ridge Drive (beside 1, 2, 9, 10 and 18), Walnut Hill Road (beside 1, 9, 10, 12, 14 and 15) and Thunder Bay Road (beside 2, 3, 6 and 7), the resort roads. No traffic.
@@ -197,6 +201,40 @@ Trees: about 11,600 from the lidar (6,900 broadleaf, 4,500 conifer, 150 shrubs).
 Buildings: the 7 OSM buildings on and beside the course, drawn as plain buildings. No clubhouse model, parked carts, cart ride, hot dog, fountain, signs or songs yet (none of those `scene` settings are set).
 
 Practice green and driving range: Woodbine Bend's, as for every course.
+
+STONEHENGE (stonehenge)
+=======================
+
+Listed as "Stonehenge"; records count from 2026-10-30. Early build: the OSM and lidar data only, nothing painted (no fescue, painted boundary, cart paths, tee boxes or site props). Blue tees played (6,350 yd, par 72); black, white and red are markers.
+
+Deep rough: dark green long rough (engine `longRough`), as at Eagle Ridge. It plays the same as any deep rough.
+
+White-tailed deer (`scene.deer` = .5: about half the holes have them; the others have none): a doe with a fawn (spotted, smaller) or a second doe, and on about a third of those holes a buck with antlers too.
+  - Each appears 6-36 s after arriving on the hole, walks across the line of play, stops to graze with its head down for 3-9 s at a time, looks round as it walks, and leaves the far side; it is back 30-90 s later.
+  - They bound away (10 m/s, white tail up) if the ball lands within ~18 m or flies within ~45 m, and walk again once the ball is 70 m off.
+  - Can be hit (the body, not the legs): "Oh deer!", the ball ricochets.
+
+Squirrels (`scene.squirrels` = 3 on every hole; grey ones and fox squirrels, a few times real size so they show):
+  - Each appears 3-28 s after arriving, at a tree near the hole (within 30 m of the hole's play area), and dashes in bursts to another tree 8-45 m away, sitting up and flicking its tail between dashes; at the tree it runs up the trunk and is gone, back 10-40 s later.
+  - Run for the nearest tree if the ball lands within ~9 m or flies within ~25 m.
+  - Can be hit: "Nailed a squirrel!", with a squeak.
+  - A hole with fewer than two trees near it has none.
+
+No wild turkeys, gopher or banner plane.
+
+IL 22 (the highway, with the traffic in part 1): runs past the south side of the course by the clubhouse drive, 50 mph all along (no slower stretch).
+
+Side road (out of bounds, for looks only): Old Barrington Road past the northeast corner. No traffic.
+
+Water: the OSM ponds (lateral and water hazards; water beside most holes, both sides of 18) and the OSM streams through the course (about 740 m in 3 pieces, from `creek.py osm`, clipped to the map), drawn as creek water. Pond shores are smooth curves (`RELIEF_OFF_WATER`).
+
+No cart paths yet (OSM maps them, but the game takes cart paths only from `cartpaths_read.py`).
+
+Trees: about 4,400: the 2007 Lake County lidar's trees, checked against the August 2023 aerial (`trees_aerial.py`, `TREES_GONE` in its course.py): about 420 lidar trees with no canopy on the aerial were taken out as felled since, 65 more on roofs and gravel, about 550 crowns widened to what the aerial shows and about 1,260 trees added where the aerial shows canopy nobody had placed (about 280 inside the course; most in the yards and woods round it).
+
+Buildings: the OSM buildings on and beside the course (the clubhouse among them), drawn as plain buildings. No clubhouse model, parked carts, cart ride, hot dog, fountain, signs or songs.
+
+Practice green and driving range: Woodbine Bend's, as for every course (the course's own range is not built).
 
 CHESTNUT MOUNTAIN DISC GOLF (cmdg)
 ==================================
@@ -211,7 +249,7 @@ Tee pads: a 1.6 x 3.6 m mat at each tee, square to the basket. No tee markers.
 
 Fairways: the open, mown ground within 9 m of each hole's line (no canopy over 2 m in the lidar). Everything else is rough, and deep rough well away from play.
 
-Wild turkeys (a flock of four on about 4 holes in 10, `scene.turkeys` = .4): the same flock and behaviour as at Woodbine Bend.
+No wild turkeys, gopher or banner plane.
 
 No highway. Side road (out of bounds, for looks only): West Chestnut Mountain Road, the resort road up to the lodge. No traffic.
 
@@ -232,7 +270,7 @@ The disc, baskets and tee pads: as at Chestnut Mountain (above).
 
 Fairways: the open, mown ground within 9 m of each hole's line (no canopy over 2 m in the lidar). Everything else is rough, and deep rough well away from play.
 
-No wild turkeys (`scene.turkeys` is not set).
+No wild turkeys, gopher or banner plane.
 
 No highway. Side roads (out of bounds, for looks only): North Milwaukee Avenue (IL 21) past the arts centre on the west, drawn as its two carriageways north of the arts centre and one road south of it, and West Adler Drive by the school. No traffic.
 

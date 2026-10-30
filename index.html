@@ -4019,6 +4019,121 @@ function makeTurkey(L, tom) {
   };
   return e;
 }
+/* --- white-tailed deer: a few cross the hole, graze with their heads down and bound off, white tails up, when the ball comes near (scene.deer) --- */
+function deerParts(kind) {
+  const coat = kind === 'fawn' ? 0x9a6a40 : 0x86603e, dark = 0x5e4129, pale = 0xece3d2, hoof = 0x2a2420;
+  // body (+z is forward, y up): barrel, chest, rump, the white belly; the fawn's spots
+  const bp = [lsp(.2, .25, .6, 0, .95, 0, coat, 8), lsp(.2, .27, .26, 0, .97, .36, coat, 7), lsp(.2, .25, .25, 0, .98, -.42, coat, 7), lsp(.15, .1, .42, 0, .8, .02, pale, 7), lsp(.12, .14, .06, 0, .97, -.64, pale, 6)];
+  if (kind === 'fawn') for (let k = 0; k < 10; k++) bp.push(lsp(.035, .03, .035, (k % 2 ? 1 : -1) * (.12 + (k % 3) * .03), 1.08 + (k % 3) * .04, -.4 + k * .08, pale, 4));
+  const body = mergeParts(bp);
+  // neck and head hang from a pivot at the top of the chest (the head group), so it can lower to graze and look round
+  const hp = [lbx(.15, .5, .19, 0, .2, .06, coat, -.42), lsp(.09, .1, .17, 0, .45, .26, coat, 7), lbx(.08, .08, .14, 0, .41, .42, dark), lbx(.06, .04, .04, 0, .44, .5, hoof), lbx(.11, .06, .08, 0, .14, .14, pale, -.42),
+    lbx(.16, .07, .03, -.12, .56, .18, coat, 0, .3, .5), lbx(.16, .07, .03, .12, .56, .18, coat, 0, -.3, -.5)];
+  if (kind === 'buck') for (const sd of [-1, 1]) { // the antlers: a beam out, up and forward, with three tines
+    hp.push(lbx(.035, .3, .035, sd * .1, .66, .2, 0xc9b48e, .3, 0, sd * -.55), lbx(.03, .28, .03, sd * .2, .8, .3, 0xc9b48e, 1.05, 0, sd * -.2));
+    for (let t = 0; t < 3; t++) hp.push(lbx(.025, .16, .025, sd * (.18 + t * .015), .86 + t * .02, .2 + t * .08, 0xd8c6a2, -.15, 0, sd * -.1));
+  }
+  const head = mergeParts(hp);
+  const leg = mergeParts([lbx(.08, .4, .1, 0, -.2, 0, coat), lbx(.05, .36, .055, 0, -.57, 0, dark), lbx(.055, .06, .08, 0, -.77, .01, hoof)]);
+  const tail = mergeParts([lbx(.1, .2, .05, 0, -.08, 0, coat), lbx(.09, .19, .03, 0, -.08, -.03, pale)]);
+  return { body, head, leg, tail };
+}
+function makeDeer(L, kind) {
+  const P = deerParts(kind), mat = LIFE_MAT(), g = new THREE.Group(), head = new THREE.Group(), tail = new THREE.Group();
+  head.position.set(0, 1.08, .5); head.add(lmesh(P.head, mat)); tail.position.set(0, 1.12, -.64); tail.add(lmesh(P.tail, mat));
+  const legs = [[-.11, .4], [.11, .4], [-.11, -.42], [.11, -.42]].map(p => { const lg = new THREE.Group(); lg.position.set(p[0], .8, p[1]); lg.add(lmesh(P.leg, mat)); g.add(lg); return lg; });
+  g.add(lmesh(P.body, mat)); g.add(head); g.add(tail); g.visible = false; L.grp.add(g);
+  const e = { kind: 'deer', mat, g, head, tail, legs, st: 'gone', x: 0, z: 0, yaw: 0, spd: 0, ph: Math.random() * 6, tmr: 0, wp: null, respawn: 6 + Math.random() * 30, hitT: 0, scale: kind === 'buck' ? 1.12 : kind === 'fawn' ? .68 : 1, r: .45, h: 1.6, graze: false };
+  e.spawn = () => { const c = crossingPoints(L, 10); if (!c) { e.respawn = 8; return; } e.x = c.a[0]; e.z = c.a[1]; e.wp = c.b; e.st = 'walk'; e.spd = 0; e.tmr = 3 + Math.random() * 6; e.yaw = Math.atan2(c.b[0] - c.a[0], c.b[1] - c.a[1]); g.visible = true; };
+  e.flee = (fx, fz) => { if (e.st === 'flee' || e.st === 'gone') return; e.st = 'flee'; e.tmr = 4 + Math.random() * 2; const a = Math.atan2(e.x - fx, e.z - fz) + (Math.random() - .5) * .7; e.yaw = a; e.wp = [e.x + Math.sin(a) * 120, e.z + Math.cos(a) * 120]; };
+  e.hit = (x, y, z) => { // the ball hits the body (a box round the barrel, legs ignored)
+    if (e.st === 'gone') return null; const gy = groundY(e.x, e.z), k = e.scale; if (y < gy + .45 * k || y > gy + e.h * k) return null;
+    const dx = x - e.x, dz = z - e.z, sn = Math.sin(e.yaw), cs = Math.cos(e.yaw), fw = dx * sn + dz * cs, sd = dx * cs - dz * sn;
+    if (Math.abs(fw) > .8 * k || Math.abs(sd) > e.r * k) return null; const l = Math.hypot(dx, dz) || 1; return { nx: dx / l, ny: .3, nz: dz / l };
+  };
+  e.onHit = () => { e.flee(L.T.x, L.T.z); e.hitT = .5; };
+  e.update = dt => {
+    if (e.st === 'gone') { e.respawn -= dt; if (e.respawn <= 0) e.spawn(); return; }
+    if (threatened(L, e.x, e.z, 45, 18) && e.st !== 'flee') e.flee(L.T.x, L.T.z);
+    let sp = 0;
+    if (e.st === 'walk') { if (e.tmr > 0) { e.tmr -= dt; e.graze = true; } else { e.graze = false; sp = 1.2; if (Math.random() < dt * .12) e.tmr = 3 + Math.random() * 6; } } // stops to graze
+    else if (e.st === 'flee') { e.tmr -= dt; sp = 10.5; e.graze = false; if (e.tmr <= 0 && Math.hypot(L.T.x - e.x, L.T.z - e.z) > 70) { e.st = 'walk'; e.tmr = 1; } }
+    if (sp > 0 && e.wp) {
+      const da = angWrap(Math.atan2(e.wp[0] - e.x, e.wp[1] - e.z) - e.yaw); e.yaw += clamp(da, -dt * 2.5, dt * 2.5);
+      let nx = e.x + Math.sin(e.yaw) * sp * dt, nz = e.z + Math.cos(e.yaw) * sp * dt;
+      if (!lifeWalkable(L, nx, nz)) { e.yaw += (Math.random() < .5 ? 1 : -1) * .9; nx = e.x; nz = e.z; if (e.st === 'walk') e.tmr = Math.max(e.tmr, .5); }
+      e.x = nx; e.z = nz;
+      if (Math.hypot(e.wp[0] - e.x, e.wp[1] - e.z) < 3 || !C_in(L, e.x, e.z)) { e.st = 'gone'; e.g.visible = false; e.respawn = 30 + Math.random() * 60; return; }
+    }
+    e.spd = lerp(e.spd, sp, Math.min(1, dt * 4)); const run = e.st === 'flee' && e.spd > 3;
+    e.ph += dt * (run ? 7.5 : e.spd * 3.4);
+    const k = Math.min(1, e.spd / 1.2), y = groundY(e.x, e.z);
+    // walking: diagonal pairs swing together; running: bounds, front legs together, then the back pair, the body rising and pitching
+    if (run) { const sn = Math.sin(e.ph); e.legs[0].rotation.x = e.legs[1].rotation.x = sn * .8; e.legs[2].rotation.x = e.legs[3].rotation.x = Math.sin(e.ph - 1.4) * .8; e.g.rotation.x = Math.cos(e.ph) * .12; }
+    else { const sn = Math.sin(e.ph) * .4 * k; e.legs[0].rotation.x = e.legs[3].rotation.x = sn; e.legs[1].rotation.x = e.legs[2].rotation.x = -sn; e.g.rotation.x = 0; }
+    e.g.position.set(e.x, y + (run ? Math.max(0, Math.sin(e.ph)) * .38 * e.scale : 0), e.z); e.g.rotation.y = e.yaw; e.g.scale.setScalar(e.scale);
+    e.head.rotation.x = e.graze ? 1.45 + Math.sin(L.t * 1.3 + e.ph) * .08 : run ? -.1 : Math.sin(L.t * .5 + e.ph) * .06;
+    e.head.rotation.y = e.graze || run ? 0 : Math.sin(L.t * .37 + e.ph) * .35;   // looks round while walking
+    e.tail.rotation.x = run ? -1.9 : -.15 + Math.sin(L.t * 2.1 + e.ph) * .1;      // the white flag goes up when it runs
+    if (e.hitT > 0) { e.hitT -= dt; e.g.rotation.z = Math.sin(e.hitT * 30) * .2 * e.hitT; } else e.g.rotation.z = 0;
+  };
+  return e;
+}
+/* --- squirrels: grey and fox squirrels dash from tree to tree near the line of play, stop to sit up and flick their tails, and run up a trunk when the ball comes near (scene.squirrels) --- */
+function squirrelParts(fox) {
+  const fur = fox ? 0x9a6238 : 0x7f7c76, pale = fox ? 0xd9a06a : 0xe2ddd2, dark = 0x2a2420;
+  const body = mergeParts([lsp(.065, .07, .13, 0, .1, 0, fur, 7), lsp(.05, .045, .1, 0, .08, .02, pale, 6), lsp(.05, .05, .06, 0, .16, .12, fur, 7), lbx(.03, .03, .03, 0, .15, .18, dark),
+    lbx(.025, .04, .015, -.03, .21, .11, fur), lbx(.025, .04, .015, .03, .21, .11, fur), lbx(.02, .02, .02, -.035, .17, .15, dark), lbx(.02, .02, .02, .035, .17, .15, dark),
+    lbx(.03, .07, .03, -.04, .04, .07, fur), lbx(.03, .07, .03, .04, .04, .07, fur), lsp(.035, .05, .06, -.05, .06, -.06, fur, 5), lsp(.035, .05, .06, .05, .06, -.06, fur, 5)]);
+  // the bushy tail, curled up over the back from a pivot at its root
+  const tail = mergeParts([lsp(.05, .06, .09, 0, .03, -.06, fur, 6), lsp(.06, .1, .06, 0, .13, -.1, fur, 6), lsp(.055, .06, .05, 0, .22, -.06, pale, 6)]);
+  return { body, tail };
+}
+function squirrelTrees(L) { // tree trunks round the hole a squirrel can run between (cached per hole)
+  if (L.sqTrees) return L.sqTrees;
+  const I = L.C.inner, C = L.C, out = [], src = (W.treeOcc && W.treeOcc.list) || (W.trees || []).filter(t => !t.far).map(t => ({ x: t.x, z: t.z }));
+  for (const o of src) if (o.x > I.minX - 30 && o.x < I.maxX + 30 && o.z > I.minZ - 30 && o.z < I.maxZ + 30 && C.inBounds(o.x, o.z) && C.surf(o.x, o.z) !== S.WATER) out.push([o.x, o.z]);
+  return (L.sqTrees = out);
+}
+function makeSquirrel(L) {
+  const fox = Math.random() < .4, P = squirrelParts(fox), mat = LIFE_MAT(), g = new THREE.Group(), tail = new THREE.Group();
+  tail.position.set(0, .1, -.12); tail.add(lmesh(P.tail, mat)); g.add(lmesh(P.body, mat)); g.add(tail); g.visible = false; L.grp.add(g);
+  const e = { kind: 'squirrel', mat, g, tail, st: 'gone', x: 0, y: 0, z: 0, yaw: 0, ph: Math.random() * 6, tmr: 0, to: null, up: 0, respawn: 3 + Math.random() * 25, hitT: 0, scale: 1.4, r: .22 };
+  const nearTree = (x, z, min, max) => { const T = squirrelTrees(L), ok = T.filter(t => { const d = Math.hypot(t[0] - x, t[1] - z); return d >= min && d <= max; }); return ok.length ? ok[(Math.random() * ok.length) | 0] : null; };
+  const runTo = (t, st) => { const a = Math.atan2(t[0] - e.x, t[1] - e.z); e.to = [t[0] - Math.sin(a) * .35, t[1] - Math.cos(a) * .35]; e.st = st; };
+  e.spawn = () => {
+    const T = squirrelTrees(L); if (T.length < 2) { e.respawn = 1e9; return; }
+    const a = T[(Math.random() * T.length) | 0]; e.x = a[0] + .5; e.z = a[1]; const b = nearTree(e.x, e.z, 8, 45); if (!b) { e.respawn = 4; return; }
+    runTo(b, 'run'); e.tmr = .6 + Math.random() * 1.5; e.up = 0; g.visible = true;
+  };
+  e.flee = () => { if (e.st === 'gone' || e.st === 'climb' || e.st === 'flee') return; const t = nearTree(e.x, e.z, 0, 60); if (t) runTo(t, 'flee'); else { e.st = 'gone'; e.respawn = 20; } };
+  e.hit = (x, y, z) => { if (e.st === 'gone' || e.st === 'climb') return null; const dx = x - e.x, dz = z - e.z, d = Math.hypot(dx, dz); if (d > e.r * e.scale || y > e.y + .35 * e.scale || y < e.y - .05) return null; const l = d || 1; return { nx: dx / l, ny: .4, nz: dz / l }; };
+  e.onHit = () => { e.hitT = .5; e.st = 'run'; e.flee(); };
+  e.update = dt => {
+    if (e.st === 'gone') { e.respawn -= dt; if (e.respawn <= 0) e.spawn(); return; }
+    if (e.st !== 'climb' && e.st !== 'flee' && threatened(L, e.x, e.z, 25, 9)) e.flee();
+    let sp = 0, sit = false;
+    if (e.st === 'run') { // dashes, then sits up a moment, then dashes on
+      if (e.tmr > 0) { e.tmr -= dt; sp = 3.2; if (e.tmr <= 0) e.sitT = 1 + Math.random() * 2.5; }
+      else { sit = true; e.sitT -= dt; if (e.sitT <= 0) e.tmr = .5 + Math.random() * 1.8; } }
+    else if (e.st === 'flee') sp = 6;
+    if (sp > 0) {
+      const want = Math.atan2(e.to[0] - e.x, e.to[1] - e.z); e.yaw += clamp(angWrap(want - e.yaw), -dt * 9, dt * 9);
+      e.x += Math.sin(e.yaw) * sp * dt; e.z += Math.cos(e.yaw) * sp * dt; e.ph += dt * sp * 4.5;
+      if (Math.hypot(e.to[0] - e.x, e.to[1] - e.z) < .3) { e.st = 'climb'; e.up = 0; e.tmr = 0; }
+    }
+    const gy = groundY(e.x, e.z);
+    if (e.st === 'climb') { // up the trunk, then gone into the crown
+      e.up += dt * 2.2; e.g.rotation.x = -Math.PI / 2; e.g.position.set(e.x, gy + .15 + e.up, e.z); e.g.rotation.y = e.yaw;
+      if (e.up > 4.5) { e.st = 'gone'; e.g.visible = false; e.respawn = 10 + Math.random() * 30; } return;
+    }
+    e.y = gy; e.g.position.set(e.x, gy + (sp > 0 ? Math.abs(Math.sin(e.ph)) * .07 : sit ? .04 : 0), e.z); e.g.rotation.y = e.yaw; e.g.scale.setScalar(e.scale);
+    e.g.rotation.x = sit ? -.85 : sp > 0 ? Math.sin(e.ph) * .18 : 0;
+    e.tail.rotation.x = sit ? -.3 + Math.max(0, Math.sin(L.t * 9 + e.ph)) * .5 * (Math.sin(L.t * 1.3 + e.ph) > .4 ? 1 : 0) : sp > 0 ? .5 + Math.sin(e.ph) * .2 : 0; // flicks while sitting, streams out behind when running
+    if (e.hitT > 0) { e.hitT -= dt; e.g.rotation.z = Math.sin(e.hitT * 40) * .4 * e.hitT; } else e.g.rotation.z = 0;
+  };
+  return e;
+}
 const C_in = (L, x, z) => { const I = L.C.inner; return x > I.minX - 120 && x < I.maxX + 120 && z > I.minZ - 120 && z < I.maxZ + 120; };
 /* --- birds: all drawn as three instanced meshes (body + two wings). They perch in trees, walk about on the ground, take off in arcs to new spots and bolt when the ball comes close. Flocks cross the sky in a group. --- */
 function birdGeos() {
@@ -4678,9 +4793,13 @@ function buildLife(C, grp) {
   W.life = L; W.birds = null;
   try {
     initGround(L, grp);
+    if (Math.random() < (RDC.scene.deer || 0)) { L.ents.push(makeDeer(L, 'doe'), makeDeer(L, Math.random() < .5 ? 'fawn' : 'doe')); if (Math.random() < .35) L.ents.push(makeDeer(L, 'buck')); } // a doe with a fawn or a second doe, sometimes a buck; only some holes
+    for (let i = 0; i < (RDC.scene.squirrels || 0); i++) L.ents.push(makeSquirrel(L)); // each on its own timer, among the trees by the hole
     if (Math.random() < (RDC.scene.turkeys || 0)) L.ents.push(makeTurkey(L, true), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false)); // a tom and three hens, each on its own random timer; the flock visits only some holes
     initBirds(L, grp);
-    L.plane = makePlane(L); L.gopher = makeGopher(L); L.balloon = makeBalloon(L); L.ents.push(L.plane, L.gopher, L.balloon);
+    L.balloon = makeBalloon(L); L.ents.push(L.balloon);
+    if (RDC.scene.bannerPlane) { L.plane = makePlane(L); L.ents.push(L.plane); }   // the banner plane and the gopher (groundhog) only where the course's scene asks for them
+    if (RDC.scene.groundhog) { L.gopher = makeGopher(L); L.ents.push(L.gopher); }
     if (G.hole + 1 === RDC.scene.hotdogHole && Math.random() < HOTDOG_P) L.ents.push(makeHotDog(L));
     if (RDC.scene.cartRide && C.def.par >= 4 && !G.pg && (Math.random() < CARTRIDE_P || /[?&]cart\b/.test(location.search))) { const R = cartRoute(C); if (R) { L.cartRide = makeCartRide(L, R); L.ents.push(L.cartRide); } }
     if (G.hole + 1 === RDC.scene.fountainHole) { const f = makeFountain(L); if (f) L.ents.push(f); }
@@ -4743,9 +4862,9 @@ function deflectShot(sh, tt, hit) {
 }
 function lifeHitNote(hit) {
   const e = hit.e, bd = hit.h.bird, k = bd ? 'bird' : e ? e.kind : '';
-  const txt = { turkey: 'Clipped a turkey!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!', gopher: 'A menace to the golfing industry...', hotdog: 'Revenge of The Choker!', golfcart: 'Off a golf cart!' }[k];
+  const txt = { turkey: 'Clipped a turkey!', deer: 'Oh deer!', squirrel: 'Nailed a squirrel!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!', gopher: 'A menace to the golfing industry...', hotdog: 'Revenge of The Choker!', golfcart: 'Off a golf cart!' }[k];
   if (txt) readoutNote(txt, 'bad');
-  try { if (k === 'plane' || k === 'glider' || k === 'golfcart') SFX.trunk(); else if (k === 'turkey') SFX.gobble(); else if (k === 'gopher' || k === 'hotdog') SFX.squeak(); else SFX.leaves(); } catch (er) { }
+  try { if (k === 'plane' || k === 'glider' || k === 'golfcart') SFX.trunk(); else if (k === 'turkey') SFX.gobble(); else if (k === 'gopher' || k === 'hotdog' || k === 'squirrel') SFX.squeak(); else SFX.leaves(); } catch (er) { }
   if (bd) { bd.st = 'hit'; bd.t = 0; const n = hit.h; bd.hitV = [-n.nx * 3 + (Math.random() - .5) * 2, 3, -n.nz * 3 + (Math.random() - .5) * 2]; }
   else if (e && e.onHit) e.onHit();
 }

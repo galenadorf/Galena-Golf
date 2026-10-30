@@ -41,7 +41,7 @@ from shapely.geometry import Point, shape
 from shapely.ops import unary_union
 
 import osm
-from common import DETAIL, OUT, UA, bbox_lonlat, cache
+from common import DETAIL, OUT, UA, bbox_lonlat, cache, course
 from fetch import warp
 from trees_paint import from_masks, height
 
@@ -52,17 +52,33 @@ GROW_MAX = 1.6      # never more than this
 CONIFER_MAX = 1.25  # a conifer's dark crown runs into its shadow: grown less
 D_MAX = 21.0        # m, the widest crown (as trees.py)
 RING_FULL = .55     # a ring still belongs to the crown when this share of it is canopy
+GONE_P = .25        # course.TREES_GONE: a lidar tree whose crown scores under this on the aerial (mean canopy probability) was felled
 
 
 def naip2023():
     out = cache('naip2023_025.tif')
     if not os.path.exists(out):
         w, s, e, n = bbox_lonlat(DETAIL)
-        body = {'collections': ['naip'], 'bbox': [w, s, e, n], 'limit': 1, 'sortby': [{'field': 'datetime', 'direction': 'desc'}]}
-        f = requests.post('https://planetarycomputer.microsoft.com/api/stac/v1/search', json=body, headers=UA, timeout=60).json()['features'][0]
+        body = {'collections': ['naip'], 'bbox': [w, s, e, n], 'limit': 10, 'sortby': [{'field': 'datetime', 'direction': 'desc'}]}
+        feats = requests.post('https://planetarycomputer.microsoft.com/api/stac/v1/search', json=body, headers=UA, timeout=60).json()['features']
+        feats = [f for f in feats if f['properties']['datetime'][:4] == feats[0]['properties']['datetime'][:4]]   # every tile of the newest year (Stonehenge spans two)
         tok = requests.get('https://planetarycomputer.microsoft.com/api/sas/v1/token/naip', headers=UA, timeout=60).json()['token']
-        print('NAIP', f['id'])
-        warp('/vsicurl/' + f['assets']['image']['href'] + '?' + tok, out, DETAIL, .25, resampling=Resampling.cubic)
+        print('NAIP', [f['id'] for f in feats])
+        parts = []
+        for i, f in enumerate(feats):
+            parts.append(cache(f'naip2023_{i}.tif'))
+            warp('/vsicurl/' + f['assets']['image']['href'] + '?' + tok, parts[-1], DETAIL, .25, resampling=Resampling.cubic)
+        with rasterio.open(parts[0]) as a:   # mosaic: the first tile that has data wins
+            prof, acc = a.profile, a.read()
+        for q in parts[1:]:
+            with rasterio.open(q) as b:
+                d = b.read()
+            hole = acc.sum(0) == 0
+            acc[:, hole] = d[:, hole]
+        with rasterio.open(out, 'w', **prof) as dst:
+            dst.write(acc)
+        for q in parts:
+            os.remove(q)
     with rasterio.open(out) as s:
         a = s.read().astype(np.float32)
     h, w = a.shape[1] // 2, a.shape[2] // 2
@@ -144,6 +160,17 @@ def main():
         win = (slice(max(0, r - rr), r + rr + 1), slice(max(0, c - rr), c + rr + 1))
         if vis[win].mean() > 170:
             drop.append(t)
+    # gone: on a course whose lidar is much older than the aerial (course.TREES_GONE: Stonehenge, 2007 lidar, 2023 aerial), a lidar tree
+    # with no leaf canopy over its crown on the aerial was felled since
+    gone = 0
+    if getattr(course, 'TREES_GONE', False):
+        for t in trees:
+            c, r = int((t['e'] - E0) / RES), int((N1 - t['n']) / RES)
+            rr = max(3, int(t['d'] / 2 / RES * .6))
+            win = (slice(max(0, r - rr), r + rr + 1), slice(max(0, c - rr), c + rr + 1))
+            if Ps[win].size and Ps[win].mean() < GONE_P and t not in drop:
+                drop.append(t)
+                gone += 1
     # and any lidar tree standing in a painted shed (the range's metal shed, the pump house): the lidar saw them as canopy
     sheds = []
     for f in ('range.json', 'paint_props.json'):
@@ -159,7 +186,8 @@ def main():
                 drop.append(t)
     dk = {(t['e'], t['n']) for t in drop}
     trees = [t for t in trees if (t['e'], t['n']) not in dk]
-    painted = json.load(open(os.path.join(OUT, 'trees_painted.json')))
+    pp = os.path.join(OUT, 'trees_painted.json')   # none on a course whose trees were never painted (Stonehenge)
+    painted = json.load(open(pp)) if os.path.exists(pp) else []
     allt = trees + painted
     ispainted = [False] * len(trees) + [True] * len(painted)
 
@@ -234,7 +262,7 @@ def main():
         d.ellipse([x - r, y - r, x + r, y + r], outline=c, width=1)
     img.save(os.path.join(OUT, 'trees_aerial.png'))
     ks = np.bincount([t['kind'] for t in add], minlength=3)
-    print(f'{len(drop)} lidar trees on roofs or gravel dropped; {len(grow)} crowns grown ({sum(g["d"] - g["was"] for g in grow) / max(1, len(grow)):.1f} m wider on average, '
+    print(f'{len(drop) - gone} lidar trees on roofs or gravel dropped, {gone} felled since the lidar; {len(grow)} crowns grown ({sum(g["d"] - g["was"] for g in grow) / max(1, len(grow)):.1f} m wider on average, '
           f'{sum(ispainted[i] for i, t in enumerate(allt) if (t["e"], t["n"]) in gd)} of them painted); '
           f'{len(add)} trees added: {ks[0]} broadleaf, {ks[2]} conifer, {ks[1]} shrubs')
 
