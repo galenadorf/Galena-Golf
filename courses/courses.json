@@ -64,9 +64,7 @@
       "recFrom": "2026-10-30",
       "about": "Disc golf (alpha) in Adler Memorial Park (Libertyville, Illinois; 9 holes, 1981): a town park course through wooded ravines and open lawns above the Des Plaines River, with one tee per hole, so the nine is played twice. Throw with the tempo bar as for a golf swing; the strike dot sets the release angle (hyzer or anhyzer) and the nose. Rounds here are not posted to the world leaderboard. Tees and baskets from the course sign's map, hole lengths from its card; the ground from the USGS 3DEP 1 m elevation model, trees from the 2007 Lake County lidar (USGS), buildings, the river and roads from \u00a9 OpenStreetMap contributors (ODbL).",
       "engine": { "disc": true, "z0": 200, "gr": { "e0": -450, "n0": -450, "res": 2, "W": 450, "H": 450 } },
-      "scene": {
-        "turkeys": 0.4
-      }
+      "scene": {}
     }
   ]
 }

@@ -232,7 +232,7 @@ The disc, baskets and tee pads: as at Chestnut Mountain (above).
 
 Fairways: the open, mown ground within 9 m of each hole's line (no canopy over 2 m in the lidar). Everything else is rough, and deep rough well away from play.
 
-Wild turkeys (a flock of four on about 4 holes in 10, `scene.turkeys` = .4): the same flock and behaviour as at Woodbine Bend.
+No wild turkeys (`scene.turkeys` is not set).
 
 No highway. Side roads (out of bounds, for looks only): North Milwaukee Avenue (IL 21) past the arts centre on the west, drawn as its two carriageways north of the arts centre and one road south of it, and West Adler Drive by the school. No traffic.
 
