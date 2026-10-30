@@ -11,7 +11,10 @@ from common import cache, course, to_local
 def load():
     els = json.load(open(cache('osm.json')))['elements']
     nodes = {e['id']: to_local(e['lon'], e['lat']) for e in els if e['type'] == 'node'}
-    ways = {e['id']: e for e in els if e['type'] == 'way'}
+    ways = {}
+    for e in els:   # Overpass may list a way twice (the second copy, from '>; out skel', has no tags): keep the tagged one
+        if e['type'] == 'way' and (e['id'] not in ways or e.get('tags')):
+            ways[e['id']] = e
     tagged_nodes = [e for e in els if e['type'] == 'node' and e.get('tags')]
     rels = [e for e in els if e['type'] == 'relation']
 

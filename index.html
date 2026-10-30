@@ -158,10 +158,12 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
 .nameRow input,.mrow input{flex:1;min-width:0;height:44px;border:0;outline:0;border-radius:14px;padding:0 14px;font:600 20px var(--cond);text-transform:uppercase;letter-spacing:.04em;color:#fff;background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);text-shadow:var(--tsh)}
 .nameRow input::placeholder{color:rgba(255,255,255,.55)}
 .nameRow.need{animation:shake .4s}.nameRow.need input{box-shadow:inset 0 0 0 2px var(--yel)}
-.courseRow{padding:6px 6px 6px 16px}
-.courseRow .seg{flex:1;background:rgba(255,255,255,.14);box-shadow:inset 0 0 0 1px rgba(255,255,255,.26);border-radius:14px}
-.courseRow .seg button{flex:1;height:38px;padding:0 6px;font-size:15px;color:var(--w1);text-shadow:var(--tsh);border-radius:11px;white-space:nowrap}
-.courseRow .seg button.sel{background:#fff;color:var(--ink);text-shadow:none}
+.courseRow{padding:6px 8px 6px 16px}
+/* the course picker: a native dropdown (any number of courses on one line; the phone opens its own list) */
+.courseSel{flex:1;min-width:0;height:44px;border:0;outline:0;border-radius:14px;padding:0 38px 0 14px;font:600 20px var(--cond);text-transform:uppercase;letter-spacing:.04em;color:#fff;text-shadow:var(--tsh);background:rgba(255,255,255,.16) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center/14px 10px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);-webkit-appearance:none;appearance:none;text-overflow:ellipsis;cursor:pointer}
+.courseSel:focus-visible{box-shadow:inset 0 0 0 2px var(--yel)}
+.courseSel option{color:#16211c;background:#fff;text-shadow:none}
+#menuSheet .courseSel{flex:0 1 70%;height:38px;font-size:18px;padding-right:34px;background-position:right 12px center}   /* the menu's glass: white text on the translucent box, like its Name field */
 @keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 .btn{height:58px;border-radius:20px;background:linear-gradient(180deg,#4a9a4c,#2f6b35);color:#fff;font:600 22px var(--cond);text-transform:uppercase;letter-spacing:.06em;box-shadow:0 10px 24px rgba(20,70,30,.35),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .15s;text-shadow:0 1px 2px rgba(0,30,12,.3)}
 .btn:active{transform:scale(.97)}
@@ -459,7 +461,7 @@ Golf Course
       <div class="card"><svg class="tut" viewBox="0 0 90 100" aria-hidden="true"><rect x="31" y="6" width="28" height="88" rx="14" fill="#2f6b35"/><rect x="38" y="14" width="14" height="72" rx="7" fill="rgba(255,255,255,.16)"/><path class="tDown" d="M45 80V20" stroke="#ffe85a" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M17 34V62m0 0l-5-6m5 6l5-6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".75"/><path d="M73 68V40m0 0l-5 6m5-6l5 6" stroke="#ffe85a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".9"/><g class="tThumb"><circle r="9" fill="#fff" stroke="#1d3d22" stroke-width="2"/></g></svg><b>Left thumb · tempo</b><p>Slide down, then slide straight up. A tempo of 3:1 gets the best smash factor.</p></div>
       <div class="card"><svg class="tut" viewBox="0 0 90 100" aria-hidden="true"><circle cx="45" cy="50" r="40" fill="#bfe2a0"/><rect x="12" y="34" width="66" height="32" rx="14" fill="#dfe5ea" stroke="#7f93a6" stroke-width="2"/><circle cx="45" cy="50" r="9" fill="none" stroke="#2f6b35" stroke-width="1.6" stroke-dasharray="3 3"/><g class="tBall"><circle r="7.5" fill="#fff" stroke="#8d9aa4" stroke-width="1.2"/><circle cx="-2" cy="-2" r="1" fill="#cfd8de"/><circle cx="2.4" cy="1.5" r="1" fill="#cfd8de"/></g><circle class="tFinger" r="12" fill="rgba(255,255,255,.28)" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/></svg><b>Right thumb · strike</b><p>Your thumb jitters, and the ball rides up-left of it. Keep the ball on the club's sweet spot.</p></div>
     </div>
-    <div class="card nameRow courseRow" hidden><span>Course</span><div class="seg segCourse" id="segCourse"></div></div>
+    <label class="card nameRow courseRow" hidden><span>Course</span><select class="courseSel" id="selCourse" aria-label="Course"></select></label>
     <label class="card nameRow" id="nameRow"><span>Player</span><input id="nameIn" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="go"></label>
     <div class="playRow"><button class="btn alt" id="btnResume" style="display:none">Resume<small id="resumeInfo"></small></button><button class="btn" id="btnPlay">Tee off</button></div>
     <div class="playRow"><button class="btn subBtn" id="btnPractice">Practice</button><button class="btn subBtn" id="btnSettings">Settings</button></div>
@@ -474,7 +476,7 @@ Golf Course
 <div class="sheet" id="menuSheet"><div class="grab"></div><div class="sht">Settings</div>
   <div class="mlist">
     <div class="sub"><span>Players online</span></div><div class="mpList" id="mpList"></div>
-    <div class="mrow" hidden>Course<div class="seg segCourse" id="segCourseM"></div></div>
+    <label class="mrow" hidden>Course<select class="courseSel" id="selCourseM" aria-label="Course"></select></label>
   </div>
   <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mChange">⛳ Change practice</button><button class="mbtn dark wide" id="mQuit">Quit to Main Screen</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
   <div class="mlist setBlock">
@@ -2788,7 +2790,7 @@ function courseLoad(key) {
   }).finally(() => { delete COURSE_LOADING[key]; }));
 }
 // the course in hand, then fn(); if its data cannot be loaded (offline before it was ever kept), a note instead
-function withCourse(key, fn) { courseLoad(key).then(() => fn(), e => { console.error(e); readout('<div class="r1">That course could not be loaded</div>', 2.5); }); }
+function withCourse(key, fn) { courseLoad(key).then(() => fn(), e => { console.error(e); document.querySelectorAll('.courseSel').forEach(el => { el.value = COURSE.key; }); readout('<div class="r1">That course could not be loaded</div>', 2.5); }); }
 function courseReady(c, D) {
   if (!D || !D.rd || !D.alti) throw new Error('courses/' + c.key + '.js has no data');
   const rd = D.rd;
@@ -2831,7 +2833,7 @@ function setCourse(key) {
   if (settings.course !== COURSE.key) { settings.course = COURSE.key; saveSettings(); }
   $('courseLine').textContent = `${COURSE.name.replace(/ (Golf Course)$/, '\n$1')}\n${HOLE_DEFS.length} holes · Par ${PAR_TOTAL}`;
   $('boardName').textContent = COURSE.name; $('aboutCourse').textContent = COURSE.about; $('musRow').hidden = !COURSE.music;
-  document.querySelectorAll('.segCourse button').forEach(b => b.classList.toggle('sel', b.dataset.v === COURSE.key));
+  document.querySelectorAll('.courseSel').forEach(el => { el.value = COURSE.key; });
   showBest(); refreshBoards(); try { loadWorld(); } catch (e) { } refreshResume();
   if (MP.inited && mpIsLobby(MP.room) && MP.room !== mpLobby()) { if (MP.spec) mpResume(true); mpJoin(mpLobby()); } // each course has its own lobby
 }
@@ -7681,23 +7683,24 @@ function initInput() {
   $('btnPractice').onclick = () => { audio(); SFX.blip(); openPractice(); };
   $('btnSettings').onclick = () => { audio(); SFX.blip(); syncMenu(); openSheet('menuSheet'); };
   // course: on the title it just switches the course shown; in the menu it starts a new round on it
-  for (const id of ['segCourse', 'segCourseM']) {
+  for (const id of ['selCourse', 'selCourseM']) {
     const el = $(id); el.innerHTML = ''; el.parentElement.hidden = Object.keys(COURSES).length < 2;
-    for (const c of Object.values(COURSES)) { const b = document.createElement('button'); b.dataset.v = c.key; b.textContent = c.short; el.appendChild(b); }
+    for (const c of Object.values(COURSES)) { const o = document.createElement('option'); o.value = c.key; o.textContent = c.short; el.appendChild(o); }
+    if (COURSE) el.value = COURSE.key;
   }
-  document.querySelectorAll('#segCourse button').forEach(b => b.onclick = () => {
-    if (b.dataset.v === COURSE.key) return; SFX.blip(); withCourse(b.dataset.v, () => { setCourse(b.dataset.v); showTitleHole(); });
-  });
+  $('selCourse').onchange = e => {
+    const k = e.target.value; if (k === COURSE.key) return; SFX.blip(); e.target.blur(); withCourse(k, () => { setCourse(k); showTitleHole(); });
+  };
   // (in the menu the round in progress is kept for when you come back to its course; a course with a round waiting resumes it, else a new one starts)
-  document.querySelectorAll('#segCourseM button').forEach(b => b.onclick = () => {
+  $('selCourseM').onchange = e => {
     if (MP.spec) mpResume(true);
-    const k = b.dataset.v; if (k === COURSE.key) return; SFX.blip(); closeSheets();
+    const k = e.target.value; if (k === COURSE.key) return; SFX.blip(); e.target.blur(); closeSheets();
     withCourse(k, () => {
       if ($('title').classList.contains('on')) { setCourse(k); showTitleHole(); return; }
       saveRound();
       if (!resumeRound(k)) { setCourse(k); startRound(); }
     });
-  });
+  };
 }
 
 let lastT = performance.now(), dueT = 0;

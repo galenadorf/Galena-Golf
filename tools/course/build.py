@@ -335,8 +335,8 @@ def creek_pieces(hw=2.0, step=14.0):
 
 def highway(area=course.ROAD_AREA):
     """The highway with traffic (course.HIGHWAY; at Woodbine US 20, past the north edge of the course), as one west-to-east line clipped to the game's 2 m class grid, and the
-    distance along it where the 55 mph road becomes Woodbine Street (35 mph) at the edge of Stockton. Read from the raw OSM file: osm.load
-    keeps the tag-less duplicate of a way that Overpass lists twice, which loses these two ways."""
+    distance along it where the 55 mph road becomes Woodbine Street (35 mph) at the edge of Stockton. Read from the raw OSM file (osm.load
+    once kept the tag-less duplicate of a way that Overpass lists twice, which lost these two ways; it keeps the tagged copy now)."""
     els = json.load(open(cache('osm.json')))['elements']
     nodes = {e['id']: to_local(e['lon'], e['lat']) for e in els if e['type'] == 'node'}
     H = course.HIGHWAY

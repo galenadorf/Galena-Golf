@@ -36,7 +36,7 @@ The outlines are smoothed so painted pixel staircases do not show: `bunkers_pain
 
 To change a layer: repaint the mask, run its reader, then `build.py` and `install.py`.
 
-The highway (`course.HIGHWAY`; at Woodbine US 20; `highway` and `hwSlow` in the data, empty when the course has none) is not painted: `build.py highway()` reads it from `.cache/osm.json` (clipped to the 2 m class grid, west to east; `hwSlow` is the distance along it where the limit drops to 35 mph). It reads the raw file because `osm.load` loses ways that Overpass lists twice (the second copy has no tags), which includes both US 20 ways.
+The highway (`course.HIGHWAY`; at Woodbine US 20; `highway` and `hwSlow` in the data, empty when the course has none) is not painted: `build.py highway()` reads it from `.cache/osm.json` (clipped to the 2 m class grid, west to east; `hwSlow` is the distance along it where the limit drops to 35 mph). It reads the raw file (written when `osm.load` lost ways that Overpass lists twice, the second copy having no tags, which included both US 20 ways; `osm.load` now keeps the tagged copy, which is how Eagle Ridge North's course outline is found).
 
 # Adding another course
 

@@ -171,3 +171,24 @@ Trees: about 9,900 from the lidar (6,100 broadleaf, 3,750 conifer, a few shrubs)
 Buildings: the 10 OSM buildings on and beside the course, drawn as plain buildings. No clubhouse model, parked carts, cart ride, hot dog, fountain, signs or songs yet (none of those `scene` settings are set).
 
 Practice green and driving range: Woodbine Bend's, as for every course.
+
+EAGLE RIDGE NORTH (eagle_north)
+===============================
+
+Beta (listed as "ER North (Beta)"; records count from 2027-10-30, so beta rounds set none). Early build: the OSM and lidar data only, nothing painted yet (no fescue, painted boundary, cart paths, tee boxes or site props). Gold tees played (6,428 yd, par 72; Roger Packard, 1977).
+
+Deep rough: dark green long rough (engine `longRough`), as at Eagle Ridge South. It plays the same as any deep rough.
+
+Wild turkeys (a flock of four on about 4 holes in 10, `scene.turkeys` = .4): the same flock and behaviour as at Woodbine Bend.
+
+No highway: US 20 is south of the resort, off the map, so there is no traffic.
+
+Side roads (out of bounds, for looks only): Eagle Ridge Drive (beside 1, 2, 9, 10 and 18), Walnut Hill Road (beside 1, 9, 10, 12, 14 and 15) and Thunder Bay Road (beside 2, 3, 6 and 7), the resort roads. No traffic.
+
+Water: the OSM ponds (golf=water_hazard and lateral_water_hazard; water right of 8, 11, 13 and 16) and the OSM streams through the course (about 2.9 km in 9 pieces, from `creek.py osm`), drawn as creek water.
+
+Trees: about 11,600 from the lidar (6,900 broadleaf, 4,500 conifer, 150 shrubs).
+
+Buildings: the 7 OSM buildings on and beside the course, drawn as plain buildings. No clubhouse model, parked carts, cart ride, hot dog, fountain, signs or songs yet (none of those `scene` settings are set).
+
+Practice green and driving range: Woodbine Bend's, as for every course.
