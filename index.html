@@ -163,6 +163,9 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
 .courseSel{flex:1;min-width:0;height:44px;border:0;outline:0;border-radius:14px;padding:0 38px 0 14px;font:600 20px var(--cond);text-transform:uppercase;letter-spacing:.04em;color:#fff;text-shadow:var(--tsh);background:rgba(255,255,255,.16) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center/14px 10px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);-webkit-appearance:none;appearance:none;text-overflow:ellipsis;cursor:pointer}
 .courseSel:focus-visible{box-shadow:inset 0 0 0 2px var(--yel)}
 .courseSel option{color:#16211c;background:#fff;text-shadow:none}
+#practiceSheet .pracCourse{display:flex;align-items:center;gap:12px;margin:4px 0 10px;font:700 15px var(--cond);letter-spacing:.1em;text-transform:uppercase}
+#practiceSheet .pracCourse[hidden]{display:none}
+#practiceSheet .courseSel{height:42px;font-size:18px;padding-right:34px;background-position:right 12px center}
 #menuSheet .courseSel{flex:0 1 70%;height:38px;font-size:18px;padding-right:34px;background-position:right 12px center}   /* the menu's glass: white text on the translucent box, like its Name field */
 @keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 .btn{height:58px;border-radius:20px;background:linear-gradient(180deg,#4a9a4c,#2f6b35);color:#fff;font:600 22px var(--cond);text-transform:uppercase;letter-spacing:.06em;box-shadow:0 10px 24px rgba(20,70,30,.35),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .15s;text-shadow:0 1px 2px rgba(0,30,12,.3)}
@@ -496,7 +499,7 @@ Golf Course
     <div id="buildNo" style="font:500 13px var(--sans,system-ui);color:#b4b4b4;padding:6px 4px 2px;text-align:center;font-variant-numeric:tabular-nums">Build …</div>
   </div>
 </div>
-<div class="sheet" id="practiceSheet"><div class="grab"></div><div class="sht">Practice <small>Pick a hole · scores are not recorded</small></div><button class="pracPutt" id="pracPutt">Putting green<small>Chip and putt · four cups · nothing scored</small></button><button class="pracPutt" id="pracRange">Driving range<small>Any club · flags to aim at · nothing scored</small></button><div class="pracGrid" id="pracGrid"></div></div>
+<div class="sheet" id="practiceSheet"><div class="grab"></div><div class="sht">Practice <small>Pick a hole · scores are not recorded</small></div><button class="pracPutt" id="pracPutt">Putting green<small>Chip and putt · four cups · nothing scored</small></button><button class="pracPutt" id="pracRange">Driving range<small>Any club · flags to aim at · nothing scored</small></button><label class="pracCourse" hidden><span>Holes</span><select class="courseSel" id="selCourseP" aria-label="Course to practise"></select></label><div class="pracGrid" id="pracGrid"></div></div>
 <div class="sheet" id="cardSheet"><div class="grab"></div><div id="cardBody"></div></div>
 <div class="sheet" id="boardSheet"><div class="grab"></div><div class="sht">Leaderboard <small id="boardName">Woodbine Bend Golf Course</small></div><div id="boardBody"></div></div>
 <div class="sheet" id="mapSheet"><div class="grab"></div><div class="sht"><span id="mapTitle">Hole map</span><small id="mapInfo"></small></div><div class="mapwrap"><canvas id="mapCv"></canvas></div><div class="maph"><span id="mapHint">Tap or drag to place your target</span><button class="mbtn dark" id="mapDone" style="height:44px;padding:0 22px">Done</button></div></div>
@@ -6682,11 +6685,11 @@ function syncMenu() {
   $('mQuit').style.display = G.state === 'title' ? 'none' : ''; // nothing to quit from the start screen
   $('mChange').style.display = G.practice && G.state !== 'title' ? '' : 'none';   // only while practising
 }
-// the Practice sheet (from the start screen): every hole with its par and length
+// the Practice sheet (from the start screen): every hole with its par and length, of the course picked on it (`pracKey`: the course in play
+// when the sheet opens; its dropdown lists another course's holes, and the switch to that course happens only when one of them is tapped)
+let pracKey = null;
 function openPractice() {
-  const g = $('pracGrid');
-  if (g.children.length !== HOLE_DEFS.length) { g.innerHTML = ''; HOLE_DEFS.forEach((d, i) => { const b = document.createElement('button'); b.innerHTML = `${i + 1}<small>Par ${d.par} · ${HOLE_LEN[i]} yd</small>`; b.onclick = () => startPractice(i); g.appendChild(b); }); }
-  [...g.children].forEach((b, i) => b.classList.toggle('cur', !G.pg && G.practice && G.state !== 'title' && G.hole === i)); $('pracPutt').classList.toggle('cur', !!G.pg && !G.pg.range); $('pracRange').classList.toggle('cur', !!G.pg && !!G.pg.range); $('pracRange').style.display = RANGE_DEF ? '' : 'none';
+  pracKey = COURSE.key; $('selCourseP').value = pracKey; pracFill(); $('pracPutt').classList.toggle('cur', !!G.pg && !G.pg.range); $('pracRange').classList.toggle('cur', !!G.pg && !!G.pg.range); $('pracRange').style.display = RANGE_DEF ? '' : 'none';
   openSheet('practiceSheet');
 }
 $('pracPutt').onclick = () => { SFX.blip(); startPuttingGreen(); };
@@ -6696,6 +6699,18 @@ $('pgRe').onclick = () => { const pg = G.pg; if (pg && pg.range) { if (G.state =
 // practice: one hole at a time, nothing scored. Picking a hole ends the round in progress.
 function leaveShot() {   // switching practice in the middle of play: whatever was happening stops
   G.rep = null; G.shot = null; SW.phase = 'idle'; $('done').classList.remove('on'); $('readout').classList.remove('on'); UI.readT = 0;
+}
+function pracFill() {
+  const g = $('pracGrid'), defs = COURSES[pracKey].defs; g.innerHTML = '';
+  defs.forEach((d, i) => { const b = document.createElement('button'); b.innerHTML = `${i + 1}<small>Par ${d.par} · ${holeYd(d)} yd</small>`; b.onclick = () => pracHole(i); g.appendChild(b); });
+  [...g.children].forEach((b, i) => b.classList.toggle('cur', pracKey === COURSE.key && !G.pg && G.practice && G.state !== 'title' && G.hole === i));
+}
+// a hole tapped on the Practice sheet: on another course, a round in progress here is kept for when you come back (as the menu's course picker does)
+function pracHole(i) {
+  if (pracKey === COURSE.key) { startPractice(i); return; }
+  const k = pracKey; leaveShot(); if (MP.spec) mpResume(true);
+  if (!G.practice && G.state !== 'title') saveRound();
+  setCourse(k); startPractice(i);
 }
 function startPractice(i) {
   leaveShot();
@@ -7689,6 +7704,8 @@ function initInput() {
     for (const c of Object.values(COURSES)) { const o = document.createElement('option'); o.value = c.key; o.textContent = c.short; el.appendChild(o); }
     if (COURSE) el.value = COURSE.key;
   }
+  { const el = $('selCourseP'); el.innerHTML = $('selCourse').innerHTML; el.parentElement.hidden = Object.keys(COURSES).length < 2; if (COURSE) el.value = COURSE.key;
+    el.onchange = () => { const k = el.value; SFX.blip(); el.blur(); withCourse(k, () => { pracKey = k; pracFill(); }); }; }   // only lists that course's holes: nothing changes until one is tapped
   $('selCourse').onchange = e => {
     const k = e.target.value; if (k === COURSE.key) return; SFX.blip(); e.target.blur(); withCourse(k, () => { setCourse(k); showTitleHole(); });
   };
