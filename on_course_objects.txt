@@ -180,7 +180,7 @@ Practice green and driving range: Woodbine Bend's, as for every course.
 EAGLE RIDGE NORTH (eagle_north)
 ===============================
 
-Beta (listed as "ER North (Beta)"; records count from 2026-11-30, so its first month sets none). Early build: the OSM and lidar data only, nothing painted yet (no fescue, painted boundary, cart paths, tee boxes or site props). Gold tees played (6,428 yd, par 72; Roger Packard, 1977).
+Listed as "ER North"; records count from 2026-10-30. Early build: the OSM and lidar data only, nothing painted yet (no fescue, painted boundary, cart paths, tee boxes or site props). Gold tees played (6,428 yd, par 72; Roger Packard, 1977).
 
 Deep rough: dark green long rough (engine `longRough`), as at Eagle Ridge South. It plays the same as any deep rough.
 

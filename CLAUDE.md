@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Galena!!! Golf**: a mobile, browser-based 3D golf game (installable PWA), forked from SweetSpot (https://github.com/nephlonor/SweetSpot). Its courses are **Woodbine Bend Golf Course** (Stockton IL), **Eagle Ridge South** and **Eagle Ridge North (beta)** (Eagle Ridge Resort, Galena IL), built from public geodata (see **Courses** below). Repo: https://github.com/galenadorf/Galena-Golf, branch `main`, live at https://galenadorf.github.io/Galena-Golf/.
+**Galena!!! Golf**: a mobile, browser-based 3D golf game (installable PWA), forked from SweetSpot (https://github.com/nephlonor/SweetSpot). Its courses are **Woodbine Bend Golf Course** (Stockton IL), **Eagle Ridge South** and **Eagle Ridge North** (Eagle Ridge Resort, Galena IL), built from public geodata (see **Courses** below). Repo: https://github.com/galenadorf/Galena-Golf, branch `main`, live at https://galenadorf.github.io/Galena-Golf/.
 
 **v1.0 (major milestone):** build `ce4c23d`, 2026-10-27 16:30 CDT (21:30 UTC), the commit that turned PALS Rules on by default. This is the first version of the game considered complete (also noted in `README.md`).
 

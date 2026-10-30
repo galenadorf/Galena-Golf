@@ -33,9 +33,9 @@
     {
       "key": "eagle_north",
       "name": "Eagle Ridge North Course",
-      "short": "ER North (Beta)",
+      "short": "ER North",
       "pars": [4, 5, 4, 3, 5, 4, 4, 3, 4, 4, 5, 4, 3, 4, 5, 3, 4, 4],
-      "recFrom": "2026-11-30",
+      "recFrom": "2026-10-30",
       "about": "The North Course at Eagle Ridge Resort & Spa (Galena, Illinois; Roger Packard, 1977) is played from the gold tees. Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
       "engine": { "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -1150, "n0": -850, "res": 2, "W": 1150, "H": 850 } },
       "scene": {
