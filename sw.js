@@ -29,6 +29,10 @@ self.addEventListener('fetch', e => {
     e.respondWith(Promise.race([net, new Promise((ok, no) => setTimeout(no, 4000))]).catch(cached));
     return;
   }
+  // A file the page asked for with another build's ?v= (a new page while the old worker still runs, right after a deploy):
+  // the network, so the page never gets the old build's courses.json or course data; the cached copy only when offline.
+  const v = url.searchParams.get('v');
+  if (v && v !== BUILD) { e.respondWith(fetch(req).catch(() => caches.match(req, { ignoreSearch: true }))); return; }
   // Everything else: cache first, filling the cache with anything not listed above.
   e.respondWith(caches.match(req, { ignoreSearch: true }).then(hit => hit || fetch(req).then(r => {
     if (r.ok) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); }
