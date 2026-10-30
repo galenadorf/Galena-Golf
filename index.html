@@ -6971,6 +6971,7 @@ const myRec = key => { const c = PID.stats && PID.stats.courses && PID.stats.cou
 // a finished round: cards for the marks that beat the world's or the player's own (the stats and records are fetched first; at most three cards, world first)
 async function recCheck(e) {
   if (!isReg() || !Array.isArray(e.hs)) return;
+  const rf = (COURSES[e.course] || {}).recFrom; if (rf && e.at < Date.parse(rf + 'T00:00:00Z')) return; // records start on the course's recFrom day (as in the workflow)
   try {
     await Promise.all([pidRounds(true), loadRecords(e.course, true)]);
     const cn = (COURSES[e.course] || COURSE).short, cand = roundMarks(e), mine = myRec(e.course), wr = Rec.gh[e.course] ? Rec.gh[e.course].rec : null, out = [];
