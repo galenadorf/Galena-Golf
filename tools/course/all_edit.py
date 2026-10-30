@@ -9,7 +9,11 @@ all_read.py reads it back into every layer file the separate readers write.
   out/all_key.png     the colour key
   out/all_edit.json   the map's frame (local metres)
 
-Paint with hard edges (GIMP: the Pencil tool, not the Paintbrush; no anti-aliasing, no feathered selections) and the exact colours of PALETTE.
+A course may paint only some layers: course.PAINT (in its course.py) names them, and the start map, the key and all_read.py then
+take only those colours (Eagle Ridge: fairways, greens, tee boxes, bunkers and played-tee dots; the rough, deep rough, trees, water,
+paths, boundary and props stay as the data makes them). Without PAINT, every layer in PALETTE.
+
+Paint with hard edges (GIMP: the Pencil tool, not the Paintbrush; no anti-aliasing, no feathered selections) and the exact colours of the key.
 Unpainted ground inside the boundary is rough (the game adds the first cut and the collar round each green). The order things
 are painted in does not matter: a line or dot painted over an area (a cart path across a fairway, the boundary line, a tree dot,
 a clearing) leaves the area whole underneath, filled in from the pixels beside it.
@@ -25,7 +29,7 @@ from shapely.geometry import Polygon, shape
 
 import build
 import osm
-from common import OUT
+from common import OUT, course
 from preview import E0, N1, load_rgb
 
 PAD = 60.0   # m of aerial round the course outline
@@ -54,6 +58,9 @@ PALETTE = {
     'sign':     ((0, 255, 128), 'signpost (its text: out/signs.txt, by the nearest hole)', 'dot ~2 m'),
 }
 SURFACES = ('fairway', 'green', 'tee', 'bunker', 'fescue', 'pond')   # areas the game's ground is made of (a line or dot over one leaves it whole)
+PAINT = tuple(getattr(course, 'PAINT', None) or PALETTE)
+assert all(k in PALETTE for k in PAINT), f'course.PAINT names a layer all_edit.PALETTE lacks: {PAINT}'
+LAYERS = {k: v for k, v in PALETTE.items() if k in PAINT}   # the colours this course's map takes
 
 
 def frame():
@@ -105,12 +112,13 @@ def main():
 
     start = base.copy()
     for k in ('fescue', 'fairway', 'pond', 'creek', 'green', 'tee', 'bunker', 'path', 'building'):   # later ones on top
-        ps = [p for p in L[k] if not p.is_empty]
+        ps = [p for p in L[k] if not p.is_empty] if k in LAYERS else []
         if ps:
             m = features.rasterize([(p, 1) for p in ps], out_shape=(fr['h'], fr['w']), transform=tr, dtype='uint8') > 0
             start[m] = PALETTE[k][0]
-    ring = L['boundary'].exterior.buffer(.9)   # a 1.8 m (3-4 px) line
-    start[features.rasterize([(ring, 1)], out_shape=(fr['h'], fr['w']), transform=tr, dtype='uint8') > 0] = PALETTE['boundary'][0]
+    if 'boundary' in LAYERS:
+        ring = L['boundary'].exterior.buffer(.9)   # a 1.8 m (3-4 px) line
+        start[features.rasterize([(ring, 1)], out_shape=(fr['h'], fr['w']), transform=tr, dtype='uint8') > 0] = PALETTE['boundary'][0]
     sp = os.path.join(OUT, 'all_start.png')
     Image.fromarray(start).save(sp)
 
@@ -146,10 +154,10 @@ def main():
 
     f1 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 22)
     f2 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 19)
-    k = Image.new('RGB', (1500, 70 + 52 * len(PALETTE)), (34, 34, 34))
+    k = Image.new('RGB', (1500, 70 + 52 * len(LAYERS)), (34, 34, 34))
     d = ImageDraw.Draw(k)
     d.text((20, 20), 'all_mask.png colours  (hard edges: Pencil tool; unpainted ground inside the boundary is rough)', fill=(255, 255, 255), font=f1)
-    for i, (name, (c, what, how)) in enumerate(PALETTE.items()):
+    for i, (name, (c, what, how)) in enumerate(LAYERS.items()):
         y = 66 + 52 * i
         d.rectangle([20, y, 90, y + 38], fill=c)
         d.text((105, y + 7), '#%02X%02X%02X' % c, fill=(255, 255, 255), font=f1)

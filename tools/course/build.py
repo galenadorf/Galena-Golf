@@ -122,14 +122,22 @@ def build_dem():
     return dem, demZ
 
 
-def build_relief(demZ, area, inside=None):
-    """What the 1 m terrain holds beyond the coarse grid, on 2 m cells: one signed byte per cell in 5 cm steps, zero runs as (0, count)."""
+def build_relief(demZ, area, inside=None, water=None):
+    """What the 1 m terrain holds beyond the coarse grid, on 2 m cells: one signed byte per cell in 5 cm steps, zero runs as (0, count).
+    water (course.RELIEF_OFF_WATER: Eagle Ridge North): the ponds and creek pieces, where the relief is left off (faded in from 3 to 6 m
+    out, the banks the game digs), so a nearly flat shore (a lake the DEM holds as one flat surface) is not edged in 2 m steps."""
     d1, tr1 = read(cache('dem1m.tif'))
     d1 = ndi.gaussian_filter(d1, .8)
     e0, n0, e1, n1 = [round(v / RELIEF_RES) * RELIEF_RES for v in area]
     w, h = int((e1 - e0) / RELIEF_RES), int((n1 - n0) / RELIEF_RES)
     E, N = np.meshgrid(e0 + (np.arange(w) + .5) * RELIEF_RES, n0 + (np.arange(h) + .5) * RELIEF_RES)
     r = sample(d1, tr1, E, N) - demZ(E, N)
+    if water is not None and not water.is_empty:
+        from rasterio import features as rfeat
+        from rasterio.transform import from_origin
+        wm = rfeat.rasterize([(water, 1)], out_shape=(h, w), transform=from_origin(e0, n1, RELIEF_RES, RELIEF_RES), dtype='uint8')[::-1]
+        t = np.clip((ndi.distance_transform_edt(wm == 0) * RELIEF_RES - 3) / 3, 0, 1)
+        r = r * t * t * (3 - 2 * t)
     q = np.clip(np.round(r * 20), -127, 127).astype(int).ravel()
     q[np.abs(q) <= 2] = 0  # within 10 cm of the coarse grid: nothing to add
     if inside is not None:  # only on and just around the course
@@ -474,7 +482,8 @@ def main():
     dem, demZ = build_dem()
     d1, tr1 = read(cache('dem1m.tif'))
     demZ1 = lambda e, n: float(sample(d1, tr1, [e], [n])[0])
-    relief = build_relief(demZ, course_poly.buffer(40).bounds, course_poly.buffer(30))
+    water = unary_union([w['poly'] for w in F['water']] + creek_pieces()) if getattr(course, 'RELIEF_OFF_WATER', False) else None
+    relief = build_relief(demZ, course_poly.buffer(40).bounds, course_poly.buffer(30), water)
     holes = build_holes(F, demZ1)
     alti = {i: green_alti(h.pop('_green_poly')) for i, h in enumerate(holes)}
     prac = None   # the practice green (practice_read.py): a scene of its own, not one of the 18 holes

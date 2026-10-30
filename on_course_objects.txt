@@ -185,7 +185,7 @@ No highway: US 20 is south of the resort, off the map, so there is no traffic.
 
 Side roads (out of bounds, for looks only): Eagle Ridge Drive (beside 1, 2, 9, 10 and 18), Walnut Hill Road (beside 1, 9, 10, 12, 14 and 15) and Thunder Bay Road (beside 2, 3, 6 and 7), the resort roads. No traffic.
 
-Water: the OSM ponds (golf=water_hazard and lateral_water_hazard; water right of 8, 11, 13 and 16) and the OSM streams through the course (about 2.9 km in 9 pieces, from `creek.py osm`), drawn as creek water.
+Water: the OSM ponds (golf=water_hazard and lateral_water_hazard; water right of 8, 11, 13 and 16) and the OSM streams through the course (about 2.7 km in 10 pieces, from `creek.py osm`, which leaves out the stretches inside a pond), drawn as creek water. Lake Galena (OSM) lies off the right of 8; pond and lake shores are smooth curves (no lidar relief on the water or its banks, `RELIEF_OFF_WATER`).
 
 Trees: about 11,600 from the lidar (6,900 broadleaf, 4,500 conifer, 150 shrubs).
 

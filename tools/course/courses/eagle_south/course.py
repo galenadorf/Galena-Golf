@@ -34,5 +34,9 @@ TEES = {  # name: (rating, slope, yards per hole)
     'jade': (73.1, 135, [321, 488, 105, 292, 356, 449, 131, 307, 341, 357, 426, 284, 143, 328, 370, 463, 107, 341]),
 }
 ALT = {}  # no alternate tee lengths
+# the layers painted on all_edit.py's map (all_read.py reads only these): fairways, greens, tee boxes, bunkers and played-tee dots.
+# The rough, deep rough (no fescue: the game makes it from the distance to play), trees, water, cart paths, boundary and props are
+# left as OSM and the lidar give them.
+PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 # the game's four tee-marker slots: w is the set played, y/b/r the others (tee set, marker colour)
 MARKERS = {'w': ('gold', 0xd9b23a), 'y': ('black', 0x26282b), 'b': ('white', 0xeeeeee), 'r': ('jade', 0x2f8f6f)}

@@ -15,6 +15,7 @@ import numpy as np
 import rasterio
 from scipy import ndimage as ndi
 from scipy.ndimage import gaussian_filter1d
+from shapely.ops import unary_union
 from shapely.geometry import LineString, mapping
 from skimage.measure import label
 from skimage.morphology import remove_small_objects, skeletonize
@@ -64,8 +65,11 @@ def from_osm():
     F = osm.load()
     near = F['course'][0]['poly'].buffer(KEEP_NEAR)
     parts = []
+    ponds = unary_union([w['poly'] for w in F['water']]).buffer(2) if F['water'] else None   # a stream through a pond is the pond's water there
     for s in F['stream']:
         seg = s['line'].intersection(near)
+        if ponds is not None:
+            seg = seg.difference(ponds)
         parts += [g for g in getattr(seg, 'geoms', [seg]) if g.geom_type == 'LineString' and g.length > 20]
     json.dump([mapping(g) for g in parts], open(os.path.join(OUT, 'creek.json'), 'w'))
     print('creek pieces (OSM)', len(parts), 'length', [round(g.length) for g in parts], 'm')
