@@ -164,7 +164,7 @@ No highway: US 20 runs about 2 km south of the course, off the map, so there is 
 
 Side road (out of bounds, for looks only): Eagle Ridge Drive, the resort road past the clubhouse. No traffic.
 
-Water: three ponds (OSM golf=water_hazard; the big one between holes 9 and 18) and the streams OSM maps through the valley (about 3.5 km in 10 pieces, from `creek.py osm`), drawn as creek water.
+Water: three ponds (OSM golf=water_hazard; the big one between holes 9 and 18) and the streams OSM maps through the valley (about 3.5 km in 10 pieces, from `creek.py osm`, which leaves out the stretches inside a pond), drawn as creek water. Pond shores are smooth curves (no lidar relief on the water or its banks, `RELIEF_OFF_WATER`).
 
 Trees: about 9,900 from the lidar (6,100 broadleaf, 3,750 conifer, a few shrubs), the wooded valley the holes run through.
 

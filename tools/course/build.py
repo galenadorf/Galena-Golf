@@ -124,7 +124,7 @@ def build_dem():
 
 def build_relief(demZ, area, inside=None, water=None):
     """What the 1 m terrain holds beyond the coarse grid, on 2 m cells: one signed byte per cell in 5 cm steps, zero runs as (0, count).
-    water (course.RELIEF_OFF_WATER: Eagle Ridge North): the ponds and creek pieces, where the relief is left off (faded in from 3 to 6 m
+    water (course.RELIEF_OFF_WATER: both Eagle Ridge courses): the ponds and creek pieces, where the relief is left off (faded in from 3 to 6 m
     out, the banks the game digs), so a nearly flat shore (a lake the DEM holds as one flat surface) is not edged in 2 m steps."""
     d1, tr1 = read(cache('dem1m.tif'))
     d1 = ndi.gaussian_filter(d1, .8)
