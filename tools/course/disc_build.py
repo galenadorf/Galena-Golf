@@ -5,7 +5,8 @@ A disc course has no greens, bunkers or painted layers: its holes are tee pads a
   [{"tee": [e, n], "short": [e, n] or null, "basket": [e, n]}, ...]   one row per hole (local metres), in playing order
 
 (disc_read.py writes it from the course's hole map). The game's 18 holes are the course's 9 played twice: holes 1-9 from the long tees,
-10-18 from the short ones (a short tee left out is put on the line at the short layout's share of the hole). Each tee is a rubber mat
+10-18 from the short ones (a short tee left out is put on the line at the short layout's share of the hole; a course with one tee per
+hole, Adler Park, sets FEET_SHORT = FEET_LONG and plays the same nine again). Each tee is a rubber mat
 (1.6 x 3.6 m, square to the basket); the 'fairway' is the open, mown ground along each hole (no canopy within 9 m of the line); the
 boundary is every hole's corridor, 70 m round its line; trees, water, buildings and roads come as for a golf course (lidar and OSM).
 
@@ -94,7 +95,7 @@ def main():
             yd = round(L / YD)
             holes.append(dict(par=3, hcp=i + 1, len=round(L, 1), yd=yd, lens=[round(L, 1)] * 4, tee=list(t), green=[round(b[0], 2), round(b[1], 2)],
                               line=[list(t), [round(b[0], 2), round(b[1], 2)]], mk={m: list(t) for m in 'wybr'}, mkh={m: .8 for m in 'wybr'},
-                              desc=describe(t, b, trees, demZ1) + (' · short tee' if lay == 'short' else '')))
+                              desc=describe(t, b, trees, demZ1) + (' · short tee' if lay == 'short' and abs(L - math.hypot(b[0] - r['tee'][0], b[1] - r['tee'][1])) > .5 else '')))
     fair = open_ground(lines)
     bound = round_osm(unary_union([L.buffer(BOUND) for L in lines]).buffer(10).buffer(-10).simplify(2), step=12)
     if bound.geom_type != 'Polygon':
@@ -108,8 +109,14 @@ def main():
     tq = []
     for t in trees:
         tq += [int(round(t['e'] * 10)), int(round(t['n'] * 10)), int(round(t['d'] * 10)), t['kind'] * 1000 + min(999, int(round(t['h'] * 10)))]
-    water = [w['poly'] for w in F['water'] if w['poly'].area < 50000]   # the ponds by the lodge (the river's backwaters on the map's edge stay off)
+    if getattr(course, 'WATER_CLIP', False):   # every water area, cut to the detail area (Adler Park: the Des Plaines River by holes 8 and 9)
+        water = [g for w in F['water'] for g in getattr(w['poly'].intersection(area), 'geoms', [w['poly'].intersection(area)]) if g.geom_type == 'Polygon' and g.area > 20]
+    else:
+        water = [w['poly'] for w in F['water'] if w['poly'].area < 50000]   # the ponds by the lodge (the river's backwaters on the map's edge stay off)
     roads = side_roads(F, None)
+    streams = [f['line'] for f in F['stream']]
+    if getattr(course, 'WATER_CLIP', False):   # and the river's centre line, which runs on for kilometres
+        streams = [g for L in streams for g in getattr(L.intersection(area), 'geoms', [L.intersection(area)]) if g.geom_type == 'LineString' and g.length > 5]
     rd = dict(
         name=NAME, origin=list(ORIGIN), dem=dem, holes=holes, disc=True,
         feat=dict(fair=enc_polys(fair), green=enc_polys([]), tee=enc_polys(tees), sand=enc_polys([]), water=enc_polys(water), path=enc_polys([]),
@@ -117,7 +124,7 @@ def main():
         trees=b64i16(tq) if tq else '', ntrees=len(trees),
         forest=enc_polys(clip([f['poly'] for f in F['wood']])) if F['wood'] else enc_polys([]), orchard=enc_polys([]),
         boundary=enc_polys([bound]), buildings=enc_polys(clip([f['poly'] for f in F['building']])),
-        cover=enc_polys([area] if trees else []), streams=enc_lines([f['line'] for f in F['stream']]),
+        cover=enc_polys([area] if trees else []), streams=enc_lines(streams),
         highway=enc_lines([]), hwSlow=None, relief=relief, prac=None, drv=None, roads=[enc_lines([r]) for r in roads], props=[],
         mkc={m: c for m, c in zip('wybr', (0x2b2b2b, 0x2b2b2b, 0x2b2b2b, 0x2b2b2b))},
     )

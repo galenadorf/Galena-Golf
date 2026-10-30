@@ -222,3 +222,24 @@ Trees: about 6,000 from the lidar (almost all broadleaf: oaks and hickories on t
 Buildings: the 6 OSM buildings (the lodge and the resort's buildings), drawn as plain buildings. No ski lifts, alpine slide or other resort props yet.
 
 Practice green and driving range: Woodbine Bend's, as for every course (with golf clubs).
+
+ADLER PARK DISC GOLF (adgc)
+===========================
+
+Listed as "ADGC (Alpha)": a disc golf course (engine `disc`), in alpha (`alpha` in courses.json: no round is posted to the world leaderboard and no record cards). The 9 holes in Adler Memorial Park, Libertyville, all par 3 (2,740 ft), with one tee per hole: holes 10-18 are holes 1-9 again from the same tees.
+
+The disc, baskets and tee pads: as at Chestnut Mountain (above).
+
+Fairways: the open, mown ground within 9 m of each hole's line (no canopy over 2 m in the lidar). Everything else is rough, and deep rough well away from play.
+
+Wild turkeys (a flock of four on about 4 holes in 10, `scene.turkeys` = .4): the same flock and behaviour as at Woodbine Bend.
+
+No highway. Side roads (out of bounds, for looks only): North Milwaukee Avenue (IL 21) past the arts centre on the west, drawn as its two carriageways north of the arts centre and one road south of it, and West Adler Drive by the school. No traffic.
+
+Water: the Des Plaines River past holes 8 and 9 (cut out of OSM's river area) and the OSM ponds nearby.
+
+Trees: about 2,800 from the 2007 Lake County lidar (almost all broadleaf; a few conifers and shrubs). The lidar is old, so trees planted or felled since are not shown.
+
+Buildings: the OSM buildings round the park (the rec centre, the pool house, the arts centre, the school and the houses beyond), drawn as plain buildings. No pool, playground or park props yet.
+
+Practice green and driving range: Woodbine Bend's, as for every course (with golf clubs).

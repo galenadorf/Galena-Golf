@@ -366,25 +366,33 @@ def highway(area=course.ROAD_AREA):
 def side_roads(F, hw, area=course.ROAD_AREA):
     """The public roads beside the course (course.SIDE_ROADS), drawn for looks only (the ball does not touch them). At Woodbine: East Center Road along the south
     side and South Brown Road (with Chicago Street, its stretch through Stockton) along the east side. Each runs out past the map and
-    stops at the middle of US 20, which both meet. Lines from OSM, ordered west to east / south to north."""
+    stops at the middle of US 20, which both meet. Lines from OSM, ordered west to east / south to north. A road that is two carriageways
+    for a stretch (Milwaukee Avenue at Adler Park) merges into several lines; each is drawn as its own road."""
     out = []
     for names in course.SIDE_ROADS or []:
-        line = linemerge([r['line'] for r in F['road'] if r['tags'].get('name') in names])
-        assert line.geom_type == 'LineString', names
-        x = line.intersection(hw)
-        if hw is not None and not x.is_empty:   # the road meets the highway: keep the long side of it, ending on the highway's centre line
-            p = x if x.geom_type == 'Point' else list(x.geoms)[0]
-            d = line.project(p)
-            a, b = substring(line, 0, d), substring(line, d, line.length)
-            line = a if a.length > b.length else b
-        c = line.intersection(box(*area))
-        if c.geom_type != 'LineString':
-            c = max(c.geoms, key=lambda g: g.length)
-        pts = list((LineString(round_line(c.coords)) if getattr(course, 'ROUND_ROADS', False) else c).simplify(.4).coords)   # Eagle Ridge: its winding resort road
-        if pts[0][0] + pts[0][1] > pts[-1][0] + pts[-1][1]:
-            pts = pts[::-1]
-        out.append(LineString(pts))
+        merged = linemerge([r['line'] for r in F['road'] if r['tags'].get('name') in names])
+        for line in getattr(merged, 'geoms', [merged]):
+            out += side_road(line, hw, area)
     return out
+
+
+def side_road(line, hw, area):
+    """One side road's line: cut where it meets the highway, clipped to the area, rounded; [] when it is outside the area."""
+    if not line.intersects(box(*area)):
+        return []
+    x = line.intersection(hw) if hw is not None else None
+    if x is not None and not x.is_empty:   # the road meets the highway: keep the long side of it, ending on the highway's centre line
+        p = x if x.geom_type == 'Point' else list(x.geoms)[0]
+        d = line.project(p)
+        a, b = substring(line, 0, d), substring(line, d, line.length)
+        line = a if a.length > b.length else b
+    c = line.intersection(box(*area))
+    if c.geom_type != 'LineString':
+        c = max(c.geoms, key=lambda g: g.length)
+    pts = list((LineString(round_line(c.coords)) if getattr(course, 'ROUND_ROADS', False) else c).simplify(.4).coords)   # Eagle Ridge: its winding resort road
+    if pts[0][0] + pts[0][1] > pts[-1][0] + pts[-1][1]:
+        pts = pts[::-1]
+    return [LineString(pts)]
 
 
 def round_green(p, iters=3):
