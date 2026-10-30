@@ -240,6 +240,10 @@ Water: the Des Plaines River past holes 8 and 9 (cut out of OSM's river area) an
 
 Trees: about 2,800 from the 2007 Lake County lidar (almost all broadleaf; a few conifers and shrubs). The lidar is old, so trees planted or felled since are not shown.
 
-Buildings: the OSM buildings round the park (the rec centre, the pool house, the arts centre, the school and the houses beyond), drawn as plain buildings. No pool, playground or park props yet.
+Buildings: the OSM buildings round the park (the rec centre, the pool house, the arts centre, the school and the houses beyond), drawn as plain buildings.
+
+Adler Park Pool (between holes 4 and 5, `POOL` in its course.py): a pale concrete deck with four pools on it in white coping (the leisure pool, the lap pool joined to it with 8 lane lines, a side pool and a kiddie pool), a blue water slide (a steel tower with stairs and a tube spiralling down to the kiddie pool), six teal shade canopies on posts, and a 1.8 m chain-link fence round the lot (OSM's pool outline). The slide tower is solid ("Off the water slide!"); the fence, canopies and the pool itself are not (the pool area plays as ground, in bounds). No long grass grows on the deck.
+
+Playground (by basket 3, `PLAYGROUND` in its course.py): a wood-chip mulch bed in a timber edging; a play structure of two decks on green posts with red and blue pyramid roofs, a railed bridge between them, a yellow slide and a red one, a ladder; a blue swing set with three swings out front. The two decks are solid ("Off the playground!").
 
 Practice green and driving range: Woodbine Bend's, as for every course (with golf clubs).

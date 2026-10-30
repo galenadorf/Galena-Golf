@@ -2482,7 +2482,7 @@ function buildRealDecor(C, grp) {
   const Mt = new THREE.Matrix4(), cc = new THREE.Color(), SV = new THREE.Vector3();
   for (let k = 0; k < 9000 && tufts.count < NT; k++) {
     const x = lerp(I.minX, I.maxX, r()), z = lerp(I.minZ, I.maxZ, r());
-    if (C.surf(x, z) !== S.DEEP || strawAt(C, x, z) > .3) continue;
+    if (C.surf(x, z) !== S.DEEP || strawAt(C, x, z) > .3 || onPad(C, x, z)) continue;
     const y = C.h(x, z), s2 = .8 + r() * .9; Mt.makeRotationY(r() * TAU); Mt.scale(SV.set(s2, s2 * 1.5, s2)); Mt.setPosition(x, y, z);
     tufts.setMatrixAt(tufts.count, Mt); if (RDC.fescue) cc.setHex((RDC.longRough ? LONG_COLS : FESCUE_COLS)[(r() * 9) | 0]); else cc.setHex(LEAF_COLS[(r() * LEAF_COLS.length) | 0]).offsetHSL(RDC.dry ? -.04 : 0, RDC.dry ? -.08 : -.05, RDC.dry ? .06 : -.01); tufts.setColorAt(tufts.count, cc); tufts.count++;
   }
@@ -2640,7 +2640,7 @@ function spotBeside(C, x, z, side, back) {
 // ---- site props painted on the aerial map (tools/course/site_paint.py): washrooms, porta-potties and signposts ----
 // GC.props rows: [kind, e, n, direction the front faces (degrees, east = 0, counter-clockwise), width m, depth m, text, extra]
 // (extra: for 'lot' {poly: outline [e, n]..., lines: stall edges [e1, n1, e2, n2]...}; for 'car' [model 'car' | 'suv', body colour])
-const SITE_NAMES = { wash: 'Off the washroom!', potty: 'Off the porta-potty!', shed: 'Off the pump house!', car: 'Off a parked car!', cart: 'Off a golf cart!' };
+const SITE_NAMES = { wash: 'Off the washroom!', potty: 'Off the porta-potty!', shed: 'Off the pump house!', car: 'Off a parked car!', cart: 'Off a golf cart!', pool: 'Off the water slide!', play: 'Off the playground!' };
 // two empty Club Car Precedents parked nose to tail on the cart path north-east of the practice green, facing up the path toward the first hole
 // (rows like GC.props: kind, e, n, front-facing degrees, width m, depth m, text, and 'riders' as the eighth field for a cart with two men in it)
 function realProps(C) {
@@ -2662,6 +2662,7 @@ function propGround(C, b, w, d) {
 }
 function realSiteColliders(C, colliders) {
   for (const b of realProps(C)) {
+    if (b.k === 'pool' || b.k === 'play') { parkColliders(C, b, colliders); continue; }
     if (b.k !== 'wash' && b.k !== 'potty' && b.k !== 'shed' && b.k !== 'car' && b.k !== 'cart') continue;
     const id = 200001 + b.i, gr = propGround(C, b, b.w, b.d), hgt = b.k === 'wash' ? 3.5 : b.k === 'shed' ? 3.2 : b.k === 'car' ? (b.a && b.a[0] === 'suv' ? 1.75 : 1.45) : b.k === 'cart' ? 1.9 : 2.4;
     colliders.push({ box: true, x: b.X, z: b.Z, r: Math.hypot(b.w, b.d) / 2, c: Math.cos(b.yaw), s: -Math.sin(b.yaw), hw: b.w / 2 + .1, hd: b.d / 2 + .1, y1: gr.hi + hgt, t: id });
@@ -2712,19 +2713,13 @@ function labelTexture(text, bg) {
 }
 // ---- the parking lot (tools/course/site_paint.py): asphalt with painted stalls draped on the ground, and the parked cars ----
 const LOT_LIFT = .1, CAR_GEOS = {};
-function realLotMesh(C, b) {
-  const A = b.a, P = A.poly.map(q => { const l = C.loc(q[0], q[1]); return [l[0], -l[1]]; });
+// a canvas draped on the ground over an outline P (scene [x, z]...): paint(g, tp, k, cv) draws on it (tp: scene x, z to canvas pixels; k pixels a metre)
+function drapeMesh(C, P, paint) {
   let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (const q of P) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); z0 = Math.min(z0, q[1]); z1 = Math.max(z1, q[1]); }
   x0 -= 1; z0 -= 1; x1 += 1; z1 += 1;
   const w = x1 - x0, d = z1 - z0, k = Math.min(10, 2048 / Math.max(w, d)), cv = document.createElement('canvas'); cv.width = Math.ceil(w * k); cv.height = Math.ceil(d * k);
   const g = cv.getContext('2d'), tp = (X, Z) => [(X - x0) * k, (Z - z0) * k];
-  g.beginPath(); P.forEach((q, i) => { const t = tp(q[0], q[1]); i ? g.lineTo(t[0], t[1]) : g.moveTo(t[0], t[1]); }); g.closePath();
-  g.fillStyle = '#4b4d51'; g.fill(); g.lineWidth = .25 * k; g.strokeStyle = '#a9a69c'; g.stroke();    // asphalt and a pale gravel edge
-  g.save(); g.clip();
-  for (let i = 0; i < 9000; i++) { const v = Math.random() < .5 ? 0 : 255; g.fillStyle = `rgba(${v},${v},${v},${.03 + Math.random() * .06})`; g.fillRect(Math.random() * cv.width, Math.random() * cv.height, 1 + Math.random() * 2, 1 + Math.random() * 2); }
-  g.strokeStyle = '#dcdcd5'; g.lineWidth = Math.max(1.2, .1 * k); g.lineCap = 'butt'; g.beginPath(); // the stall lines
-  for (const l of A.lines) { const a = C.loc(l[0], l[1]), c = C.loc(l[2], l[3]), t0 = tp(a[0], -a[1]), t1 = tp(c[0], -c[1]); g.moveTo(t0[0], t0[1]); g.lineTo(t1[0], t1[1]); }
-  g.stroke(); g.restore();
+  paint(g, tp, k, cv);
   const tex = new THREE.CanvasTexture(cv); tex.anisotropy = 4;
   const nx = Math.max(1, Math.ceil(w / 2)), nz = Math.max(1, Math.ceil(d / 2)), pos = new Float32Array((nx + 1) * (nz + 1) * 3), uv = new Float32Array((nx + 1) * (nz + 1) * 2), idx = [];
   for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) {
@@ -2734,6 +2729,20 @@ function realLotMesh(C, b) {
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
   const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
   m.receiveShadow = true; m.renderOrder = 1; return m;
+}
+const sceneRing = (C, R) => R.map(q => { const l = C.loc(q[0], q[1]); return [l[0], -l[1]]; });
+function ringPath(g, tp, P) { g.beginPath(); P.forEach((q, i) => { const t = tp(q[0], q[1]); i ? g.lineTo(t[0], t[1]) : g.moveTo(t[0], t[1]); }); g.closePath(); }
+function speckle(g, cv, n, a) { for (let i = 0; i < n; i++) { const v = Math.random() < .5 ? 0 : 255; g.fillStyle = `rgba(${v},${v},${v},${a + Math.random() * a * 2})`; g.fillRect(Math.random() * cv.width, Math.random() * cv.height, 1 + Math.random() * 2, 1 + Math.random() * 2); } }
+function realLotMesh(C, b) {
+  const A = b.a, P = sceneRing(C, A.poly);
+  return drapeMesh(C, P, (g, tp, k, cv) => {
+    ringPath(g, tp, P);
+    g.fillStyle = '#4b4d51'; g.fill(); g.lineWidth = .25 * k; g.strokeStyle = '#a9a69c'; g.stroke();    // asphalt and a pale gravel edge
+    g.save(); g.clip(); speckle(g, cv, 9000, .03);
+    g.strokeStyle = '#dcdcd5'; g.lineWidth = Math.max(1.2, .1 * k); g.lineCap = 'butt'; g.beginPath(); // the stall lines
+    for (const l of A.lines) { const a = C.loc(l[0], l[1]), c = C.loc(l[2], l[3]), t0 = tp(a[0], -a[1]), t1 = tp(c[0], -c[1]); g.moveTo(t0[0], t0[1]); g.lineTo(t1[0], t1[1]); }
+    g.stroke(); g.restore();
+  });
 }
 function realCarMesh(C, b, mat) {
   const key = b.a[0] + b.a[1]; if (!CAR_GEOS[key]) CAR_GEOS[key] = b.a[0] === 'suv' ? santaFeGeo(b.a[1]) : carGeo(b.a[1]);
@@ -2790,11 +2799,118 @@ function realCartMesh(C, b) {
   const g = makeGolfCart(b.a === 'riders', siteVMat()), gr = propGround(C, b, b.w, b.d);
   g.position.set(b.X, (gr.lo + gr.hi) / 2, b.Z); g.rotation.y = b.yaw; return g;
 }
+// ---- park props (tools/course/disc_build.py park_props; Adler Park): a fenced pool complex and a playground ----
+// 'pool' extra: fence, deck (rings, ENU), pools [{ring, lanes}], slide [[e, n, height]...] (the tower first), shades [[e, n]...];
+// 'play' extra: mulch (ring). The play structure is built in the prop's own frame (+z the front): two decks and a bridge, two slides, a
+// ladder, and a swing set out front.
+const PLAY = { H: 1.8, towers: [[-4.5, -2], [3.5, -2]] };
+function fenceTexture() { // chain link: grey diamonds on nothing
+  const cv = document.createElement('canvas'); cv.width = 64; cv.height = 96; const g = cv.getContext('2d');
+  g.strokeStyle = 'rgba(150,156,160,.95)'; g.lineWidth = 3; g.beginPath();
+  for (let i = -2; i <= 4; i++) { g.moveTo(i * 32, 0); g.lineTo(i * 32 + 96, 96); g.moveTo(i * 32 + 96, 0); g.lineTo(i * 32, 96); }
+  g.stroke(); const t = new THREE.CanvasTexture(cv); t.wrapS = THREE.RepeatWrapping; t.anisotropy = 4; return t;
+}
+function realPoolMesh(C, b, grp) {
+  const A = b.a, deck = sceneRing(C, A.deck), pools = A.pools.map(q => ({ P: sceneRing(C, q.ring), lanes: q.lanes }));
+  grp.add(drapeMesh(C, deck, (g, tp, k, cv) => {
+    ringPath(g, tp, deck); g.fillStyle = '#e4e3de'; g.fill(); g.save(); g.clip(); speckle(g, cv, 6000, .025); g.restore();   // the concrete deck
+    g.lineJoin = 'round'; g.strokeStyle = '#f3f0e8'; g.lineWidth = .9 * k; for (const q of pools) { ringPath(g, tp, q.P); g.stroke(); }   // white coping (all first, so pools that join show no seam)
+    for (const q of pools) {
+      const t = q.P.map(p => tp(p[0], p[1])), xs = t.map(p => p[0]), ys = t.map(p => p[1]);
+      const gr = g.createLinearGradient(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)); gr.addColorStop(0, '#7ad6f5'); gr.addColorStop(1, '#2b8fe0');
+      ringPath(g, tp, q.P); g.fillStyle = gr; g.fill();
+    }
+    g.strokeStyle = '#1f5f98'; g.lineWidth = .25 * k;   // the lap pool's lane lines, along its first edge, stopping short of the walls
+    for (const q of pools) if (q.lanes > 1) {
+      const [a, c, d, e] = q.P, L = (u, v, t) => [u[0] + (v[0] - u[0]) * t, u[1] + (v[1] - u[1]) * t];
+      for (let i = 1; i < q.lanes; i++) { const s0 = L(a, e, i / q.lanes), s1 = L(c, d, i / q.lanes), p0 = tp(...L(s0, s1, .08)), p1 = tp(...L(s0, s1, .92)); g.beginPath(); g.moveTo(...p0); g.lineTo(...p1); g.stroke(); }
+    }
+  }));
+  // the fence: chain link 1.8 m high on posts every 3 m or so
+  const F = sceneRing(C, A.fence), pos = [], uv = [], idx = [], parts = []; let run = 0;
+  for (let i = 0; i < F.length - 1; i++) {
+    const [ax, az] = F[i], [bx, bz] = F[i + 1], len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(len / 3));
+    for (let j = i ? 1 : 0; j <= n; j++) {
+      const x = ax + (bx - ax) * j / n, z = az + (bz - az) * j / n, y = C.h(x, z), o = pos.length / 3; run += j ? len / n : 0;
+      pos.push(x, y - .1, z, x, y + 1.8, z); uv.push(run / 1.2, 0, run / 1.2, 1);
+      if (o) idx.push(o - 2, o, o - 1, o - 1, o, o + 1);
+      parts.push(lbx(.07, 2.0, .07, x, y + .9, z, 0x8e9499));
+    }
+  }
+  const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); fg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); fg.setIndex(idx); fg.computeVertexNormals();
+  grp.add(new THREE.Mesh(fg, new THREE.MeshLambertMaterial({ map: fenceTexture(), alphaTest: .3, side: THREE.DoubleSide })));
+  for (const [e, n] of A.shades) {   // shade canopies: a steel post and a teal square pyramid
+    const l = C.loc(e, n), x = l[0], z = -l[1], y = C.h(x, z);
+    parts.push(lbx(.16, 3.1, .16, x, y + 1.5, z, 0x9aa0a6), { g: new THREE.ConeGeometry(3.3, .8, 4), c: 0x3fa7c4, m: new THREE.Matrix4().makeRotationY(Math.PI / 4).setPosition(x, y + 3.35, z) });
+  }
+  const S0 = A.slide[0], tl = C.loc(S0[0], S0[1]), tx = tl[0], tz = -tl[1], ty = C.h(tx, tz), top = ty + S0[2];   // the water slide: a steel tower, stairs, a blue tube spiralling down
+  for (const [sx, sz] of [[-1.2, -1.2], [1.2, -1.2], [-1.2, 1.2], [1.2, 1.2]]) parts.push(lbx(.18, top - ty + 1.1, .18, tx + sx, (top + ty + 1.1) / 2, tz + sz, 0xd9d6cf));
+  parts.push(lbx(2.8, .2, 2.8, tx, top - .1, tz, 0xd9d6cf), lbx(2.8, .9, .06, tx, top + .45, tz - 1.4, 0x2a5fc8), lbx(.06, .9, 2.8, tx + 1.4, top + .45, tz, 0x2a5fc8));
+  const st = Math.atan2(top - ty, 7);
+  parts.push(lbx(1.0, .12, Math.hypot(top - ty, 7), tx - 1.9, (top + ty) / 2, tz - 3.5, 0x9aa0a6, -st));   // the stairs, rising to the tower's west side
+  const curve = new THREE.CatmullRomCurve3(A.slide.map(q => { const l = C.loc(q[0], q[1]); return new THREE.Vector3(l[0], ty + q[2] + .45, -l[1]); }));
+  parts.push({ g: new THREE.TubeGeometry(curve, 90, .5, 8, false), c: 0x2a5fc8 });
+  const m = new THREE.Mesh(mergeParts(parts), siteVMat()); m.castShadow = true; m.receiveShadow = true; grp.add(m);
+  for (const p of parts) p.g.dispose();
+}
+function realPlayMesh(C, b, grp) {
+  const M = sceneRing(C, b.a.mulch);
+  grp.add(drapeMesh(C, M, (g, tp, k, cv) => {   // wood-chip mulch in a timber edging
+    ringPath(g, tp, M); g.fillStyle = '#8a6243'; g.fill(); g.save(); g.clip();
+    for (let i = 0; i < 7000; i++) { g.fillStyle = ['#a57a52', '#6e4b31', '#b8925f'][i % 3]; g.fillRect(Math.random() * cv.width, Math.random() * cv.height, 1 + Math.random() * 3, 1 + Math.random() * 1.5); }
+    g.restore(); g.lineJoin = 'round'; g.strokeStyle = '#5b3d26'; g.lineWidth = .3 * k; g.stroke();
+  }));
+  const H = PLAY.H, P = [], post = 0x2f7a46, deckC = 0x9c6b3e, yel = 0xf2c230, red = 0xd2452f, blue = 0x2f6fb5, gr = propGround(C, b, 12, 8), y0 = gr.lo;
+  for (const [i, [cx, cz]] of PLAY.towers.entries()) {   // a deck on four posts, a pyramid roof, a yellow panel at the back
+    for (const [sx, sz] of [[-1.1, -1.1], [1.1, -1.1], [-1.1, 1.1], [1.1, 1.1]]) P.push(lbx(.14, H + 2, .14, cx + sx, (H + 1.6 - .4) / 2, cz + sz, post));
+    P.push(lbx(2.4, .12, 2.4, cx, H, cz, deckC), lbx(2.4, .7, .06, cx, H + .45, cz - 1.2, yel));
+    P.push({ g: new THREE.ConeGeometry(1.9, 1.1, 4), c: i ? red : blue, m: new THREE.Matrix4().makeRotationY(Math.PI / 4).setPosition(cx, H + 1.6 + .55, cz) });
+  }
+  const [ax, az] = PLAY.towers[0], [bx, bz] = PLAY.towers[1], mx = (ax + bx) / 2, bl = bx - ax - 2.4;
+  P.push(lbx(bl, .1, 1.0, mx, H, az, 0x7d5a3a));   // the bridge, its rails and slats
+  for (const sz of [-.5, .5]) { P.push(lbx(bl, .06, .06, mx, H + .85, az + sz, post)); for (let x = -bl / 2 + .3; x < bl / 2; x += .45) P.push(lbx(.04, .85, .04, mx + x, H + .43, az + sz, yel)); }
+  const sl = Math.atan2(H, 3), L = Math.hypot(H, 3);
+  P.push(lbx(.7, .08, L, ax, H / 2 + .1, az + 1.2 + 1.5, yel, sl));   // a yellow slide off the front of the first deck
+  for (const sx of [-.38, .38]) P.push(lbx(.06, .3, L, ax + sx, H / 2 + .25, az + 1.2 + 1.5, yel, sl));
+  P.push(lbx(L, .08, .7, bx + 1.2 + 1.5, H / 2 + .1, bz, red, 0, 0, -sl));   // a red slide off the side of the second
+  for (const sz of [-.38, .38]) P.push(lbx(L, .3, .06, bx + 1.2 + 1.5, H / 2 + .25, bz + sz, red, 0, 0, -sl));
+  for (const sx of [-.45, .45]) P.push(lbx(.08, H + .9, .08, bx + sx, (H + .9) / 2, bz - 1.45, post));   // a ladder up the back of it
+  for (let y = .3; y < H; y += .38) P.push(lbx(.9, .06, .06, bx, y, bz - 1.45, yel));
+  const sw = [-11, -6.5], swz = 5, sh = 2.6;   // the swing set out front: blue A-frames, a beam, three swings
+  for (const x of sw) for (const sz of [-.85, .85]) P.push(lbx(.1, sh + .3, .1, x, sh / 2, swz + sz / 2, blue, sz > 0 ? -.33 : .33));
+  P.push(lbx(sw[1] - sw[0] + .3, .12, .12, (sw[0] + sw[1]) / 2, sh, swz, blue));
+  for (let x = sw[0] + 1.1; x < sw[1] - .5; x += 1.2) P.push(lbx(.03, 1.95, .03, x - .22, sh - .98, swz, 0x555a5e), lbx(.03, 1.95, .03, x + .22, sh - .98, swz, 0x555a5e), lbx(.5, .05, .22, x, .62, swz, 0x1c1c1e));
+  const m = new THREE.Mesh(mergeParts(P), siteVMat()); for (const p of P) p.g.dispose();
+  m.position.set(b.X, y0, b.Z); m.rotation.y = b.yaw; m.castShadow = true; m.receiveShadow = true; grp.add(m);
+}
+// the ground the park props cover (the pool deck, the playground mulch): no long grass grows through it
+function propPads(C) {
+  if (C._pads) return C._pads;
+  return (C._pads = realProps(C).filter(b => b.k === 'pool' || b.k === 'play').map(b => {
+    const R = sceneRing(C, b.k === 'pool' ? b.a.deck : b.a.mulch), xs = R.map(q => q[0]), zs = R.map(q => q[1]);
+    return { r: R.flat(), x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
+  }));
+}
+const onPad = (C, x, z) => propPads(C).some(p => x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1 && inRings([p.r], x, z));
+// the play decks and the slide tower are solid; the rest (fence, canopies, swings) lets a disc through
+function parkColliders(C, b, colliders) {
+  const id = 200001 + b.i, add = (x, z, yaw, w, d, y1) => colliders.push({ box: true, x, z, r: Math.hypot(w, d) / 2, c: Math.cos(yaw), s: -Math.sin(yaw), hw: w / 2 + .1, hd: d / 2 + .1, y1, t: id });
+  if (b.k === 'play') {
+    const gr = propGround(C, b, 12, 8), cs = Math.cos(b.yaw), sn = Math.sin(b.yaw);
+    for (const [lx, lz] of PLAY.towers) add(b.X + lx * cs + lz * sn, b.Z - lx * sn + lz * cs, b.yaw, 2.4, 2.4, gr.lo + PLAY.H + 2.7);
+  } else {
+    const S0 = b.a.slide[0], l = C.loc(S0[0], S0[1]), x = l[0], z = -l[1];
+    add(x, z, 0, 2.8, 2.8, C.h(x, z) + S0[2] + 1.1);
+  }
+  C.colNames[id] = SITE_NAMES[b.k];
+}
 function realSiteMeshes(C, grp) {
   const box = (g, w, h, d, x, y, z, mat) => { const m = new THREE.Mesh(unitBox, mat); m.scale.set(w, h, d); m.position.set(x, y, z); g.add(m); return m; };
   const carMat = LIFE_MAT();
   for (const b of realProps(C)) {
     if (b.k === 'lot') { grp.add(realLotMesh(C, b)); continue; }
+    if (b.k === 'pool') { realPoolMesh(C, b, grp); continue; }
+    if (b.k === 'play') { realPlayMesh(C, b, grp); continue; }
     if (b.k === 'car') { grp.add(realCarMesh(C, b, carMat)); continue; }
     if (b.k === 'cart') { grp.add(realCartMesh(C, b)); continue; }
     const g = new THREE.Group(), gr = propGround(C, b, b.w, b.d), base = gr.lo - .6;
@@ -3789,6 +3905,7 @@ function* groundJob(L, fx, fz) {
       if (d2 > R1 * R1 || d2 < ring.r0 * ring.r0) continue;
       const h1 = hash2(gi, gj, 47 + ring.tag); if (h1 > .93) continue;
       const sf = C.surf(x, z), deep = sf === S.DEEP; if (!deep && (sf !== S.ROUGH || RDC.fescue)) continue; // (fescue courses: tall grass only in the fescue)
+      if (onPad(C, x, z)) continue;
       if (!C.inBounds(x, z)) continue;
       const bd = Math.hypot(x - bx0, z - bz0); if (bd < .8 && !flying) continue; // keep the ball in the clear
       // low grass right at the ball and along the view from the camera to it, so the lie and the line stay readable

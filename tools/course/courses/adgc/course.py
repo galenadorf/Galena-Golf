@@ -32,3 +32,20 @@ FEET_LONG = [304, 366, 275, 270, 325, 300, 380, 240, 280]
 FEET_SHORT = FEET_LONG
 FIT_CARD = True   # disc_read.py: the sign draws its tees and baskets loosely; each hole is scaled about its middle to the card
 WATER_CLIP = True   # disc_build.py: OSM's Des Plaines River is one 16 km2 area (and a long centre line); the stretch past holes 8 and 9 is cut out
+
+# disc_build.py props (local metres, read off the NAIP 2023 aerial at 0.5 m; disc_build adds the OSM outlines named here)
+# Adler Park Pool: the fenced pool complex (OSM way 61511555, the fence), the leisure pool (OSM way 369025489) and, measured here, the lap pool
+# joined to it (lanes along its first edge), the side pool and the kiddie pool; the blue water slide (its tower, then the tube's path down:
+# east, north, height above the tower's foot); the shade canopies over the deck.
+POOL = dict(
+    fence_way=61511555, water_way=369025489,
+    pools=[dict(ring=[(-60.3, -236.7), (-37.5, -234.2), (-35.0, -257.5), (-58.0, -260.0)], lanes=8),
+           dict(ring=[(-100.3, -223.3), (-87.0, -227.5), (-90.3, -240.8), (-103.7, -236.7)]),
+           dict(ring=[(-84.2, -237.5), (-74.2, -240.0), (-76.3, -249.7), (-86.3, -247.0)])],
+    slide=[(-79.0, -254.0, 6.5), (-83.0, -252.0, 5.6), (-88.0, -253.5, 4.6), (-91.0, -250.5, 3.6), (-88.0, -247.5, 2.6), (-84.0, -249.5, 1.6),
+           (-82.0, -246.5, .9), (-81.0, -244.5, .4)],
+    shades=[(-95.8, -201.7), (-71.7, -196.7), (-54.2, -209.2), (-73.3, -220.0), (-53.3, -266.7), (-40.0, -264.2)],
+)
+# the park playground by basket 3 (OSM has only a point, node 762932305): its mulch bed, and the way the play structure faces (degrees, east = 0)
+PLAYGROUND = dict(mulch=[(-15.0, -141.7), (-4.2, -133.3), (10.0, -133.3), (15.0, -141.7), (11.7, -150.0), (5.0, -157.5), (-10.8, -155.0), (-17.5, -148.3)],
+                  face=-90)

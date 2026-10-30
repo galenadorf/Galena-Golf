@@ -11,6 +11,9 @@ hole, Adler Park, sets FEET_SHORT = FEET_LONG and plays the same nine again). Ea
 boundary is every hole's corridor, 70 m round its line; trees, water, buildings and roads come as for a golf course (lidar and OSM).
 
   out/rd_<key>.js   the same shape as build.py writes (install.py puts it into the game)
+
+A course.py may also list park props (Adler Park): POOL, a fenced pool complex, becomes a 'pool' row and PLAYGROUND a 'play' row in
+props (see park_props; the game draws them in realSiteMeshes).
 """
 import json
 import math
@@ -24,7 +27,7 @@ from shapely.ops import unary_union
 
 import osm
 from build import b64i16, build_dem, build_relief, enc_lines, enc_polys, read, round_osm, sample, side_roads
-from common import ALTI_VAR, DETAIL, NAME, ORIGIN, OUT, RD_JS, RD_VAR, YD, cache, course
+from common import ALTI_VAR, DETAIL, NAME, ORIGIN, OUT, RD_JS, RD_VAR, YD, cache, course, to_local
 
 FT = .3048
 MAT = (1.6, 3.6)        # a tee mat, across x along (m)
@@ -54,6 +57,42 @@ def open_ground(hw_lines):
     polys = [shape(g) for g, v in rfeat.shapes(m.astype('uint8'), mask=m, transform=tr) if v == 1]
     polys = [p.buffer(1.5).buffer(-1.5).simplify(.5) for p in polys if p.area > 60]
     return [g for p in polys for g in getattr(p, 'geoms', [p]) if g.geom_type == 'Polygon' and g.area > 60]
+
+
+def osm_way(wid):
+    """An OSM way's points in local metres, straight from the download."""
+    els = json.load(open(cache('osm.json')))['elements']
+    nodes = {e['id']: (e['lon'], e['lat']) for e in els if e['type'] == 'node' and 'lon' in e}
+    way = next(e for e in els if e['type'] == 'way' and e['id'] == wid)
+    return [to_local(*nodes[n]) for n in way['nodes']]
+
+
+def ring(pts):
+    return [[round(e, 2), round(n, 2)] for e, n in pts]
+
+
+def park_props():
+    """The props rows for course.POOL and course.PLAYGROUND: [kind, e, n, facing degrees, width, depth, '', extra].
+    pool extra: {fence: ring (OSM), deck: ring (the pools grown 4.5 m, inside the fence), pools: [{ring, lanes}] (the OSM leisure pool first),
+    slide: [[e, n, height]...] (the tower first), shades: [[e, n]...]}; play extra: {mulch: ring}."""
+    rows = []
+    P = getattr(course, 'POOL', None)
+    if P:
+        fence = Polygon(osm_way(P['fence_way']))
+        pools = [dict(ring=ring(osm_way(P['water_way'])[:-1]), lanes=0)] + [dict(ring=ring(q['ring']), lanes=q.get('lanes', 0)) for q in P['pools']]
+        deck = unary_union([Polygon(q['ring']).buffer(4.5, join_style=2) for q in pools]).buffer(2).buffer(-2).intersection(fence.buffer(-1))
+        if deck.geom_type != 'Polygon':
+            deck = max(deck.geoms, key=lambda g: g.area)
+        c, (x0, y0, x1, y1) = fence.centroid, fence.bounds
+        rows.append(['pool', round(c.x, 2), round(c.y, 2), 0, round(x1 - x0, 1), round(y1 - y0, 1), '',
+                     dict(fence=ring(fence.exterior.coords), deck=ring(deck.simplify(.2).exterior.coords), pools=pools,
+                          slide=[[round(v, 2) for v in q] for q in P['slide']], shades=[[round(v, 2) for v in q] for q in P['shades']])])
+    Q = getattr(course, 'PLAYGROUND', None)
+    if Q:
+        m = Polygon(Q['mulch'])
+        c, (x0, y0, x1, y1) = m.centroid, m.bounds
+        rows.append(['play', round(c.x, 2), round(c.y, 2), Q['face'], round(x1 - x0, 1), round(y1 - y0, 1), '', dict(mulch=ring(Q['mulch']))])
+    return rows
 
 
 def describe(tee, basket, trees, demZ1):
@@ -103,8 +142,11 @@ def main():
     relief = build_relief(demZ, bound.buffer(40).bounds, bound.buffer(30))
     area = box(*DETAIL)
     clip = lambda ps: [p.intersection(area) for p in ps if p.intersects(area)]
-    # trees standing on a tee mat or within 2 m of a basket are left out (the course keeps its tees and baskets clear)
-    keep = unary_union([t.buffer(1.5) for t in tees] + [Point(h['green']).buffer(2.5) for h in holes])
+    # trees standing on a tee mat or within 2 m of a basket are left out (the course keeps its tees and baskets clear), and those on a
+    # pool deck or playground mulch (the lidar is older than them)
+    props = park_props()
+    keep = unary_union([t.buffer(1.5) for t in tees] + [Point(h['green']).buffer(2.5) for h in holes]
+                       + [Polygon(p[7].get('deck') or p[7]['mulch']) for p in props])
     trees = [t for t in trees if not keep.intersects(Point(t['e'], t['n']).buffer(t['d'] / 2 * .5))]
     tq = []
     for t in trees:
@@ -125,7 +167,7 @@ def main():
         forest=enc_polys(clip([f['poly'] for f in F['wood']])) if F['wood'] else enc_polys([]), orchard=enc_polys([]),
         boundary=enc_polys([bound]), buildings=enc_polys(clip([f['poly'] for f in F['building']])),
         cover=enc_polys([area] if trees else []), streams=enc_lines(streams),
-        highway=enc_lines([]), hwSlow=None, relief=relief, prac=None, drv=None, roads=[enc_lines([r]) for r in roads], props=[],
+        highway=enc_lines([]), hwSlow=None, relief=relief, prac=None, drv=None, roads=[enc_lines([r]) for r in roads], props=props,
         mkc={m: c for m, c in zip('wybr', (0x2b2b2b, 0x2b2b2b, 0x2b2b2b, 0x2b2b2b))},
     )
     js = f'const {RD_VAR} = ' + json.dumps(rd, separators=(',', ':')) + ';\n' + f'const {ALTI_VAR} = {{}};\n'
