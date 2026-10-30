@@ -146,6 +146,11 @@ THE RAREST THING ON THE COURSE: a moving golf cart (`scene.cartRide`; same model
 
 Cart paths: about 7.4 km, found on the aerial and corrected by hand. They cross the course between the holes, past the clubhouse and to the tees.
 
+Trees: about 1,350 (800 broadleaf, 310 conifer, 240 shrubs) over the 1.4 km square round the course: the 2019 lidar trees, the ones painted by hand
+    (trees_mask.png, the practice green and the range), and a pass against the July 2023 aerial (`trees_aerial.py`): about 400 added where the aerial
+    shows canopy nobody had placed (40 of them inside the boundary; most along US 20, in the Stockton yards and along the creek), about 230 crowns
+    widened to what the aerial shows, and 27 lidar "trees" taken out: on roofs, grain bins and gravel, and seven standing in the range's metal shed.
+
 Fountain (hole 1 only, `scene.fountainHole`): a small spray in the middle of the pond right of the first tee, about 10 ft high, always running. The ball does not hit it.
 
 Practice putting green (southeast of the 1st tee, beside the parking lot): a green with four cups and flags (numbered 1-4), a collar, tall fescue joined to the course's own, and three large broadleaf trees round it. Visible from hole 1; played from Practice > Putting green.
@@ -175,7 +180,7 @@ Practice green and driving range: Woodbine Bend's, as for every course.
 EAGLE RIDGE NORTH (eagle_north)
 ===============================
 
-Beta (listed as "ER North (Beta)"; records count from 2027-10-30, so beta rounds set none). Early build: the OSM and lidar data only, nothing painted yet (no fescue, painted boundary, cart paths, tee boxes or site props). Gold tees played (6,428 yd, par 72; Roger Packard, 1977).
+Beta (listed as "ER North (Beta)"; records count from 2026-11-30, so its first month sets none). Early build: the OSM and lidar data only, nothing painted yet (no fescue, painted boundary, cart paths, tee boxes or site props). Gold tees played (6,428 yd, par 72; Roger Packard, 1977).
 
 Deep rough: dark green long rough (engine `longRough`), as at Eagle Ridge South. It plays the same as any deep rough.
 

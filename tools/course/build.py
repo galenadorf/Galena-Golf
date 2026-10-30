@@ -525,6 +525,15 @@ def main():
     tp = os.path.join(OUT, 'trees_painted.json')  # trees added by hand-painting (trees_paint.py) on top of the lidar ones
     if os.path.exists(tp):
         trees += json.load(open(tp))
+    tap = os.path.join(OUT, 'trees_aerial.json')  # crowns grown to the 2023 aerial and canopy nobody had placed (trees_aerial.py)
+    if os.path.exists(tap):
+        ta = json.load(open(tap))
+        dk = {(g['e'], g['n']) for g in ta.get('drop', [])}
+        trees = [t for t in trees if (t['e'], t['n']) not in dk]
+        gd = {(g['e'], g['n']): g for g in ta['grow']}
+        trees = [dict(t, d=gd[(t['e'], t['n'])]['d'], h=gd[(t['e'], t['n'])]['h']) if (t['e'], t['n']) in gd else t for t in trees]
+        trees += ta['add']
+        print(len(dk), 'lidar trees dropped,', sum((t['e'], t['n']) in gd for t in trees), 'crowns grown,', len(ta['add']), 'trees added by trees_aerial.json')
     if os.path.exists(ppn):   # the trees painted on the practice-green map stand in for any lidar tree under them
         trees = [t for t in trees if not any(math.hypot(t['e'] - q['e'], t['n'] - q['n']) < .5 * q['d'] for q in pr['trees'])] + pr['trees']
     if os.path.exists(rpn):   # the trees painted on the range map stand in for any lidar tree under them
