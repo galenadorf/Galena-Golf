@@ -461,6 +461,9 @@ def main():
         import disc_build
         return disc_build.main()
     F = osm.load()
+    det = box(*DETAIL)   # a water area that is not one simple polygon (Bear Slide: Morse Reservoir, kilometres wide) is cut to the detail area and split
+    F['water'] = [dict(w, poly=g) for w in F['water'] for q in [w['poly'] if w['poly'].geom_type == 'Polygon' else w['poly'].intersection(det)]
+                  for g in getattr(q, 'geoms', [q]) if g.geom_type == 'Polygon' and g.area > 20]
     for w in F['water']:
         a0 = w['poly'].area
         w['poly'] = round_pond(w['poly'])

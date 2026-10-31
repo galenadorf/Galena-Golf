@@ -72,6 +72,16 @@
       "scene": { "deer": 0.5, "squirrels": 3 }
     },
     {
+      "key": "bearslide",
+      "name": "Bear Slide Golf Club",
+      "short": "Bear Slide",
+      "pars": [4, 4, 5, 3, 4, 3, 4, 5, 4, 4, 4, 5, 4, 3, 4, 3, 4, 4],
+      "recFrom": "2026-10-31",
+      "about": "Bear Slide Golf Club (Cicero, Indiana; Hamilton County) is played from the white tees (par 71, 5,966 yd); black, blue and red are the markers. Hole lines, greens, tees, bunkers, ponds and the out-of-bounds line from © OpenStreetMap contributors (ODbL); fairways traced from the 2022 USDA NAIP aerial where OpenStreetMap has none; trees from the 2017 Hamilton County lidar (USGS), checked against the aerial; the ground from the USGS 3DEP 1 m elevation model.",
+      "engine": { "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -1250, "n0": -650, "res": 2, "W": 1250, "H": 650 } },
+      "scene": { "deer": 0.5, "squirrels": 3 }
+    },
+    {
       "key": "cmdg",
       "name": "Chestnut Mountain Disc Golf",
       "short": "CMDG (alpha)",

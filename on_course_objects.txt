@@ -77,7 +77,7 @@ NOT IN THE GAME
   - The hole-info tee signs (Nr., par, yards) are switched off (code kept; set TEE_SIGNS_ON = true in index.html). Only signs listed in signs.txt are shown.
   - The paraglider is switched off (code kept; set PARAGLIDER_ON = true in index.html to bring it back).
   - The six small birds (pigeons and crows on the ground and in treetops) and the four gulls circling over the hole are switched off (SMALL_BIRDS_ON and CIRCLING_GULLS_ON in index.html).
-  - No rabbits, butterflies or fish. Deer and squirrels only at Stonehenge and Thunderhawk; the gopher, the banner plane and wild turkeys only at Woodbine Bend and Eagle Ridge South and North. Nothing else drives, and there are no bridges (the creek has none). (The stats screen only jokes "fed the fish" for balls in the water.)
+  - No rabbits, butterflies or fish. Deer and squirrels only at Stonehenge, Thunderhawk and Bear Slide; the gopher, the banner plane and wild turkeys only at Woodbine Bend and Eagle Ridge South and North. Nothing else drives, and there are no bridges (the creek has none). (The stats screen only jokes "fed the fish" for balls in the water.)
   - Benches, huts and similar props exist in the engine from the removed courses but no course uses them.
 
 
@@ -256,6 +256,31 @@ No cart paths yet (OSM maps them, but the game takes cart paths only from `cartp
 Trees: about 7,700: the 2007 Lake County lidar's trees, checked against the July 2023 aerial (`trees_aerial.py`, `TREES_GONE` in its course.py): about 1,270 lidar trees with no canopy on the aerial were taken out as felled since, 140 more on roofs and gravel, about 610 crowns widened to what the aerial shows and about 1,190 trees added where the aerial shows canopy nobody had placed (many in the yards and woods round the course).
 
 Buildings: the OSM buildings on and beside the course (the clubhouse among them; the houses along 33rd Street and the north edge), drawn as plain buildings. No clubhouse model, parked carts, cart ride, hot dog, fountain, signs or songs.
+
+Practice green and driving range: Woodbine Bend's, as for every course (the course's own range is not built).
+
+BEAR SLIDE (bearslide)
+======================
+
+Listed as "Bear Slide"; records count from 2026-10-31. Early build: the OSM and lidar data only, nothing painted (no fescue, painted boundary, cart paths, tee boxes or site props). White tees played (5,966 yd, par 71); black, blue and red are markers (gold is on the card but not marked).
+
+Deep rough: dark green long rough (engine `longRough`), as at Thunderhawk.
+
+White-tailed deer (`scene.deer` = .5) and squirrels (`scene.squirrels` = 3), the same animals and behaviour as at Stonehenge (see there).
+
+No wild turkeys, gopher or banner plane.
+
+No highway with traffic. Side roads (out of bounds, for looks only, no traffic): 231st Street along the north side, East 226th Street along the south side, Tollgate Road on the east, East Millcreek Road on the west, and the streets of the housing beside it (Sonoma Lane, Morse Landing Drive).
+
+Water: the OSM ponds (four lateral water hazards, one lake) and the edge of Morse Reservoir where it reaches the detail area, plus OSM streams (about 1.8 km, from `creek.py osm`), drawn as creek water. Pond shores are smooth curves (`RELIEF_OFF_WATER`).
+
+Fairways: OSM maps nine; the holes it has none for (1, 3, 5, 8, 9, 13, 15 and others, `fairways_fill.py`) are traced from the aerial.
+
+No cart paths yet (OSM maps them, but the game takes cart paths only from `cartpaths_read.py`).
+
+Trees: about 6,900: the 2017 Hamilton County lidar's trees, checked against the June 2022 aerial (`trees_aerial.py`, `TREES_GONE`): about 320 lidar trees felled since taken out, 120 more on roofs and gravel, about 950 crowns widened and about 1,800 trees added.
+
+Buildings: the OSM buildings on and beside the course, drawn as plain buildings. No clubhouse model, parked carts, cart ride, hot dog, fountain, signs or songs.
 
 Practice green and driving range: Woodbine Bend's, as for every course (the course's own range is not built).
 
