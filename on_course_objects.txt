@@ -77,7 +77,7 @@ NOT IN THE GAME
   - The hole-info tee signs (Nr., par, yards) are switched off (code kept; set TEE_SIGNS_ON = true in index.html). Only signs listed in signs.txt are shown.
   - The paraglider is switched off (code kept; set PARAGLIDER_ON = true in index.html to bring it back).
   - The six small birds (pigeons and crows on the ground and in treetops) and the four gulls circling over the hole are switched off (SMALL_BIRDS_ON and CIRCLING_GULLS_ON in index.html).
-  - No rabbits, butterflies or fish. Deer and squirrels only at Stonehenge; the gopher, the banner plane and wild turkeys only at Woodbine Bend and Eagle Ridge South and North. Nothing else drives, and there are no bridges (the creek has none). (The stats screen only jokes "fed the fish" for balls in the water.)
+  - No rabbits, butterflies or fish. Deer and squirrels only at Stonehenge and Thunderhawk; the gopher, the banner plane and wild turkeys only at Woodbine Bend and Eagle Ridge South and North. Nothing else drives, and there are no bridges (the creek has none). (The stats screen only jokes "fed the fish" for balls in the water.)
   - Benches, huts and similar props exist in the engine from the removed courses but no course uses them.
 
 
@@ -233,6 +233,29 @@ No cart paths yet (OSM maps them, but the game takes cart paths only from `cartp
 Trees: about 4,400: the 2007 Lake County lidar's trees, checked against the August 2023 aerial (`trees_aerial.py`, `TREES_GONE` in its course.py): about 420 lidar trees with no canopy on the aerial were taken out as felled since, 65 more on roofs and gravel, about 550 crowns widened to what the aerial shows and about 1,260 trees added where the aerial shows canopy nobody had placed (about 280 inside the course; most in the yards and woods round it).
 
 Buildings: the OSM buildings on and beside the course (the clubhouse among them), drawn as plain buildings. No clubhouse model, parked carts, cart ride, hot dog, fountain, signs or songs.
+
+Practice green and driving range: Woodbine Bend's, as for every course (the course's own range is not built).
+
+THUNDERHAWK (thunderhawk)
+=========================
+
+Listed as "Thunderhawk"; records count from 2026-10-30. Early build: the OSM and lidar data only, nothing painted (no fescue, painted boundary, cart paths, tee boxes or site props). Bronze tees played (6,361 yd, par 72); black, silver and auburn are markers (brass is on the card but not marked).
+
+Deep rough: dark green long rough (engine `longRough`), as at Eagle Ridge and Stonehenge. It plays the same as any deep rough.
+
+White-tailed deer (`scene.deer` = .5) and squirrels (`scene.squirrels` = 3), the same animals and behaviour as at Stonehenge (see there).
+
+No wild turkeys, gopher or banner plane.
+
+No highway with traffic. Side roads (out of bounds, for looks only, no traffic): Green Bay Road along the west side, Lewis Avenue along the east side (the clubhouse drive comes off it) and 33rd Street along the south side.
+
+Water: the OSM ponds (15 water hazards; water beside most holes) and one short OSM stream (about 115 m, from `creek.py osm`), drawn as creek water. Pond shores are smooth curves (`RELIEF_OFF_WATER`).
+
+No cart paths yet (OSM maps them, but the game takes cart paths only from `cartpaths_read.py`).
+
+Trees: about 7,700: the 2007 Lake County lidar's trees, checked against the July 2023 aerial (`trees_aerial.py`, `TREES_GONE` in its course.py): about 1,270 lidar trees with no canopy on the aerial were taken out as felled since, 140 more on roofs and gravel, about 610 crowns widened to what the aerial shows and about 1,190 trees added where the aerial shows canopy nobody had placed (many in the yards and woods round the course).
+
+Buildings: the OSM buildings on and beside the course (the clubhouse among them; the houses along 33rd Street and the north edge), drawn as plain buildings. No clubhouse model, parked carts, cart ride, hot dog, fountain, signs or songs.
 
 Practice green and driving range: Woodbine Bend's, as for every course (the course's own range is not built).
 
