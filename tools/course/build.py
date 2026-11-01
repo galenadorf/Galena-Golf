@@ -464,6 +464,14 @@ def main():
     det = box(*DETAIL)   # a water area that is not one simple polygon (Bear Slide: Morse Reservoir, kilometres wide) is cut to the detail area and split
     F['water'] = [dict(w, poly=g) for w in F['water'] for q in [w['poly'] if w['poly'].geom_type == 'Polygon' else w['poly'].intersection(det)]
                   for g in getattr(q, 'geoms', [q]) if g.geom_type == 'Polygon' and g.area > 20]
+    for hh in F['hole']:   # a green OSM tags as a tee (Bear Slide 16): where a hole line ends on no green but on a large tee polygon, that polygon is the green
+        e = Point(hh['line'].coords[-1])
+        if min(g['poly'].distance(e) for g in F['green']) > 25:
+            t = [t for t in F['tee'] if t['poly'].distance(e) < 10 and t['poly'].area > 150]
+            if t:
+                t = max(t, key=lambda t: t['poly'].area)
+                F['tee'].remove(t); F['green'].append(t)
+                print(f'hole {hh["ref"]}: the line ends on a {t["poly"].area:.0f} m2 tee polygon and no green: taken as the green')
     for w in F['water']:
         a0 = w['poly'].area
         w['poly'] = round_pond(w['poly'])
