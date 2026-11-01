@@ -383,7 +383,7 @@ def osm_cartpaths(F, roads):
     path meets a road closed (the two path ends either side of a road, up to 30 m apart, are joined straight across, so the path is one piece through
     the crossing). Creek crossings are left open: their bridges (course.CART_BRIDGES) carry the path. Returns the path polygons, and the pieces of
     path that lie on a road (the game draws those over the road: `pathRoad`)."""
-    lines = [c['line'] for c in F['cartpath_line']]
+    lines = [c['line'] for c in F['cartpath_line'] if not c['tags'].get('bridge')]   # OSM's own bridge ways are left out: the game's bridge (course.CART_BRIDGES) carries the path
     road = unary_union(roads) if roads else None
     streams = unary_union([f['line'] for f in F['stream']]) if F['stream'] else None
     ends = [(i, Point(c.coords[k])) for i, c in enumerate(lines) for k in (0, -1)]
@@ -400,6 +400,11 @@ def osm_cartpaths(F, roads):
     join += [LineString(j) for j in getattr(course, 'PATH_JOINS', [])]   # gaps closed by hand (course.PATH_JOINS)
     parts = [LineString(round_line(g.coords)) if len(g.coords) > 2 else g for g in getattr(linemerge(lines + join), 'geoms', [linemerge(lines + join)])]
     polys = [g.buffer(1.2, cap_style=2, join_style=1) for g in parts]
+    decks = [LineString([(e - math.cos(math.radians(b)) * L / 2, n - math.sin(math.radians(b)) * L / 2), (e + math.cos(math.radians(b)) * L / 2, n + math.sin(math.radians(b)) * L / 2)]).buffer(1.5, cap_style=2)
+             for e, n, b, L, _ in getattr(course, 'CART_BRIDGES', [])]
+    if decks:   # no path polygon over a bridge's creek: the deck is the path there
+        cut = unary_union(decks)
+        polys = [q for g in polys for q in getattr(g.difference(cut), 'geoms', [g.difference(cut)]) if q.geom_type == 'Polygon' and not q.is_empty]
     on_road = []
     if road is not None:
         r = unary_union(parts).intersection(road.buffer(SIDE_ROAD_HW + .6))

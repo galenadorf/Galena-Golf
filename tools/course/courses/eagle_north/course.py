@@ -24,6 +24,7 @@ HIGHWAY = None
 SIDE_ROADS = [('Eagle Ridge Drive',), ('Walnut Hill Road',), ('Thunder Bay Road',)]
 ROUND_ROADS = True   # build.py rounds the side roads' corners
 ALL_ROADS = True      # build.py draws every OSM road near a hole, not just the SIDE_ROADS names (the game draws only what is in view)
+OSM_CARTPATHS = True  # no painted cart paths: build.py takes OSM's golf=cartpath lines, joined across the roads
 
 # the official scorecard (eagleridge.com, pdf/doc-2016-north-scorecard), yards. Men's stroke index. Roger B. Packard, opened 1977.
 # White is also rated for women (75.2/137), Jade 71.9/130 for women; Forward tees (64.8/116) not used.
@@ -43,4 +44,15 @@ RELIEF_OFF_WATER = True   # build.py leaves the lidar relief off the ponds, cree
 # left as OSM and the lidar give them.
 PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 # the game's four tee-marker slots: w is the set played, y/b/r the others (tee set, marker colour)
+# cart-path bridges over the creek, at OSM's bridge=yes cart-path ways (and one crossing OSM maps no bridge for): (east, north, deck bearing in degrees
+# counter-clockwise from east, length m, hole). build.py writes them as `cartBridges`; the game builds a 2.6 m wide deck with rails (buildCartBridges).
+CART_BRIDGES = [
+    (78.5, 667.3, 169.8, 10, 11),     # hole 11: the long path crosses a stream with no bridge mapped
+    (850.1, 210.4, 118.9, 10, 13),    # hole 13
+    (798.5, 144.8, 33.2, 11, 14),     # hole 14
+    (115.1, 0.9, 89.1, 10, 15),       # hole 15
+    (161.4, -92.5, 0.6, 10, 15),      # hole 15, the second
+    (253.6, -284.3, 49.1, 8, 16),     # hole 16
+]
+
 MARKERS = {'w': ('gold', 0xd9b23a), 'y': ('black', 0x26282b), 'b': ('white', 0xeeeeee), 'r': ('jade', 0x2f8f6f)}

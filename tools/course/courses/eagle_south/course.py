@@ -48,16 +48,16 @@ PATH_JOINS = [
 # cart-path bridges over the creek, where OSM's cart paths break at it (the gap between the two path ends): (east, north, deck bearing in degrees
 # counter-clockwise from east, length m, hole). build.py writes them as `cartBridges`; the game builds a 2.6 m wide deck with rails (buildCartBridges).
 CART_BRIDGES = [
-    (-685.8, 575.6, 53.5, 14, 3),     # hole 3, the creek on the way to the green
-    (-553.5, 512.1, 57.4, 14, 8),     # hole 8, from the tee box towards the fairway
-    (-231.8, 464.7, 82.8, 14, 8),     # hole 8, the creek again, by the green
-    (-122.4, 394.9, 43.7, 14, 9),     # hole 9, just after the tee box
-    (517.6, 267.5, 137.3, 10, 10),    # hole 10, the second path, three-quarters of the way down on the south side
-    (701.3, 174.0, 60.9, 8, 10),      # hole 10, the creek crossing by the green
-    (509.6, -171.4, 50.4, 14, 13),    # hole 13, towards the green
-    (630.2, -367.8, 1.0, 8, 14),      # hole 14, just after the tee box
-    (761.6, -676.6, 32.6, 13, 15),    # between the 14th green and the 15th tee boxes
-    (180.4, 251.9, 62.6, 10, 18),     # hole 18, where the fairway divides at the bottom of the hill
+    (-685.8, 575.6, 53.5, 21, 3),     # hole 3, the creek on the way to the green
+    (-553.5, 512.1, 57.4, 19, 8),     # hole 8, from the tee box towards the fairway
+    (-231.8, 464.7, 82.8, 16, 8),     # hole 8, the creek again, by the green
+    (-122.4, 394.9, 43.7, 16, 9),     # hole 9, just after the tee box
+    (517.6, 267.5, 137.3, 14, 10),    # hole 10, the second path, three-quarters of the way down on the south side
+    (701.3, 174.0, 60.9, 9, 10),      # hole 10, the creek crossing by the green
+    (509.6, -171.4, 50.4, 19, 13),    # hole 13, towards the green
+    (630.2, -367.8, 1.0, 9, 14),      # hole 14, just after the tee box
+    (761.6, -676.6, 32.6, 18, 15),    # between the 14th green and the 15th tee boxes
+    (180.4, 251.9, 62.6, 14, 18),     # hole 18, where the fairway divides at the bottom of the hill
 ]
 RELIEF_OFF_WATER = True   # build.py leaves the lidar relief off the ponds, creeks and their banks (shores drawn as curves, not 2 m steps)
 # the layers painted on all_edit.py's map (all_read.py reads only these): fairways, greens, tee boxes, bunkers and played-tee dots.

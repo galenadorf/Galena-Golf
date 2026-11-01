@@ -4715,7 +4715,7 @@ function makeVehicle(L, kind, geo, first, wait) {
     const R = pickRoad(L); if (!R) { e.tmr = 15; return; }
     const dir = Math.random() < .5 ? 1 : -1;
     for (const o of L.traffic) if (o !== e && o.st === 'drive' && o.R === R && o.dir === dir && o.u - o.rear < e.rear + e.front + 35) { e.tmr = 3; return; } // not on top of one that has just set off
-    e.honkAt = truck && Math.random() < .35 ? R.len * (.25 + Math.random() * .5) : -1; // semi-rare: about one trip in three has a honk, somewhere along the way
+    e.honkAt = truck && RDC.scene.truckHorn && Math.random() < .35 ? R.len * (.25 + Math.random() * .5) : -1; // semi-rare: about one trip in three has a honk, somewhere along the way
     e.R = R; e.dir = dir; e.u = e.rear; e.spd = truck ? .88 + Math.random() * .08 : .95 + Math.random() * .1; e.v = (R.fast || HW_FAST) * e.spd * .8; e.st = 'drive';
   };
   e.update = dt => {

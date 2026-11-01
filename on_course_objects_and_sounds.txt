@@ -1,0 +1,429 @@
+ON-COURSE OBJECTS AND SOUNDS: what a player sees and hears in Galena!!! Golf right now
+=====================================================================================
+Current state only. Keep this file in step with index.html and courses/courses.json (see CLAUDE.md): whenever an object or a sound is added,
+removed or retuned, or a condition or frequency changes, update it in the same change, and delete entries for things that are gone.
+Frequencies and conditions come from the code (buildLife / updateLife, the SFX table, songTick, birdTick, fartSwing in index.html), not from
+watching a full round.
+
+HOW THIS FILE IS ORGANISED
+  GLOBAL        what every course has (objects, then sounds), after a table of which course has what.
+  then one section per course, in the order of the course picker: Woodbine Bend, Eagle Ridge South, Eagle Ridge North, Stonehenge,
+  Thunderhawk, Bear Slide, Chestnut Mountain Disc Golf, Adler Park Disc Golf.
+  Each course section has OBJECTS (what only that course has, with how often and when) then SOUNDS (the same), then SCENERY AND DATA (trees,
+  water, buildings, roads, paths). A line "also everything in GLOBAL" is always true; "NOT here" lists what a reader might expect and will not find.
+  Wording used for frequency: "always" = every time; "per hole" = decided each time a hole loads; "per trip" = each time a vehicle sets off;
+  "per round" = once per round of 18; "rare/very rare" are said with the number.
+
+
+#####################################################################################################
+GLOBAL
+#####################################################################################################
+
+A. WHICH COURSE HAS WHAT
+------------------------
+  Y = yes, - = no. WB Woodbine Bend, ERS Eagle Ridge South, ERN Eagle Ridge North, SH Stonehenge, TH Thunderhawk, BS Bear Slide,
+  CM Chestnut Mountain (disc), AD Adler Park (disc). Details are in each course's section.
+
+  OBJECTS                                         WB   ERS  ERN  SH   TH   BS   CM   AD
+  Bird flocks, hot air balloon, weather, rainbow   Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL)
+  Wild turkeys                                     Y    Y    Y    -    -    -    -    -
+  Gopher (groundhog)                               Y    Y    Y    -    -    -    -    -
+  Banner plane                                     Y    Y    Y    -    -    -    -    -
+  White-tailed deer                                -    -    -    Y    Y    Y    -    -
+  Squirrels (3 on every hole)                      -    -    -    Y    Y    Y    -    -
+  Highway with an 18-wheeler and 4 cars            Y    -    -    Y    -    -    -    -
+  Cars (Subaru and Hyundai only) on side roads     -    Y    Y    -    -    -    -    -
+  Dancing hot dog (hole 10)                        Y    -    -    -    -    -    -    -
+  Fountain (hole 1)                                Y    -    -    -    -    -    -    -
+  Moving golf cart with two men (rare)             Y    -    -    -    -    -    -    -
+  Parked golf carts, clubhouse model, washroom,
+    porta-potties, parking lot, pump house,
+    entrance sign, hole 7 sign                     Y    -    -    -    -    -    -    -
+  Cart paths                                       Y    Y    Y    -    -    -    -    -
+  Cart-path bridges                                -    10   6    -    -    -    -    -
+  Roads drawn (out of bounds, for looks)           2    all* all* 1    3    5+   1    2         (* every OSM road near a hole)
+  Pool, water slide, playground                    -    -    -    -    -    -    -    Y
+  Disc, basket, tee pad (no ball, cup, tee peg)    -    -    -    -    -    -    Y    Y
+  Long rough (dark green) instead of fescue        -    Y    Y    Y    Y    Y    -    -     (Woodbine: golden fescue)
+
+  SOUNDS                                          WB   ERS  ERN  SH   TH   BS   CM   AD
+  Club strikes, landing, trees, water, cup,
+    chimes, interface blips, birdsong, rainbow
+    jingle, the rare unseen sound                  Y    Y    Y    Y    Y    Y    Y*   Y*    (GLOBAL; * disc: release whoosh and chains instead of strikes and cup)
+  Banner plane engine drone                        Y    Y    Y    -    -    -    -    -
+  Truck air horn / engine rumble (`scene.truckHorn`) Y   -    -    -    -    -    -    -
+  Hole 7 song                                      Y    -    -    -    -    -    -    -     (no birdsong on that hole)
+  Golf cart radio ("Around the World")             Y    -    -    -    -    -    -    -
+  Gobble / squeak / rustle / thunk when the
+    ball hits an animal, plane or cart             per animal on that course (see its section)
+
+B. OBJECTS ON EVERY COURSE
+--------------------------
+Bird flocks (2, high up, crossing the sky)
+  - 11 gulls: first pass about 6-20 s into a hole.
+  - 8 sparrows: first pass about 28-42 s into a hole.
+  - Each returns 25-75 s after it passes, from a new direction. Most holes show at least one if you wait.
+  - Can be hit in principle ("Birdie... literally!"), but they fly high. A hit bird plays the leaf-rustle sound (below).
+
+Hot air balloon (brown, red, orange and white stripes, wicker basket, burner flame; about 18 m across)
+  - Drifts slowly downwind across the sky at 38-60 m up, taking about 80-130 s to cross, bobbing and turning gently.
+  - Rare: per hole, a 60% chance one is scheduled 10-65 s after arriving, 40% none at first; after one leaves, the next is due 100-220 s later.
+  - Cannot be hit: the ball passes through it. Silent.
+
+Sky and weather
+  - Clouds drift across the sky and thicken as the weather changes.
+  - Weather spells last 6-9 holes: clear, damp, rain, damp, fine. Rain has falling drops and a darker sky. No rain sound (birdsong is only rarer in rain).
+  - Rainbow: a faint one in light rain when the sky is not too cloudy (as a spell builds or eases off); it sits low in the east and has its own jingle (see sounds).
+  - Wind: the flag flutters and a wind arrow shows on screen. Wind changes every hole.
+
+Ground-level scenery
+  - Grass blades and tufts around the camera; in the deep rough, tan and amber fescue (Woodbine only) or dark green long rough (every other golf course).
+  - Wildflowers: small daisies in drifts (white, yellow, pink, lilac, orange, pale blue).
+  - Tall reeds round ponds, creeks and ditches.
+  - Trees from the lidar data; they block the ball. Broadleaf: the bigger half oaks (broad, deep green), the smaller half maples (compact, livelier
+    green). Conifer: the bigger half northern pines (tall bare trunk, tufted crown), the smaller half blue Norwegian spruces (blue-green cones).
+    Shrubs under 4 m.
+
+Man-made objects
+  - Flagstick, flag and cup on every green (on a disc golf course a basket instead).
+  - Tee markers in four colours (white, yellow, blue, red), two per tee set, always standing inside the tee box. None on a disc golf course.
+  - White boundary stakes (out of bounds); red stakes round the ponds (penalty areas).
+  - Distance posts at 200, 150 and 100 m.
+  - Buildings from OpenStreetMap (houses, farm buildings, sheds) within about 240 m of each hole; the ball can hit them ("Off the clubhouse wall!" style note and the tree-hit crack).
+  - Cart paths, where the course's data has them (dark asphalt, 2.4 m wide). A hard surface: a ball bounces on it several times (restitution .8: a wedge shot
+    hops 2 m or more, a drive 1 m, 7-9 hops before it rolls) and rolls fast. See the table for which courses have them.
+  - Cart-path bridges (Eagle Ridge only): a ball that lands on a deck is on a cart path.
+  - Roads out of bounds, for looks only (the ball does not touch them).
+
+Practice areas
+  - The practice green (four cups and flags, a close map) and the driving range (four flags, six hitting spots) are Woodbine Bend's whichever course is picked.
+    They have all the GLOBAL sounds below and nothing course-specific; the practice green chimes on every holed putt.
+
+C. SOUNDS ON EVERY COURSE
+-------------------------
+All of them are silenced by the Sound switch (Settings). Hole songs and the golf cart radio are also scaled by Song volume (Off / Low .125 / Med .35 / High 1).
+Nothing plays on the title screen except the interface blip.
+
+Shot sounds (a golf course)
+  - Club strike, every full shot, at impact, with a short phone vibration. A recording per club type:
+      driver (club 1)  sounds/driver.mp3      woods (3 wood, 5 wood...)  sounds/wood.mp3      wedges  sounds/wedge.mp3
+      irons and hybrids  sounds/iron.mp3      (the putter: below)
+    A mishit (quality below 1) uses the same recording slightly lower and softer and duller. If a file failed to load a synthesised click stands in.
+  - Putt: a soft tap, sounds/putter.mp3, a little louder for a harder stroke (synthesised thud and click if the file is missing). Every putt.
+  - Ball landing or bouncing: a short soft thud (synthesised), louder the faster the ball arrives; every landing and every bounce of the flight (including the
+    hops on a cart path); not played when a shot is skipped.
+Shot sounds (a disc golf course: CMDG and ADGC)
+  - Release: a soft whoosh (synthesised) at every throw instead of a strike or tap.
+  - Catch in the chains: a bright shower of metallic ticks (synthesised) when a disc is caught, with a short phone vibration.
+  - Graze: a light version of the chain shower when a disc brushes the chains. Spit-out: a half chain shower and a clank, "Through the chains · spit out".
+  - Cage / tray / band / pole: a dull steel clank, "Off the cage!" or "Clanked the basket".
+Hitting things
+  - Tree branches the ball passes through: a leaf rustle, "Through the branches".
+  - A tree trunk: a dull thunk, "Off the trunk!".
+  - A tree crown or building wall: a short crack, "Timber! Clipped the trees" (or the building's own note).
+  - Water: a splash (noise burst), each time the ball enters water; with a random splash note ("Fed the fish!" etc.).
+  - Flagstick: a short metallic ping, "Off the flagstick!" / "...and in!". Cup rim: four quick ticks (also for a lip-out, "Lip out · too firm").
+  - Holed on a golf course: the recorded cup sound (sounds/cup.mp3) as the ball drops, then a four-note chime and the "In the hole!" card
+    ("In the chains!" on a disc course; no cup recording there, the chain shower is the sound). If the shot is skipped the cup sound still plays.
+  - Putting green practice: the chime on every holed putt.
+  - Record cards (New personal / world record, Record beaten): the same four-note chime with confetti.
+  - A ball that hits an animal, the plane or a cart: see each course (rustle for deer and birds, gobble for a turkey, squeak for a gopher, squirrel or the
+    hot dog, thunk for the plane, the paraglider and a golf cart).
+Interface
+  - A short 700 Hz blip on button presses: Play, Practice, Settings, opening a sheet, changing club or aim range, changing course, the Play Hole tap that ends
+    the fly-over, the mulligan ask and the mulligan, skipping a shot's replay, and the next-hole button.
+Ambient
+  - Birdsong (synthesised, no file): on every hole that has no song of its own (everywhere except Woodbine hole 7). The first call comes 1.5-4 s after the hole
+    loads, then one every 2.5-9 s (every 9-18 s while it rains). Each call is a short phrase of high sine notes (about 2.3-4.5 kHz: a whistle, a trill or a two-tone
+    call), very quiet, panned to its own spot; one call in three answers itself from another bird 0.9-1.7 s later (35%). Silent on the title screen, with the
+    Sound switch off or the page hidden.
+  - Rainbow jingle (synthesised): a rising run of bell tones ending in a held sparkle, about 2 s. Plays once each time a rainbow appears, only once it
+    is well faded in and only while the camera is facing it (it sits low in the east).
+  - Heard, not seen: one of 8 short recordings (sounds/fart1-8.mp3, picked at random). At least once per round: the round is dealt one of its 18 holes where it is
+    certain and every other hole has a 1 in 18 chance (practice: 1 in 18 per hole, no dealt hole). It plays only during a swing, the moment you start the backswing,
+    on the 1st, 2nd or 3rd swing of that hole (picked at random; putts count). A dealt hole that ends first is dealt again later in the round. Loudness is the same as
+    the hole-7 song at Med whatever the Song setting; only the Sound switch silences it. Much rarer than the balloon.
+  - The synthesised background music engine (guitar and piano) is switched off: no course uses it.
+
+D. NOT IN THE GAME (switched off or never built)
+------------------------------------------------
+  - The hole-info tee signs (Nr., par, yards): switched off (code kept; TEE_SIGNS_ON in index.html). Only signs listed in a course's signs.txt are shown.
+  - The paraglider (PARAGLIDER_ON), the six small ground birds (SMALL_BIRDS_ON) and the four circling gulls (CIRCLING_GULLS_ON) are switched off.
+  - No rabbits, butterflies or fish. Benches, huts and similar props exist in the engine from removed courses but no course uses them.
+  - No rain sound, wind sound, crowd, footsteps, flag rustle or clubhouse sounds.
+  - No horn or truck sound anywhere except Woodbine Bend (`scene.truckHorn`): the Eagle Ridge courses have no trucks, and Stonehenge's truck is silent.
+
+
+#####################################################################################################
+WOODBINE BEND (woodbine)
+#####################################################################################################
+Also everything in GLOBAL. Golden fescue deep rough. Par 72, gold tees 6,223 yd. Its practice green and range are the game's.
+
+OBJECTS
+-------
+Wild turkeys (`scene.turkeys` = .4: a flock of four, one tom with a fanned tail and three hens, on about 4 holes in 10, decided per hole; the other holes have none)
+  - First appear 4-24 s after arriving on a hole. Each walks across the line of play, stopping to peck, leaves the far side, and returns 14-54 s later.
+  - On a hole that has the flock expect one or two at a time.
+  - They bolt (run for 4-6 s) if the ball lands within about 16 m or flies within about 32 m.
+  - Can be hit: "Clipped a turkey!", the ball ricochets.
+
+Gopher, the groundhog (`scene.groundhog`; Caddyshack-style: brown, buck teeth, pops out of a dirt mound with a dark hole)
+  - Appears only while the golfer stands over a full (non-putt) shot: 20-35 yd down the aim line (within a 15-degree cone, 7.5 either side) on fairway or rough, and
+    pops up about 1 s after its mound fades in. If the spot is unsuitable it retries 2 s later.
+  - Stays up 9-14 s, turning its head and watching the golfer, then ducks back down.
+  - Rare: per hole, a 20% chance one is scheduled 10-65 s after arriving, 80% none at first; after one leaves, the next is due 100-220 s later.
+  - Ducks instantly if the ball lands close by (within about 12 m, or flies within about 26 m).
+  - Can be hit while up: "A menace to the golfing industry...".
+
+Banner plane (`scene.bannerPlane`; white and red prop plane, low flyby)
+  - Tows a rippling banner behind the tail reading "Hot tubbbbbb!!!" from both sides (text PLANE_BANNER in index.html). The ball passes through the banner and rope; only the plane can be hit.
+  - Only appears right after a tee shot; sometimes crosses straight through the ball's path.
+  - Each round is dealt 0, 1 or 2 planes (2/7 none, 3/7 one, 2/7 two; about 1.1 on average), spread over the holes left.
+  - Can be hit: "Hit the plane!"
+
+Dancing hot dog (`scene.hotdogHole` = 10; a giant, 10 ft: red sausage in a bun with a mustard zigzag, a smiling face, stick arms with white gloves, red sneakers)
+  - Always on hole 10 (HOTDOG_P = 1), never on other holes. From the moment the hole loads: about 100 yd down the line from the tee on the fairway (the nearest fairway spot if that one is rough or a bunker).
+  - Dances to a 100 bpm beat: bounces, sways, waves both arms, kicks alternate legs, sidesteps slowly across the fairway (never into the rough), always facing the golfer.
+  - Can be hit (it bounces the ball off and spins): "Revenge of The Choker!".
+
+Fountain (`scene.fountainHole` = 1): a small spray in the middle of the pond right of the first tee, about 10 ft high, always running. The ball does not hit it. Silent.
+
+Moving golf cart (`scene.cartRide`; THE RAREST THING ON THE COURSE; same model as the parked ones, with two men: dark hair, grey trousers, the driver in a light blue shirt and cap, the passenger in a salmon shirt and cap)
+  - Each par 4 or par 5 hole has a 2.84% chance (CARTRIDE_P), and only if the hole has a cart path on both sides of the line of play: holes 3, 5, 6, 8, 10, 12, 13, 14, 16, 17 and 18
+    (holes 1, 4 and 9 have no route). A bit over one round in four sees it (1 - (1 - .0284)^11 = 27%). Not on the putting green or the range. `?cart` on the page address forces it (testing).
+  - Sets off the moment the golfer presses Play Hole: appears on the cart path about 14 m behind the tee box (on holes 8 and 16 no path reaches the tee, so it starts 117 m and 197 m out),
+    drives down the path at 22.5 mph, crosses the rough and fairway about 262 yd (240 m) from the tee (shorter holes: 62% of the way; it shifts up to 36 m to find a clear crossing) and parks on the
+    path on the far side, where it stays. Wheels turn, it follows the ground, and a ball can hit it ("Off a golf cart!").
+
+Highway and traffic (US 20; the stretch drawn is about 2.6 km, past the north side of the course and then east along Stockton's edge)
+  - Two lanes, double yellow centre line, white edge lines, gravel shoulders; 9.7 m across; trees kept clear; out of bounds. Speed 55 mph, 35 mph on the town stretch (the east end).
+  - Traffic keeps right, in either direction chosen at random per trip, and drives the whole stretch end to end (about two minutes at 55 mph). A vehicle never drives through the one in front. The ball passes through traffic.
+  - 18-wheeler (red tractor with sleeper cab and roof deflector, 16 m white trailer with a red band; about 21 m): one truck. First sets off 8-33 s after arriving on a hole, then 20-60 s after each trip ends. 88-96% of the limit.
+  - Subaru Legacy (blue-grey sedan): two. First sets off 2-10 s after arriving, the second 10-26 s; each again 6-25 s after a trip ends. 95-105% of the limit.
+  - Hyundai Santa Fe (black SUV, 2002): two. First 4-14 s, second 12-28 s; same timing after a trip and same speed.
+
+Side roads (out of bounds, looks only; no traffic): East Center Road along the south and South Brown Road (then Chicago Street into Stockton) along the east: two-lane chip-sealed, gravel shoulders, no centre line. Both run out to the horizon and end on US 20. No trees stand on them.
+
+Buildings and props (all always there)
+  - The clubhouse (`scene.clubhouse`): the long building by the parking lot; rust-brown vertical-board walls, green-framed windows, grey-green shingle roof, a gabled entrance with two limestone columns, a brick-paver porch, a round "Woodbine Bend" sign in the gable, shrubs along the front. Solid.
+  - Double washroom near hole 18 (MEN and WOMEN doors). Two blue porta-potties. All solid.
+  - The clubhouse parking lot (between holes 10 and 13): painted stalls and 8 parked cars that are always the same ones (sedans and SUVs in assorted colours, the Subaru and the Hyundai among them). Seen on holes 1, 7-10, 12, 13 and 16-18. The cars are solid; the lot is only paint.
+  - Two empty golf carts (Club Car Precedent: black roof, off-white body, black bumpers and tyres, tan bench, two golf bags) parked nose to tail on the cart path north-east of the practice green, facing up the path toward the first hole (`scene.parkedCarts`). Solid ("Off a golf cart!").
+  - The big Woodbine Bend entrance sign (green board on posts, a golf ball on a red tee at each end, stone-edged flower bed) beside Route 20 on the west side, facing the course; only seen from the holes nearest it.
+  - The pump house: a small plain metal building by the 8th tee, no doors; solid.
+  - Hole 7 sign ("Andy Lewis / Hole in One / 9/10/2026", text from signs.txt), with its own fly-over intro.
+
+Practice green (southeast of the 1st tee, beside the parking lot): four cups and flags numbered 1-4, a collar, tall fescue, three large broadleaf trees round it; visible from hole 1.
+Driving range (the field south of the cart road, west of the clubhouse lot): mown striped grass, two sand bunkers, a small target green, tall fescue along the west edge and the creek, large broadleaf trees along the creek, a long grey metal shed beside the lot (solid), white boundary stakes, four red flags on tall poles (no cup) and six hitting spots (two in bunkers). After each shot the camera rests on where the ball stopped for about a second, then returns.
+
+SOUNDS
+------
+  - Hole 7 song (`scene.songs` 7: sounds/hole7-q.mp3, level 1): always on hole 7. Starts 3 s after you tap Play Hole (after the fly-over), fades in over 2.5 s, loops, fades out when you move to the next hole or leave. Scaled by Song volume (Off silent, Low .125, Med .35, High 1). No birdsong on hole 7 at all (the song replaces it).
+  - Truck horn or engine rumble (a recording, picked at random: sounds/truckhorn.mp3 air horn or sounds/truckrumble.mp3 engine): about one truck trip in three (35%) has one, at a random point 25-75% of the way along the road, and it plays only if the truck is within about 650 m of the camera (level up to .3, falling off with distance). Not on trips without one.
+  - Golf cart radio, "Around the World" (sounds/cartmusic.mp3), only when the moving cart appears (2.84% per par 4/5 hole with a path both sides, see Objects): starts when it sets off and plays from the cart until the next hole, looping. Loud within 20 m, fading with distance to nothing by 280 m, duller far away and panned to the side the cart is on. Scaled by Song volume; silent at Off.
+  - Banner plane drone: a low engine hum (synthesised, 5.5 s) once per flyby, when the plane starts its pass and the camera is within 260 m.
+  - Ball hits: gobble (a turkey: two phrases of warbling chirps, synthesised), squeak (gopher or hot dog), thunk (the plane, a golf cart).
+  - Plus all of GLOBAL: strikes, landings, trees, water, cup and chime, interface blips, birdsong (not on hole 7), rainbow jingle, the rare unseen sound.
+
+SCENERY AND DATA
+----------------
+  - Cart paths: about 7.4 km, found on the aerial and corrected by hand; they cross the course between holes, past the clubhouse and to the tees.
+  - Trees: about 1,350 (800 broadleaf, 310 conifer, 240 shrubs) over the 1.4 km square round the course: lidar, hand-painted ones, and a pass against the July 2023 aerial.
+  - Water: a creek, two ponds and 31 OSM bunkers on the course.
+  - Buildings: OSM houses and farm buildings round the course, plus the props above.
+
+
+#####################################################################################################
+EAGLE RIDGE SOUTH (eagle_south)
+#####################################################################################################
+Also everything in GLOBAL. Dark green long rough (engine `longRough`) instead of fescue. OSM and lidar data only; nothing painted. Gold tees 6,361 yd, par 72.
+
+OBJECTS
+-------
+Wild turkeys: the same flock and behaviour as Woodbine (`scene.turkeys` = .4: four birds on about 4 holes in 10, per hole).
+Gopher (`scene.groundhog`): as at Woodbine (20% per hole, up 9-14 s, only over a full shot).
+Banner plane (`scene.bannerPlane`): as at Woodbine ("Hot tubbbbbb!!!", right after a tee shot, 0-2 per round).
+
+Traffic on the roads (`scene.traffic`): occasional cars, ONLY the blue-grey Subaru Legacy and the black Hyundai Santa Fe: one of each. No truck, ever.
+  - The Subaru first sets off 25-65 s after arriving on a hole, the Hyundai 60-120 s; each again 45-135 s after a trip ends.
+  - 28 mph, right-hand lane, on one of the roads in view (the longer and nearer the tee, the likelier; roads under 80 m are not used), end to end of the piece in view. Per trip, not per hole. Cannot be hit.
+
+Roads (out of bounds, for looks only): every OSM road, drive and service road within 230 m of a hole (42 pieces: Eagle Ridge Drive and the housing streets beside the course), each drawn 7.2 m wide, chip-sealed with gravel shoulders, no centre line, on the hole and on the hole map. Only what could be seen is drawn: the parts within about 320 m of the line from the tee to the cup, inside the hole's terrain. No trees stand on them.
+
+Cart paths: OSM's cart-path lines (about 8.5 km, 2.4 m wide; nobody painted them). One continuous network: where a path meets a road the two ends are joined and the path is drawn over the road; five hand-closed gaps (by the 18th green and between holes 13 and 16); the creek crossings are carried by the bridges.
+
+Cart-path bridges (ten; `CART_BRIDGES`): holes 3, 8 (two: from the tee box towards the fairway, and by the green), 9, 10 (two: the second path three-quarters of the way down, and by the green), 13, 14, between the 14th green and the 15th tee, and 18. A grey concrete deck 2.6 m wide and 9-21 m long (as long as the gap OSM leaves in the path), level with the higher bank and clear of the water, girders under it, a sill at each end, timber rails and posts. A ball that lands on the deck is on a cart path (hard, bounces and rolls as on any cart path, flat, never water); the rails and girders are scenery the ball passes through. Silent.
+
+NOT here: highway, US 20 (about 2 km south, off the map), trucks, deer, squirrels, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+
+SOUNDS
+------
+  - Banner plane drone: as at Woodbine.
+  - Ball hits: gobble (turkey), squeak (gopher), thunk (plane).
+  - NO horn, truck rumble, cart radio or hole song. The cars make no sound.
+  - Plus all of GLOBAL, including birdsong on every hole.
+
+SCENERY AND DATA
+----------------
+  - Water: three ponds (the big one between holes 9 and 18) and the OSM streams through the valley (about 3.5 km in 10 pieces), drawn as creek water; pond shores are smooth curves.
+  - Trees: about 9,900 from the lidar (6,100 broadleaf, 3,750 conifer, a few shrubs), the wooded valley the holes run through.
+  - Buildings: the 10 OSM buildings on and beside the course, plain.
+
+
+#####################################################################################################
+EAGLE RIDGE NORTH (eagle_north)
+#####################################################################################################
+Also everything in GLOBAL. Dark green long rough. OSM and lidar data only. Gold tees 6,428 yd, par 72 (Roger Packard, 1977).
+
+OBJECTS
+-------
+Wild turkeys, gopher, banner plane: all as at Eagle Ridge South and Woodbine (turkeys .4 per hole; gopher 20% per hole; plane 0-2 per round).
+Traffic on the roads (`scene.traffic`): exactly as at Eagle Ridge South: occasional Subaru and Hyundai only, no truck, 28 mph, 25-65 s and 60-120 s to first set off, 45-135 s between trips.
+Roads: every OSM road, drive and service road within 230 m of a hole (Eagle Ridge Drive, Walnut Hill Road, Thunder Bay Road and the housing streets), drawn and culled as at Eagle Ridge South.
+Cart paths: OSM's cart-path lines (about 8.7 km, 2.4 m wide), one connected network, drawn over a road where they cross it.
+Cart-path bridges (six): holes 11 (the long path crosses a stream OSM maps no bridge for), 13, 14, 15 (two) and 16 (five are OSM's own bridge=yes ways). Same deck and behaviour as at Eagle Ridge South.
+NOT here: highway and trucks, deer, squirrels, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+
+SOUNDS
+------
+  - Banner plane drone as at Woodbine; gobble, squeak and thunk on hits. NO horn, truck rumble, cart radio or hole song. Plus all of GLOBAL.
+
+SCENERY AND DATA
+----------------
+  - Water: OSM ponds (right of 8, 11, 13 and 16) and OSM streams (about 2.7 km in 10 pieces); Lake Galena lies off the right of 8.
+  - Trees: about 11,600 from the lidar (6,900 broadleaf, 4,500 conifer, 150 shrubs).
+  - Buildings: the 7 OSM buildings on and beside the course, plain.
+
+
+#####################################################################################################
+STONEHENGE (stonehenge)
+#####################################################################################################
+Also everything in GLOBAL. Dark green long rough. OSM and lidar data only. Blue tees 6,350 yd, par 72.
+
+OBJECTS
+-------
+White-tailed deer (`scene.deer` = .5: about half the holes have them, per hole; the others none): a doe with a fawn (spotted, smaller) or a second doe, and on about a third of those holes a buck with antlers too.
+  - Each appears 6-36 s after arriving, walks across the line of play, stops to graze with its head down for 3-9 s at a time, looks round as it walks, leaves the far side, and is back 30-90 s later.
+  - They bound away (10 m/s, white tail up) if the ball lands within about 18 m or flies within about 45 m, and walk again once the ball is 70 m off.
+  - Can be hit (the body, not the legs): "Oh deer!", the ball ricochets.
+
+Squirrels (`scene.squirrels` = 3 on every hole; grey and fox squirrels, a few times real size so they show)
+  - Each appears 3-28 s after arriving, at a tree near the hole (within 30 m of the hole's play area), dashes in bursts to another tree 8-45 m away, sitting up and flicking its tail between dashes; at the tree it runs up the trunk and is gone, back 10-40 s later.
+  - Run for the nearest tree if the ball lands within about 9 m or flies within about 25 m. A hole with fewer than two trees near it has none.
+  - Can be hit: "Nailed a squirrel!".
+
+Highway and traffic (IL 22, past the south side by the clubhouse drive; the stretch inside the map, about 1.4 km): the same traffic as Woodbine's US 20 (one 18-wheeler, two Subarus, two Hyundais, same timings, per trip direction random, keep right), but the road has no slower stretch and the game drives at 55 mph all along. Out of bounds; trees kept clear.
+
+Side road (out of bounds, looks only, no traffic): Old Barrington Road past the northeast corner.
+
+NOT here: turkeys, gopher, banner plane, side-road cars, cart paths (OSM maps them, but the game takes cart paths only from a painted cart-path file), clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+
+SOUNDS
+------
+  - NO truck horn or engine rumble: the truck on IL 22 drives silently (`scene.truckHorn` is not set; only Woodbine has it).
+  - Ball hits: rustle (a deer: the leaf-rustle sound), squeak (a squirrel). The animals themselves are silent.
+  - NO banner plane drone (no plane), cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
+
+SCENERY AND DATA
+----------------
+  - Water: the OSM ponds (beside most holes, both sides of 18) and about 740 m of OSM streams in 3 pieces, drawn as creek water.
+  - Trees: about 4,400: the 2007 Lake County lidar's trees checked against the August 2023 aerial (felled ones taken out, crowns widened, missing trees added).
+  - Buildings: the OSM buildings on and beside the course (the clubhouse among them), plain.
+  - Practice: Woodbine's green and range (the course's own range is not built).
+
+
+#####################################################################################################
+THUNDERHAWK (thunderhawk)
+#####################################################################################################
+Also everything in GLOBAL. Dark green long rough. OSM and lidar data only. Bronze tees 6,361 yd, par 72.
+
+OBJECTS
+-------
+White-tailed deer (`scene.deer` = .5) and squirrels (`scene.squirrels` = 3): the same animals, frequencies and behaviour as at Stonehenge.
+Side roads (out of bounds, looks only, no traffic): Green Bay Road along the west, Lewis Avenue along the east (the clubhouse drive comes off it) and 33rd Street along the south.
+NOT here: any traffic at all (no highway, no side-road cars), turkeys, gopher, banner plane, cart paths, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+
+SOUNDS
+------
+  - Ball hits: rustle (deer), squeak (squirrel). NO truck sounds, plane drone, cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
+
+SCENERY AND DATA
+----------------
+  - Water: 15 OSM water hazards (beside most holes) and one short OSM stream (about 115 m).
+  - Trees: about 7,700 from the 2007 Lake County lidar, checked against the July 2023 aerial.
+  - Buildings: the OSM buildings on and beside the course (the clubhouse; the houses along 33rd Street and the north edge), plain.
+
+
+#####################################################################################################
+BEAR SLIDE (bearslide)
+#####################################################################################################
+Also everything in GLOBAL. Dark green long rough. OSM and lidar data only. White tees 5,966 yd, par 71.
+
+OBJECTS
+-------
+White-tailed deer (.5) and squirrels (3 per hole): as at Stonehenge.
+Side roads (out of bounds, looks only, no traffic): 231st Street along the north, East 226th Street along the south, Tollgate Road on the east, East Millcreek Road on the west, and the housing streets beside it (Sonoma Lane, Morse Landing Drive).
+NOT here: any traffic, turkeys, gopher, banner plane, cart paths, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+
+SOUNDS
+------
+  - Ball hits: rustle (deer), squeak (squirrel). NO truck sounds, plane drone, cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
+
+SCENERY AND DATA
+----------------
+  - Water: OSM ponds (four lateral water hazards, one lake), the edge of Morse Reservoir, OSM streams (about 1.8 km).
+  - Fairways: OSM maps nine; the holes it has none for (1, 3, 5, 8, 9, 13, 15 and others) are traced from the aerial.
+  - Trees: about 6,900 from the 2017 Hamilton County lidar, checked against the June 2022 aerial.
+  - Buildings: the OSM buildings on and beside the course, plain.
+
+
+#####################################################################################################
+CHESTNUT MOUNTAIN DISC GOLF (cmdg)  "CMDG (alpha)"
+#####################################################################################################
+Also everything in GLOBAL, but a disc golf course (engine `disc`) and in alpha: no round is posted to the world leaderboard and there are no record cards. 9 holes on the ski hill at Chestnut Mountain Resort, all par 3, played twice (1-9 long tees, 2,972 ft; 10-18 short).
+
+OBJECTS
+-------
+The disc: thrown instead of a ball, drawn flat in the colour of the disc in hand (distance driver orange, fairway driver blue, midrange yellow, putter pink), banked in flight and flat once down. No tee peg.
+Baskets (one per hole, in place of cup and flagstick; 1.3x real size): steel pole, yellow tray and top band, two rings of chains, a small red hole flag on a mast above.
+Tee pads: a 1.6 x 3.6 m mat at each tee, square to the basket. No tee markers.
+Fairways: the open mown ground within 9 m of each hole's line (no canopy over 2 m in the lidar); the rest is rough, and deep rough well away from play.
+Side road (out of bounds, looks only, no traffic): West Chestnut Mountain Road, the resort road up to the lodge.
+NOT here: any animal (turkeys, gopher, deer, squirrels), banner plane, traffic, cart paths, signs, clubhouse model, songs, ski lifts or alpine slide. Only the GLOBAL birds, balloon and weather.
+
+SOUNDS
+------
+  - The disc sounds in GLOBAL: release whoosh at every throw; chain shower on a catch; graze, spit-out and cage clanks. No club strikes, putter tap or cup recording.
+  - NO plane drone, truck sounds, cart radio or hole song. Plus the rest of GLOBAL: landings, trees, water, "In the chains!" chime, blips, birdsong, rainbow jingle, the rare unseen sound.
+
+SCENERY AND DATA
+----------------
+  - Water: the OSM ponds by the lodge (the Mississippi's backwaters at the map's west edge are left off).
+  - Trees: about 6,000 from the lidar (almost all broadleaf: oaks and hickories on the bluff).
+  - Buildings: the 6 OSM buildings (the lodge and the resort's buildings), plain.
+  - Practice: Woodbine's green and range, played with golf clubs.
+
+
+#####################################################################################################
+ADLER PARK DISC GOLF (adgc)  "ADGC (Alpha)"
+#####################################################################################################
+Also everything in GLOBAL, but a disc golf course and in alpha (as CMDG). 9 holes in Adler Memorial Park, Libertyville, all par 3 (2,740 ft), one tee per hole: holes 10-18 are holes 1-9 again from the same tees.
+
+OBJECTS
+-------
+The disc, baskets, tee pads and fairways: as at Chestnut Mountain.
+Adler Park Pool (between holes 4 and 5): a pale concrete deck with four pools in white coping (the leisure pool, the lap pool joined to it with 8 lane lines, a side pool, a kiddie pool), a blue water slide (a steel tower with stairs and a tube spiralling to the kiddie pool), six teal shade canopies on posts, and a 1.8 m chain-link fence round the lot. The fenced lot is out of bounds (a hole in the course boundary; no stakes). The slide tower is solid ("Off the water slide!"); the fence and canopies are not. No long grass on the deck.
+Playground (by basket 3): a wood-chip mulch bed in timber edging; a play structure of two decks on green posts with red and blue pyramid roofs, a railed bridge between them, a yellow slide and a red one, a ladder; a blue swing set with three swings. The two decks are solid ("Off the playground!").
+Side roads (out of bounds, looks only, no traffic): North Milwaukee Avenue (IL 21) past the arts centre on the west (two carriageways north of the arts centre, one road south of it) and West Adler Drive by the school.
+NOT here: any animal, banner plane, traffic, cart paths, signs, clubhouse model, songs.
+
+SOUNDS
+------
+  - As Chestnut Mountain: disc release, chains, graze, spit-out, cage clanks; no club sounds; NO plane drone, truck sounds, cart radio or hole song. The pool, slide and playground make no sound (hitting them plays the tree-hit crack). Plus the rest of GLOBAL.
+
+SCENERY AND DATA
+----------------
+  - Water: the Des Plaines River past holes 8 and 9 (cut out of OSM's river area) and the OSM ponds nearby.
+  - Trees: about 2,800 from the 2007 Lake County lidar (almost all broadleaf; the lidar is old, so trees planted or felled since are not shown).
+  - Buildings: the OSM buildings round the park (the rec centre, the pool house, the arts centre, the school, the houses beyond), plain.
+  - Practice: Woodbine's green and range, played with golf clubs.
