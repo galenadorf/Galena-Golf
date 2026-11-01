@@ -440,6 +440,8 @@ def round_osm(p, iters=3, step=None):
 def round_pond(p, iters=3):
     """A pond's OSM outline has corners every 8-22 m; the same corner cutting as round_green, then scaled about its centre back to the original
     area (cutting corners alone shrinks a pond by a few percent, which would pull the shore in from the real one)."""
+    if p.geom_type == 'MultiPolygon':   # Bear Slide: an OSM water body in several parts
+        return unary_union([round_pond(g, iters) for g in p.geoms])
     q = round_green(p, iters)
     c = p.centroid
     return affinity.scale(q, math.sqrt(p.area / q.area), math.sqrt(p.area / q.area), origin=c)
