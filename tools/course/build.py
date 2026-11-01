@@ -278,6 +278,10 @@ def build_holes(F, demZ1):
             if p.distance(raw) > 8:
                 print(f'  hole {hh["ref"]} {k}: {yd} yd is {p.distance(raw):.0f} m from the nearest tee box; placed in the box')
             pos[k] = (round(p.x, 2), round(p.y, 2))
+        for k, xy in getattr(course, 'TEE_BOXES', {}).get(hh['ref'], {}).items():   # a tee set put in the box named by its centre (course.TEE_BOXES), where the nearest-box rule picks the wrong one
+            raw = Point(xy)
+            q, gap[k] = snap_to_tee(raw, [min(tees, key=lambda t: t.distance(raw))], L)
+            pos[k] = (round(q.x, 2), round(q.y, 2))
         if i in starts:
             pos[play] = starts[i]
             q, gap[play] = snap_to_tee(Point(starts[i]), tees, L, marks[str(hh['ref'])]['half'] if str(hh['ref']) in marks else 2.6)
@@ -625,6 +629,19 @@ def main():
         trees = [t for t in trees if not any(math.hypot(t['e'] - q['e'], t['n'] - q['n']) < .5 * q['d'] for q in pr['trees'])] + pr['trees']
     if os.path.exists(rpn):   # the trees painted on the range map stand in for any lidar tree under them
         trees = [t for t in trees if not any(math.hypot(t['e'] - q['e'], t['n'] - q['n']) < .5 * q['d'] for q in rr['trees'])] + rr['trees']
+    if getattr(course, 'TREES_OFF_TEES_GREENS', False):   # no tree stands in a tee box or on a green (the lidar sees a crown hanging over one, or a shadow, as a tree)
+        keep = unary_union([f['poly'].buffer(.5) for f in F['tee'] + F['green']])
+        n0 = len(trees)
+        trees = [t for t in trees if not keep.contains(Point(t['e'], t['n']))]
+        print(n0 - len(trees), 'trees taken out of tee boxes and greens (course.TREES_OFF_TEES_GREENS)')
+    json.dump(trees, open(os.path.join(OUT, 'trees_all.json'), 'w'))   # every tree before the hand-marked ones are taken out (trees_x.py works on this list)
+    xp = os.path.join(OUT, 'trees_x_removed.json')   # trees marked with an X on the tree guide (trees_x.py read)
+    if os.path.exists(xp):
+        gone = {(round(g['e'], 2), round(g['n'], 2)) for g in json.load(open(xp))}
+        n0 = len(trees)
+        trees = [t for t in trees if (round(t['e'], 2), round(t['n'], 2)) not in gone]
+        print(n0 - len(trees), 'trees removed by trees_x_removed.json')
+    json.dump(trees, open(os.path.join(OUT, 'trees_final.json'), 'w'))   # every tree the game gets (to look one up by position)
     tq = []
     for t in trees:  # e, n, crown diameter (dm), kind * 1000 + height (dm)
         tq += [int(round(t['e'] * 10)), int(round(t['n'] * 10)), int(round(t['d'] * 10)), t['kind'] * 1000 + min(999, int(round(t['h'] * 10)))]

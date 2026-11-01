@@ -291,7 +291,8 @@ SOUNDS
 SCENERY AND DATA
 ----------------
   - Water: OSM ponds (right of 8, 11, 13 and 16) and OSM streams (about 2.7 km in 10 pieces); Lake Galena lies off the right of 8.
-  - Trees: about 11,600 from the lidar (6,900 broadleaf, 4,500 conifer, 150 shrubs).
+  - Trees: about 11,570 from the lidar (6,900 broadleaf, 4,500 conifer, 150 shrubs), none in a tee box or on a green (4 taken out: hole 17's green, hole 18's two tee boxes, hole 11's white tee) and 13 more taken out by hand with X marks (`trees_x.py`: holes 2, 3, 7, 8 (two), 10 (two), 11, 12, 13 (two), 16 and 17).
+  - Tee boxes: hole 11's four tee sets sit in the boxes the card yardages point to (black, gold, white, jade from the back).
   - Buildings: the 7 OSM buildings on and beside the course, plain.
 
 

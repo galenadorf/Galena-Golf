@@ -44,6 +44,12 @@ RELIEF_OFF_WATER = True   # build.py leaves the lidar relief off the ponds, cree
 # left as OSM and the lidar give them.
 PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 # the game's four tee-marker slots: w is the set played, y/b/r the others (tee set, marker colour)
+TREES_OFF_TEES_GREENS = True   # build.py takes any tree out of a tee box or off a green (17th green, 18th tees, 11th white tee)
+
+# tee sets put in the tee box the card yardage points to, where the nearest-box rule picked the wrong one: hole -> {tee set: centre of its box}
+# (hole 11: black (533 yd), gold (527), white (515) and jade (418) are the four boxes 536, 526, 513 and 414 yd from the green along the line)
+TEE_BOXES = {11: {'black': (-20.2, 662.5), 'gold': (-7.9, 670.8), 'white': (5.6, 675.5), 'jade': (92.6, 648.3)}}
+
 # cart-path bridges over the creek, at OSM's bridge=yes cart-path ways (and one crossing OSM maps no bridge for): (east, north, deck bearing in degrees
 # counter-clockwise from east, length m, hole). build.py writes them as `cartBridges`; the game builds a 2.6 m wide deck with rails (buildCartBridges).
 CART_BRIDGES = [
