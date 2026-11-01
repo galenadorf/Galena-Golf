@@ -374,12 +374,56 @@ def highway(area=course.ROAD_AREA):
     return clipped.simplify(.4), None if slow is None else round(slow - cut)
 
 
+ROADS_NEAR = 230.0   # m: ALL_ROADS keeps the road pieces within this of a hole's line
+SIDE_ROAD_HW = 3.6   # half width of a side road in the game (index.html SIDE_HW)
+
+
+def osm_cartpaths(F, roads):
+    """The cart paths of a course whose paths nobody painted (course.OSM_CARTPATHS): OSM's golf=cartpath lines, each 2.4 m wide, with the gap where a
+    path meets a road closed (the two path ends either side of a road, up to 30 m apart, are joined straight across, so the path is one piece through
+    the crossing). Creek crossings are left open: their bridges (course.CART_BRIDGES) carry the path. Returns the path polygons, and the pieces of
+    path that lie on a road (the game draws those over the road: `pathRoad`)."""
+    lines = [c['line'] for c in F['cartpath_line']]
+    road = unary_union(roads) if roads else None
+    streams = unary_union([f['line'] for f in F['stream']]) if F['stream'] else None
+    ends = [(i, Point(c.coords[k])) for i, c in enumerate(lines) for k in (0, -1)]
+    join = []
+    if road is not None:
+        for a in range(len(ends)):
+            for b in range(a + 1, len(ends)):
+                (i, p), (j, q) = ends[a], ends[b]
+                if i == j or p.distance(q) > 30:
+                    continue
+                seg = LineString([p, q])
+                if seg.intersects(road) and not (streams is not None and seg.intersects(streams)):
+                    join.append(seg)
+    join += [LineString(j) for j in getattr(course, 'PATH_JOINS', [])]   # gaps closed by hand (course.PATH_JOINS)
+    parts = [LineString(round_line(g.coords)) if len(g.coords) > 2 else g for g in getattr(linemerge(lines + join), 'geoms', [linemerge(lines + join)])]
+    polys = [g.buffer(1.2, cap_style=2, join_style=1) for g in parts]
+    on_road = []
+    if road is not None:
+        r = unary_union(parts).intersection(road.buffer(SIDE_ROAD_HW + .6))
+        on_road = [g for g in getattr(r, 'geoms', [r]) if g.geom_type == 'LineString' and g.length > .5]
+    return polys, on_road
+
+
 def side_roads(F, hw, area=course.ROAD_AREA):
     """The public roads beside the course (course.SIDE_ROADS), drawn for looks only (the ball does not touch them). At Woodbine: East Center Road along the south
     side and South Brown Road (with Chicago Street, its stretch through Stockton) along the east side. Each runs out past the map and
     stops at the middle of US 20, which both meet. Lines from OSM, ordered west to east / south to north. A road that is two carriageways
     for a stretch (Milwaukee Avenue at Adler Park) merges into several lines; each is drawn as its own road."""
     out = []
+    if getattr(course, 'ALL_ROADS', False):   # Eagle Ridge: every public road, drive and service road near a hole (the game draws only what is in view)
+        ok = ('residential', 'service', 'unclassified', 'tertiary', 'secondary', 'primary', 'living_street')
+        near = unary_union([h['line'] for h in F['hole']]).buffer(ROADS_NEAR).intersection(box(*area))
+        merged = linemerge([r['line'] for r in F['road'] if r['tags'].get('highway') in ok and not r['tags'].get('golf')])
+        for line in getattr(merged, 'geoms', [merged]):
+            c = line.intersection(near)
+            for g in getattr(c, 'geoms', [c]):
+                if g.geom_type == 'LineString' and g.length >= 12:
+                    pts = list((LineString(round_line(g.coords)) if getattr(course, 'ROUND_ROADS', False) else g).simplify(.4).coords)
+                    out.append(LineString(pts[::-1] if pts[0][0] + pts[0][1] > pts[-1][0] + pts[-1][1] else pts))
+        return out
     for names in course.SIDE_ROADS or []:
         merged = linemerge([r['line'] for r in F['road'] if r['tags'].get('name') in names])
         for line in getattr(merged, 'geoms', [merged]):
@@ -590,6 +634,9 @@ def main():
     fescue = [g for f in fescue for g in getattr(f.intersection(bound), 'geoms', [f.intersection(bound)]) if g.geom_type == 'Polygon' and not g.is_empty]
     hw, hw_slow = highway() if course.HIGHWAY else (None, None)
     roads = side_roads(F, hw)
+    path_road = []
+    if not paths and getattr(course, 'OSM_CARTPATHS', False):   # nobody painted the cart paths: OSM's, joined across the roads
+        paths, path_road = osm_cartpaths(F, roads)
     rd = dict(
         name=NAME, origin=list(ORIGIN), dem=dem, holes=holes,
         feat=dict(fair=enc_polys(fair), green=enc_polys([f['poly'] for f in F['green']]), tee=enc_polys([f['poly'] for f in F['tee']]),
@@ -604,7 +651,8 @@ def main():
         cover=enc_polys([area] if trees else []),
         streams=enc_lines(clip_lines([f['line'] for f in F['stream']], box(*DETAIL))),   # clipped: a stream may run on for km (Stonehenge's Flint Creek)
         highway=enc_lines([hw] if hw else []), hwSlow=hw_slow,  # the highway with traffic (Woodbine: US 20 past the north edge); hwSlow = metres from its west end where the limit drops from 55 to 35 mph
-        relief=relief, prac=prac, drv=drv, roads=[enc_lines([r]) for r in roads],
+        relief=relief, prac=prac, drv=drv, roads=[enc_lines([r]) for r in roads], pathRoad=[enc_lines([r]) for r in path_road],
+        cartBridges=[[round(e, 1), round(n, 1), L, 2.6, brg] for e, n, brg, L, _ in getattr(course, 'CART_BRIDGES', [])],   # cart-path bridges: [east, north, length, width, deck bearing]
         props=(json.load(open(os.path.join(OUT, 'site_props.json'))) if os.path.exists(os.path.join(OUT, 'site_props.json')) else []) + ([rr['shed']] if drv and rr.get('shed') else []),  # washrooms, porta-potties and signposts painted on the aerial (site_paint.py)
         # tee marker colours: w is the tee played, y/b/r the other sets (course.MARKERS)
         mkc={m: c for m, (_, c) in card.MARKERS.items()},

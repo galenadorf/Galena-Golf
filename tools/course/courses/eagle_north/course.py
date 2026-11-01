@@ -23,6 +23,7 @@ LIDAR_EPT = 'IL_8County_PlusChampaign_B2_2019'
 HIGHWAY = None
 SIDE_ROADS = [('Eagle Ridge Drive',), ('Walnut Hill Road',), ('Thunder Bay Road',)]
 ROUND_ROADS = True   # build.py rounds the side roads' corners
+ALL_ROADS = True      # build.py draws every OSM road near a hole, not just the SIDE_ROADS names (the game draws only what is in view)
 
 # the official scorecard (eagleridge.com, pdf/doc-2016-north-scorecard), yards. Men's stroke index. Roger B. Packard, opened 1977.
 # White is also rated for women (75.2/137), Jade 71.9/130 for women; Forward tees (64.8/116) not used.

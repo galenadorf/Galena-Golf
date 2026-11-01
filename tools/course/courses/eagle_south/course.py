@@ -22,6 +22,8 @@ LIDAR_EPT = 'IL_8County_PlusChampaign_B2_2019'
 HIGHWAY = None
 SIDE_ROADS = [('Eagle Ridge Drive',)]
 ROUND_ROADS = True   # build.py rounds the side roads' corners (Eagle Ridge Drive winds; Woodbine's are left as OSM has them)
+ALL_ROADS = True      # build.py draws every OSM road near a hole, not just the SIDE_ROADS names (the game draws only what is in view)
+OSM_CARTPATHS = True  # no painted cart paths: build.py takes OSM's golf=cartpath lines, joined across the roads
 
 # the official scorecard (eagleridge.com, doc-2016-south-scorecard, printed 08/2014), yards. Men's handicap. Jade is rated for women
 # (73.1/135; women's handicap 16 4 18 12 8 6 14 10 2 / 1 11 15 9 13 5 3 17 7).
@@ -34,6 +36,29 @@ TEES = {  # name: (rating, slope, yards per hole)
     'jade': (73.1, 135, [321, 488, 105, 292, 356, 449, 131, 307, 341, 357, 426, 284, 143, 328, 370, 463, 107, 341]),
 }
 ALT = {}  # no alternate tee lengths
+
+# gaps in OSM's cart paths that are neither a road nor the creek, closed with a straight piece: ((east, north), (east, north)) of the two path ends
+PATH_JOINS = [
+    ((250.5, 403.4), (240.5, 381.5)),    # hole 18, by the green: the path from the 18th green's junction on to the next path
+    ((240.5, 381.5), (227.8, 370.8)),
+    ((501.6, -284.6), (500.4, -296.9)),  # between holes 13 and 16, one path through three ends
+    ((500.4, -296.9), (500.1, -309.5)),
+    ((500.1, -309.5), (546.4, -324.5)),  # and the fork off it
+]
+# cart-path bridges over the creek, where OSM's cart paths break at it (the gap between the two path ends): (east, north, deck bearing in degrees
+# counter-clockwise from east, length m, hole). build.py writes them as `cartBridges`; the game builds a 2.6 m wide deck with rails (buildCartBridges).
+CART_BRIDGES = [
+    (-685.8, 575.6, 53.5, 14, 3),     # hole 3, the creek on the way to the green
+    (-553.5, 512.1, 57.4, 14, 8),     # hole 8, from the tee box towards the fairway
+    (-231.8, 464.7, 82.8, 14, 8),     # hole 8, the creek again, by the green
+    (-122.4, 394.9, 43.7, 14, 9),     # hole 9, just after the tee box
+    (517.6, 267.5, 137.3, 10, 10),    # hole 10, the second path, three-quarters of the way down on the south side
+    (701.3, 174.0, 60.9, 8, 10),      # hole 10, the creek crossing by the green
+    (509.6, -171.4, 50.4, 14, 13),    # hole 13, towards the green
+    (630.2, -367.8, 1.0, 8, 14),      # hole 14, just after the tee box
+    (761.6, -676.6, 32.6, 13, 15),    # between the 14th green and the 15th tee boxes
+    (180.4, 251.9, 62.6, 10, 18),     # hole 18, where the fairway divides at the bottom of the hill
+]
 RELIEF_OFF_WATER = True   # build.py leaves the lidar relief off the ponds, creeks and their banks (shores drawn as curves, not 2 m steps)
 # the layers painted on all_edit.py's map (all_read.py reads only these): fairways, greens, tee boxes, bunkers and played-tee dots.
 # The rough, deep rough (no fescue: the game makes it from the distance to play), trees, water, cart paths, boundary and props are

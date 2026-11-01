@@ -1500,7 +1500,7 @@ function realPrep() {
   }
   // the highway (US 20), resampled every HW_STEP metres with the distance along it, and a bucket grid for "how far is this from the road"
   GC.hw = null;
-  if (D.highway) {
+  if (D.highway && decLine(D.highway).length >= 4) {   // (a course with no highway stores an empty line)
     const L0 = decLine(D.highway), e = [L0[0]], n = [L0[1]], sd = [0], cell = new Map(); let acc = 0, tot = 0;
     for (let i = 2; i < L0.length; i += 2) {
       const dx = L0[i] - L0[i - 2], dy = L0[i + 1] - L0[i - 1], len = Math.hypot(dx, dy);
@@ -1520,6 +1520,16 @@ function realPrep() {
     }
     for (let i = 0; i < e.length; i++) { const key = Math.floor(e[i] / 24) * 4096 + Math.floor(n[i] / 24); if (!cell.has(key)) cell.set(key, []); cell.get(key).push(i); }
     return { e, n, cell };
+  });
+  // the pieces of cart path that lie on a road (Eagle Ridge South), resampled every 1.5 m: drawn over the road so the path runs through the crossing
+  GC.pathRoad = (D.pathRoad || []).map(enc => {
+    const L0 = decLine(enc), e = [L0[0]], n = [L0[1]]; let acc = 0, tot = 0;
+    for (let i = 2; i < L0.length; i += 2) {
+      const dx = L0[i] - L0[i - 2], dy = L0[i + 1] - L0[i - 1], len = Math.hypot(dx, dy);
+      while (acc + 1.5 <= tot + len) { acc += 1.5; const t = (acc - tot) / len; e.push(L0[i - 2] + dx * t); n.push(L0[i - 1] + dy * t); }
+      tot += len;
+    }
+    e.push(L0[L0.length - 2]); n.push(L0[L0.length - 1]); return { e, n };
   });
   // species: of the broadleaf trees the bigger half are oaks, the smaller half maples; of the conifers the bigger half are
   // northern pines, the smaller half blue Norwegian spruces (split at the median crown width)
@@ -2039,32 +2049,54 @@ function sideRoadTexture() {
   for (let i = 0; i < 1400; i++) { const v = Math.random() < .5 ? 0 : 255; x.fillStyle = `rgba(${v},${v},${v},${.03 + Math.random() * .06})`; x.fillRect(Math.random() * 128, Math.random() * 128, 1 + Math.random() * 2, 1 + Math.random() * 2); }
   const t = new THREE.CanvasTexture(cv); t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
 }
+const ROAD_SEE = 320, SIDE_V = 28 * .44704, SIDE_LANE = 1.35;   // a side road's traffic: speed, and the middle of the lane from the centre line
 function buildSideRoads(C, grp) {
+  W.roads = W.road ? [W.road] : [];   // every stretch of road in view, for the traffic
   const g = W.tgrid; if (!GC.sides || !GC.sides.length || !g) return;
+  // only roads that could be seen: within ROAD_SEE m of the line from the tee to the cup (the far hills are trees and haze)
+  const tee = C.def.tee, tx = tee.x, tz = -tee.f, ux = C.cup.x - tx, uz = C.cup.z - tz, ul = Math.max(1, ux * ux + uz * uz);
+  const seen = (X, Z) => { if (!RDC.allRoads) return true; const t = clamp(((X - tx) * ux + (Z - tz) * uz) / ul, 0, 1); return Math.hypot(X - tx - ux * t, Z - tz - uz * t) < ROAD_SEE; };
   const x0 = g.xs[0] + 25, x1 = g.xs[g.nx - 1] - 25, z0 = g.zs[0] + 25, z1 = g.zs[g.nz - 1] - 25, mat = new THREE.MeshLambertMaterial({ map: sideRoadTexture(), polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
   for (const R of GC.sides) {
     const runs = []; let cur = null;
     for (let i = 0; i < R.e.length; i++) {
       const q = C.loc(R.e[i], R.n[i]), X = q[0], Z = -q[1];
-      if (X > x0 && X < x1 && Z > z0 && Z < z1) { if (!cur) runs.push(cur = { X: [], Z: [] }); cur.X.push(X); cur.Z.push(Z); } else cur = null;
+      if (X > x0 && X < x1 && Z > z0 && Z < z1 && seen(X, Z)) { if (!cur) runs.push(cur = { X: [], Z: [] }); cur.X.push(X); cur.Z.push(Z); } else cur = null;
     }
     for (const run of runs) {
       const n = run.X.length; if (n < 6) continue;
-      const pos = new Float32Array(n * 9), uv = new Float32Array(n * 6), idx = []; let S = 0;
+      const pos = new Float32Array(n * 9), uv = new Float32Array(n * 6), idx = [], SA = new Float32Array(n), YA = new Float32Array(n); let S = 0;
       for (let i = 0; i < n; i++) {
         const a = Math.max(0, i - 1), b = Math.min(n - 1, i + 1);
         let tx = run.X[b] - run.X[a], tz = run.Z[b] - run.Z[a]; const tl = Math.hypot(tx, tz) || 1; tx /= tl; tz /= tl;
-        const nx = -tz, nz = tx; if (i) S += Math.hypot(run.X[i] - run.X[i - 1], run.Z[i] - run.Z[i - 1]);
+        const nx = -tz, nz = tx; if (i) S += Math.hypot(run.X[i] - run.X[i - 1], run.Z[i] - run.Z[i - 1]); SA[i] = S;
         for (let k = 0; k < 3; k++) {
           const off = (k - 1) * SIDE_HW, px = run.X[i] + nx * off, pz = run.Z[i] + nz * off, o = (i * 3 + k) * 3;
           pos[o] = px; pos[o + 1] = groundY(px, pz) + ROAD_LIFT; pos[o + 2] = pz; uv[(i * 3 + k) * 2] = k / 2; uv[(i * 3 + k) * 2 + 1] = S / ROAD_VREP;
         }
+        YA[i] = pos[(i * 3 + 1) * 3 + 1];
         if (i) for (let k = 0; k < 2; k++) { const a0 = (i - 1) * 3 + k, b0 = i * 3 + k; idx.push(a0, a0 + 1, b0, a0 + 1, b0 + 1, b0); }
       }
+      if (S >= 60) W.roads.push({ X: Float32Array.from(run.X), Z: Float32Array.from(run.Z), Y: YA, S: SA, slow: new Uint8Array(n), len: S, fast: SIDE_V, lane: SIDE_LANE });
       const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
       const na = geo.attributes.normal; for (let i = 0; i < na.count; i++) if (na.getY(i) < 0) na.setXYZ(i, -na.getX(i), -na.getY(i), -na.getZ(i));
       const mesh = new THREE.Mesh(geo, mat); mesh.receiveShadow = true; mesh.userData.keep = true; mesh.frustumCulled = false; grp.add(mesh);
     }
+  }
+  // a cart path that crosses a road runs on over it: the path's asphalt, 2.4 m wide, drawn just above the road
+  const pmat = new THREE.MeshLambertMaterial({ color: 0x70727a, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+  for (const P of GC.pathRoad || []) {
+    const X = [], Z = []; for (let i = 0; i < P.e.length; i++) { const q = C.loc(P.e[i], P.n[i]); if (q[0] > x0 && q[0] < x1 && -q[1] > z0 && -q[1] < z1 && seen(q[0], -q[1])) { X.push(q[0]); Z.push(-q[1]); } }
+    const n = X.length; if (n < 2) continue;
+    const pos = new Float32Array(n * 6), idx = [];
+    for (let i = 0; i < n; i++) {
+      const a = Math.max(0, i - 1), b = Math.min(n - 1, i + 1); let tx = X[b] - X[a], tz = Z[b] - Z[a]; const tl = Math.hypot(tx, tz) || 1; tx /= tl; tz /= tl;
+      for (let k = 0; k < 2; k++) { const off = (k ? 1 : -1) * 1.2, px = X[i] - tz * off, pz = Z[i] + tx * off, o = (i * 2 + k) * 3; pos[o] = px; pos[o + 1] = groundY(px, pz) + ROAD_LIFT + .01; pos[o + 2] = pz; }
+      if (i) { const a0 = (i - 1) * 2, b0 = i * 2; idx.push(a0, a0 + 1, b0, a0 + 1, b0 + 1, b0); }
+    }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+    const na = geo.attributes.normal; for (let i = 0; i < na.count; i++) if (na.getY(i) < 0) na.setXYZ(i, -na.getX(i), -na.getY(i), -na.getZ(i));
+    const mesh = new THREE.Mesh(geo, pmat); mesh.receiveShadow = true; mesh.userData.keep = true; mesh.frustumCulled = false; grp.add(mesh);
   }
 }
 function buildRealRoad(C, grp) {
@@ -2527,6 +2559,7 @@ function buildRealDecor(C, grp) {
     reeds.instanceMatrix.needsUpdate = true; reeds.instanceColor.needsUpdate = true; reeds.castShadow = false; grp.add(reeds);
   }
   buildAzaleas(C, grp);
+  buildCartBridges(C, grp);
   buildStoneBridges(C, grp);
   buildSwirlFx(C, grp);
   buildLife(C, grp);
@@ -2583,6 +2616,44 @@ function stoneTex() {
     }
   }
   const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(.55, .7); _stoneTex = t; return t;
+}
+// cart-path bridges (course data `cartBridges`, [e, n, length, width, deck bearing]; Eagle Ridge South's creek crossings): a concrete deck from bank to
+// bank, level with the higher bank and clear of the water (it tilts if the banks differ), girders under it, a sill at each end, and timber rails and posts
+// along both sides. A ball over the deck lands on it as on a cart path (C.h, C.surf, C.surfInfo, C.wl and C.grad are wrapped: the deck is flat ground, hard
+// surface, no water; the rails are scenery and the ball passes through them). Wrapped here, after the terrain mesh is built from the unwrapped C.h.
+function buildCartBridges(C, grp) {
+  const I = C.inner, list = RDC.data.cartBridges || []; if (!list.length) return;
+  const decks = [];
+  const deckM = lambert(0x9d9b95), girderM = lambert(0x5f5b55), railM = lambert(0x8a6c4e);
+  for (const b of list) {
+    const q0 = C.loc(b[0], b[1]), q1 = C.loc(b[0] + Math.cos(b[4] * DEG), b[1] + Math.sin(b[4] * DEG)), cx = q0[0], cz = -q0[1];
+    if (cx < I.minX - 60 || cx > I.maxX + 60 || cz < I.minZ - 60 || cz > I.maxZ + 60) continue;
+    const ax = q1[0] - q0[0], az = -(q1[1] - q0[1]), L = b[2], Wd = b[3], hAt = u => C.h(cx + ax * u, cz + az * u);
+    let wl = -1e9, y0 = -1e9, y1 = -1e9;
+    for (let u = -L / 2; u <= L / 2; u += 1) wl = Math.max(wl, C.wl(cx + ax * u, cz + az * u));
+    for (let d = -1.5; d <= .5; d += .5) { y0 = Math.max(y0, hAt(-L / 2 - d)); y1 = Math.max(y1, hAt(L / 2 + d)); }
+    if (wl > -1e8) { y0 = Math.max(y0, wl + .45); y1 = Math.max(y1, wl + .45); }
+    y0 += .12; y1 += .12;
+    const al = Math.hypot(ax, az) || 1; decks.push({ cx, cz, ax: ax / al, az: az / al, L, W: Wd, ym: (y0 + y1) / 2, sl: (y1 - y0) / L });
+    const g = new THREE.Group(), tilt = new THREE.Group(); g.position.set(cx, (y0 + y1) / 2, cz); g.rotation.y = Math.atan2(-az, ax); tilt.rotation.z = Math.atan2(y1 - y0, L); g.add(tilt);
+    const box = (sx, sy, sz, m, x, y, z) => { const o = new THREE.Mesh(unitBox, m); o.scale.set(sx, sy, sz); o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true; tilt.add(o); };
+    box(L, .2, Wd, deckM, 0, -.1, 0);
+    for (const sd of [-1, 1]) {
+      box(L, .34, .14, girderM, 0, -.35, sd * (Wd / 2 - .2));
+      for (const hh of [.5, .95]) box(L, .08, .1, railM, 0, hh, sd * (Wd / 2 + .06));
+      const n = Math.max(2, Math.round(L / 2.4)); for (let k = 0; k <= n; k++) box(.12, 1.05, .12, railM, (k / n - .5) * L, .42, sd * (Wd / 2 + .06));
+    }
+    for (const sd of [-1, 1]) box(.45, .6, Wd + .5, girderM, sd * (L / 2 - .1), -.3, 0);
+    grp.add(g);
+  }
+  if (!decks.length) return;
+  const deckAt = (x, z) => { for (const d of decks) { const dx = x - d.cx, dz = z - d.cz, u = dx * d.ax + dz * d.az, v = -dx * d.az + dz * d.ax; if (Math.abs(u) <= d.L / 2 && Math.abs(v) <= d.W / 2) return d; } return null; };
+  const h0 = C.h, wl0 = C.wl, grad0 = C.grad, info0 = C.surfInfo, surf0 = C.surf;
+  C.h = (x, z) => { const d = deckAt(x, z); return d ? d.ym + ((x - d.cx) * d.ax + (z - d.cz) * d.az) * d.sl : h0(x, z); };
+  C.wl = (x, z) => deckAt(x, z) ? -1e9 : wl0(x, z);
+  C.grad = (x, z, o) => { const d = deckAt(x, z); if (!d) return grad0(x, z, o); o[0] = d.sl * d.ax; o[1] = d.sl * d.az; return o; };
+  C.surfInfo = (x, z, hh) => { const inf = info0(x, z, hh); if (deckAt(x, z)) { inf.surf = S.PATH; inf.water = -1; inf.stripe = 0; } return inf; };
+  C.surf = (x, z) => deckAt(x, z) ? S.PATH : surf0(x, z);
 }
 function buildStoneBridges(C, grp) {
   const I = C.inner;
@@ -3729,6 +3800,17 @@ function renderPlan(C) {
     ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
     for (const [wd, col] of [[ROAD_HW * 2, '#a89f8a'], [ROAD_HW * 2 - 2.4, '#5d5f64'], [.5, '#e2b92b']]) { ctx.lineWidth = Math.max(1, wd / mpp); ctx.strokeStyle = col; ctx.stroke(path); }
   }
+  for (const R of GC.sides || []) { // the side roads: gravel shoulders and chip-sealed surface
+    const path = new Path2D(); let pen = false;
+    for (let i = 0; i < R.e.length; i++) { const q = C.loc(R.e[i], R.n[i]), px = (q[0] - x0) / mpp, py = (-q[1] - z0) / mpp; if (px < -40 || py < -40 || px > w + 40 || py > h + 40) { pen = false; continue; } if (pen) path.lineTo(px, py); else path.moveTo(px, py); pen = true; }
+    ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
+    for (const [wd, col] of [[SIDE_HW * 2, '#a89f8a'], [SIDE_HW * 2 - 1.8, '#74747a']]) { ctx.lineWidth = Math.max(1, wd / mpp); ctx.strokeStyle = col; ctx.stroke(path); }
+  }
+  for (const P of GC.pathRoad || []) { // cart paths over those roads
+    const path = new Path2D(); let pen = false;
+    for (let i = 0; i < P.e.length; i++) { const q = C.loc(P.e[i], P.n[i]), px = (q[0] - x0) / mpp, py = (-q[1] - z0) / mpp; if (pen) path.lineTo(px, py); else path.moveTo(px, py); pen = true; }
+    ctx.lineWidth = Math.max(1, 2.4 / mpp); ctx.strokeStyle = '#' + new THREE.Color(PAL[S.PATH]).getHexString(); ctx.stroke(path);
+  }
   for (const t of W.trees) {
     if (t.far) continue; const px = (t.x - x0) / mpp, py = (t.z - z0) / mpp;
     ctx.fillStyle = '#' + new THREE.Color(t.col).offsetHSL(0, -.05, -.12).getHexString(); ctx.beginPath(); ctx.arc(px, py, Math.max(1.6, (t.r || 2.4) / mpp), 0, TAU); ctx.fill();
@@ -4614,26 +4696,34 @@ function roadPose(R, u, dir, o) {
   const s = dir > 0 ? u : R.len - u;
   roadAt(R, s - 2, _ra); roadAt(R, s + 2, _rb); roadAt(R, s, o);
   let fx = (_rb.x - _ra.x) * dir, fz = (_rb.z - _ra.z) * dir; const fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
-  o.x += -fz * HW_LANE; o.z += fx * HW_LANE; o.y = groundY(o.x, o.z) + ROAD_LIFT;
+  const ln = R.lane || HW_LANE; o.x += -fz * ln; o.z += fx * ln; o.y = groundY(o.x, o.z) + ROAD_LIFT;
   o.yaw = Math.atan2(fx, fz); o.pitch = -Math.atan2((_rb.y - _ra.y) * dir, Math.max(.1, Math.hypot(_rb.x - _ra.x, _rb.z - _ra.z))); return o;
+}
+// the road a vehicle sets off on: the highway where there is one; otherwise one of the roads in view (side roads at least 80 m long), the longer and nearer
+// to the tee the likelier. Cars on the course's side roads are the Subaru and the Hyundai only (RDC.scene.traffic); no truck, no horn.
+function pickRoad(L) {
+  if (GC.hw) return W.road && W.road.len >= 300 ? W.road : null;
+  const rs = (W.roads || []).filter(R => R.len >= 80); if (!rs.length) return null;
+  const t = L.C.def.tee, wt = rs.map(R => { const k = R.X.length >> 1, d = t ? Math.hypot(R.X[k] - t.x, R.Z[k] + t.f) : 0; return R.len / (80 + d); });
+  let a = Math.random() * wt.reduce((p, q) => p + q, 0); for (let i = 0; i < rs.length; i++) { a -= wt[i]; if (a <= 0) return rs[i]; } return rs[rs.length - 1];
 }
 function makeVehicle(L, kind, geo, first, wait) {
   const truck = kind === 'truck', mat = LIFE_MAT(), g = new THREE.Group(), p = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, slow: 0 }, q = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, slow: 0 };
   const body = lmesh(truck ? geo.cab : geo, mat), trl = truck ? lmesh(geo.trl, mat) : null; g.add(body); if (trl) g.add(trl); g.visible = false; L.grp.add(g);
   const e = { kind, mat, g, st: 'wait', tmr: first[0] + Math.random() * first[1], dir: 1, u: 0, v: 0, spd: 1, front: truck ? 5.3 : 2.5, rear: truck ? 21 : 2.5 };
   e.start = () => {
-    const R = W.road; if (!R || R.len < 300) { e.tmr = 15; return; }
+    const R = pickRoad(L); if (!R) { e.tmr = 15; return; }
     const dir = Math.random() < .5 ? 1 : -1;
-    for (const o of L.traffic) if (o !== e && o.st === 'drive' && o.dir === dir && o.u - o.rear < e.rear + e.front + 35) { e.tmr = 3; return; } // not on top of one that has just set off
+    for (const o of L.traffic) if (o !== e && o.st === 'drive' && o.R === R && o.dir === dir && o.u - o.rear < e.rear + e.front + 35) { e.tmr = 3; return; } // not on top of one that has just set off
     e.honkAt = truck && Math.random() < .35 ? R.len * (.25 + Math.random() * .5) : -1; // semi-rare: about one trip in three has a honk, somewhere along the way
-    e.dir = dir; e.u = e.rear; e.spd = truck ? .88 + Math.random() * .08 : .95 + Math.random() * .1; e.v = HW_FAST * e.spd * .8; e.st = 'drive';
+    e.R = R; e.dir = dir; e.u = e.rear; e.spd = truck ? .88 + Math.random() * .08 : .95 + Math.random() * .1; e.v = (R.fast || HW_FAST) * e.spd * .8; e.st = 'drive';
   };
   e.update = dt => {
     if (e.st === 'wait') { e.tmr -= dt; if (e.tmr <= 0 && G.state !== 'title') e.start(); return; }
-    const R = W.road; if (!R) { e.st = 'wait'; e.tmr = 15; return; }
+    const R = e.R; if (!R || !W.roads.includes(R)) { e.st = 'wait'; e.tmr = 15; return; }
     roadAt(R, e.dir > 0 ? e.u : R.len - e.u, _ra);
-    let vt = (_ra.slow ? HW_TOWN : HW_FAST) * e.spd;
-    for (const o of L.traffic) if (o !== e && o.st === 'drive' && o.dir === e.dir && o.u > e.u) { const gap = (o.u - o.rear) - (e.u + e.front); if (gap < 18) vt = Math.min(vt, o.v * (gap < 6 ? .8 : 1)); } // no driving through the one in front
+    let vt = (_ra.slow ? HW_TOWN : (R.fast || HW_FAST)) * e.spd;
+    for (const o of L.traffic) if (o !== e && o.st === 'drive' && o.R === R && o.dir === e.dir && o.u > e.u) { const gap = (o.u - o.rear) - (e.u + e.front); if (gap < 18) vt = Math.min(vt, o.v * (gap < 6 ? .8 : 1)); } // no driving through the one in front
     e.v += clamp(vt - e.v, -7 * dt, 2.2 * dt); const u0 = e.u; e.u += e.v * dt;
     if (e.honkAt >= 0 && u0 < e.honkAt && e.u >= e.honkAt) { // honk honk, if the golfer is within earshot
       const c = W.cam.position, d = Math.hypot(c.x - body.position.x, c.z - body.position.z); e.honkAt = -1;
@@ -4803,7 +4893,7 @@ function buildLife(C, grp) {
     if (G.hole + 1 === RDC.scene.hotdogHole && Math.random() < HOTDOG_P) L.ents.push(makeHotDog(L));
     if (RDC.scene.cartRide && C.def.par >= 4 && !G.pg && (Math.random() < CARTRIDE_P || /[?&]cart\b/.test(location.search))) { const R = cartRoute(C); if (R) { L.cartRide = makeCartRide(L, R); L.ents.push(L.cartRide); } }
     if (G.hole + 1 === RDC.scene.fountainHole) { const f = makeFountain(L); if (f) L.ents.push(f); }
-    if (GC.hw) { const cg = carGeo(), sg = santaFeGeo(); L.traffic = [makeVehicle(L, 'car', cg, [2, 8], [6, 19]), makeVehicle(L, 'car', cg, [10, 16], [6, 19]), makeVehicle(L, 'car', sg, [4, 10], [6, 19]), makeVehicle(L, 'car', sg, [12, 16], [6, 19]), makeVehicle(L, 'truck', truckGeos(), [8, 25], [20, 40])]; L.ents.push(...L.traffic); } else L.traffic = [];
+    if (GC.hw) { const cg = carGeo(), sg = santaFeGeo(); L.traffic = [makeVehicle(L, 'car', cg, [2, 8], [6, 19]), makeVehicle(L, 'car', cg, [10, 16], [6, 19]), makeVehicle(L, 'car', sg, [4, 10], [6, 19]), makeVehicle(L, 'car', sg, [12, 16], [6, 19]), makeVehicle(L, 'truck', truckGeos(), [8, 25], [20, 40])]; L.ents.push(...L.traffic); } else if (RDC.scene.traffic) { const cg = carGeo(), sg = santaFeGeo(); L.traffic = [makeVehicle(L, 'car', cg, [25, 40], [45, 90]), makeVehicle(L, 'car', sg, [60, 60], [45, 90])]; L.ents.push(...L.traffic); } else L.traffic = [];
     if (PARAGLIDER_ON) { L.glider = makeGlider(L); L.ents.push(L.glider); }
   } catch (e) { console.error('life', e); W.life = null; }
 }

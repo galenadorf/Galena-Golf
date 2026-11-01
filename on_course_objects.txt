@@ -38,6 +38,7 @@ HIGHWAY AND TRAFFIC (on a course whose data has a highway: `HIGHWAY` in its tool
     the road, and it plays only if the truck is within ~650 m of the camera (louder when closer).
 Car (blue-grey sedan, a 2016 Subaru Legacy)
   - Two Subarus: the first sets off 2-10 s after arriving, the second 10-26 s; each starts again 6-25 s after a trip ends.
+  - (The Eagle Ridge courses have a few cars of their own, a Subaru and a Hyundai only, on their side roads: see those sections.)
     Drives at 95-105% of the limit.
 Car (black SUV, a 2002 Hyundai Santa Fe)
   - Two of them, same timing and speed as the Subarus: first sets off 4-14 s after arriving, second 12-28 s.
@@ -77,7 +78,7 @@ NOT IN THE GAME
   - The hole-info tee signs (Nr., par, yards) are switched off (code kept; set TEE_SIGNS_ON = true in index.html). Only signs listed in signs.txt are shown.
   - The paraglider is switched off (code kept; set PARAGLIDER_ON = true in index.html to bring it back).
   - The six small birds (pigeons and crows on the ground and in treetops) and the four gulls circling over the hole are switched off (SMALL_BIRDS_ON and CIRCLING_GULLS_ON in index.html).
-  - No rabbits, butterflies or fish. Deer and squirrels only at Stonehenge, Thunderhawk and Bear Slide; the gopher, the banner plane and wild turkeys only at Woodbine Bend and Eagle Ridge South and North. Nothing else drives, and there are no bridges (the creek has none). (The stats screen only jokes "fed the fish" for balls in the water.)
+  - No rabbits, butterflies or fish. Deer and squirrels only at Stonehenge, Thunderhawk and Bear Slide; the gopher, the banner plane and wild turkeys only at Woodbine Bend and Eagle Ridge South and North. Nothing else drives (except the cars on the Eagle Ridge side roads, below), and the only bridges are the ten cart-path bridges at Eagle Ridge South. (The stats screen only jokes "fed the fish" for balls in the water.)
   - Benches, huts and similar props exist in the engine from the removed courses but no course uses them.
 
 
@@ -169,7 +170,10 @@ Gopher (`scene.groundhog`) and banner plane (`scene.bannerPlane`): as at Woodbin
 
 No highway: US 20 runs about 2 km south of the course, off the map, so there is no traffic.
 
-Side road (out of bounds, for looks only): Eagle Ridge Drive, the resort road past the clubhouse. No traffic.
+Roads (out of bounds, for looks only): every OSM road, drive and service road within 230 m of a hole (42 pieces: Eagle Ridge Drive and the streets of the housing beside the course), drawn the way Woodbine's side roads are (7.2 m, chip-sealed, gravel shoulders, no centre line) on the hole and on the hole map, but only the part inside the hole's terrain mesh, so only what could be seen. No trees stand on them.
+Traffic (`scene.traffic`): occasional cars on those roads, only the blue-grey Subaru Legacy and the black Hyundai Santa Fe (one of each, no truck and no horn or truck sound anywhere on either Eagle Ridge course). The Subaru first sets off 25-65 s after arriving on a hole, the Hyundai after 60-120 s, each again 45-135 s after a trip ends; 28 mph, right-hand lane, on one of the roads in view (the longer and the nearer the tee, the likelier), end to end. Cannot be hit.
+Cart paths: OSM's golf=cartpath lines (about 8.5 km), 2.4 m wide, nobody painted them (`OSM_CARTPATHS`). Where a path meets a road the two ends are joined straight across and the path is drawn over the road, so it is one unbroken path through the crossing. Five hand-closed gaps (`PATH_JOINS`: by the 18th green, and between holes 13 and 16) join the rest, so the paths are continuous apart from the creek crossings, which the bridges carry.
+Cart-path bridges (`CART_BRIDGES`, `cartBridges`, `buildCartBridges`): ten, over the creek where OSM's cart paths break at it: holes 3, 8 (two), 9, 10 (two), 13, 14, between the 14th green and 15th tee, and 18. A grey concrete deck 2.6 m wide and 8-14 m long, level with the higher bank and clear of the water, girders under it, a sill at each end and timber rails and posts. A ball that lands on the deck is on a cart path (hard, bounces and rolls as on any cart path, flat ground, never water); the rails and girders are scenery the ball passes through.
 
 Water: three ponds (OSM golf=water_hazard; the big one between holes 9 and 18) and the streams OSM maps through the valley (about 3.5 km in 10 pieces, from `creek.py osm`, which leaves out the stretches inside a pond), drawn as creek water. Pond shores are smooth curves (no lidar relief on the water or its banks, `RELIEF_OFF_WATER`).
 
@@ -190,9 +194,10 @@ Wild turkeys (a flock of four on about 4 holes in 10, `scene.turkeys` = .4): the
 
 Gopher (`scene.groundhog`) and banner plane (`scene.bannerPlane`): as at Woodbine Bend.
 
-No highway: US 20 is south of the resort, off the map, so there is no traffic.
+No highway: US 20 is south of the resort, off the map.
 
-Side roads (out of bounds, for looks only): Eagle Ridge Drive (beside 1, 2, 9, 10 and 18), Walnut Hill Road (beside 1, 9, 10, 12, 14 and 15) and Thunder Bay Road (beside 2, 3, 6 and 7), the resort roads. No traffic.
+Roads (out of bounds, for looks only): every OSM road, drive and service road within 230 m of a hole (Eagle Ridge Drive, Walnut Hill Road, Thunder Bay Road and the streets of the housing), drawn as at Eagle Ridge South, on the hole and on the hole map, only where they could be seen.
+Traffic (`scene.traffic`): as at Eagle Ridge South: occasional Subaru and Hyundai cars only, no truck, no horn or truck sound.
 
 Water: the OSM ponds (golf=water_hazard and lateral_water_hazard; water right of 8, 11, 13 and 16) and the OSM streams through the course (about 2.7 km in 10 pieces, from `creek.py osm`, which leaves out the stretches inside a pond), drawn as creek water. Lake Galena (OSM) lies off the right of 8; pond and lake shores are smooth curves (no lidar relief on the water or its banks, `RELIEF_OFF_WATER`).
 
