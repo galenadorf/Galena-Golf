@@ -648,7 +648,7 @@ const POW_EXP = .78;
 const DOWN_FULL = .35; // seconds
 const DOWN_STEP = .2, DOWN_STEP_LOSS = .2; // each 0.2 s the downswing is slower than DOWN_FULL cuts the ball speed by a further 20 % (compounding)
 const TEMPO_K = -Math.log((1.4 / 1.5 - .85) / .15); // tempo multiplier .85 + .15 * exp(-K * (R - 3)^2) hits 1.4/1.5 at 2:1 and 4:1
-const PUTT_RANGES = [3, 6, 10, 15, 71 * FT]; // the longest stroke is 105 % of 71 ft, the longest putt on any green (holes 5 and 9)
+const PUTT_RANGES = [3, 6, 10, 15, 100 * FT]; // the longest stroke is 105 % of 100 ft (was 71 ft, the longest putt on any green of the first course; raised on request)
 // part swings make less spin: a short chip leaves the face with a fraction of a full swing's backspin
 const SPIN_BASE = .55;
 function spinFrac(p) { return SPIN_BASE + (1 - SPIN_BASE) * p; }
