@@ -36,6 +36,7 @@ TEES = {  # name: (rating, slope, yards per hole)
 }
 ALT = {}  # no alternate tee lengths
 TREES_GONE = True   # trees_aerial.py: the lidar is from 2007, the aerial 2023; a lidar tree with no canopy on the aerial was felled since
+FILL_CLEAN = True   # build.py cleans the aerial-traced fairways (holes OSM maps none for): notches closed, slivers and small pieces dropped, strongly smoothed
 RELIEF_OFF_WATER = True   # build.py leaves the lidar relief off the ponds, creeks and their banks
 # the layers painted on all_edit.py's map, if the course is ever painted (all_read.py reads only these)
 PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')

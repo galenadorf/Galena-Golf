@@ -603,7 +603,12 @@ def main():
         fair = [f['poly'] for f in F['fairway']]
         ff = os.path.join(OUT, 'fairways_fill.json')   # holes OSM maps no fairway for (Thunderhawk 1-2, Stonehenge 10, 11, 13, 15, 16, 18): trace.py's aerial fairways, cut to those holes (fairways_fill.py)
         if os.path.exists(ff):
-            fair += [shape(g) for g in json.load(open(ff))]
+            fill = [shape(g) for g in json.load(open(ff))]
+            if getattr(course, 'FILL_CLEAN', False):   # the aerial's fairways are ragged (Stonehenge): close the notches, open away thin necks and slivers, drop small pieces, then a strong low-pass with the area kept
+                fill = [q.buffer(6, quad_segs=8).buffer(-6, quad_segs=8).buffer(-4, quad_segs=8).buffer(4, quad_segs=8) for q in fill]
+                fill = [g for q in fill for g in getattr(q, 'geoms', [q]) if g.geom_type == 'Polygon' and g.area > 900]
+                fill = [smooth_poly(q, 7.0) for q in fill]
+            fair += fill
     fair, rep = link_fairways(fair, F)
     if not os.path.exists(fp0) and F['fairway']:   # OSM fairways: round the inside corners where the link to the green meets the fairway's edge
         fair = [q.buffer(5, quad_segs=8).buffer(-5, quad_segs=8).simplify(.04) for q in fair]
