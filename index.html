@@ -160,12 +160,12 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
 .nameRow.need{animation:shake .4s}.nameRow.need input{box-shadow:inset 0 0 0 2px var(--yel)}
 .courseRow{padding:6px 8px 6px 16px}
 /* the course picker: a native dropdown (any number of courses on one line; the phone opens its own list) */
-.courseSel{flex:1;min-width:0;height:44px;border:0;outline:0;border-radius:14px;padding:0 38px 0 14px;font:600 20px var(--cond);text-transform:uppercase;letter-spacing:.04em;color:#fff;text-shadow:var(--tsh);background:rgba(255,255,255,.16) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center/14px 10px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);-webkit-appearance:none;appearance:none;text-overflow:ellipsis;cursor:pointer}
-.courseSel:focus-visible{box-shadow:inset 0 0 0 2px var(--yel)}
-.courseSel option{color:#16211c;background:#fff;text-shadow:none}
+.courseSel,.boardSel{flex:1;min-width:0;height:44px;border:0;outline:0;border-radius:14px;padding:0 38px 0 14px;font:600 20px var(--cond);text-transform:uppercase;letter-spacing:.04em;color:#fff;text-shadow:var(--tsh);background:rgba(255,255,255,.16) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center/14px 10px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);-webkit-appearance:none;appearance:none;text-overflow:ellipsis;cursor:pointer}
+.courseSel:focus-visible,.boardSel:focus-visible{box-shadow:inset 0 0 0 2px var(--yel)}
+.courseSel option,.boardSel option{color:#16211c;background:#fff;text-shadow:none}
 #practiceSheet .pracCourse{display:flex;align-items:center;gap:12px;margin:4px 0 10px;font:700 15px var(--cond);letter-spacing:.1em;text-transform:uppercase}
 #practiceSheet .pracCourse[hidden]{display:none}
-#practiceSheet .courseSel{height:42px;font-size:18px;padding-right:34px;background-position:right 12px center}
+#practiceSheet .courseSel,#boardSheet .boardSel{height:42px;font-size:18px;padding-right:34px;background-position:right 12px center}
 #menuSheet .courseSel{flex:0 1 70%;height:38px;font-size:18px;padding-right:34px;background-position:right 12px center}   /* the menu's glass: white text on the translucent box, like its Name field */
 @keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 .btn{height:58px;border-radius:20px;background:linear-gradient(180deg,#4a9a4c,#2f6b35);color:#fff;font:600 22px var(--cond);text-transform:uppercase;letter-spacing:.06em;box-shadow:0 10px 24px rgba(20,70,30,.35),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .15s;text-shadow:0 1px 2px rgba(0,30,12,.3)}
@@ -351,7 +351,7 @@ body.spec #tempo,body.spec #strike{opacity:.55!important}body.spec #tempo *,body
 #mpPanel .mpr .t{font-variant-numeric:tabular-nums}#mpPanel .mpr .h{opacity:.75;font-size:11px;min-width:24px;text-align:right}
 #mpPanel .mpr.me .n{text-decoration:underline;text-underline-offset:2px}
 #mpTags .gtag{position:fixed;left:0;top:0;z-index:2;padding:2px 8px;border-radius:9px;font:600 12px var(--cond);pointer-events:none;white-space:nowrap;text-transform:uppercase;color:#fff;transition:opacity .2s}
-.boardCourse{display:flex;margin:0 0 10px}.boardCourse button{flex:1}
+.boardCourse{display:flex;margin:0 0 10px}.boardCourse button{flex:1}#boardSheet select.boardSel{display:block;width:100%;margin:0 0 10px;flex:none}
 .scw{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font:600 17px var(--cond);font-variant-numeric:tabular-nums}
 th,td{padding:9px 4px;text-align:center;border-bottom:1px solid var(--hair)}
@@ -5029,7 +5029,8 @@ function loadSounds(a) {
     try { fetch('sounds/' + k + '.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(buf => { if (buf) a.decodeAudioData(buf, b => { SND['s_' + k] = b; }, () => { }); }).catch(() => { }); } catch (e) { }
   }
 }
-const SND_FILES = ['driver', 'wood', 'iron', 'wedge', 'putter', 'cup', 'fart1', 'fart2', 'fart3', 'fart4', 'fart5', 'fart6', 'fart7', 'fart8', 'truckhorn', 'truckrumble'];
+const SND_FILES = ['driver', 'wood', 'iron', 'wedge', 'putter', 'cup', 'fart1', 'fart2', 'fart3', 'fart4', 'fart5', 'fart6', 'fart7', 'fart8', 'fart9', 'fart10', 'fart11', 'fart12', 'fart13', 'fart14', 'fart15', 'fart16', 'fart17', 'fart18', 'fart19', 'bird1', 'bird2', 'bird3', 'bird4', 'bird5', 'plane', 'truckhorn', 'truckrumble'];
+const BIRD_N = 5;   // birdsong recordings (see birdTick)
 function play(name, rate, vol, lp, delay) {
   if (!settings.sound || !SND[name]) return false; const a = audio(); if (!a) return false;
   const s = a.createBufferSource(); s.buffer = SND[name]; s.playbackRate.value = rate || 1; const g = a.createGain(); g.gain.value = vol == null ? 1 : vol; let n = s;
@@ -5179,7 +5180,7 @@ function cartMusicTick() {
   CARTM.lp.frequency.setTargetAtTime(500 + 15500 * Math.min(1, 12 / Math.max(d, 12)) ** 1.5, t, .12);
   if (CARTM.pan) CARTM.pan.pan.setTargetAtTime(clamp((dx * me[0] + dz * me[2]) / Math.max(d, 1), -1, 1) * Math.min(1, d / 12) * .85, t, .12);
 }
-// ---- an unseen, very rare sound: a pool of recordings (sounds/fart1-8.mp3), one picked at random ----
+// ---- an unseen, very rare sound: a pool of recordings (sounds/fart1-19.mp3), one picked at random ----
 // Their level is baked into the files (the same loudness as the hole-7 song at Med), so they play at gain 1. A round is dealt one hole where it is
 // certain (G.fartHole, saved with the round), so a full round has at least one, and every other hole also has a 1 in 18 chance, so a second or third
 // is possible. It only ever plays during a swing, the moment the thumb starts the backswing (fartSwing, from swingMove / the keyboard swing), and on
@@ -5191,36 +5192,24 @@ function fartSwing() {
   if (G.hole !== FART.hole) { FART.hole = G.hole; FART.n = 0; FART.at = ((G.fartHole === G.hole && !G.fartDone) || Math.random() < 1 / HOLE_DEFS.length) ? 1 + Math.floor(Math.random() * 3) : 0; }
   FART.n++;
   if (!FART.at || FART.n < FART.at || !settings.sound || document.hidden) return;
-  if (play('s_fart' + (1 + (Math.random() * 8 | 0)), 1, 1)) { FART.at = 0; if (G.hole === G.fartHole) G.fartDone = true; } // (a chance one on another hole does not use up the dealt one)
+  if (play('s_fart' + (1 + (Math.random() * 19 | 0)), 1, 1)) { FART.at = 0; if (G.hole === G.fartHole) G.fartDone = true; } // (a chance one on another hole does not use up the dealt one)
 }
-// ---- soft birdsong: on every hole without a song, a few unseen birds call now and then (synthesised, no files) ----
-// Each call is a short phrase of sine notes (a whistle, a trill or a two-tone call) at a low level, panned to its own spot, sometimes answered by a second bird.
-const BIRD = { next: 0, hole: -1, chk: 0 };
-function birdCall(a, t0, f0, kind, pan, vol) {
-  const out = a.createGain(); out.gain.value = vol; let n = out;
-  if (a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = pan; out.connect(p); n = p; }
-  n.connect(a.destination);
-  const notes = kind === 0 ? 2 + (Math.random() * 3 | 0) : kind === 1 ? 6 + (Math.random() * 6 | 0) : 2;
-  let t = t0;
-  for (let i = 0; i < notes; i++) {
-    const d = kind === 1 ? .045 : .07 + Math.random() * .08, f = f0 * (kind === 1 ? 1 + (i % 2) * .04 : kind === 2 ? (i ? .78 : 1) : .85 + Math.random() * .4);
-    const o = a.createOscillator(), g = a.createGain(); o.type = 'sine';
-    o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * (kind === 1 ? 1.08 : Math.random() < .5 ? 1.25 : .8), t + d);
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + .012); g.gain.exponentialRampToValueAtTime(.001, t + d);
-    o.connect(g).connect(out); o.start(t); o.stop(t + d + .02);
-    t += d + (kind === 1 ? .03 : .05 + Math.random() * .1);
-  }
-}
+// ---- soft birdsong: on every hole without a song, a recording of unseen birds plays now and then (sounds/bird1-5.mp3, picked at random) ----
+// Each clip is a 7-11 s bed of birds with its level baked in (quiet), panned to its own side; the next one comes after it ends plus a pause, never the same twice running.
+const BIRD = { next: 0, hole: -1, chk: 0, last: -1 };
 function birdTick(now) {
   if (now - BIRD.chk < 300) return; BIRD.chk = now;
   if (G.hole !== BIRD.hole) { BIRD.hole = G.hole; BIRD.next = now + 1500 + Math.random() * 2500; }
   if (now < BIRD.next) return;
   if (!settings.sound || document.hidden || G.state === 'title' || holeSong(G.hole) || !AC || AC.state !== 'running') { BIRD.next = now + 1000; return; }
-  const rain = G.weather && G.weather.id === 'rain';
-  BIRD.next = now + (rain ? 9000 + Math.random() * 9000 : 2500 + Math.random() * 6500);
-  const a = AC, t = a.currentTime + .05, pan = Math.random() * 1.6 - .8, f = 2300 + Math.random() * 2200, v = .012 + Math.random() * .012;
-  birdCall(a, t, f, Math.random() * 3 | 0, pan, v);
-  if (Math.random() < .35) birdCall(a, t + .9 + Math.random() * .8, 2300 + Math.random() * 2200, Math.random() * 3 | 0, -pan, v * .7);
+  const have = []; for (let i = 1; i <= BIRD_N; i++) if (SND['s_bird' + i]) have.push(i);
+  if (!have.length) { BIRD.next = now + 3000; return; }   // (still loading, or offline without them cached)
+  let k = have[Math.random() * have.length | 0]; if (have.length > 1 && k === BIRD.last) k = have[(have.indexOf(k) + 1) % have.length]; BIRD.last = k;
+  const a = AC, buf = SND['s_bird' + k], rain = G.weather && G.weather.id === 'rain';
+  const s = a.createBufferSource(); s.buffer = buf; const g = a.createGain(); g.gain.value = (rain ? .6 : 1) * (.75 + Math.random() * .25); let n = g;
+  s.connect(g); if (a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = Math.random() * 1.2 - .6; g.connect(p); n = p; }
+  n.connect(a.destination); s.start(a.currentTime + .05);
+  BIRD.next = now + buf.duration * 1000 + (rain ? 12000 + Math.random() * 14000 : 4000 + Math.random() * 12000);
 }
 /* ---------- live multiplayer: rooms ---------- */
 // Players in the same room (a short code; a link with ?room=CODE joins it) share, through a public MQTT broker over secure websockets:
@@ -5719,7 +5708,7 @@ const SFX = {
     n.forEach((f, i) => { tone(f, .5, 'sine', .07, null, i * .085); tone(f * 2, .25, 'triangle', .02, null, i * .085 + .02); });
     tone(4186, 1.1, 'sine', .05, null, n.length * .085); tone(5274, .7, 'sine', .025, null, n.length * .085 + .12); tone(6272, .5, 'sine', .015, null, n.length * .085 + .25);
   },
-  plane() { tone(92, 5.5, 'sawtooth', .03, 68); tone(184, 5.5, 'triangle', .018, 136, .1); },
+  plane() { if (!play('s_plane', 1, 1)) { tone(92, 5.5, 'sawtooth', .03, 68); tone(184, 5.5, 'triangle', .018, 136, .1); } },   // the recording (sounds/plane.mp3); the synthesised drone only until it has loaded
   chime() { [523, 659, 784, 1047].forEach((f, i) => tone(f, .4, 'sine', .13, null, i * .09)); },
   rim() { [0, .05, .1, .16].forEach((d, i) => tone(1300 + i * 90, .03, 'triangle', .05, null, d)); },
   pin() { tone(1900, .05, 'triangle', .09); tone(2500, .035, 'sine', .04, null, .01); noiseBurst(.05, .07, 2800, 2); },
@@ -8018,11 +8007,10 @@ function fillBoard(el, limit, key, pick) {
   // the leaderboard sheet can show any course's board, without touching the round in play
   if (pick) {
     $('boardName').textContent = CO.name;
-    const cs = document.createElement('div'); cs.className = 'seg boardCourse';
-    for (const c of Object.values(COURSES)) {
-      const b = document.createElement('button'); b.textContent = c.short; if (c.key === key) b.className = 'sel';
-      b.onclick = () => { Board.view = c.key; loadWorld(false, c.key); loadRecords(c.key).then(ch => { if (ch) refreshBoards(); }); refreshBoards(); }; cs.appendChild(b);
-    }
+    const cs = document.createElement('select'); cs.className = 'boardSel'; cs.setAttribute('aria-label', 'Course');
+    for (const c of Object.values(COURSES)) { const o = document.createElement('option'); o.value = c.key; o.textContent = c.short; cs.appendChild(o); }
+    cs.value = key;
+    cs.onchange = () => { const k = cs.value; Board.view = k; loadWorld(false, k); loadRecords(k).then(ch => { if (ch) refreshBoards(); }); refreshBoards(); };
     el.appendChild(cs);
     const ms = document.createElement('div'); ms.className = 'seg boardCourse';
     for (const [k, t] of [['rounds', 'Rounds'], ['records', 'Records']]) {

@@ -7,8 +7,12 @@ Music: sounds_raw/Hole_7_background_music.m4a -> sounds/hole7-q.mp3, mono at 80 
 holds the song's closing hit), a short fade at the end, the playing level is baked into the file (MUSIC_PEAK_DB), so it is quiet even where the browser ignores the game's volume setting (HOLE_SONGS vol is 1).
 Around_the_world.mp3 -> sounds/cartmusic.mp3: the radio on the moving golf cart (`cartMusic*` in index.html). Mono at 64 kbps, 44.1 kHz, peak
 -12 dBFS (the game scales it by distance from the cart and by the Song volume setting), leading and trailing silence cut, a short fade at the end.
-Fart_01..07.m4a and Penis.m4a -> sounds/fart1..8.mp3: trimmed like the strikes, mono at 96 kbps, the playing level baked in (FART_RMS_DB: the same loudness as the
+Fart_01..07.m4a, Penis.m4a, then Fart_08..18.m4a -> sounds/fart1..19.mp3: trimmed like the strikes, mono at 96 kbps, the playing level baked in (FART_RMS_DB: the same loudness as the
 hole-7 song at its Med setting, measured as RMS over the trimmed clip), so the game plays them at gain 1 (a pool, one picked at random: `fartTick`).
+Bird_sounds_01..05.m4a -> sounds/bird1..5.mp3: the ambient birdsong pool (`birdTick`). Each is a 7-11 s bed of birds, kept whole (the ends have no silence to cut),
+with a 0.3 s fade at each end, downsampled to 32 kHz, mono at 64 kbps, the playing level baked in (BIRD_RMS_DB), so the game plays them at gain ~1.
+Plane.m4a -> sounds/plane.mp3: the banner plane's flyby (`SFX.plane`), trimmed to the sound (-45 dB), 0.4 s fades, 32 kHz mono at 64 kbps, level baked in (PLANE_RMS_DB, about what the old
+synthesised drone was), played at gain 1.
 Truck_horn.m4a -> sounds/truckhorn.mp3, Truck_rumble.m4a -> sounds/truckrumble.mp3: trimmed like the strikes, mono at 96 kbps (the rumble at 64), peak -3 dBFS;
 the truck on the road plays one of the two at random (`SFX.honk`, TRUCK_SND), each with its own level there.
 Rerun after replacing a recording; commit sounds/ (the game loads it, sw.js caches it)."""
@@ -23,7 +27,10 @@ from common import HERE, SOUNDS_RAW
 SR = 48000
 MUSIC_PEAK_DB = -15.5   # the song's loudest peak: -1.5 dBFS at full scale, 14 dB (a factor of .2) down
 FART_RMS_DB = -44.8     # the song's RMS over the whole file is -35.7 dB; Med is x.35 (-9.1 dB)
-FARTS = ['Fart_01', 'Fart_02', 'Fart_03', 'Fart_04', 'Fart_05', 'Fart_06', 'Fart_07', 'Penis']   # fart1.mp3 ... in this order
+BIRD_RMS_DB = -42.0     # a soft background: the raw beds sit near -35 dB RMS
+PLANE_RMS_DB = -36.0    # the raw recording is -24 dB RMS; the old synthesised drone was about -35
+BIRDS = [f'Bird_sounds_{i:02d}' for i in range(1, 6)]   # bird1.mp3 ... in this order
+FARTS = ['Fart_01', 'Fart_02', 'Fart_03', 'Fart_04', 'Fart_05', 'Fart_06', 'Fart_07', 'Penis'] + [f'Fart_{i:02d}' for i in range(8, 19)]   # fart1.mp3 ... in this order (fart9-19 are Fart_08-18)
 MAP = {'Driver': 'driver', '3-wood': 'wood', 'Irons': 'iron', 'Wedges': 'wedge', 'Putter': 'putter', 'Ball_in_hole': 'cup'}
 DEST = os.path.join(os.path.dirname(os.path.dirname(HERE)) if os.path.basename(HERE) == 'course' else HERE, 'sounds')
 
@@ -91,10 +98,44 @@ def farts():
         if not os.path.exists(p):
             print('missing', p); continue
         y, a, b = trim(load(p))
+        # a recording with a long stretch of digital silence after the sound (Fart_08 has 15 s of it, with stray blips): keep up to the silence
+        n = int(.1 * SR); blk = np.array([np.abs(y[i:i + n]).max() for i in range(0, len(y), n)]); on = np.nonzero(blk > 10 ** (-60 / 20))[0]
+        for k in range(len(blk) - 7):
+            if (blk[k:k + 7] < 1e-6).all() and k > on[0]:
+                y = y[:k * n].copy(); f = int(.05 * SR); y[-f:] *= np.linspace(1, 0, f); break
         y = y / np.sqrt((y ** 2).mean()) * 10 ** (FART_RMS_DB / 20)
         assert np.abs(y).max() < 10 ** (-12 / 20), p
         d = os.path.join(DEST, f'fart{i}.mp3'); write(y, d)
         print(f'{nm} -> sounds/fart{i}.mp3  kept {a:.2f}-{b:.2f} s  (peak {20 * np.log10(np.abs(y).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
+
+
+def birds():
+    from scipy.signal import resample_poly
+    for i, nm in enumerate(BIRDS, 1):
+        p = os.path.join(SOUNDS_RAW, nm + '.m4a')
+        if not os.path.exists(p):
+            print('missing', p); continue
+        y, a, b = trim_music(load(p), .02, .1)
+        y = resample_poly(y, 2, 3).astype(np.float32); sr = 32000   # 48 kHz -> 32 kHz
+        f = int(.3 * sr); y[:f] *= np.linspace(0, 1, f); y[-f:] *= np.linspace(1, 0, f)
+        y = y / np.sqrt((y ** 2).mean()) * 10 ** (BIRD_RMS_DB / 20)
+        assert np.abs(y).max() < 10 ** (-6 / 20), p
+        d = os.path.join(DEST, f'bird{i}.mp3'); write(y, d, 64, sr)
+        print(f'{nm} -> sounds/bird{i}.mp3  {len(y) / sr:.1f} s  (peak {20 * np.log10(np.abs(y).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
+
+
+def plane():
+    from scipy.signal import resample_poly
+    p = os.path.join(SOUNDS_RAW, 'Plane.m4a')
+    if not os.path.exists(p):
+        print('missing', p); return
+    y, a, b = trim_music(load(p), .05, .3)
+    y = resample_poly(y, 2, 3).astype(np.float32); sr = 32000
+    f = int(.4 * sr); y[:f] *= np.linspace(0, 1, f); y[-f:] *= np.linspace(1, 0, f)
+    y = y / np.sqrt((y ** 2).mean()) * 10 ** (PLANE_RMS_DB / 20)
+    assert np.abs(y).max() < 10 ** (-6 / 20)
+    d = os.path.join(DEST, 'plane.mp3'); write(y, d, 64, sr)
+    print(f'Plane -> sounds/plane.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / sr:.1f} s, peak {20 * np.log10(np.abs(y).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
 
 
 def trucks():
@@ -110,6 +151,8 @@ def main():
     music()
     cartmusic()
     farts()
+    birds()
+    plane()
     trucks()
     os.makedirs(DEST, exist_ok=True)
     for src, dst in MAP.items():

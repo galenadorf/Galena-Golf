@@ -133,13 +133,13 @@ Interface
   - A short 700 Hz blip on button presses: Play, Practice, Settings, opening a sheet, changing club or aim range, changing course, the Play Hole tap that ends
     the fly-over, the mulligan ask and the mulligan, skipping a shot's replay, and the next-hole button.
 Ambient
-  - Birdsong (synthesised, no file): on every hole that has no song of its own (everywhere except Woodbine hole 7). The first call comes 1.5-4 s after the hole
-    loads, then one every 2.5-9 s (every 9-18 s while it rains). Each call is a short phrase of high sine notes (about 2.3-4.5 kHz: a whistle, a trill or a two-tone
-    call), very quiet, panned to its own spot; one call in three answers itself from another bird 0.9-1.7 s later (35%). Silent on the title screen, with the
-    Sound switch off or the page hidden.
+  - Birdsong (5 recordings, sounds/bird1-5.mp3, 7-11 s each, picked at random, never the same twice running): on every hole that has no song of its own
+    (everywhere except Woodbine hole 7). The first one starts 1.5-4 s after the hole loads; after each, the next comes 4-16 s after it ends (26-38 s while it
+    rains, and 40% quieter). Very quiet (level baked in), panned to its own side. Silent on the title screen, with the Sound switch off or the page hidden.
+    Until the files have loaded (or offline, if not cached) there is no birdsong.
   - Rainbow jingle (synthesised): a rising run of bell tones ending in a held sparkle, about 2 s. Plays once each time a rainbow appears, only once it
     is well faded in and only while the camera is facing it (it sits low in the east).
-  - Heard, not seen: one of 8 short recordings (sounds/fart1-8.mp3, picked at random). At least once per round: the round is dealt one of its 18 holes where it is
+  - Heard, not seen: one of 19 recordings (sounds/fart1-19.mp3, picked at random). At least once per round: the round is dealt one of its 18 holes where it is
     certain and every other hole has a 1 in 18 chance (practice: 1 in 18 per hole, no dealt hole). It plays only during a swing, the moment you start the backswing,
     on the 1st, 2nd or 3rd swing of that hole (picked at random; putts count). A dealt hole that ends first is dealt again later in the round. Loudness is the same as
     the hole-7 song at Med whatever the Song setting; only the Sound switch silences it. Much rarer than the balloon.
@@ -221,7 +221,7 @@ SOUNDS
   - Hole 7 song (`scene.songs` 7: sounds/hole7-q.mp3, level 1): always on hole 7. Starts 3 s after you tap Play Hole (after the fly-over), fades in over 2.5 s, loops, fades out when you move to the next hole or leave. Scaled by Song volume (Off silent, Low .125, Med .35, High 1). No birdsong on hole 7 at all (the song replaces it).
   - Truck horn or engine rumble (a recording, picked at random: sounds/truckhorn.mp3 air horn or sounds/truckrumble.mp3 engine): about one truck trip in three (35%) has one, at a random point 25-75% of the way along the road, and it plays only if the truck is within about 650 m of the camera (level up to .3, falling off with distance). Not on trips without one.
   - Golf cart radio, "Around the World" (sounds/cartmusic.mp3), only when the moving cart appears (2.84% per par 4/5 hole with a path both sides, see Objects): starts when it sets off and plays from the cart until the next hole, looping. Loud within 20 m, fading with distance to nothing by 280 m, duller far away and panned to the side the cart is on. Scaled by Song volume; silent at Off.
-  - Banner plane drone: a low engine hum (synthesised, 5.5 s) once per flyby, when the plane starts its pass and the camera is within 260 m.
+  - Banner plane drone: a recording of a small plane (sounds/plane.mp3, about 6 s) once per flyby, when the plane starts its pass and the camera is within 260 m.
   - Ball hits: gobble (a turkey: two phrases of warbling chirps, synthesised), squeak (gopher or hot dog), thunk (the plane, a golf cart).
   - Plus all of GLOBAL: strikes, landings, trees, water, cup and chime, interface blips, birdsong (not on hole 7), rainbow jingle, the rare unseen sound.
 
