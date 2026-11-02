@@ -1,5 +1,6 @@
 """Fairways for the holes OSM maps none for (with course.FAIRWAYS_FROM_AERIAL, for every par 4 and 5, added to OSM's): trace.py's aerial fairways (out/fairways.json) within 35 m of each such par 4/5 hole line, written to out/fairways_fill.json for build.py. Usage: fairways_fill.py --course <key> (run trace.py first)."""
 import sys, json, os
+import numpy as np
 c = sys.argv[sys.argv.index('--course') + 1] if '--course' in sys.argv else sys.argv[1]
 sys.argv = ['x', '--course', c]
 sys.path.insert(0, '.')
@@ -11,6 +12,24 @@ F = osm.load()
 tr = [shape(g) for g in json.load(open(os.path.join(OUT, 'fairways.json')))]
 osmf = unary_union([f['poly'] for f in F['fairway']])
 out = []
+from scipy import ndimage as ndi
+from common import DETAIL
+RES = 1.0
+def territory(h):
+    """The ground (a polygon) that is closer to hole h's line than to any other hole's line, within 60 m of it."""
+    W, H = int((DETAIL[2] - DETAIL[0]) / RES), int((DETAIL[3] - DETAIL[1]) / RES)
+    if 'dist' not in territory.__dict__:
+        from rasterio.features import rasterize
+        from rasterio.transform import from_origin
+        tr_ = from_origin(DETAIL[0], DETAIL[3], RES, RES); territory.tr = tr_; territory.dist = {}
+        for hh in F['hole']:
+            m = rasterize([(hh['line'].buffer(.6), 1)], out_shape=(H, W), transform=tr_).astype(bool)
+            territory.dist[hh['ref']] = ndi.distance_transform_edt(~m) * RES
+        refs = sorted(territory.dist); stack = np.stack([territory.dist[r] for r in refs]); territory.nearest = np.array(refs)[stack.argmin(0)]
+    from rasterio.features import shapes
+    m = (territory.nearest == h['ref']) & (territory.dist[h['ref']] <= 60)
+    polys = [shape(g) for g, v in shapes(m.astype('uint8'), mask=m, transform=territory.tr) if v == 1]
+    return unary_union(polys)
 for h in sorted(F['hole'], key=lambda h: h['ref']):
     L = h['line']
     partial = getattr(course, 'FAIRWAYS_FROM_AERIAL', False)   # OSM's fairways are only a core stripe, or part of the hole (Fossil Trace): fill every par 4 and 5 from the aerial
@@ -18,8 +37,17 @@ for h in sorted(F['hole'], key=lambda h: h['ref']):
         continue
     corr = L.buffer(35)
     got = 0
-    q = unary_union([p.intersection(corr) for p in tr]).buffer(9).buffer(-9).buffer(-2).buffer(2).simplify(.4)   # close the shadow gaps, smooth the edge
-    q = q.difference(osmf.buffer(1))
+    if partial:
+        # territory: the traced fairway nearest THIS hole's line (up to 60 m away), so a wide fairway is not cut off by a fixed corridor and two neighbouring
+        # holes share the mown ground at the midline between their lines
+        corr = territory(h)
+        # OSM's own fairway for this hole and the aerial's one are made into ONE shape (the aerial fairway is wider, and cut out of OSM's it left slivers):
+        # close the gaps between them, then open away anything narrower than about 5 m (the cart path's edge, the trace's ragged ends)
+        mine = [f['poly'] for f in F['fairway'] if f['poly'].distance(L) < 8]
+        q = unary_union([p.intersection(corr) for p in tr] + mine).buffer(8, quad_segs=8).buffer(-8, quad_segs=8).buffer(-3, quad_segs=8).buffer(3, quad_segs=8).simplify(.4)
+    else:
+        q = unary_union([p.intersection(corr) for p in tr]).buffer(9).buffer(-9).buffer(-2).buffer(2).simplify(.4)   # close the shadow gaps, smooth the edge
+        q = q.difference(osmf.buffer(1))
     for g in getattr(q, 'geoms', [q]):
         if g.area >= 300 and g.geom_type == 'Polygon':
             out.append(g); got += g.area

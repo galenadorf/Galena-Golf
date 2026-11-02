@@ -338,10 +338,10 @@ def creek_pieces(hw=2.0, step=14.0):
     out = []
     for g in json.load(open(p)):
         L = LineString(round_line(shape(g).coords))   # the centre line is rounded, so the ribbons bend smoothly
-        n = max(1, int(round(L.length / step)))
+        n = max(1, int(round(L.length / (step / 2 if getattr(course, 'SMOOTH_MORE', False) else step))))   # (half-length pieces: the water level steps down in finer steps)
         for i in range(n):
             a, b = L.length * i / n, min(L.length, L.length * (i + 1) / n + .3)
-            out.append(substring(L, a, b).buffer(hw, cap_style=2))
+            out.append(substring(L, a, b).buffer(hw, cap_style=1 if getattr(course, 'SMOOTH_MORE', False) else 2))   # (round ends: the pieces blend on a bend instead of meeting in blocky corners)
     return out
 
 
@@ -500,6 +500,41 @@ def round_pond(p, iters=3):
     return affinity.scale(q, math.sqrt(p.area / q.area), math.sqrt(p.area / q.area), origin=c)
 
 
+def smooth_line(coords, sigma, step=1.0):
+    """A low-pass over an open line: resampled every `step` m and smoothed with a Gaussian of `sigma` m, the two ends held where they are."""
+    from scipy.ndimage import gaussian_filter1d
+    L = LineString(coords)
+    if L.length < 4 * sigma:
+        return list(coords)
+    n = max(8, int(L.length / step))
+    P = np.array([L.interpolate(L.length * i / n).coords[0] for i in range(n + 1)])
+    Q = np.stack([gaussian_filter1d(P[:, k], sigma / step, mode='nearest') for k in (0, 1)], 1)
+    Q[0], Q[-1] = P[0], P[-1]
+    return [tuple(q) for q in Q]
+
+
+def smooth_poly(p, sigma, step=1.0):
+    """The same low-pass round every ring of a polygon (course.SMOOTH_MORE): wobbles and corners go, then the area is given back by an even offset so a
+    green, bunker or fairway keeps its size."""
+    from scipy.ndimage import gaussian_filter1d
+    if p.geom_type == 'MultiPolygon':
+        return unary_union([smooth_poly(g, sigma, step) for g in p.geoms])
+    if p.area < 25:
+        return p
+
+    def ring(r):
+        r = LineString(r.coords)
+        n = max(12, int(r.length / step))
+        P = np.array([r.interpolate(r.length * i / n).coords[0] for i in range(n)])
+        return [tuple(q) for q in np.stack([gaussian_filter1d(P[:, k], sigma / step, mode='wrap') for k in (0, 1)], 1)]
+    q = Polygon(ring(p.exterior), [ring(h) for h in p.interiors if h.length > 6 * sigma]).buffer(0)
+    if q.is_empty or q.geom_type != 'Polygon':
+        return p
+    for _ in range(2):
+        q = q.buffer((p.area - q.area) / q.length, join_style=1, quad_segs=4)
+    return q.simplify(.04)
+
+
 def round_line(coords, iters=3):
     """Corner cutting on an open line (the creek's centre line); the two ends stay where they are."""
     pts = list(coords)
@@ -508,6 +543,8 @@ def round_line(coords, iters=3):
         for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
             q += [(.75 * x0 + .25 * x1, .75 * y0 + .25 * y1), (.25 * x0 + .75 * x1, .25 * y0 + .75 * y1)]
         pts = q + [pts[-1]]
+    if getattr(course, 'SMOOTH_MORE', False):   # then a low-pass of 3 m on top: every mapped line (creeks, cart paths, roads) flows
+        pts = smooth_line(pts, 3.0)
     return pts
 
 
@@ -549,6 +586,10 @@ def main():
     for k in ('bunker', 'tee', 'fairway'):   # OSM outlines (painted ones replace them below, already smoothed)
         for f in F[k]:
             f['poly'] = round_osm(f['poly'])
+    if getattr(course, 'SMOOTH_MORE', False):   # every mapped outline gets the low-pass too (bunkers, tees, fairways, greens, ponds), area kept
+        for k, sg in (('bunker', 1.6), ('tee', 2.0), ('fairway', 3.0), ('green', 1.6), ('water', 2.5)):
+            for f in F[k]:
+                f['poly'] = smooth_poly(f['poly'], sg)
     bpn = os.path.join(OUT, 'bunkers_painted.json')  # hand-refined bunkers (bunkers_paint.py) replace the OSM and automatic ones
     if os.path.exists(bpn):
         F['bunker'] = [dict(poly=shape(g), tags={'painted': 'yes'}) for g in json.load(open(bpn))]
@@ -566,6 +607,8 @@ def main():
     fair, rep = link_fairways(fair, F)
     if not os.path.exists(fp0) and F['fairway']:   # OSM fairways: round the inside corners where the link to the green meets the fairway's edge
         fair = [q.buffer(5, quad_segs=8).buffer(-5, quad_segs=8).simplify(.04) for q in fair]
+    if getattr(course, 'SMOOTH_MORE', False):
+        fair = [smooth_poly(q, 3.0) for q in fair]
     print('fairway -> green links (hole, gap m, area added m2):', rep)
     cp = os.path.join(OUT, 'cartpaths.json')   # the cart paths: found on the aerial and corrected by hand (cartpaths_edit.py, cartpaths_read.py); trace.py's paths.json was only fragments
     paths = [shape(g) for g in json.load(open(cp))] if os.path.exists(cp) else []
@@ -656,6 +699,8 @@ def main():
         mown = unary_union([r['poly'] for r in F['rough']] + list(fair) + [t['poly'] for t in F['tee']] + [g['poly'] for g in F['green']] + [b['poly'] for b in F['bunker']]).buffer(8)
         deep = Polygon(course_poly.exterior).difference(mown).buffer(-2).buffer(2).simplify(.5)
         fescue = [g for g in getattr(deep, 'geoms', [deep]) if g.geom_type == 'Polygon' and g.area > 80]
+        if getattr(course, 'SMOOTH_MORE', False):
+            fescue = [smooth_poly(g, 3.0) for g in fescue]
         print('deep rough from the mown area:', len(fescue), 'pieces,', round(sum(g.area for g in fescue) / 1e4, 1), 'ha')
     if os.path.exists(ppn):
         fescue = practice_read.merge_fescue(fescue, pr)

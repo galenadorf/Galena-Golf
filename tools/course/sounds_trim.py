@@ -27,7 +27,7 @@ from common import HERE, SOUNDS_RAW
 SR = 48000
 MUSIC_PEAK_DB = -15.5   # the song's loudest peak: -1.5 dBFS at full scale, 14 dB (a factor of .2) down
 FART_RMS_DB = -44.8     # the song's RMS over the whole file is -35.7 dB; Med is x.35 (-9.1 dB)
-BIRD_RMS_DB = -42.0     # a soft background: the raw beds sit near -35 dB RMS
+BIRD_RMS_DB = -42.9     # a soft background: the raw beds sit near -35 dB RMS (was -42.0; 10 % quieter = -0.9 dB)
 PLANE_RMS_DB = -36.0    # the raw recording is -24 dB RMS; the old synthesised drone was about -35
 BIRDS = [f'Bird_sounds_{i:02d}' for i in range(1, 6)]   # bird1.mp3 ... in this order
 FARTS = ['Fart_01', 'Fart_02', 'Fart_03', 'Fart_04', 'Fart_05', 'Fart_06', 'Fart_07', 'Penis'] + [f'Fart_{i:02d}' for i in range(8, 19)]   # fart1.mp3 ... in this order (fart9-19 are Fart_08-18)

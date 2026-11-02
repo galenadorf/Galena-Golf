@@ -38,6 +38,7 @@ ALT = {}
 RELIEF_OFF_WATER = True
 PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 TREES_OFF_TEES_GREENS = True
+SMOOTH_MORE = True   # build.py low-passes every mapped line (3 m) and outline (1.6-3 m, area kept) on top of the corner cutting: no ripples left from OSM or the aerial trace
 FAIRWAYS_FROM_AERIAL = True   # OSM's fairways are a core stripe (and miss part of holes 1, 6, 8, 12...): fairways_fill.py adds trace.py's aerial fairways to every par 4 and 5
 MOWN_ROUGH = True             # OSM's golf=rough outlines the mown rough: deep rough is only the native grass beyond 8 m of anything mown (build.py)
 

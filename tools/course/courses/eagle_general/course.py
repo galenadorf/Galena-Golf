@@ -39,7 +39,8 @@ ALT = {}  # no alternate tee lengths
 RELIEF_OFF_WATER = True
 # the layers painted on all_edit.py's map (all_read.py reads only these)
 PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
-TREES_OFF_TEES_GREENS = True   # build.py takes any tree out of a tee box or off a green
+TREES_OFF_TEES_GREENS = True
+SMOOTH_MORE = True   # build.py low-passes every mapped line (3 m) and outline (1.6-3 m, area kept) on top of the corner cutting: no ripples left from OSM or the aerial trace   # build.py takes any tree out of a tee box or off a green
 
 # the game's four tee-marker slots: w is the set played (3-Star, 6,245 yd), y/b/r the others (tee set, marker colour)
 MARKERS = {'w': ('3-star', 0xd9b23a), 'y': ('4-star', 0x26282b), 'b': ('2-star', 0xeeeeee), 'r': ('1-star', 0x2f8f6f)}
