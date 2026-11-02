@@ -7,7 +7,7 @@
       "pars": [4, 3, 4, 5, 4, 4, 3, 4, 5, 4, 3, 4, 4, 4, 3, 5, 4, 5],
       "recFrom": "2026-10-27",
       "about": "Woodbine Bend Golf Course (Stockton, Illinois) is played from the gold tees. Hole lines, greens, tees, bunkers, ponds, buildings and the out-of-bounds line from © OpenStreetMap contributors (ODbL); fairways traced from USDA NAIP aerial imagery; trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
-      "engine": { "fescue": true, "z0": 200, "gr": { "e0": -1000, "n0": -1000, "res": 2, "W": 1000, "H": 1000 } },
+      "engine": { "alt": 250, "fescue": true, "z0": 200, "gr": { "e0": -1000, "n0": -1000, "res": 2, "W": 1000, "H": 1000 } },
       "scene": {
         "clubhouse": { "minArea": 800, "front": [100, -175], "sign": ["WOODBINE", "B E N D", "GOLF COURSE & RESTAURANT"] },
         "parkedCarts": [[63.4, -160.2, 143], [65.8, -162.0, 143]],
@@ -28,7 +28,7 @@
       "pars": [4, 5, 3, 4, 4, 5, 3, 4, 4, 4, 5, 4, 3, 4, 4, 5, 3, 4],
       "recFrom": "2026-10-30",
       "about": "The South Course at Eagle Ridge Resort & Spa (Galena, Illinois; Roger Packard, 1984) is played from the gold tees. Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
-      "engine": { "fescue": true, "longRough": true, "allRoads": true, "z0": 200, "gr": { "e0": -1000, "n0": -1000, "res": 2, "W": 1000, "H": 1000 } },
+      "engine": { "alt": 260, "fescue": true, "longRough": true, "allRoads": true, "z0": 200, "gr": { "e0": -1000, "n0": -1000, "res": 2, "W": 1000, "H": 1000 } },
       "scene": {
         "turkeys": 0.4,
         "bannerPlane": true,
@@ -43,7 +43,7 @@
       "pars": [4, 5, 4, 3, 5, 4, 4, 3, 4, 4, 5, 4, 3, 4, 5, 3, 4, 4],
       "recFrom": "2026-10-30",
       "about": "The North Course at Eagle Ridge Resort & Spa (Galena, Illinois; Roger Packard, 1977) is played from the gold tees. Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
-      "engine": { "fescue": true, "longRough": true, "allRoads": true, "z0": 200, "gr": { "e0": -1150, "n0": -850, "res": 2, "W": 1150, "H": 850 } },
+      "engine": { "alt": 255, "fescue": true, "longRough": true, "allRoads": true, "z0": 200, "gr": { "e0": -1150, "n0": -850, "res": 2, "W": 1150, "H": 850 } },
       "scene": {
         "turkeys": 0.4,
         "bannerPlane": true,
@@ -58,12 +58,25 @@
       "pars": [4, 3, 5, 4, 4, 3, 4, 4, 5, 4, 5, 3, 4, 4, 5, 3, 4, 4],
       "recFrom": "2026-11-01",
       "about": "The General Course at Eagle Ridge Resort & Spa (Galena, Illinois; Andy North and Roger Packard, 1997) is played from the 3-Star tees (6,245 yards). Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
-      "engine": { "fescue": true, "longRough": true, "allRoads": true, "z0": 200, "gr": { "e0": -1150, "n0": -700, "res": 2, "W": 1150, "H": 700 } },
+      "engine": { "alt": 300, "fescue": true, "longRough": true, "allRoads": true, "z0": 200, "gr": { "e0": -1150, "n0": -700, "res": 2, "W": 1150, "H": 700 } },
       "scene": {
         "turkeys": 0.4,
         "bannerPlane": true,
         "groundhog": true,
         "traffic": true
+      }
+    },
+    {
+      "key": "fossil_trace",
+      "name": "Fossil Trace Golf Club",
+      "short": "Fossil Trace",
+      "pars": [5, 4, 3, 4, 3, 4, 4, 4, 5, 4, 3, 5, 4, 3, 5, 3, 4, 5],
+      "recFrom": "2026-11-01",
+      "about": "Fossil Trace Golf Club (Golden, Colorado; Jim Engh, 2003) is played from the blue tees (6,241 yards). Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
+      "engine": { "alt": 1775, "fescue": true, "longRough": true, "allRoads": true, "z0": 1990, "gr": { "e0": -1000, "n0": -750, "res": 2, "W": 1000, "H": 750 } },
+      "scene": {
+        "deer": 0.5,
+        "squirrels": 3
       }
     },
     {
@@ -73,7 +86,7 @@
       "pars": [4, 4, 4, 5, 3, 4, 4, 3, 5, 4, 4, 3, 5, 4, 4, 4, 3, 5],
       "recFrom": "2026-10-30",
       "about": "Stonehenge Golf Club (Barrington, Illinois) is played from the blue tees. Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from the 2007 Lake County lidar (USGS); the ground from the USGS 3DEP 1 m elevation model.",
-      "engine": { "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -700, "n0": -700, "res": 2, "W": 700, "H": 700 } },
+      "engine": { "alt": 235, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -700, "n0": -700, "res": 2, "W": 700, "H": 700 } },
       "scene": {
         "deer": 0.5,
         "squirrels": 3
@@ -86,7 +99,7 @@
       "pars": [4, 5, 3, 4, 4, 3, 5, 4, 4, 4, 5, 4, 3, 4, 3, 5, 3, 5],
       "recFrom": "2026-10-30",
       "about": "Thunderhawk Golf Club (Beach Park, Illinois; Robert Trent Jones Jr., 1999; Lake County Forest Preserves) is played from the bronze tees. Hole lines, greens, tees, bunkers, fairways, ponds and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from the 2007 Lake County lidar (USGS), checked against the 2023 USDA NAIP aerial; the ground from the USGS 3DEP 1 m elevation model.",
-      "engine": { "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -1150, "n0": -650, "res": 2, "W": 1150, "H": 650 } },
+      "engine": { "alt": 220, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -1150, "n0": -650, "res": 2, "W": 1150, "H": 650 } },
       "scene": { "deer": 0.5, "squirrels": 3 }
     },
     {
@@ -96,7 +109,7 @@
       "pars": [4, 4, 5, 3, 4, 3, 4, 5, 4, 4, 4, 5, 4, 3, 4, 3, 4, 4],
       "recFrom": "2026-10-31",
       "about": "Bear Slide Golf Club (Cicero, Indiana; Hamilton County) is played from the white tees (par 71, 5,966 yd); black, blue and red are the markers. Hole lines, greens, tees, bunkers, ponds and the out-of-bounds line from © OpenStreetMap contributors (ODbL); fairways traced from the 2022 USDA NAIP aerial where OpenStreetMap has none; trees from the 2017 Hamilton County lidar (USGS), checked against the aerial; the ground from the USGS 3DEP 1 m elevation model.",
-      "engine": { "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -1250, "n0": -650, "res": 2, "W": 1250, "H": 650 } },
+      "engine": { "alt": 255, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -1250, "n0": -650, "res": 2, "W": 1250, "H": 650 } },
       "scene": { "deer": 0.5, "squirrels": 3 }
     },
     {
@@ -107,7 +120,7 @@
       "pars": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
       "recFrom": "2026-10-30",
       "about": "Disc golf (alpha) on the ski hill at Chestnut Mountain Resort (Galena, Illinois; 9 holes, 2010): the nine played twice, from the long tees and then the short ones. Throw with the tempo bar as for a golf swing; the strike dot sets the release angle (hyzer or anhyzer) and the nose. Rounds here are not posted to the world leaderboard. Hole lengths from UDisc; the ground from the USGS 3DEP 1 m elevation model, trees from USGS 3DEP lidar, buildings, ponds and roads from © OpenStreetMap contributors (ODbL).",
-      "engine": { "disc": true, "z0": 200, "gr": { "e0": -600, "n0": -600, "res": 2, "W": 600, "H": 600 } },
+      "engine": { "alt": 270, "disc": true, "z0": 200, "gr": { "e0": -600, "n0": -600, "res": 2, "W": 600, "H": 600 } },
       "scene": {}
     },
     {
@@ -118,7 +131,7 @@
       "pars": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
       "recFrom": "2026-10-30",
       "about": "Disc golf (alpha) in Adler Memorial Park (Libertyville, Illinois; 9 holes, 1981): a town park course through wooded ravines and open lawns above the Des Plaines River, with one tee per hole, so the nine is played twice. Throw with the tempo bar as for a golf swing; the strike dot sets the release angle (hyzer or anhyzer) and the nose. Rounds here are not posted to the world leaderboard. Tees and baskets from the course sign's map, hole lengths from its card; the ground from the USGS 3DEP 1 m elevation model, trees from the 2007 Lake County lidar (USGS), buildings, the river and roads from © OpenStreetMap contributors (ODbL).",
-      "engine": { "disc": true, "z0": 200, "gr": { "e0": -450, "n0": -450, "res": 2, "W": 450, "H": 450 } },
+      "engine": { "alt": 205, "disc": true, "z0": 200, "gr": { "e0": -450, "n0": -450, "res": 2, "W": 450, "H": 450 } },
       "scene": {}
     }
   ]

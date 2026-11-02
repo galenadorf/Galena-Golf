@@ -24,7 +24,7 @@ from common import ALTI_VAR, DETAIL, NAME, ORIGIN, OUT, RD_JS, RD_VAR, YD, cache
 
 card = course   # the scorecard: PAR, HCP, TEES, MARKERS
 DEM_RES, DEM_AREA = 15, course.DEM_AREA
-Z_DEM, Z_ALTI = 200.0, 200   # metres the dem and the green lattices are stored above
+Z_DEM = Z_ALTI = float(getattr(course, 'Z0', 200))   # metres the dem and the green lattices are stored above (course.Z0; the engine's z0 in courses.json must be the same)
 RELIEF_RES = 2
 
 

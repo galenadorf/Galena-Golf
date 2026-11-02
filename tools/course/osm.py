@@ -82,6 +82,9 @@ def load():
         if not polys:
             continue
         p = unary_union(polys)
+        if t.get('leisure') == 'golf_course':   # a course mapped as a multipolygon relation (Fossil Trace): OSM_WAY is the relation's id
+            F['course'].append(dict(poly=p, tags=t, id=r['id']))
+            continue
         key = 'water' if (t.get('natural') == 'water' or t.get('water')) else 'wood' if (t.get('natural') == 'wood' or t.get('landuse') == 'forest') else None
         if key:
             F[key].append(dict(poly=p, tags=t))
@@ -92,6 +95,16 @@ def load():
         F['hole'] = [h for h in F['hole'] if cp.contains(h['line'].interpolate(.5, normalized=True))]
         for k in ('green', 'tee', 'bunker', 'fairway', 'rough', 'water_hazard', 'lateral_water_hazard', 'pin', 'cartpath', 'cartpath_line'):   # and only its own golf features
             F[k] = [f for f in F[k] if cp.intersects(f.get('poly', f.get('pt', f.get('line'))))]
+    # greens OSM has in the wrong place (course.GREEN_FIX: hole -> outline in local metres, traced off the aerial): the nearest green is replaced
+    # by the outline, and the hole line and its pin end at the middle of it
+    for ref, ring in getattr(course, 'GREEN_FIX', {}).items():
+        h = next(h for h in F['hole'] if h['ref'] == ref); end = Point(h['line'].coords[-1]); poly = Polygon(ring)
+        old = min(F['green'], key=lambda g: g['poly'].distance(end)); F['green'].remove(old)
+        F['green'].append(dict(poly=poly, tags=dict(old['tags'])))
+        for pn in F['pin']:
+            if pn['pt'].distance(end) < 1:
+                pn['pt'] = poly.centroid
+        h['line'] = LineString(list(h['line'].coords)[:-1] + [poly.centroid.coords[0]])
     # ponds tagged only as golf=water_hazard / lateral_water_hazard (Eagle Ridge) are water too, unless natural=water already covers them
     for f in F['water_hazard'] + F['lateral_water_hazard']:
         if not any(w['poly'].intersection(f['poly']).area > .5 * f['poly'].area for w in F['water']):

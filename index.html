@@ -571,6 +571,14 @@ function holeU(d) { return d.disc ? 'ft' : 'yd'; }
 /* ================= PHYSICS ================= */
 const GRAV = 9.81, BALL_R = 0.02135, BALL_M = 0.04593, AIR_RHO = 1.2;
 const KAERO = 0.5 * AIR_RHO * Math.PI * BALL_R * BALL_R / BALL_M;
+// ALTITUDE: drag and lift both scale with the air's density, which falls with height (the standard atmosphere: (1 - 2.25577e-5 h)^4.25588). Every course has its
+// ground height in courses.json (`engine.alt`, metres above sea level; the mean of the 1 m terrain model); AIR_K is the density there over the density at ALT_REF_M.
+// ALT_REF_M is Woodbine Bend's, because the clubs' and discs' carries (CLUBS[].carry) are the standard and Woodbine is the standard every course is held to: Woodbine
+// plays exactly as it always has, a higher course carries farther (Fossil Trace, 1,775 m: about 7 %), a lower one a touch shorter. setAltitude (useRealData) sets it.
+const ALT_REF_M = 250;
+let AIR_K = 1;
+const isaRho = h => Math.pow(1 - 2.25577e-5 * h, 4.25588);
+function airK(alt) { return isaRho(alt) / isaRho(ALT_REF_M); }
 const RPM = TAU / 60;
 const CD0 = 0.22, CD1 = 0.30, CL0 = 0.12, CL1 = 0.6, CLMAX = 0.42, SPIN_TAU = 25; // fitted to TrackMan tour averages
 const VIS_R = 0.055;     // ball radius (physics and drawing): ~2.6x real, half the old 0.11. Beyond a few metres the ball is drawn larger with distance anyway (frame), so only close views see it smaller
@@ -762,6 +770,7 @@ const HIT = { kind: '', x: 0, z: 0, r: 0 };
 const _g2 = [0, 0], _w3 = [0, 0, 0];
 function simulateShot(C, o) {
   if (o.disc) return simulateDisc(C, o);
+  const KA = KAERO * AIR_K;   // (the air at this course's altitude)
   const dt = o.dt || 1 / 240, maxT = o.maxT || 40; // predictions may step coarser
   let x = o.x, y = o.y, z = o.z, vx = o.v[0], vy = o.v[1], vz = o.v[2];
   let wx = o.w ? o.w[0] : 0, wy = o.w ? o.w[1] : 0, wz = o.w ? o.w[2] : 0;
@@ -791,11 +800,11 @@ function simulateShot(C, o) {
       const wm = Math.hypot(wx, wy, wz);
       const Sp = BALL_R * wm / sp;
       const Cd = CD0 + CD1 * Sp;
-      let ax = -KAERO * Cd * sp * rvx, ay = -KAERO * Cd * sp * rvy - GRAV, az = -KAERO * Cd * sp * rvz;
+      let ax = -KA * Cd * sp * rvx, ay = -KA * Cd * sp * rvy - GRAV, az = -KA * Cd * sp * rvz;
       if (wm > 5) {
         const Cl = Math.min(CLMAX, CL0 + CL1 * Sp);
         const lx = wy * rvz - wz * rvy, ly = wz * rvx - wx * rvz, lz = wx * rvy - wy * rvx;
-        const lm = Math.hypot(lx, ly, lz) || 1, L = KAERO * Cl * sp * sp / lm;
+        const lm = Math.hypot(lx, ly, lz) || 1, L = KA * Cl * sp * sp / lm;
         ax += lx * L; ay += ly * L; az += lz * L;
       }
       vx += ax * dt; vy += ay * dt; vz += az * dt;
@@ -1052,15 +1061,26 @@ const FLAT = {
 };
 const FLAT_GREEN = Object.assign({}, FLAT, { surf: () => S.GREEN });
 function calibrateClubs() {
-  for (const c of CLUBS) {
+  const k0 = AIR_K; AIR_K = 1;   // each club's ball speed is solved at the reference altitude, so its CLUBS[].carry is what it carries there
+  for (const c of GOLF_BAG) {
     if (c.type === 'putter') continue;
+    if (c.carry0 == null) c.carry0 = c.carry;
     let lo = 20, hi = 95;
     for (let i = 0; i < 28; i++) {
       const mid = (lo + hi) / 2;
       const r = flatCarry(mid, c.launch, c.spin);
-      if (r < c.carry) lo = mid; else hi = mid;
+      if (r < c.carry0) lo = mid; else hi = mid;
     }
     c.ballSpeed = (lo + hi) / 2; c.clubSpeed = c.ballSpeed / c.smash;
+  }
+  AIR_K = k0; clubTables();
+}
+// what each club does in the air of the course in play (AIR_K): the carry table for the tempo pad, the total, the chip share, the rough-lie factors, and
+// CLUBS[].carry itself (a full swing's flat carry here: the caddie, the club label and the aim ring all use it)
+function clubTables() {
+  const wx = WX, fw = FAIR_WX; WX = WEATHERS[1]; FAIR_WX = SURF[S.FAIR];   // (always measured in the same dry, calm conditions as at start-up, whatever the weather in play)
+  for (const c of GOLF_BAG) {
+    if (c.type === 'putter') continue;
     // carry table for the tempo pad (power -> carry)
     c.table = [];
     for (let k = 0; k <= 20; k++) {
@@ -1068,6 +1088,7 @@ function calibrateClubs() {
       if (p === 0) { c.table.push(0); continue; }
       c.table.push(flatCarry(c.ballSpeed * Math.pow(p, POW_EXP), c.launch, c.spin * spinFrac(p)));
     }
+    c.carry = c.table[20];
     const full = simulateShot(FLAT, launchVec(c.ballSpeed, c.launch, c.spin));
     c.total = full.total; c.roll = full.total - full.carry;
     // chips release far more than full shots: carry share of a pure quarter swing onto a flat green (first guess for the chip line)
@@ -1085,19 +1106,21 @@ function calibrateClubs() {
       }
     }
   }
+  WX = wx; FAIR_WX = fw;
 }
 function launchVec(speed, launch, rpm) {
   const cl = Math.cos(launch * DEG), sl = Math.sin(launch * DEG);
   return { x: 0, y: 0, z: 0, v: [0, sl * speed, -cl * speed], w: [rpm * RPM, 0, 0] };
 }
 function flatCarry(speed, launch, rpm) {
+  const KA = KAERO * AIR_K;
   const o = launchVec(speed, launch, rpm);
   const dt = 1 / 240; let y = 0, z = 0, vy = o.v[1], vz = o.v[2], w = rpm * RPM, t = 0;
   while (t < 20) {
     const sp = Math.hypot(vy, vz), Sp = BALL_R * w / sp, Cd = CD0 + CD1 * Sp, Cl = Math.min(CLMAX, CL0 + CL1 * Sp);
     // lift perpendicular: w along +x, v=(0,vy,vz): w x v = (0, -w*vz, w*vy)/|.| *... direction (0,-vz,vy)/sp
-    const ay = -KAERO * Cd * sp * vy + KAERO * Cl * sp * (-vz) - GRAV;
-    const az = -KAERO * Cd * sp * vz + KAERO * Cl * sp * (vy);
+    const ay = -KA * Cd * sp * vy + KA * Cl * sp * (-vz) - GRAV;
+    const az = -KA * Cd * sp * vz + KA * Cl * sp * (vy);
     vy += ay * dt; vz += az * dt; y += vy * dt; z += vz * dt; t += dt; w *= Math.exp(-dt / SPIN_TAU);
     if (y < 0 && vy < 0) return -z;
   }
@@ -1193,7 +1216,7 @@ function simulateDisc(C, o) {
       let px = -uy * ux, py = 1 - uy * uy, pz = -uy * uz; const pl = Math.hypot(px, py, pz) || 1; px /= pl; py /= pl; pz /= pl;
       const lx = py * uz - pz * uy, ly = pz * ux - px * uz, lz = px * uy - py * ux;
       const cl = (DISC_CL0 + DISC_CLA * Math.min(al, .35)) * d.glide * (al > .35 ? Math.max(0, 1 - (al - .35) * 2.5) : 1);   // (stalls past 20 degrees)
-      const cd = DISC_CD0 * (1 + d.wob) + DISC_CDA * (al - DISC_A0) ** 2, q = DISC_KD * V * V, c = Math.cos(phi), sn = Math.sin(phi) * sg;
+      const cd = DISC_CD0 * (1 + d.wob) + DISC_CDA * (al - DISC_A0) ** 2, q = DISC_KD * AIR_K * V * V, c = Math.cos(phi), sn = Math.sin(phi) * sg;
       const ax = q * cl * (px * c + lx * sn) - q * cd * ux, ay = q * cl * (py * c + ly * sn) - q * cd * uy - GRAV, az = q * cl * (pz * c + lz * sn) - q * cd * uz;
       // turn near full speed, fade as it slows (never past 70 degrees of bank); slowing down, the nose drops toward the flight path
       const r = V / d.vr, rate = DISC_TURN * d.turn * smooth(.75, 1, r) + DISC_FADE * d.fade * (1 - smooth(.45, .85, r));
@@ -1286,14 +1309,24 @@ function discFlat(c, V, p) {
 }
 // each disc's release speed for its carry, and its power -> carry table (as calibrateClubs does for the clubs)
 function calibrateDiscs() {
+  const k0 = AIR_K; AIR_K = 1;   // solved at the reference altitude, as for the clubs
   for (const c of DISC_BAG) {
+    if (c.carry0 == null) c.carry0 = c.carry;
     let lo = 8, hi = 45;
-    for (let i = 0; i < 26; i++) { const m = (lo + hi) / 2; c.ballSpeed = 0; if (discFlat(c, m).carry < c.carry) lo = m; else hi = m; }
+    for (let i = 0; i < 26; i++) { const m = (lo + hi) / 2; c.ballSpeed = 0; if (discFlat(c, m).carry < c.carry0) lo = m; else hi = m; }
     Object.assign(c, { ballSpeed: (lo + hi) / 2, smash: 1, launch: DISC_LAUNCH, spin: 0, loft: 0 }); c.clubSpeed = c.ballSpeed;
+  }
+  AIR_K = k0; discTables();
+}
+function discTables() {   // each disc in the air of the course in play: power -> carry table, totals, and CLUBS[].carry
+  const wx = WX, fw = FAIR_WX; WX = WEATHERS[1]; FAIR_WX = SURF[S.FAIR];
+  for (const c of DISC_BAG) {
     c.table = []; for (let k = 0; k <= 20; k++) c.table.push(k ? discFlat(c, c.ballSpeed * Math.pow(k / 20, POW_EXP), k / 20).carry : 0);
+    c.carry = c.table[20];
     const full = discFlat(c, c.ballSpeed), ch = discFlat(c, c.ballSpeed * Math.pow(.25, POW_EXP), .25);
     c.total = full.total; c.roll = full.total - full.carry; c.chipCarry = ch.carry / ch.total;
   }
+  WX = wx; FAIR_WX = fw;
 }
 
  // broad rolling ground (m), faded out around creeks and ponds
@@ -1747,12 +1780,18 @@ function makeRealCourse(idx, pin) {
       // the hole's own green follows the real elevation lattice; the double-plateau ones are rebuilt as two levels
       if (GREEN_ALTI[idx] && Math.hypot(cx - gX0, cz - gZ0) < 30) tier = TIER_HOLES.includes(idx) ? tierGreen(GREEN_ALTI[idx], sd, ww, hh, i0, j0, cx, cz, maxS, TIER_CUT[idx]) : realGreen(GREEN_ALTI[idx], sd, ww, hh, i0, j0, cx, cz);
     }
-    if (tier && tier.g) { // no green steeper than Woodbine Bend's steepest: over GREEN_P90_MAX, part of the green's overall tilt is taken out (its contours stay)
+    if (tier && tier.g) { // no green steeper than Woodbine Bend's steepest: over GREEN_P90_MAX, part of the green's overall tilt is taken out (its contours stay; only when none of the tilt is left and the contours alone are still over the limit are they scaled down too)
       const h1 = tier.h, roll = (X, Z) => amp ? .4 * amp * Math.sin((X - cx) * .19 + p0) * Math.cos((Z - cz) * .15 + p1) : 0, [tx, tz] = tier.g, d = .5;
-      const stat = t => { const g = []; for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) if (sd[j * ww + i] < 0) { const X = x0 + (i + i0) * res, Z = z0 + (j + j0) * res, f = (A, B) => h1(A, B) + roll(A, B);
-        g.push(Math.hypot((f(X + d, Z) - f(X - d, Z)) / (2 * d) - (1 - t) * tx, (f(X, Z + d) - f(X, Z - d)) / (2 * d) - (1 - t) * tz)); } g.sort((a, b) => a - b); return [g.reduce((a, b) => a + b, 0) / (g.length || 1), g[Math.floor(.9 * (g.length - 1))] || 0]; };
-      const steep = t => { const [mn, p9] = stat(t); return mn > GREEN_MEAN_MAX || p9 > GREEN_P90_MAX; };
-      if (steep(1)) { let lo = 0, hi = 1; for (let b = 0; b < 14; b++) { const m = (lo + hi) / 2; if (steep(m)) hi = m; else lo = m; } tier.tilt = lo; tier.h = (X, Z) => h1(X, Z) - (1 - lo) * (tx * (X - cx) + tz * (Z - cz)); }
+      const stat = (t, k) => { const g = []; for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) if (sd[j * ww + i] < 0) { const X = x0 + (i + i0) * res, Z = z0 + (j + j0) * res, fr = roll;
+        g.push(Math.hypot(k * ((h1(X + d, Z) - h1(X - d, Z)) / (2 * d) - tx) + t * tx + (fr(X + d, Z) - fr(X - d, Z)) / (2 * d), k * ((h1(X, Z + d) - h1(X, Z - d)) / (2 * d) - tz) + t * tz + (fr(X, Z + d) - fr(X, Z - d)) / (2 * d))); } g.sort((a, b) => a - b); return [g.reduce((a, b) => a + b, 0) / (g.length || 1), g[Math.floor(.9 * (g.length - 1))] || 0]; };
+      const steep = (t, k) => { const [mn, p9] = stat(t, k); return mn > GREEN_MEAN_MAX || p9 > GREEN_P90_MAX; };
+      if (steep(1, 1)) {
+        let lo = 0, hi = 1; for (let b = 0; b < 14; b++) { const m = (lo + hi) / 2; if (steep(m, 1)) hi = m; else lo = m; } tier.tilt = lo;
+        let kk = 1; // no tilt left and still too steep: the contours alone are over the limit (Fossil Trace), so they are scaled down too (never at the other courses)
+        if (lo < .005 && steep(0, 1)) { let a = 0, bb = 1; for (let b = 0; b < 14; b++) { const m = (a + bb) / 2; if (steep(0, m)) bb = m; else a = m; } kk = a; lo = 0; tier.tilt = 0; }
+        const cont0 = h1(cx, cz);   // (the tilt plane is 0 at the middle of the green)
+        tier.h = (X, Z) => { const pl = tx * (X - cx) + tz * (Z - cz), cont = h1(X, Z) - pl; return kk < 1 ? pl * lo + cont0 + (cont - cont0) * kk : h1(X, Z) - (1 - lo) * pl; };
+      }
     }
     const top = (X, Z) => {
       if (tier) return tier.h(X, Z) + (amp ? .4 * amp * Math.sin((X - cx) * .19 + p0) * Math.cos((Z - cz) * .15 + p1) : 0);
@@ -3192,9 +3231,16 @@ async function courseInit(data) {
   await Promise.all([courseLoad(PRACTICE_COURSE), courseLoad(courseStartKey(data))]);
   COURSE = COURSES[courseStartKey(data)]; // (boot starts input and multiplayer, which read the course, before setCourse)
 }
+// the air of the course in play: its density sets how far everything flies (tables are redone only when it changes)
+function setAltitude(alt) {
+  const k = airK(Number.isFinite(alt) ? alt : ALT_REF_M);
+  if (Math.abs(k - AIR_K) < 1e-6 || !GOLF_BAG[0].table) { AIR_K = k; return; }
+  AIR_K = k; clubTables(); discTables();
+  if (typeof G !== 'undefined' && G) G.carryKey = '';
+}
 function useRealData(key) {
   RDC = RDS[key] || RDS[PRACTICE_COURSE]; if (RD_CUR === RDC.data) return;
-  setBag(!!RDC.disc);
+  setBag(!!RDC.disc); setAltitude(RDC.alt);
   RD_CUR = RDC.data; GREEN_ALTI = RDC.alti; Object.assign(GR, RDC.gr); TREE_TWEAK = RDC.tweak; TIER_CUT = RDC.tierCut;
   for (const k of Object.keys(GC)) delete GC[k]; GC.ready = false;
   W.life = null; // the old hole's scenery belongs to the old course's data
