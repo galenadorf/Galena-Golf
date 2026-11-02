@@ -651,6 +651,12 @@ def main():
     fescue = [shape(g) for g in json.load(open(fp))] if os.path.exists(fp) else []
     bp = os.path.join(OUT, 'boundary.json')  # the hand-painted boundary (boundary.py) replaces the OSM outline as the out-of-bounds line
     bound = shape(json.load(open(bp))) if os.path.exists(bp) else round_osm(Polygon(course_poly.exterior), step=12)
+    if getattr(course, 'MOWN_ROUGH', False) and not fescue:
+        # OSM maps the mown rough (golf=rough) as well as the fairway: deep rough is only the native grass more than 8 m outside everything mown
+        mown = unary_union([r['poly'] for r in F['rough']] + list(fair) + [t['poly'] for t in F['tee']] + [g['poly'] for g in F['green']] + [b['poly'] for b in F['bunker']]).buffer(8)
+        deep = Polygon(course_poly.exterior).difference(mown).buffer(-2).buffer(2).simplify(.5)
+        fescue = [g for g in getattr(deep, 'geoms', [deep]) if g.geom_type == 'Polygon' and g.area > 80]
+        print('deep rough from the mown area:', len(fescue), 'pieces,', round(sum(g.area for g in fescue) / 1e4, 1), 'ha')
     if os.path.exists(ppn):
         fescue = practice_read.merge_fescue(fescue, pr)
     fescue = [g for f in fescue for g in getattr(f.intersection(bound), 'geoms', [f.intersection(bound)]) if g.geom_type == 'Polygon' and not g.is_empty]

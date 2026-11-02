@@ -344,7 +344,8 @@ SCENERY AND DATA
   - Greens: hole 15's OSM green was in the wrong place (a strip of fairway 14 m west of the real one); `GREEN_FIX` in its course.py replaces it with an outline traced off the aerial. Holes 5, 7, 9, 11, 12, 14 and 18 had contours steeper than the Woodbine standard even with no tilt, so their contours are scaled down.
   - Tee sets: Black 6,798, Blue 6,241 (played), Trike 5,925, White 5,551; the card's T-Rex, Palm and Gold sets are not used. Hole 12's black tee is 33 m from the nearest OSM tee box.
   - Buildings: the OSM buildings on and beside the course (houses, the clubhouse), plain.
-  - Nothing painted yet: fairways, greens, tee boxes and bunkers are OSM's.
+  - Fairways: OSM maps only a core stripe of each fairway (and part of some holes), so every par 4 and 5 also gets the fairway traced from the aerial (`fairways_fill.py`, `FAIRWAYS_FROM_AERIAL`). Deep rough is only native grass more than 8 m outside anything mown (OSM's golf=rough polygons, fairways, tees, greens, bunkers: `MOWN_ROUGH`); the mown rough between is regular rough.
+  - Nothing painted yet: greens, tee boxes and bunkers are OSM's.
 
 
 #####################################################################################################

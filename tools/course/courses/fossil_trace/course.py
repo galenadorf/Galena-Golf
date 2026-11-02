@@ -38,6 +38,8 @@ ALT = {}
 RELIEF_OFF_WATER = True
 PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 TREES_OFF_TEES_GREENS = True
+FAIRWAYS_FROM_AERIAL = True   # OSM's fairways are a core stripe (and miss part of holes 1, 6, 8, 12...): fairways_fill.py adds trace.py's aerial fairways to every par 4 and 5
+MOWN_ROUGH = True             # OSM's golf=rough outlines the mown rough: deep rough is only the native grass beyond 8 m of anything mown (build.py)
 
 # greens OSM has in the wrong place: hole -> outline in local metres, traced off the 2023 aerial (osm.py swaps it for the nearest OSM green and ends
 # the hole line and pin in it). Hole 15's OSM green is a strip of fairway 14 m west of the real green.
