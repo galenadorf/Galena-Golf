@@ -7,8 +7,8 @@ watching a full round.
 
 HOW THIS FILE IS ORGANISED
   GLOBAL        what every course has (objects, then sounds), after a table of which course has what.
-  then one section per course, in the order of the course picker: Woodbine Bend, Eagle Ridge South, Eagle Ridge North, Stonehenge,
-  Thunderhawk, Bear Slide, Chestnut Mountain Disc Golf, Adler Park Disc Golf.
+  then one section per course, in the order of the course picker: Woodbine Bend, Eagle Ridge South, Eagle Ridge North, Eagle Ridge The General,
+  Stonehenge, Thunderhawk, Bear Slide, Chestnut Mountain Disc Golf, Adler Park Disc Golf.
   Each course section has OBJECTS (what only that course has, with how often and when) then SOUNDS (the same), then SCENERY AND DATA (trees,
   water, buildings, roads, paths). A line "also everything in GLOBAL" is always true; "NOT here" lists what a reader might expect and will not find.
   Wording used for frequency: "always" = every time; "per hole" = decided each time a hole loads; "per trip" = each time a vehicle sets off;
@@ -21,39 +21,39 @@ GLOBAL
 
 A. WHICH COURSE HAS WHAT
 ------------------------
-  Y = yes, - = no. WB Woodbine Bend, ERS Eagle Ridge South, ERN Eagle Ridge North, SH Stonehenge, TH Thunderhawk, BS Bear Slide,
+  Y = yes, - = no. WB Woodbine Bend, ERS Eagle Ridge South, ERN Eagle Ridge North, ERG Eagle Ridge The General, SH Stonehenge, TH Thunderhawk, BS Bear Slide,
   CM Chestnut Mountain (disc), AD Adler Park (disc). Details are in each course's section.
 
-  OBJECTS                                         WB   ERS  ERN  SH   TH   BS   CM   AD
-  Bird flocks, hot air balloon, weather, rainbow   Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL)
-  Wild turkeys                                     Y    Y    Y    -    -    -    -    -
-  Gopher (groundhog)                               Y    Y    Y    -    -    -    -    -
-  Banner plane                                     Y    Y    Y    -    -    -    -    -
-  White-tailed deer                                -    -    -    Y    Y    Y    -    -
-  Squirrels (3 on every hole)                      -    -    -    Y    Y    Y    -    -
-  Highway with an 18-wheeler and 4 cars            Y    -    -    Y    -    -    -    -
-  Cars (Subaru and Hyundai only) on side roads     -    Y    Y    -    -    -    -    -
-  Dancing hot dog (hole 10)                        Y    -    -    -    -    -    -    -
-  Fountain (hole 1)                                Y    -    -    -    -    -    -    -
-  Moving golf cart with two men (rare)             Y    -    -    -    -    -    -    -
+  OBJECTS                                         WB   ERS  ERN  ERG  SH   TH   BS   CM   AD
+  Bird flocks, hot air balloon, weather, rainbow   Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL)
+  Wild turkeys                                     Y    Y    Y    Y    -    -    -    -    -
+  Gopher (groundhog)                               Y    Y    Y    Y    -    -    -    -    -
+  Banner plane                                     Y    Y    Y    Y    -    -    -    -    -
+  White-tailed deer                                -    -    -    -    Y    Y    Y    -    -
+  Squirrels (3 on every hole)                      -    -    -    -    Y    Y    Y    -    -
+  Highway with an 18-wheeler and 4 cars            Y    -    -    -    Y    -    -    -    -
+  Cars (Subaru and Hyundai only) on side roads     -    Y    Y    Y    -    -    -    -    -
+  Dancing hot dog (hole 10)                        Y    -    -    -    -    -    -    -    -
+  Fountain (hole 1)                                Y    -    -    -    -    -    -    -    -
+  Moving golf cart with two men (rare)             Y    -    -    -    -    -    -    -    -
   Parked golf carts, clubhouse model, washroom,
     porta-potties, parking lot, pump house,
-    entrance sign, hole 7 sign                     Y    -    -    -    -    -    -    -
-  Cart paths                                       Y    Y    Y    -    -    -    -    -
-  Cart-path bridges                                -    10   6    -    -    -    -    -
-  Roads drawn (out of bounds, for looks)           2    all* all* 1    3    5+   1    2         (* every OSM road near a hole)
-  Pool, water slide, playground                    -    -    -    -    -    -    -    Y
-  Disc, basket, tee pad (no ball, cup, tee peg)    -    -    -    -    -    -    Y    Y
-  Long rough (dark green) instead of fescue        -    Y    Y    Y    Y    Y    -    -     (Woodbine: golden fescue)
+    entrance sign, hole 7 sign                     Y    -    -    -    -    -    -    -    -
+  Cart paths                                       Y    Y    Y    Y    -    -    -    -    -
+  Cart-path bridges                                -    10   6    -    -    -    -    -    -
+  Roads drawn (out of bounds, for looks)           2    all* all* all* 1    3    5+   1    2         (* every OSM road near a hole)
+  Pool, water slide, playground                    -    -    -    -    -    -    -    -    Y
+  Disc, basket, tee pad (no ball, cup, tee peg)    -    -    -    -    -    -    -    Y    Y
+  Long rough (dark green) instead of fescue        -    Y    Y    Y    Y    Y    Y    -    -     (Woodbine: golden fescue)
 
-  SOUNDS                                          WB   ERS  ERN  SH   TH   BS   CM   AD
+  SOUNDS                                          WB   ERS  ERN  ERG  SH   TH   BS   CM   AD
   Club strikes, landing, trees, water, cup,
     chimes, interface blips, birdsong, rainbow
-    jingle, the rare unseen sound                  Y    Y    Y    Y    Y    Y    Y*   Y*    (GLOBAL; * disc: release whoosh and chains instead of strikes and cup)
-  Banner plane engine drone                        Y    Y    Y    -    -    -    -    -
-  Truck air horn / engine rumble (`scene.truckHorn`) Y   -    -    -    -    -    -    -
-  Hole 7 song                                      Y    -    -    -    -    -    -    -     (no birdsong on that hole)
-  Golf cart radio ("Around the World")             Y    -    -    -    -    -    -    -
+    jingle, the rare unseen sound                  Y    Y    Y    Y    Y    Y    Y    Y*   Y*    (GLOBAL; * disc: release whoosh and chains instead of strikes and cup)
+  Banner plane engine drone                        Y    Y    Y    Y    -    -    -    -    -
+  Truck air horn / engine rumble (`scene.truckHorn`) Y   -    -    -    -    -    -    -    -
+  Hole 7 song                                      Y    -    -    -    -    -    -    -    -     (no birdsong on that hole)
+  Golf cart radio ("Around the World")             Y    -    -    -    -    -    -    -    -
   Gobble / squeak / rustle / thunk when the
     ball hits an animal, plane or cart             per animal on that course (see its section)
 
@@ -294,6 +294,31 @@ SCENERY AND DATA
   - Trees: about 11,570 from the lidar (6,900 broadleaf, 4,500 conifer, 150 shrubs), none in a tee box or on a green (4 taken out: hole 17's green, hole 18's two tee boxes, hole 11's white tee) and 13 more taken out by hand with X marks (`trees_x.py`: holes 2, 3, 7, 8 (two), 10 (two), 11, 12, 13 (two), 16 and 17).
   - Tee boxes: hole 11's four tee sets sit in the boxes the card yardages point to (black, gold, white, jade from the back).
   - Buildings: the 7 OSM buildings on and beside the course, plain.
+
+
+#####################################################################################################
+EAGLE RIDGE THE GENERAL (eagle_general)
+#####################################################################################################
+Also everything in GLOBAL. Dark green long rough. OSM and lidar data only. 3-Star tees 6,245 yd, par 72 (Andy North and Roger Packard, 1997). The card names its tees 4-Star (6,649), 3-Star (6,245), 2-Star (5,846) and 1-Star (5,150); markers shown black, gold, white and green from the back.
+
+OBJECTS
+-------
+Wild turkeys, gopher, banner plane: all as at Eagle Ridge South and Woodbine (turkeys .4 per hole; gopher 20% per hole; plane 0-2 per round).
+Traffic on the roads (`scene.traffic`): exactly as at Eagle Ridge South: occasional Subaru and Hyundai only, no truck, 28 mph, 25-65 s and 60-120 s to first set off, 45-135 s between trips.
+Roads: every OSM road, drive and service road within 230 m of a hole (Eagle Ridge Drive, West Longhollow Road, U.S. Grant Memorial Highway's link roads and the housing streets), drawn and culled as at Eagle Ridge South.
+Cart paths: OSM's cart-path lines (about 9.2 km, 2.4 m wide), drawn over a road where they cross it. Several short spurs run to tee boxes and end there; OSM maps no creek crossing on this course, so there are no cart-path bridges.
+NOT here: highway and trucks, deer, squirrels, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs, cart-path bridges.
+
+SOUNDS
+------
+  - Banner plane drone as at Woodbine; gobble, squeak and thunk on hits. NO horn, truck rumble, cart radio or hole song. Plus all of GLOBAL.
+
+SCENERY AND DATA
+----------------
+  - Water: three OSM ponds (right of 1, 12 and 13) and OSM streams (about 7 km in 8 pieces).
+  - Trees: about 11,150 from the lidar (6,570 broadleaf, 4,390 conifer, 195 shrubs), none in a tee box or on a green. Nothing taken out by hand yet.
+  - Buildings: the 3 OSM buildings on and beside the course, plain.
+  - Nothing painted yet: fairways, greens, tee boxes and bunkers are OSM's (`all_edit.py` makes the paint map when wanted).
 
 
 #####################################################################################################

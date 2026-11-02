@@ -52,6 +52,21 @@
       }
     },
     {
+      "key": "eagle_general",
+      "name": "Eagle Ridge The General Course",
+      "short": "ER The General",
+      "pars": [4, 3, 5, 4, 4, 3, 4, 4, 5, 4, 5, 3, 4, 4, 5, 3, 4, 4],
+      "recFrom": "2026-11-01",
+      "about": "The General Course at Eagle Ridge Resort & Spa (Galena, Illinois; Andy North and Roger Packard, 1997) is played from the 3-Star tees (6,245 yards). Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
+      "engine": { "fescue": true, "longRough": true, "allRoads": true, "z0": 200, "gr": { "e0": -1150, "n0": -700, "res": 2, "W": 1150, "H": 700 } },
+      "scene": {
+        "turkeys": 0.4,
+        "bannerPlane": true,
+        "groundhog": true,
+        "traffic": true
+      }
+    },
+    {
       "key": "stonehenge",
       "name": "Stonehenge Golf Club",
       "short": "Stonehenge",
