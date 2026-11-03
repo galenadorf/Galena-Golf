@@ -3638,8 +3638,8 @@ varying vec3 vWPos; varying vec3 vWN;
 float dcF(float v) { return (v * 2. - 1.) * fR; }
 float ins(float d) { float w = max(fwidth(d), 1e-3) * .75; return 1. - smoothstep(-w, w, d); }
 float lineAt(float d, float hw) { float w = max(fwidth(d), 1e-3) * .75; return 1. - smoothstep(hw - w, hw + w, abs(d)); }
-// the putting read, drawn on the green itself: a grid of SG_CELL squares, each with one bead that rolls downhill across its own square (so one texture read a pixel).
-// tSlope, one texel a square: rg downhill direction, b steepness (1 = SG_MAX), a the bead's phase; a steeper square's bead runs faster and turns from navy to red.
+// the putting read, drawn on the green itself: a grid of SG_CELL squares, each with rows of small dots that flow downhill across it (so one texture read a pixel).
+// tSlope, one texel a square: rg downhill direction, b steepness (1 = SG_MAX), a the phase; a steeper square's dots run much faster and turns from navy to red.
 vec3 slopeGrid(vec3 col, float mask) {
   if (mask < .01) return col;
   vec2 p = (vWPos.xz - sgBox.xy) * sgBox.z, id = floor(p), q = p - id - .5, fw = max(fwidth(p), vec2(1e-3));
@@ -3648,9 +3648,9 @@ vec3 slopeGrid(vec3 col, float mask) {
   col = mix(col, vec3(1.), ln * .34 * focus * mask);
   vec4 s = texture2D(tSlope, (id + .5) * sgBox.w);
   if (s.b < .004 || id.x < 0. || id.y < 0. || id.x * sgBox.w >= 1. || id.y * sgBox.w >= 1.) return col;
-  vec2 dir = normalize(s.rg * 2. - 1.); float u = fract(sgT * (.12 + s.b * .5) + s.a), head = (u - .5) * .86, tail = .08 + s.b * .14;
-  float along = dot(q, dir), across = dot(q, vec2(-dir.y, dir.x)), ta = clamp(head - along, 0., tail), r = .035 * (1. - .75 * ta / tail), d = length(vec2(along - (head - ta), across));
-  float aa = max(fw.x, fw.y), bead = (1. - smoothstep(r - aa * .6, r + aa * .6, d)) * sqrt(sin(u * PI)) * mask * mix(.55, 1., focus);
+  vec2 dir = normalize(s.rg * 2. - 1.), sp = vec2(.25, 1. / 3.); float aa = max(fw.x, fw.y), r = max(.024, aa * .7);
+  vec2 m = vec2(dot(q, dir) - sgT * .86 * (.06 + pow(s.b, 1.5)) - s.a, dot(q, vec2(-dir.y, dir.x))), g = (fract(m / sp + vec2(0., .5)) - .5) * sp, ed = .5 - abs(q);
+  float bead = (1. - smoothstep(r - aa * .6, r + aa * .6, length(g))) * smoothstep(0., .06, min(ed.x, ed.y)) * clamp(.25 / (aa * 3.), 0., 1.) * mask * mix(.55, 1., focus);
   return mix(col, mix(vec3(.03, .08, .2), vec3(.8, .04, .16), smoothstep(.45, .75, s.b)), bead);
 }
 // real courses: beyond the hole's own fields, a course-wide class map (2 m cells) colours the rest of the course
@@ -3817,7 +3817,7 @@ function gableRoof(w, d, h, over) {
   const v = [-x, 0, z, x, 0, z, x, h, 0, -x, 0, z, x, h, 0, -x, h, 0, x, 0, -z, -x, 0, -z, -x, h, 0, x, 0, -z, -x, h, 0, x, h, 0, -x, 0, -z, -x, 0, z, -x, h, 0, x, 0, z, x, 0, -z, x, h, 0];
   g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); g.computeVertexNormals(); return g;
 }
-// The putting read: the grid and beads (slopeGrid in TERRAIN_GLSL) and the read chip. On trial on the practice green, where pgRead switches back to the arrows; the courses keep the arrows.
+// The putting read: the grid and dots (slopeGrid in TERRAIN_GLSL) and the read chip. On trial on the practice green, where pgRead switches back to the arrows; the courses keep the arrows.
 const SG_CELL = 1.25, SG_MAX = .06, SG_FLAT = .003;
 const readGrid = () => !!(G.pg && !G.pg.range && settings.greenRead !== 'arrows');
 function slopeGridBake(C) {
