@@ -3648,8 +3648,8 @@ vec3 slopeGrid(vec3 col, float mask) {
   col = mix(col, vec3(1.), ln * .34 * focus * mask);
   vec4 s = texture2D(tSlope, (id + .5) * sgBox.w);
   if (s.b < .004 || id.x < 0. || id.y < 0. || id.x * sgBox.w >= 1. || id.y * sgBox.w >= 1.) return col;
-  vec2 dir = normalize(s.rg * 2. - 1.); float u = fract(sgT * (.22 + s.b * 1.5) + s.a), head = (u - .5) * .86, tail = .12 + s.b * .22;
-  float along = dot(q, dir), across = dot(q, vec2(-dir.y, dir.x)), ta = clamp(head - along, 0., tail), r = .055 * (1. - .75 * ta / tail), d = length(vec2(along - (head - ta), across));
+  vec2 dir = normalize(s.rg * 2. - 1.); float u = fract(sgT * (.12 + s.b * .5) + s.a), head = (u - .5) * .86, tail = .08 + s.b * .14;
+  float along = dot(q, dir), across = dot(q, vec2(-dir.y, dir.x)), ta = clamp(head - along, 0., tail), r = .035 * (1. - .75 * ta / tail), d = length(vec2(along - (head - ta), across));
   float aa = max(fw.x, fw.y), bead = (1. - smoothstep(r - aa * .6, r + aa * .6, d)) * sqrt(sin(u * PI)) * mask * mix(.55, 1., focus);
   return mix(col, mix(vec3(.03, .08, .2), vec3(.8, .04, .16), smoothstep(.45, .75, s.b)), bead);
 }
