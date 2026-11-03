@@ -2192,9 +2192,11 @@ function buildRealRoad(C, grp) {
   W.road = { X: Float32Array.from(run.X), Z: Float32Array.from(run.Z), Y, S, slow, len: S[n - 1] };
 }
 
+let FAR_LAST = null;
 function realFarTex() {
   if (!GC.farTex) {
-    const t = new THREE.DataTexture(GC.cls, GR.W, GR.H, THREE.LuminanceFormat, THREE.UnsignedByteType);
+    if (FAR_LAST) FAR_LAST.dispose();   // the previous course's (only the hole being built draws with this one; the old hole is already gone)
+    const t = FAR_LAST = new THREE.DataTexture(GC.cls, GR.W, GR.H, THREE.LuminanceFormat, THREE.UnsignedByteType);
     t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.unpackAlignment = 1; t.needsUpdate = true; GC.farTex = t;
   }
   return GC.farTex;
@@ -2287,8 +2289,9 @@ function buildRealTrees(C, grp) {
   const dOut = (X, Z) => Math.hypot(Math.max(I.minX - X, 0, X - I.maxX), Math.max(I.minZ - Z, 0, Z - I.maxZ));
   const add = (t, m, fi) => {
     if ((TREE_TWEAK[t.fill ? -1 : fi] || {}).hide) return;
-    if (GC.hw && hwDist(t.e, t.n) < 8) return; // the highway and its shoulders are clear of trees
-    if (GC.sides && sideDist(t.e, t.n) < 5.5) return; // and so are the side roads
+    // the highway and its shoulders are clear of trees, and so are the side roads (worked out once per tree per course: it is slow on a course with many roads and trees)
+    if (t.onRoad === undefined) t.onRoad = !!(GC.hw && hwDist(t.e, t.n) < 8) || !!(GC.sides && sideDist(t.e, t.n) < 5.5);
+    if (t.onRoad) return;
     if (Math.hypot(t.e - 99.5, t.n + 146.8) < 9) return; // and the clubhouse's front door
     const q = C.loc(t.e, t.n), X = q[0], Z = -q[1], d = dOut(X, Z); if (d > m) return;
     let sc = 1; if (t.fill && d > 220) { if (hash2(fi, 3, 17) < .45) return; sc = 1.22; }
@@ -2300,6 +2303,7 @@ function buildRealTrees(C, grp) {
   const trunkG = new THREE.CylinderGeometry(.22, .32, 1, 6, 1, true); trunkG.translate(0, .5, 0);
   const trunkF = new THREE.CylinderGeometry(.22, .32, 1, 4, 1, true); trunkF.translate(0, .5, 0);
   const blobN = new THREE.IcosahedronGeometry(1, 1), blobF = new THREE.IcosahedronGeometry(1, 0), coneG = new THREE.ConeGeometry(1, 1, 10); coneG.translate(0, .5, 0);
+  blobF.attributes.normal.copy(blobF.attributes.position);   // detail 0 comes flat-shaded: smooth normals (a unit sphere's are its positions) make far crowns match the near ones at no extra triangles
   const coneF = new THREE.ConeGeometry(1, 1, 6, 1, true); coneF.translate(0, .5, 0);
   const mk = (geo, cnt, shadow) => { const c2 = Math.max(1, cnt); const m = new THREE.InstancedMesh(geo, lambert(0xffffff), c2); m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(c2 * 3), 3); m.castShadow = shadow; m.count = 0; grp.add(m); return m; };
   const trN = mk(trunkG, nN, true), trF = mk(trunkF, nF, false), blN = mk(blobN, nN * 4, true), blF = mk(blobF, nF * 2, false), coN = mk(coneG, nN * 3, true), coF = mk(coneF, nF * 2, false);
@@ -3627,9 +3631,10 @@ function axisCoords(min, max, step, ext, fine) {
   return a;
 }
 function disposeGroup(grp) {
-  grp.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) { (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.map) m.map.dispose(); if (m.userData.disposeTex) m.userData.disposeTex(); m.dispose(); }); } });
+  grp.traverse(o => { if (o.isInstancedMesh) o.dispose(); /* frees its instance buffers: without this every hole left them on the GPU */ if (o.geometry) o.geometry.dispose(); if (o.material) { (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.map) m.map.dispose(); if (m.userData.disposeTex) m.userData.disposeTex(); m.dispose(); }); } });
 }
 function buildHole(C) {
+  W.stillDrawn = false;
   if (W.holeGroup) { W.scene.remove(W.holeGroup); disposeGroup(W.holeGroup); }
   const grp = new THREE.Group(); W.holeGroup = grp; W.scene.add(grp);
   W.treeOcc = null;
@@ -6859,6 +6864,7 @@ function fillGap() {
     const lg = Math.max(screen.width, screen.height), sh = Math.min(screen.width, screen.height), full = window.innerWidth > window.innerHeight ? sh : lg, gap = full - window.innerHeight; return gap > 0 && gap <= 100 ? gap : 0; } catch (e) { return 0; }
 }
 function onResize() {
+  W.stillDrawn = false;
   UI.pcT = -1e9; if (UI.pt) UI.pt.w = 0; UI.btWH = null;   // re-measure the HUD tags
   const w = window.innerWidth, h = VH(), gap = fillGap(); SHV = gap ? h + gap : 0;
   const gl = $('gl'); gl.style.bottom = gap ? 'auto' : ''; gl.style.height = gap ? (h + gap) + 'px' : '';
@@ -8571,8 +8577,18 @@ let lastT = performance.now(), dueT = 0;
 // (the hole-done card and the final scorecard); everything else (the flyover, a swing, the ball in flight, the camera settling, any touch in the
 // last 0.7 s) runs at 60 fps: a 90 or 120 Hz screen would otherwise draw twice as many frames for nothing anyone can see
 const REST_FPS = 30, ACTIVE_FPS = 60;
+// a sheet is open and nothing in the scene is on the move: the last frame stays on screen and the scene is not drawn again until it closes
+function sceneStill() {
+  if (!sheetOpen()) return false;
+  if (G.state === 'title') return true;
+  if (G.state === 'holed') return G.holedT > 3;
+  if (G.state !== 'address' || SW.phase !== 'idle') return false;
+  const R = G.rig; return !(R && (R.pv.length() > .03 || R.lv.length() > .03));
+}
+document.addEventListener('visibilitychange', () => { W.stillDrawn = false; });
 function frameGap(now) {
   const rest = 1000 / REST_FPS, active = 1000 / ACTIVE_FPS;
+  if (sceneStill()) return rest;   // (a touch on the sheet does not bring back 60 fps either)
   if (G.state === 'title') return rest;
   if (G.state === 'holed') return G.holedT > 3 && now - UI.touchT >= 700 ? rest : active;
   if (G.state !== 'address') return active;
@@ -8641,7 +8657,7 @@ function frame(now) {
       if (busy || now - UI.hudT >= (G.state === 'address' ? 62 : 96)) { UI.hudT = now; drawTempo(now); drawStrike(now); drawFx(now); }
     }
   } else if (UI.fxc) UI.fxc.clearRect(0, 0, UI.fxc.canvas.width, UI.fxc.canvas.height);
-  renderTiltShift(dt);
+  const still = sceneStill(); if (!still || !W.stillDrawn) { W.stillDrawn = still; renderTiltShift(dt); }
 }
 // the first hole of the course in play behind the title screen
 function showTitleHole() {
