@@ -14,7 +14,7 @@ This pals golf game was inspired by and is dedicated Andy in honor of his first 
 
 **v1.2.** Build `39e00cf`, 2026-11-03.
 
-- **Putting read.** Every putt now shows a grid on the green with small dots flowing downhill (steeper is faster and redder) and a short read such as "Downhill · Breaks right". It replaces the old arrows, which are gone.
+- **Putting read.** Every putt now shows a grid on the green with small dots flowing downhill (steeper is faster and pinker) and a short read such as "Downhill · Breaks right". It replaces the old arrows, which are gone.
 - **Flag shadows.** They no longer flicker, and shadows no longer shimmer as you aim.
 
 **v1.0: a major milestone.** Build `ce4c23d`, 2026-10-27 16:30 CDT (21:30 UTC). PALS Rules (mulligan, gimme, maximum hole score) on by default. This is the first version of Galena!!! Pocket Edition to be considered complete: all 18 holes of Woodbine Bend, the practice green and driving range, live multiplayer, and the Player ID leaderboard and records.
