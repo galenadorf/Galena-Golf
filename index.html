@@ -125,9 +125,15 @@ body.rev #strike{right:auto;left:calc(var(--sl) + 38px)}
 /* ---------- overlays ---------- */
 .layer{position:fixed;inset:0;z-index:6;opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
 .layer.on{opacity:1;pointer-events:auto}
-#title{display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--st) + 26px) calc(var(--sr) + 16px) calc(var(--sb) + 8px) calc(var(--sl) + 16px);background:linear-gradient(180deg,rgba(10,40,20,0) 45%,rgba(10,40,20,.32) 100%)}
+#title,#play{display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--st) + 26px) calc(var(--sr) + 16px) calc(var(--sb) + 8px) calc(var(--sl) + 16px);background:linear-gradient(180deg,rgba(10,40,20,0) 45%,rgba(10,40,20,.32) 100%)}
 .logoCard{align-self:stretch;flex:none;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;gap:4px;text-align:left;padding:14px 14px 14px 24px;border-radius:28px}
 .logoCard .lt{min-width:0}
+.playHead{align-self:stretch;flex:none;display:flex;align-items:center;gap:12px;padding:14px 20px 14px 14px;border-radius:28px;text-align:left}
+.playHead .lt{min-width:0}
+.playHead h1{margin:0;font:700 38px/.95 var(--cond);text-transform:uppercase;letter-spacing:.01em}
+.playHead p{margin:7px 0 0;font:600 13px/1.45 var(--cond);text-transform:uppercase;letter-spacing:.14em;color:var(--w2);white-space:pre-line}
+.playBack{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.2);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}.playBack:active{background:rgba(255,255,255,.34)}
+.playBack svg{width:22px;height:22px}
 .logoCard img{height:126px;width:auto;flex:none;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.35))}
 .logoCard h1{margin:0;font:700 46px/.95 var(--cond);text-transform:uppercase;letter-spacing:.01em}
 .logoCard h1 span{color:inherit}
@@ -418,8 +424,8 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
   #strike{width:min(220px,28vw);right:calc(var(--sr) + 60px);bottom:calc(var(--sb) + 30px)}
   body.rev #strike{right:auto;left:calc(var(--sl) + 60px)}
   .icard{max-width:600px}
-  #title{flex-direction:row;align-items:flex-end;gap:20px}
-  .logoCard{align-self:flex-start}
+  #title,#play{flex-direction:row;align-items:flex-end;gap:20px}
+  .logoCard,.playHead{align-self:flex-start}
   .tb{width:min(440px,55%)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -456,19 +462,23 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 <div id="specBar" class="glass"><span id="specInfo">Following</span><button class="btn" id="specResume">Resume play</button></div>
 <div id="ballTag" class="gtag"><div class="bt1"><span id="btD">0</span><small>YD</small></div><div class="bt2" id="btC"></div></div>
 <div class="layer on" id="title">
-  <div class="card logoCard"><div class="lt"><h1>Galena<span>!!!</span><br>Golf</h1><p id="courseLine">Woodbine Bend
-Golf Course
-18 holes · Par 72</p></div><img src="crest.png" width="123" height="126" alt="Galena crest" decoding="async"></div>
+  <div class="card logoCard"><div class="lt"><h1>Galena<span>!!!</span><br>Golf</h1></div><img src="crest.png" width="123" height="126" alt="Galena crest" decoding="async"></div>
   <div class="tb">
     <div class="how">
       <div class="card"><svg class="tut" viewBox="0 0 90 100" aria-hidden="true"><rect x="31" y="6" width="28" height="88" rx="14" fill="#2f6b35"/><rect x="38" y="14" width="14" height="72" rx="7" fill="rgba(255,255,255,.16)"/><path class="tDown" d="M45 80V20" stroke="#ffe85a" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M17 34V62m0 0l-5-6m5 6l5-6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".75"/><path d="M73 68V40m0 0l-5 6m5-6l5 6" stroke="#ffe85a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".9"/><g class="tThumb"><circle r="9" fill="#fff" stroke="#1d3d22" stroke-width="2"/></g></svg><b>Left thumb · tempo</b><p>Slide down, then slide straight up. A tempo of 3:1 gets the best smash factor.</p></div>
       <div class="card"><svg class="tut" viewBox="0 0 90 100" aria-hidden="true"><circle cx="45" cy="50" r="40" fill="#bfe2a0"/><rect x="12" y="34" width="66" height="32" rx="14" fill="#dfe5ea" stroke="#7f93a6" stroke-width="2"/><circle cx="45" cy="50" r="9" fill="none" stroke="#2f6b35" stroke-width="1.6" stroke-dasharray="3 3"/><g class="tBall"><circle r="7.5" fill="#fff" stroke="#8d9aa4" stroke-width="1.2"/><circle cx="-2" cy="-2" r="1" fill="#cfd8de"/><circle cx="2.4" cy="1.5" r="1" fill="#cfd8de"/></g><circle class="tFinger" r="12" fill="rgba(255,255,255,.28)" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/></svg><b>Right thumb · strike</b><p>Your thumb jitters, and the ball rides up-left of it. Keep the ball on the club's sweet spot.</p></div>
     </div>
-    <label class="card nameRow courseRow" hidden><span>Course</span><select class="courseSel" id="selCourse" aria-label="Course"></select></label>
     <label class="card nameRow" id="nameRow"><span>Player</span><input id="nameIn" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="go"></label>
-    <div class="playRow"><button class="btn alt" id="btnResume" style="display:none">Resume<small id="resumeInfo"></small></button><button class="btn" id="btnPlay">Tee off</button></div>
+    <div class="playRow"><button class="btn" id="btnPlay">Tee off</button></div>
     <div class="playRow"><button class="btn subBtn" id="btnPractice">Practice</button><button class="btn subBtn" id="btnSettings">Settings</button></div>
     <div class="best" id="best"></div>
+  </div>
+</div>
+<div class="layer" id="play">
+  <div class="card playHead"><button class="playBack" id="btnPlayBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><h1>Play</h1><p id="playCourse"></p></div></div>
+  <div class="tb">
+    <label class="card nameRow courseRow" hidden><span>Course</span><select class="courseSel" id="selCourse" aria-label="Course"></select></label>
+    <div class="playRow"><button class="btn alt" id="btnResume" style="display:none">Continue round<small id="resumeInfo"></small></button><button class="btn" id="btnNew">New round</button></div>
   </div>
 </div>
 <div class="layer" id="intro"><div class="card icard"><canvas id="introMap" width="172" height="288"></canvas><div class="ic-b"><div><div class="ic-k" id="icK">Hole 1 of 3</div><div class="ic-n" id="icN">Headland</div><div class="ic-i" id="icI"></div><div class="ic-f"><div>Par<b id="icPar">4</b></div><div>Length<b id="icLen">390 yd</b></div><div>Wind<b id="icWind">5 mph</b></div><div>Fairway<b id="icWx">Fine</b></div></div></div><button class="btn ic-go" id="icGo">Play hole</button></div></div></div>
@@ -3228,8 +3238,12 @@ function courseReady(c, D) {
     PRAC_DEF = rd.prac ? { par: 2, hcp: 1, name: 'Practice green', inspo: '', seed: 9999, windMax: 3, rh: rd.prac, len: 25, real: true, teeCam: null } : null;
   }
 }
-// the course the game opens on: the one a restored round was on, else the last one picked, else the first listed
-function courseStartKey(data) { const k = data && data.scores ? data.course : settings.course; return COURSES[k] ? k : Object.keys(COURSES)[0]; }
+// the course the game opens on: the one a restored round was on, else the course of the saved round waiting to be resumed (the most recent), else Woodbine
+function courseStartKey(data) {
+  if (data && data.scores && COURSES[data.course]) return data.course;
+  let best = null; for (const k of Object.keys(COURSES)) { const r = loadRound(k); if (r && COURSES[r.course] && (!best || r.at > best.at)) best = r; }
+  return best ? best.course : COURSES[PRACTICE_COURSE] ? PRACTICE_COURSE : Object.keys(COURSES)[0];
+}
 // before boot: the course list, the course to open on and the practice areas' course
 async function courseInit(data) {
   const r = await fetch('courses/courses.json?v=' + BUILD); if (!r.ok) throw new Error('courses/courses.json: ' + r.status);
@@ -3263,7 +3277,7 @@ function setCourse(key) {
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   G.hole = 0; G.submitted = false; G.practice = false; G.pg = null; document.body.classList.remove('pg');
   if (settings.course !== COURSE.key) { settings.course = COURSE.key; saveSettings(); }
-  $('courseLine').textContent = `${COURSE.name.replace(/ (Golf Course)$/, '\n$1')}\n${HOLE_DEFS.length} holes · Par ${PAR_TOTAL}`;
+  $('playCourse').textContent = `${COURSE.name.replace(/ (Golf Course)$/, '\n$1')}\n${HOLE_DEFS.length} holes · Par ${PAR_TOTAL}`;
   $('boardName').textContent = COURSE.name; $('aboutCourse').textContent = COURSE.about; $('musRow').hidden = !COURSE.music;
   document.querySelectorAll('.courseSel').forEach(el => { el.value = COURSE.key; });
   showBest(); refreshBoards(); try { loadWorld(); } catch (e) { } refreshResume();
@@ -5510,7 +5524,7 @@ function mpFollow(id) {
   if (!MP.spec && G.state !== 'address' && G.state !== 'title') { readout('<div class="r1">Watch once your ball is at rest</div>', 2.2); return; }
   // my round waits exactly as it is: its course, hole, score; from the start screen there is no round to wait
   if (!MP.spec) MP.spec = { C: G.C, hole: G.hole, course: COURSE.key, tp: totalToPar().d, th: G.scores.filter(v => v != null).length, title: G.state === 'title' };
-  if (MP.spec.title) $('title').classList.remove('on');
+  if (MP.spec.title) titleOff();
   MP.follow = id; MP.rin = null; closeSheets(); mpSpecLoad(pr);
   document.body.classList.add('spec'); G.state = 'spec'; $('readout').classList.remove('on'); $('aimHint').classList.remove('on');
   mpState(true); MP.panelT = 0; SFX.blip();
@@ -5842,11 +5856,11 @@ function savedRound(course) {
 }
 // the hole to go back to: the one being played, else the next one not yet finished
 function resumeHole(r) { if (r.scores[r.hole] == null) return r.hole; for (let k = 1; k <= r.scores.length; k++) { const i = (r.hole + k) % r.scores.length; if (r.scores[i] == null) return i; } return 0; }
+function titleOff() { $('title').classList.remove('on'); $('play').classList.remove('on'); }   // (a round or practice starts from the title or the play screen: both go)
 function refreshResume() {
   recNoticeFlush();
   const b = $('btnResume'); if (!b) return; const r = savedRound();
-  if (!r) { b.style.display = 'none'; $('btnPlay').textContent = 'Tee off'; return; }
-  $('btnPlay').textContent = r.course === COURSE.key ? 'New round' : 'Tee off';
+  if (!r) { b.style.display = 'none'; return; }
   const pars = COURSES[r.course].pars; let s = 0, p = 0; r.scores.forEach((v, i) => { if (v != null) { s += v; p += pars[i]; } });
   $('resumeInfo').textContent = `${COURSES[r.course].short} · Hole ${resumeHole(r) + 1} · ${p ? fmtToPar(s - p) : 'E'}`;
   b.style.display = '';
@@ -6506,7 +6520,7 @@ function startPuttingGreen(range) {
   G.practice = true; G.submitted = true; clearRound(); G.pg = { shots: 0, makes: 0, cup: 0, from: null, range: !!range, spot: 0 };
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   if (!G.pins) G.pins = HOLE_DEFS.map(() => Math.floor(Math.random() * 4));
-  document.body.classList.add('pg'); document.body.classList.toggle('rg', !!range); $('title').classList.remove('on'); closeSheets(); startHole(0);
+  document.body.classList.add('pg'); document.body.classList.toggle('rg', !!range); titleOff(); closeSheets(); startHole(0);
   if (range) G.club = Math.max(0, CLUBS.findIndex(c => c.id === 'Dr')), rgPlace(Math.max(0, G.C.spots.findIndex(q => G.C.surf(q.x, q.z) !== S.SAND)));
   else { const sp = pgStartSpot(); pgPlace(sp[0], sp[1], null); $('pgRe').disabled = true; }
   beginHole(); G.snapCam = true; pgSync();
@@ -7361,7 +7375,7 @@ function startPractice(i) {
   G.practice = true; G.pg = null; document.body.classList.remove('pg'); G.submitted = true; clearRound();
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   if (!G.pins) G.pins = HOLE_DEFS.map(() => Math.floor(Math.random() * 4));
-  $('title').classList.remove('on'); closeSheets(); startHole(i);
+  titleOff(); closeSheets(); startHole(i);
 }
 // quit to the start screen: the round (or practice hole) in progress is abandoned entirely, nothing is scored or saved
 function quitToMain() {
@@ -8293,15 +8307,17 @@ function initInput() {
   ni.addEventListener('keydown', e => { if (e.key === 'Enter') { ni.blur(); $('btnPlay').click(); } });
   mn.addEventListener('change', () => { setName(mn.value); mn.value = settings.name || ''; });
   mn.addEventListener('keydown', e => { if (e.key === 'Enter') mn.blur(); });
+  // Tee off opens the play screen (course, continue round, new round; leagues and tournaments will join them there); the name is asked for before it
   $('btnResume').onclick = () => {
-    if (!cleanName(settings.name)) { nr.classList.remove('need'); void nr.offsetWidth; nr.classList.add('need'); ni.focus(); return; }
     audio(); SFX.blip(); const r = savedRound();
-    withCourse(r ? r.course : COURSE.key, () => { $('title').classList.remove('on'); if (!resumeRound()) { $('title').classList.add('on'); refreshResume(); } });
+    withCourse(r ? r.course : COURSE.key, () => { titleOff(); if (!resumeRound()) { $('play').classList.add('on'); refreshResume(); } });
   };
   $('btnPlay').onclick = () => {
     if (!cleanName(settings.name)) { nr.classList.remove('need'); void nr.offsetWidth; nr.classList.add('need'); ni.focus(); return; }
-    audio(); SFX.blip(); $('title').classList.remove('on'); startRound();
+    audio(); SFX.blip(); refreshResume(); $('title').classList.remove('on'); $('play').classList.add('on');
   };
+  $('btnNew').onclick = () => { audio(); SFX.blip(); titleOff(); startRound(); };
+  $('btnPlayBack').onclick = () => { SFX.blip(); $('play').classList.remove('on'); $('title').classList.add('on'); };
   $('mBoard').onclick = openBoard;
   document.querySelectorAll('#segRev button').forEach(b => b.onclick = () => { settings.reverse = +b.dataset.v === 1; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segHand button').forEach(b => b.onclick = () => { settings.hand = +b.dataset.v; saveSettings(); syncMenu(); if (G.C) { G.carryKey = ''; updateAim(true); } });
@@ -8331,7 +8347,7 @@ function initInput() {
   $('mReplay').onclick = () => { closeSheets(); setTimeout(replayLast, 120); };
   $('mStats').onclick = () => openStats();
   $('mHelp').onclick = () => openSheet('helpSheet');
-  $('mRound').onclick = () => { audio(); $('title').classList.remove('on'); closeSheets(); startRound(); }; // (from the title screen's Settings too: the title must go, as with Tee off, or the round starts behind it)
+  $('mRound').onclick = () => { audio(); titleOff(); closeSheets(); startRound(); }; // (from the title screen's Settings too: the title must go, as with Tee off, or the round starts behind it)
   $('mQuit').onclick = () => { SFX.blip(); $('quitAsk').classList.add('on'); };
   $('mChange').onclick = () => { openPractice(); };
   $('dChange').onclick = () => { openPractice(); };
@@ -8453,7 +8469,7 @@ function boot(data) {
   setCourse(courseStartKey(data)); initBoard(); pidSync().then(() => { if (isReg()) Object.keys(COURSES).forEach(k => loadRecords(k)); }).catch(() => { }); refreshResume(); setTimeout(retryUnposted, 4000);
   showTitleHole();
   sizeCanvases();
-  if (data && data.scores) { G.practice = !!data.practice; G.scores = data.scores; G.putts = data.putts || G.putts; if (data.pins) G.pins = data.pins; $('title').classList.remove('on'); startHole(data.hole || 0); }
+  if (data && data.scores) { G.practice = !!data.practice; G.scores = data.scores; G.putts = data.putts || G.putts; if (data.pins) G.pins = data.pins; titleOff(); startHole(data.hole || 0); }
   try { const h = window.claude && window.claude.hot; if (h && h.snapshot) h.snapshot(() => ({ course: COURSE.key, hole: G.hole, scores: G.scores, putts: G.putts, pins: G.pins, practice: !!G.practice })); } catch (e) { }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { sizeCanvases(); });
   requestAnimationFrame(frame);
@@ -8478,7 +8494,7 @@ window.addEventListener('load', () => { checkUpdate(); });
 if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { }); });
 window.addEventListener('load', () => {
   const h = window.claude && window.claude.hot;
-  const go = d => courseInit(d).then(() => boot(d), e => { console.error('courses', e); $('courseLine').textContent = 'The course could not be loaded.\nCheck the connection and open the game again.'; });
+  const go = d => courseInit(d).then(() => boot(d), e => { console.error('courses', e); $('playCourse').textContent = 'The course could not be loaded.\nCheck the connection and open the game again.'; });
   if (h && h.ready) h.ready(go); else go(h && h.data ? h.data : {});
 });
 
