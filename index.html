@@ -1022,7 +1022,7 @@ function computeLaunch(ci, sw, st, surf, yaw, hand, teed, lieRoll) {
       } else lieSpeed = f;
       out.lieF = f;
     }
-    let launch = c.launch + launchAdd + lie.launch;
+    let launch = clubLaunch(c, p) + launchAdd + lie.launch + (surf === S.SAND && c.type === 'wedge' ? SAND_WEDGE_LOFT * (.5 + .5 * (1 - p)) : 0);   // (out of sand a wedge's blow is steeper still)
     if (c.id === 'Dr' && !teed) { lieSpeed *= .9; launch -= 2; }
     launch = clamp(launch, 1, 68);
     const ballSpeed = clubSpeed * c.smash * tempoMult * sm * lieSpeed;
@@ -1086,13 +1086,13 @@ function clubTables() {
     for (let k = 0; k <= 20; k++) {
       const p = k / 20;
       if (p === 0) { c.table.push(0); continue; }
-      c.table.push(flatCarry(c.ballSpeed * Math.pow(p, POW_EXP), c.launch, c.spin * spinFrac(p)));
+      c.table.push(flatCarry(c.ballSpeed * Math.pow(p, POW_EXP), clubLaunch(c, p), c.spin * spinFrac(p)));
     }
     c.carry = c.table[20];
     const full = simulateShot(FLAT, launchVec(c.ballSpeed, c.launch, c.spin));
     c.total = full.total; c.roll = full.total - full.carry;
     // chips release far more than full shots: carry share of a pure quarter swing onto a flat green (first guess for the chip line)
-    const ch = simulateShot(FLAT_GREEN, launchVec(c.ballSpeed * Math.pow(.25, POW_EXP), c.launch, c.spin * spinFrac(.25)));
+    const ch = simulateShot(FLAT_GREEN, launchVec(c.ballSpeed * Math.pow(.25, POW_EXP), clubLaunch(c, .25), c.spin * spinFrac(.25)));
     c.chipCarry = ch.carry / ch.total;
     // rough lies: carry with the lie's launch and spin at full and 80 % ball speed, against the fairway carry, for
     // swings of a quarter, half, three quarters and full length
@@ -1100,8 +1100,8 @@ function clubTables() {
     for (const sf of [S.ROUGH, S.DEEP]) {
       const lie = SURF[sf].lie; c.lieCal[sf] = [];
       for (const pp of [.25, .5, .75, 1]) {
-        const v0 = c.ballSpeed * Math.pow(pp, POW_EXP), w0 = c.spin * spinFrac(pp), cf = flatCarry(v0, c.launch, w0);
-        const c1 = flatCarry(v0, c.launch + lie.launch, w0 * lie.spin), c2 = flatCarry(v0 * .8, c.launch + lie.launch, w0 * lie.spin);
+        const v0 = c.ballSpeed * Math.pow(pp, POW_EXP), w0 = c.spin * spinFrac(pp), cf = flatCarry(v0, clubLaunch(c, pp), w0);
+        const c1 = flatCarry(v0, clubLaunch(c, pp) + lie.launch, w0 * lie.spin), c2 = flatCarry(v0 * .8, clubLaunch(c, pp) + lie.launch, w0 * lie.spin);
         c.lieCal[sf].push({ p: pp, k: Math.log(c1 / c2) / Math.log(1.25), r: cf / c1 });
       }
     }
@@ -1125,6 +1125,12 @@ function flatCarry(speed, launch, rpm) {
     if (y < 0 && vy < 0) return -z;
   }
   return -z;
+}
+// a wedge swung short launches higher, as a real golfer's does (more loft at impact, an open face, a steeper blow): the lob wedge goes from 33.5 deg at full power to about 41 at half and 46 at a quarter,
+// so a 25 yard lob carries 9 m high instead of 5; the other wedges and the short irons less, in proportion to their loft; woods and hybrids keep their launch. The carry tables use it too, so the aim ring still shows the true carry
+const PARTIAL_LOFT = 17, SAND_WEDGE_LOFT = 4;
+function clubLaunch(c, p) {
+  return c.launch + clamp((c.loft - 22) / 38, 0, 1) * PARTIAL_LOFT * Math.pow(1 - clamp(p, 0, 1), 1.2);   // (the extra grows with the club's loft: none for woods and hybrids, a little for mid irons, most for the lob wedge)
 }
 function carryForPower(c, p) {
   if (!c.table) return 0;
@@ -3479,7 +3485,7 @@ function initThree() {
   const cam = new THREE.PerspectiveCamera(55, 1, .25, 3200);
   W.hemi = new THREE.HemisphereLight(0xffe4c4, 0x6b7a45, .5); scene.add(W.hemi);
   const sun = new THREE.DirectionalLight(0xffb65c, 1.05); sun.position.set(SUN_OFF[0], SUN_OFF[1], SUN_OFF[2]); sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048); const sc = sun.shadow.camera; sc.left = -75; sc.right = 75; sc.top = 75; sc.bottom = -75; sc.near = 1; sc.far = 420; sun.shadow.bias = -.0006;
+  sun.shadow.mapSize.set(2048, 2048); const sc = sun.shadow.camera; sc.left = -75; sc.right = 75; sc.top = 75; sc.bottom = -75; sc.near = 1; sc.far = 420; sun.shadow.bias = -.0001; sun.shadow.normalBias = .04;   // (the old bias, -.0006 of a 420 m depth range, was 25 cm: at the low sun the ball's shadow began a hand's width from the ball, and a ball on a green seemed to have none; normalBias keeps the grazing ground free of acne instead)
   scene.add(sun); scene.add(sun.target);
   // sky dome
   const skyG = new THREE.SphereGeometry(2000, 24, 12), cols = [], top = new THREE.Color(0x9db8d6), hor = new THREE.Color(fogC);

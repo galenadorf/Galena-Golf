@@ -73,7 +73,7 @@
       "pars": [5, 4, 3, 4, 3, 4, 4, 4, 5, 4, 3, 5, 4, 3, 5, 3, 4, 5],
       "recFrom": "2026-11-01",
       "about": "Fossil Trace Golf Club (Golden, Colorado; Jim Engh, 2003) is played from the blue tees (6,241 yards). Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
-      "engine": { "alt": 1775, "fescue": true, "longRough": true, "allRoads": true, "z0": 1990, "gr": { "e0": -1000, "n0": -750, "res": 2, "W": 1000, "H": 750 } },
+      "engine": { "alt": 1775, "fescue": true, "dry": true, "allRoads": true, "z0": 1990, "gr": { "e0": -1000, "n0": -750, "res": 2, "W": 1000, "H": 750 } },
       "scene": {
         "deer": 0.5,
         "squirrels": 3

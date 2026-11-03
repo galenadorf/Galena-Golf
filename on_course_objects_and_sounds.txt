@@ -324,7 +324,7 @@ SCENERY AND DATA
 #####################################################################################################
 FOSSIL TRACE (fossil_trace)
 #####################################################################################################
-Also everything in GLOBAL. Dark green long rough. OSM and lidar data only. Blue tees 6,241 yd, par 72 (Jim Engh, 2003; Golden CO, about 1,740-1,870 m above sea level; the game's ball flight has no altitude effect).
+Also everything in GLOBAL. High-desert look (engine `dry`): golden-tan native grass for the deep rough, drier olive mown grass and foliage, sandy cart paths. OSM and lidar data only. Blue tees 6,241 yd, par 72 (Jim Engh, 2003; Golden CO, about 1,740-1,870 m above sea level; thinner air carries the ball about 6-8 % farther).
 
 OBJECTS
 -------

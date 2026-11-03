@@ -43,3 +43,5 @@ RELIEF_OFF_WATER = True   # build.py leaves the lidar relief off the ponds, cree
 PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 # the game's four tee-marker slots: w is the set played, y/b/r the others (tee set, marker colour)
 MARKERS = {'w': ('bronze', 0xc0682a), 'y': ('black', 0x26282b), 'b': ('silver', 0xc8ccd2), 'r': ('auburn', 0xa8323c)}
+
+SMOOTH_MORE = True   # build.py low-passes every mapped line and outline (creeks, roads, cart paths; bunkers, tees, fairways, greens, ponds), area kept
