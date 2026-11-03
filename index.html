@@ -3641,13 +3641,14 @@ uniform sampler2D tFA, tFB, tFC, tFar; uniform vec2 fO, fN; uniform float fInv, 
 uniform vec4 farA, farB;
 uniform vec4 cupP[4];
 uniform sampler2D tSlope; uniform vec4 sgBox, sgAim; uniform float sgOn, sgT, sgLen;
+vec3 sgC; float sgA = 0.;
 uniform vec3 cStraw, cRough, cDeep, cOut, cFirst, cFairA, cFairB, cGreenA, cGreenB, cFringe, cSand, cWaste, cTee, cPath, cBeach, cPond, cRock, cBed1, cBed2, cDune, cGranite;
 varying vec3 vWPos; varying vec3 vWN;
 float dcF(float v) { return (v * 2. - 1.) * fR; }
 float ins(float d) { float w = max(fwidth(d), 1e-3) * .75; return 1. - smoothstep(-w, w, d); }
 float lineAt(float d, float hw) { float w = max(fwidth(d), 1e-3) * .75; return 1. - smoothstep(hw - w, hw + w, abs(d)); }
 // the putting read, drawn on the green itself: a grid of SG_CELL squares, each with rows of small dots that flow downhill across it (so one texture read a pixel).
-// tSlope, one texel a square: rg downhill direction, b steepness (1 = SG_MAX), a the phase; a steeper square's dots run much faster and turn from yellow to reddish pink.
+// tSlope, one texel a square: rg downhill direction, b steepness (1 = SG_MAX), a the phase; a steeper square's dots run much faster and turn from robin's egg blue to reddish pink.
 vec3 slopeGrid(vec3 col, float mask) {
   if (mask < .01) return col;
   vec2 p = (vWPos.xz - sgBox.xy) * sgBox.z, id = floor(p), q = p - id - .5, fw = max(fwidth(p), vec2(1e-3));
@@ -3659,7 +3660,8 @@ vec3 slopeGrid(vec3 col, float mask) {
   vec2 dir = normalize(s.rg * 2. - 1.), sp = vec2(1. / 3., .5); float aa = max(fw.x, fw.y), r = max(.0135, aa * .7);
   vec2 m = vec2(dot(q, dir) - sgT * .6 * (.06 + pow(s.b, 1.5)) - s.a, dot(q, vec2(-dir.y, dir.x))), g = (fract(m / sp) - .5) * sp, ed = .5 - abs(q);
   float bead = (1. - smoothstep(r - aa * .6, r + aa * .6, length(g))) * smoothstep(0., .06, min(ed.x, ed.y)) * clamp(sp.x / (aa * 3.), 0., 1.) * mask * mix(.55, 1., focus);
-  return mix(col, mix(vec3(1., .92, .1), vec3(1., .2, .4), smoothstep(.45, .75, s.b)), bead);
+  sgC = mix(vec3(.12, .81, .8), vec3(1., .2, .4), smoothstep(.45, .75, s.b)); sgA = bead;   // (laid over the lit result in the material: the low orange sun would dull them)
+  return col;
 }
 // real courses: beyond the hole's own fields, a course-wide class map (2 m cells) colours the rest of the course
 vec3 farColor() {
@@ -3742,12 +3744,12 @@ function terrainMatFrom(o) {
   U.cOut = { value: o.fescue ? U.cRough.value : U.cDeep.value }; // beyond the course and in woods: with a fescue map that is plain rough, the deep colour is only for the fescue
   const mat = new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0x000000, shininess: 1 });
   mat.extensions = { derivatives: true };
-  mat.customProgramCacheKey = () => 'terrain-fields-6';
+  mat.customProgramCacheKey = () => 'terrain-fields-7';
 
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWN;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = position; vWN = normal;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + TERRAIN_GLSL).replace('#include <color_fragment>', 'for (int ci = 0; ci < 4; ci++) if (cupP[ci].w > .5 && length(vWPos.xz - cupP[ci].xy) < cupP[ci].z) discard;\ndiffuseColor.rgb *= surfaceColor();');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + TERRAIN_GLSL).replace('#include <color_fragment>', 'for (int ci = 0; ci < 4; ci++) if (cupP[ci].w > .5 && length(vWPos.xz - cupP[ci].xy) < cupP[ci].z) discard;\ndiffuseColor.rgb *= surfaceColor();').replace('gl_FragColor = vec4( outgoingLight, diffuseColor.a );', 'outgoingLight = mix(outgoingLight, sgC, sgA);\ngl_FragColor = vec4( outgoingLight, diffuseColor.a );');
   };
   mat.userData.disposeTex = () => { U.tFA.value.dispose(); U.tFB.value.dispose(); U.tFC.value.dispose(); };
   return mat;
