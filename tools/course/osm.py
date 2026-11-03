@@ -1,11 +1,12 @@
 """OpenStreetMap features of the course as shapely geometry in local metres."""
 import json
+import os
 from collections import defaultdict
 
 from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import unary_union, polygonize
 
-from common import cache, course, to_local
+from common import COURSE_DIR, cache, course, to_local
 
 
 def load():
@@ -88,7 +89,38 @@ def load():
         key = 'water' if (t.get('natural') == 'water' or t.get('water')) else 'wood' if (t.get('natural') == 'wood' or t.get('landuse') == 'forest') else None
         if key:
             F[key].append(dict(poly=p, tags=t))
-    if course.OSM_WAY:   # the course's own outline, and only its holes (a resort's other courses may be in the download too)
+    # a club whose OSM outline covers only part of its holes, or none (Memphis National: two courses share one OSM outline): the course is the holes in
+    # course.HOLE_BOX (local metres [e0, n0, e1, n1]; none of OSM's holes when OSM_HOLES is False), course.EXTRA_FILE (hand-digitised holes, greens,
+    # tees, fairways and bunkers off the aerial, in local metres) is added, the outline is the holes buffered by OUTLINE_BUFFER, and OSM's golf
+    # features are kept only within KEEP_NEAR_HOLES of them
+    if getattr(course, 'HOLE_BOX', None) is not None or getattr(course, 'EXTRA_FILE', None):
+        from shapely.geometry import box
+        hb = box(*course.HOLE_BOX) if getattr(course, 'HOLE_BOX', None) else None
+        F['hole'] = [h for h in F['hole'] if hb is not None and hb.contains(h['line'].interpolate(.5, normalized=True))] if getattr(course, 'OSM_HOLES', True) else []
+        ex = getattr(course, 'EXTRA_FILE', None)
+        X = {}
+        if ex:
+            X = json.load(open(os.path.join(COURSE_DIR, ex)))
+            for h in X.get('hole', []):
+                F['hole'].append(dict(line=LineString(h['line']), ref=h['ref'], par=h['par'], hcp=h.get('hcp', 0), tags={'golf': 'hole', 'extra': 'yes'}))
+            for k in ('green', 'tee', 'bunker', 'fairway'):
+                for ring in X.get(k, []):
+                    F[k].append(dict(poly=Polygon(ring).buffer(0), tags={'extra': 'yes'}))
+            for ring in X.get('water', []):
+                F['water'].append(dict(poly=Polygon(ring).buffer(0), tags={'extra': 'yes'}))
+        if ex and X.get('course'):   # an outline drawn by hand (no holes yet to build it from): OSM's features count where they lie inside it
+            outline = Polygon(X['course']).buffer(0)
+            near = outline
+            for k in ('green', 'tee', 'fairway', 'rough', 'pin'):   # (the greens, tees and fairways there are the other course's: only bunkers, ponds and paths are kept)
+                F[k] = [f for f in F[k] if f['tags'].get('extra')]
+        else:
+            hu = unary_union([h['line'] for h in F['hole']])
+            near = hu.buffer(getattr(course, 'KEEP_NEAR_HOLES', 120))
+            outline = hu.buffer(getattr(course, 'OUTLINE_BUFFER', 90)).buffer(40).buffer(-40)
+        for k in ('green', 'tee', 'bunker', 'fairway', 'rough', 'water_hazard', 'lateral_water_hazard', 'pin', 'cartpath_line'):
+            F[k] = [f for f in F[k] if f['tags'].get('extra') or near.intersects(f.get('poly', f.get('pt', f.get('line'))))]
+        F['course'] = [dict(poly=outline, tags={}, id=0)]
+    elif course.OSM_WAY:   # the course's own outline, and only its holes (a resort's other courses may be in the download too)
         F['course'] = [c for c in F['course'] if c['id'] == course.OSM_WAY]
         assert len(F['course']) == 1, f'OSM way {course.OSM_WAY} (course.OSM_WAY) is not a leisure=golf_course in osm.json'
         cp = F['course'][0]['poly'].buffer(30)

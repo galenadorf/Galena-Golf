@@ -113,6 +113,17 @@
       "scene": { "deer": 0.5, "squirrels": 3 }
     },
     {
+      "key": "legends",
+      "name": "Legends at Memphis National Golf Club",
+      "short": "Legends (alpha)",
+      "alpha": true,
+      "pars": [5, 4, 4, 4, 3, 4, 3, 5, 4, 4, 3, 5, 4, 4, 3, 5, 4, 4],
+      "recFrom": "2026-11-03",
+      "about": "The Legends Course at Memphis National Golf Club (Collierville, Tennessee; Ed Seay and Arnold Palmer, 1971; par 72) is played from the white tees (6,274 yd); black, gold and green are the markers (alpha: no rounds are posted). Hole lines, greens, tees, bunkers, ponds and cart paths from \u00a9 OpenStreetMap contributors (ODbL); fairways traced from the 2023 USDA NAIP aerial; trees from the 2012 Shelby County lidar (USGS), checked against the aerial; the ground from the USGS 3DEP 1 m elevation model.",
+      "engine": { "alt": 95, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -1050, "n0": -700, "res": 2, "W": 1000, "H": 1100 } },
+      "scene": { "deer": 0.5, "squirrels": 3 }
+    },
+    {
       "key": "cmdg",
       "name": "Chestnut Mountain Disc Golf",
       "short": "CMDG (alpha)",
