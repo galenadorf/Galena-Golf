@@ -3,7 +3,7 @@
 .cfHole{display:flex;gap:6px;align-items:center}.cfHole b{width:22px;text-align:center;font:600 14px var(--cond)}.cfHole select{flex:1;min-width:0;height:36px;border:0;border-radius:10px;padding:0 6px;background:var(--soft);color:var(--ink);font:500 14px var(--sans,system-ui)}.cfX{width:34px;height:34px;border-radius:10px;background:var(--soft);color:var(--ink)}.cfAdd{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.cfAdd select{flex:1 1 100%;height:36px;border:0;border-radius:10px;padding:0 6px;background:var(--soft);color:var(--ink)}.cfAdd .mpb{flex:1;background:var(--soft);color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair)}.mpInfo.bad{color:#c0392b}
 .playHead .pcName{font-size:16px;letter-spacing:.06em;color:#fff;margin-top:8px}.playHead #playPlace,.playHead #playPar{margin-top:2px;letter-spacing:.06em}.playHead #playPar{font-size:12px;letter-spacing:.03em}#playTop{margin-top:10px;display:flex;flex-direction:column;gap:2px}.ptRow{display:flex;gap:8px;font:600 13px/1.45 var(--cond);text-transform:uppercase;letter-spacing:.08em;color:var(--w2)}.ptRow .r{width:26px;flex:none}.ptRow .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ptRow .s{flex:none;font-variant-numeric:tabular-nums}.ptHead{font:700 13px var(--cond);text-transform:uppercase;letter-spacing:.08em;color:#fff;text-decoration:underline;text-underline-offset:3px;margin-bottom:2px}.ptEmpty{font:600 13px var(--cond);text-transform:uppercase;letter-spacing:.08em;color:var(--w2)}
 #boardSheet .boardSel,#practiceSheet .courseSel{color:var(--ink);text-shadow:none;background-color:var(--soft);box-shadow:inset 0 0 0 1px var(--hair);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2316211c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
-#puttRead{position:fixed;z-index:3;display:none;padding:7px 12px;border-radius:14px;color:#fff;font:600 14px/1.3 var(--cond);text-transform:uppercase;letter-spacing:.04em;text-shadow:var(--tsh)}#puttRead.on{display:block}body.swing #puttRead,body.flight #puttRead{opacity:0}
+#puttRead{position:fixed;z-index:3;display:none;padding:7px 12px;border-radius:14px;color:#fff;font:600 14px/1.3 var(--cond);text-transform:uppercase;letter-spacing:.04em;text-shadow:var(--tsh)}#puttRead.on{display:block}body.swing #puttRead,body.flight #puttRead{opacity:0}body.spec #puttRead{display:none}
 </style><title>Galena!!! Pocket Edition</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -464,7 +464,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 </div>
 <canvas id="fx"></canvas>
 <div id="pinTag" class="gtag">0 yd</div>
-<div id="pgBar" class="glass"><span id="pgTxt"></span><button id="pgCup">Cup 1</button><button id="pgRe">Redo</button><button id="pgRead" hidden>Grid</button><button id="pgChange">Change</button></div><div id="puttRead" class="glass"></div>
+<div id="pgBar" class="glass"><span id="pgTxt"></span><button id="pgCup">Cup 1</button><button id="pgRe">Redo</button><button id="pgChange">Change</button></div><div id="puttRead" class="glass"></div>
 <div id="mpPanel" class="glass"></div><div id="mpTags"></div>
 <div id="specBar" class="glass"><span id="specInfo">Following</span><button class="btn" id="specResume">Resume play</button></div>
 <div id="ballTag" class="gtag"><div class="bt1"><span id="btD">0</span><small>YD</small></div><div class="bt2" id="btC"></div></div>
@@ -2073,7 +2073,7 @@ function buildRealHole(C, grp) {
   buildRealRoad(C, grp);
   buildSideRoads(C, grp);
   buildRealDecor(C, grp);
-  buildSlopeArrows(C, grp);
+  slopeShow(false);
   mergeStatic(grp);
   C.plan = renderPlan(C);
 }
@@ -2492,7 +2492,11 @@ function buildRealDecor(C, grp) {
   const fc = document.createElement('canvas'); fc.width = 128; fc.height = 80; const fx = fc.getContext('2d'); fx.fillStyle = '#e8303a'; fx.fillRect(0, 0, 128, 80); fx.fillStyle = '#fff'; fx.font = '700 54px Fredoka, sans-serif'; fx.textAlign = 'center'; fx.textBaseline = 'middle'; fx.fillText(String(C.cups ? ci + 1 : C.idx + 1), 64, 44);
   const fg = new THREE.PlaneGeometry(1.1, .7, 8, 2); fg.translate(.55, 0, 0);
   const flag = new THREE.Mesh(fg, new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(fc), side: THREE.DoubleSide }));
-  if (C.noCup) flag.scale.setScalar(RANGE_K); else if (isDisc()) flag.scale.setScalar(.45); flag.position.set(cp.x, cp.y + (isDisc() ? BASKET_HI + .62 : (PIN_H - .38) * (C.noCup ? RANGE_K : 1)), cp.z); flag.castShadow = true; grp.add(flag); pole.userData.keep = true;
+  if (C.noCup) flag.scale.setScalar(RANGE_K); else if (isDisc()) flag.scale.setScalar(.45); flag.position.set(cp.x, cp.y + (isDisc() ? BASKET_HI + .62 : (PIN_H - .38) * (C.noCup ? RANGE_K : 1)), cp.z); grp.add(flag); pole.userData.keep = true;
+  // the flag's shadow comes from a still copy of the cloth, because the waving cloth moves faster than the shadow map redraws and its shadow jumped
+  const flagSh = new THREE.Mesh(fg.clone(), SHADOW_ONLY()); flagSh.castShadow = true; flagSh.userData.keep = true; flag.add(flagSh);
+  // and the stick's from a wider one: the real stick is half a shadow-map pixel wide, so its shadow broke up
+  if (!C.noCup && !isDisc()) { const stickSh = new THREE.Mesh(new THREE.CylinderGeometry(STICK_SHADOW_R, STICK_SHADOW_R, pole.geometry.parameters.height, 6), SHADOW_ONLY()); stickSh.castShadow = true; stickSh.userData.keep = true; pole.castShadow = false; pole.add(stickSh); }
   W.flags.push({ flag, pole, base: fg.attributes.position.array.slice() });
   });
   W.flag = W.flags[0].flag; W.flagBase = W.flags[0].base; W.pole = W.flags[0].pole;
@@ -3347,6 +3351,10 @@ function makeBallTextures() {
 }
 // 4 pm golden hour: the sun hangs low (about 14 degrees) behind the golfer's left shoulder and throws long shadows down the hole
 const SUN_OFF = [-118, 36, 82];
+// the sun's sideways and upward axes, as its shadow camera has them: the camera is moved in whole shadow-map pixels along these, so a shadow stays on the same pixels as the view moves
+const SUN_X = new THREE.Vector3(), SUN_Y = new THREE.Vector3(); { const z = new THREE.Vector3(SUN_OFF[0], SUN_OFF[1], SUN_OFF[2]).normalize(); SUN_X.crossVectors(new THREE.Vector3(0, 1, 0), z).normalize(); SUN_Y.crossVectors(z, SUN_X); }
+const STICK_SHADOW_R = .045;   // (9 cm across, a little over one pixel of the 7.3 cm shadow map)
+const SHADOW_ONLY = () => new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, side: THREE.DoubleSide });   // casts a shadow, draws nothing
 /* ---------- tilt-shift ---------- */
 // the scene is drawn into a target and redrawn through a blur that grows with the screen distance from a horizontal focus band;
 // the band sits on the target line (the aim ring while aiming, the ball in flight), so the line of play stays sharp and the
@@ -3817,12 +3825,14 @@ function gableRoof(w, d, h, over) {
   const v = [-x, 0, z, x, 0, z, x, h, 0, -x, 0, z, x, h, 0, -x, h, 0, x, 0, -z, -x, 0, -z, -x, h, 0, x, 0, -z, -x, h, 0, x, h, 0, -x, 0, -z, -x, 0, z, -x, h, 0, x, 0, z, x, 0, -z, x, h, 0];
   g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); g.computeVertexNormals(); return g;
 }
-// The putting read: the grid and dots (slopeGrid in TERRAIN_GLSL) and the read chip. On trial on the practice green, where pgRead switches back to the arrows; the courses keep the arrows.
+// The putting read, on every putt: the grid and dots (slopeGrid in TERRAIN_GLSL) and the read chip.
 const SG_CELL = 1.25, SG_MAX = .06, SG_FLAT = .003;
-const readGrid = () => !!(G.pg && !G.pg.range && settings.greenRead !== 'arrows');
 function slopeGridBake(C) {
   if (SG_U.owner === C) return;
-  const gb = C.green, n = Math.min(256, Math.ceil(gb.R * 3.4 / SG_CELL)), x0 = Math.floor((gb.cx - n * SG_CELL / 2) / SG_CELL) * SG_CELL, z0 = Math.floor((gb.cz - n * SG_CELL / 2) / SG_CELL) * SG_CELL;
+  // the grid covers the green as it really is: a long or curved one reaches far past its mean radius
+  const gb = C.green; let x1 = gb.cx, x2 = gb.cx, z1 = gb.cz, z2 = gb.cz;
+  for (let x = gb.cx - gb.R * 5; x <= gb.cx + gb.R * 5; x += 1) for (let z = gb.cz - gb.R * 5; z <= gb.cz + gb.R * 5; z += 1) if (C.surf(x, z) === S.GREEN) { if (x < x1) x1 = x; if (x > x2) x2 = x; if (z < z1) z1 = z; if (z > z2) z2 = z; }
+  const x0 = Math.floor((x1 - 1) / SG_CELL) * SG_CELL, z0 = Math.floor((z1 - 1) / SG_CELL) * SG_CELL, n = Math.min(256, Math.ceil(Math.max(x2 + 1 - x0, z2 + 1 - z0) / SG_CELL));
   const d = new Uint8Array(n * n * 4), g = [0, 0], off = [[0, 0], [-.3, -.3], [.3, -.3], [-.3, .3], [.3, .3]];
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
     let gx = 0, gz = 0, k = 0;
@@ -3834,11 +3844,11 @@ function slopeGridBake(C) {
   if (SG_U.tex) SG_U.tex.dispose(); SG_U.tex = t; SG_U.owner = C; SG_U.tSlope.value = t; SG_U.sgBox.value.set(x0, z0, 1 / SG_CELL, 1 / n);
 }
 function slopeShow(on) {
-  const grid = !!on && readGrid(); if (W.slope) W.slope.mesh.visible = !!on && !grid;
-  if (grid) { slopeGridBake(G.C); slopeAim(); } SG_U.sgOn.value = grid ? 1 : 0;
-  $('puttRead').classList.toggle('on', grid); $('pgRead').hidden = !(G.pg && !G.pg.range); $('pgRead').textContent = settings.greenRead === 'arrows' ? 'Arrows' : 'Grid';
-  if (grid) { puttReadFill(); const q = $('strike').getBoundingClientRect(), e = $('puttRead').style; e.left = q.left + 'px'; e.width = q.width + 'px'; e.bottom = window.innerHeight - q.top + 8 + 'px'; } // (sits on the strike tile, clear of the flag)
+  on = !!on && !!G.C && !!G.C.green; if (on) { slopeGridBake(G.C); slopeAim(); } SG_U.sgOn.value = on ? 1 : 0;
+  $('puttRead').classList.toggle('on', on);
+  if (on) { puttReadFill(); const q = $('strike').getBoundingClientRect(), e = $('puttRead').style; e.left = q.left + 'px'; e.width = q.width + 'px'; e.bottom = window.innerHeight - q.top + 8 + 'px'; } // (sits on the strike tile, clear of the flag)
 }
+window.addEventListener('resize', () => { if (SG_U.sgOn.value) slopeShow(true); });
 function slopeAim() { const d = aimDir(); SG_U.sgAim.value.set(G.ball.x, G.ball.z, d[0], d[1]); SG_U.sgLen.value = G.carry || 0; }
 // the chip, in words only so it does not give the putt away: uphill or downhill, and which way a pure putt struck straight at the hole at the right pace ends up (one simulated putt per ball and cup)
 function puttReadFill() {
@@ -3848,38 +3858,6 @@ function puttReadFill() {
   let k = 1; while (k < r.n - 1 && (f[k * 5 + 1] - G.ball.x) * ax + (f[k * 5 + 3] - G.ball.z) * az < d) k++;
   const side = (f[k * 5 + 1] - G.ball.x) * -az + (f[k * 5 + 3] - G.ball.z) * ax, dh = C.cup.y - G.ball.y;
   $('puttRead').textContent = [Math.abs(dh) < .03 ? '' : dh > 0 ? 'Uphill' : 'Downhill', Math.abs(side) < .08 ? 'Straight' : side > 0 ? 'Breaks right' : 'Breaks left'].filter(Boolean).join(' · ');
-}
-// downhill chevrons on the green (shown while putting)
-function buildSlopeArrows(C, grp) {
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute([-.16, 0, -.05, 0, 0, .14, .16, 0, -.05, -.16, 0, -.05, .16, 0, -.05, 0, 0, .02], 3));
-  g.setIndex([0, 1, 5, 5, 1, 2, 0, 5, 3, 4, 5, 2]); g.computeVertexNormals();
-  const pts = [], gb = C.green, grd = [0, 0];
-  for (let x = gb.cx - gb.R * 1.6; x <= gb.cx + gb.R * 1.6; x += 1.3) for (let z = gb.cz - gb.R * 1.6; z <= gb.cz + gb.R * 1.6; z += 1.3) {
-    const jx = x + (hash2(x * 10 | 0, z * 10 | 0, 2) - .5) * .5, jz = z + (hash2(z * 10 | 0, x * 10 | 0, 3) - .5) * .5;
-    if (C.surf(jx, jz) !== S.GREEN) continue;
-    C.grad(jx, jz, grd); const sl = Math.hypot(grd[0], grd[1]); if (sl < .003) continue;
-    pts.push({ x: jx, z: jz, dx: -grd[0] / sl, dz: -grd[1] / sl, sl, ph: hash2(jx * 7 | 0, jz * 7 | 0, 9) });
-  }
-  const m = new THREE.InstancedMesh(g, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .8, depthWrite: false, side: THREE.DoubleSide }), Math.max(1, pts.length));
-  m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1, pts.length) * 3), 3);
-  const c = new THREE.Color();
-  pts.forEach((p, i) => { const t = clamp(p.sl / .035, 0, 1); c.setRGB(lerp(1, .2, t), lerp(1, .58, t), lerp(1, .74, t)); m.setColorAt(i, c); });
-  m.count = pts.length; m.visible = false; m.frustumCulled = false; grp.add(m);
-  W.slope = { mesh: m, pts }; SG_U.sgOn.value = 0;
-}
-const _sm = new THREE.Matrix4(), _sq = new THREE.Quaternion(), _sv = new THREE.Vector3(), _ss = new THREE.Vector3(), _sy = new THREE.Vector3(0, 1, 0);
-function updateSlopeArrows(t) {
-  if (SG_U.sgOn.value) SG_U.sgT.value = t % 1000;
-  const S2 = W.slope; if (!S2 || !S2.mesh.visible) return;
-  S2.pts.forEach((p, i) => {
-    const u = ((t * .45 + p.ph) % 1), off = (u - .5) * .7, s = 1.2 * (.5 + clamp(p.sl / .03, 0, 1) * .55);
-    const x = p.x + p.dx * off, z = p.z + p.dz * off;
-    _sq.setFromAxisAngle(_sy, Math.atan2(p.dx, p.dz));
-    const fade = Math.sin(u * Math.PI);
-    _sm.compose(_sv.set(x, G.C.h(x, z) + .025, z), _sq, _ss.set(s * fade, 1, s * fade)); S2.mesh.setMatrixAt(i, _sm);
-  });
-  S2.mesh.instanceMatrix.needsUpdate = true;
 }
 function updateSea(t) {
   const s = W.sea; if (!s) return;
@@ -5993,7 +5971,7 @@ function beginRound() {
   startHole(0);
 }
 function startHole(i) {
-  G.snap = null;
+  G.snap = null; slopeShow(false);
   if (MP.spec) { const sp = MP.spec; MP.spec = null; MP.follow = null; document.body.classList.remove('spec'); mpWorld(sp.course); } // a new hole ends following (back on my own course)
   closeSheets(); $('done').classList.remove('on'); $('readout').classList.remove('on'); UI.readT = 0;
   document.body.classList.remove('flight', 'swing');
@@ -7430,7 +7408,6 @@ function openPractice() {
 }
 $('pracPutt').onclick = () => { SFX.blip(); startPuttingGreen(); };
 $('pracRange').onclick = () => { SFX.blip(); startPuttingGreen(true); };
-$('pgRead').onclick = () => { if (!G.pg || G.state !== 'address') return; settings.greenRead = settings.greenRead === 'arrows' ? 'grid' : 'arrows'; saveSettings(); SFX.blip(); slopeShow(isPutt() && (G.surf === S.GREEN || G.surf === S.FRINGE)); };
 $('pgCup').onclick = () => { if (!G.pg || G.state !== 'address') return; SFX.blip(); (G.pg.range ? rgAim : pgAim)((G.pg.cup + 1) % G.C.cups.length); };
 $('pgRe').onclick = () => { const pg = G.pg; if (pg && pg.range) { if (G.state === 'address' && G.C.spots.length > 1) { SFX.blip(); rgPlace((pg.spot + 1) % G.C.spots.length); } return; } if (!pg || !pg.from || G.state !== 'address') return; SFX.blip(); pgPlace(pg.from.x, pg.from.z); readoutNote('Back where you played from', 'ok'); };
 // practice: one hole at a time, nothing scored. Picking a hole ends the round in progress.
@@ -7460,7 +7437,7 @@ function startPractice(i) {
 }
 // quit to the start screen: the round (or practice hole) in progress is abandoned entirely, nothing is scored or saved
 function quitToMain() {
-  $('quitAsk').classList.remove('on'); closeSheets();
+  $('quitAsk').classList.remove('on'); closeSheets(); slopeShow(false);
   const sp = MP.spec; MP.follow = null; if (sp) { MP.spec = null; mpWorld(sp.course); } // (following someone: back on my own course)
   G.rep = null; G.shot = null; G.practice = false; G.pg = null; G.submitted = true; G.strokes = 0; SW.phase = 'idle';
   document.body.classList.remove('flight', 'swing', 'replay', 'spec', 'pg');
@@ -8635,12 +8612,12 @@ function frame(now) {
   if (W.trail.visible && G.state !== 'flight') { W.trail.material.opacity -= dt * .35; if (W.trail.material.opacity <= 0) W.trail.visible = false; }
   if (W.landRing.visible) { const lr = W.landRing, u = (lr.userData.t += dt) / 1.6; if (u >= 1) lr.visible = false; else { lr.scale.setScalar(.5 + 2.2 * smooth(0, 1, u) + .01 * W.cam.position.distanceTo(lr.position)); lr.material.opacity = .75 * (1 - u) * (1 - u); } }
   if (W.tracer.visible) { const o = .8 * clamp(4 - (now - W.tracerT0) / 1000, 0, 1); W.tracer.material.opacity = o; if (o <= 0) W.tracer.visible = false; }
-  swirlWind(dt); updateSwirl(dt); mpUpdate(dt); if (G.state === 'spec') mpSpecCam(dt); else updateCamera(dt); updateWeatherVisuals(dt); updateRainbow(dt); updateRain(now, dt); if (W.treeOcc) updateTreeOcc(); updateParticles(dt); updateSlopeArrows(now / 1000); updateSea(now / 1000); updateFountains(now / 1000); updateLife(dt, now / 1000);
+  swirlWind(dt); updateSwirl(dt); mpUpdate(dt); if (G.state === 'spec') mpSpecCam(dt); else updateCamera(dt); updateWeatherVisuals(dt); updateRainbow(dt); updateRain(now, dt); if (W.treeOcc) updateTreeOcc(); updateParticles(dt); if (SG_U.sgOn.value) SG_U.sgT.value = (now / 1000) % 1000; updateSea(now / 1000); updateFountains(now / 1000); updateLife(dt, now / 1000);
   { // the flyover sees the course from high up: shadows reach four times as far there
     const ext = G.state === 'intro' ? 300 : 75, sc = W.sun.shadow.camera;
     if (sc.right !== ext) { sc.left = -ext; sc.right = ext; sc.top = ext; sc.bottom = -ext; sc.far = ext > 100 ? 900 : 420; sc.updateProjectionMatrix(); }
   }
-  if (C) { const t = G.camLook; W.sun.position.set(t.x + SUN_OFF[0], t.y + SUN_OFF[1], t.z + SUN_OFF[2]); W.sun.target.position.copy(t); }
+  if (C) { const t = W.sunAt || (W.sunAt = new THREE.Vector3()), px = 2 * W.sun.shadow.camera.right / W.sun.shadow.mapSize.x, a = G.camLook.dot(SUN_X), b = G.camLook.dot(SUN_Y); t.copy(G.camLook).addScaledVector(SUN_X, Math.round(a / px) * px - a).addScaledVector(SUN_Y, Math.round(b / px) * px - b); W.sun.position.set(t.x + SUN_OFF[0], t.y + SUN_OFF[1], t.z + SUN_OFF[2]); W.sun.target.position.copy(t); }
   { // the shadow map is redrawn when its view has moved, or every 0.1 s to catch animals and the flag; not every frame
     const T = W.shT || (W.shT = { p: new THREE.Vector3(1e9, 0, 0), t: 0, e: 0 }), ex = W.sun.shadow.camera.right;
     if (G.camLook.distanceToSquared(T.p) > .04 || T.e !== ex || now - T.t > 100) { T.p.copy(G.camLook); T.e = ex; T.t = now; W.ren.shadowMap.needsUpdate = true; }

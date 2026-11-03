@@ -98,8 +98,9 @@ Man-made objects
 Practice areas
   - The practice green (four cups and flags, a close map) and the driving range (four flags, six hitting spots) are Woodbine Bend's whichever course is picked.
     They have all the GLOBAL sounds below and nothing course-specific; the practice green chimes on every holed putt.
-    While putting, the practice green shows a white grid with navy-to-red dots rolling downhill, and a chip saying uphill or downhill and which way the putt breaks; its Grid/Arrows button switches back to the arrows.
-    The holes show the downhill arrows while putting.
+
+Putting
+  - On every golf course and the practice green: a white grid on the green with slate-blue-to-red dots flowing downhill (steeper is faster and redder), and a chip saying uphill or downhill and which way the putt breaks.
 
 C. SOUNDS ON EVERY COURSE
 -------------------------
