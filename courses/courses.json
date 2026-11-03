@@ -54,7 +54,7 @@
     {
       "key": "eagle_general",
       "name": "Eagle Ridge The General Course",
-      "short": "ER The General",
+      "short": "ER The General (beta)",
       "pars": [4, 3, 5, 4, 4, 3, 4, 4, 5, 4, 5, 3, 4, 4, 5, 3, 4, 4],
       "recFrom": "2026-11-01",
       "about": "The General Course at Eagle Ridge Resort & Spa (Galena, Illinois; Andy North and Roger Packard, 1997) is played from the 3-Star tees (6,245 yards). Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
@@ -69,7 +69,7 @@
     {
       "key": "fossil_trace",
       "name": "Fossil Trace Golf Club",
-      "short": "Fossil Trace",
+      "short": "Fossil Trace (beta)",
       "pars": [5, 4, 3, 4, 3, 4, 4, 4, 5, 4, 3, 5, 4, 3, 5, 3, 4, 5],
       "recFrom": "2026-11-01",
       "about": "Fossil Trace Golf Club (Golden, Colorado; Jim Engh, 2003) is played from the blue tees (6,241 yards). Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
@@ -82,7 +82,7 @@
     {
       "key": "stonehenge",
       "name": "Stonehenge Golf Club",
-      "short": "Stonehenge",
+      "short": "Stonehenge (beta)",
       "pars": [4, 4, 4, 5, 3, 4, 4, 3, 5, 4, 4, 3, 5, 4, 4, 4, 3, 5],
       "recFrom": "2026-10-30",
       "about": "Stonehenge Golf Club (Barrington, Illinois) is played from the blue tees. Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from the 2007 Lake County lidar (USGS); the ground from the USGS 3DEP 1 m elevation model.",
@@ -95,7 +95,7 @@
     {
       "key": "thunderhawk",
       "name": "Thunderhawk Golf Club",
-      "short": "Thunderhawk",
+      "short": "Thunderhawk (beta)",
       "pars": [4, 5, 3, 4, 4, 3, 5, 4, 4, 4, 5, 4, 3, 4, 3, 5, 3, 5],
       "recFrom": "2026-10-30",
       "about": "Thunderhawk Golf Club (Beach Park, Illinois; Robert Trent Jones Jr., 1999; Lake County Forest Preserves) is played from the bronze tees. Hole lines, greens, tees, bunkers, fairways, ponds and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from the 2007 Lake County lidar (USGS), checked against the 2023 USDA NAIP aerial; the ground from the USGS 3DEP 1 m elevation model.",
@@ -105,7 +105,7 @@
     {
       "key": "bearslide",
       "name": "Bear Slide Golf Club",
-      "short": "Bear Slide",
+      "short": "Bear Slide (beta)",
       "pars": [4, 4, 5, 3, 4, 3, 4, 5, 4, 4, 4, 5, 4, 3, 4, 3, 4, 4],
       "recFrom": "2026-10-31",
       "about": "Bear Slide Golf Club (Cicero, Indiana; Hamilton County) is played from the white tees (par 71, 5,966 yd); black, blue and red are the markers. Hole lines, greens, tees, bunkers, ponds and the out-of-bounds line from © OpenStreetMap contributors (ODbL); fairways traced from the 2022 USDA NAIP aerial where OpenStreetMap has none; trees from the 2017 Hamilton County lidar (USGS), checked against the aerial; the ground from the USGS 3DEP 1 m elevation model.",

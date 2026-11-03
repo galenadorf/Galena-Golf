@@ -6011,8 +6011,9 @@ function autoClubAndAim() {
   const bt = partial ? { x: C.cup.x, z: C.cup.z } : backThird(), dB = Math.hypot(bt.x - G.ball.x, bt.z - G.ball.z);
   G.target = null;
   if (onGreenish()) { G.club = PUTTER; G.suggested = PUTTER; G.yaw = Math.atan2(C.cup.x - G.ball.x, -(C.cup.z - G.ball.z)); pickPuttRange(); G.carryKey = ''; updateAim(true); return; }
+  // the default club is the shortest one that reaches the hole: its distance (carry plus most of its roll) is equal to or just over the distance left; too far for any, the longest
   let ci = CLUBS.length - 2;
-  for (let k = 0; k < PUTTER; k++) { const c = CLUBS[k]; if (G.surf !== S.TEE && c.id === 'Dr') continue; if (c.carry + c.roll * .6 <= dB + 4) { ci = k; break; } } // the club for the back third of the green
+  for (let k = PUTTER - 1; k >= 0; k--) { const c = CLUBS[k]; if (G.surf !== S.TEE && c.id === 'Dr') continue; ci = k; if (c.carry + c.roll * .6 >= d) break; }
   if (G.surf === S.SAND && d < 90) ci = 11;
   // caddie: aim down the centre line at the club's reach; step down a club if a pure shot would finish wet or OB
   const aimFor = k => {
