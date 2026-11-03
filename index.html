@@ -5111,10 +5111,11 @@ function play(name, rate, vol, lp, delay) {
   n.connect(g).connect(a.destination); s.start(a.currentTime + (delay || 0)); return true;
 }
 let AC = null;
-// Safari 16.4+: play like media (also past the silent switch) and let the system hand the audio back after an interruption
-try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { }
+// Safari 16.4+: play like media (also past the silent switch) and let the system hand the audio back after an interruption. The session is claimed
+// only while the game is on screen and given back ('auto') the moment the page is hidden, so music in another app is never held up by the game.
+const audioSess = t => { try { if (navigator.audioSession && navigator.audioSession.type !== t) navigator.audioSession.type = t; } catch (e) { } };
 function audio() {
-  if (!AC || AC.state === 'closed') { try { AC = new (window.AudioContext || window.webkitAudioContext)(); loadSounds(AC); const me = AC; me.onstatechange = () => { if (AC === me && !document.hidden && me.state !== 'running') wakeAudio(false); }; } catch (e) { } }
+  if (!AC || AC.state === 'closed') { audioSess('playback'); try { AC = new (window.AudioContext || window.webkitAudioContext)(); loadSounds(AC); const me = AC; me.onstatechange = () => { if (AC === me && !document.hidden && me.state !== 'running') wakeAudio(false); }; } catch (e) { } }
   if (AC && AC.state !== 'running') { try { const p = AC.resume(); if (p && p.catch) p.catch(() => { }); } catch (e) { } } // iOS also uses 'interrupted' after another app has had the audio
   return AC;
 }
@@ -5130,7 +5131,7 @@ function wakeAudio(fromTouch) {
 ['pointerdown', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => { wakeAudio(true); songTick(performance.now(), true); }, true));
 // iOS can bring a context back reporting 'running' while it is silent (after another app or a call had the audio), and that state is not
 // reliable, so the context is dropped whenever the page is hidden; the next touch on return builds a fresh one (the decoded samples are reused)
-function dropAudio() { try { songPause(false); } catch (e) { } const a = AC; AC = null; if (a) { try { a.onstatechange = null; a.close(); } catch (e) { } } }
+function dropAudio() { try { songPause(false); } catch (e) { } const a = AC; AC = null; if (a) { try { a.onstatechange = null; a.close(); } catch (e) { } } audioSess('auto'); }
 document.addEventListener('visibilitychange', () => { if (document.hidden) { dropAudio(); try { saveRound(); } catch (e) { } } else wakeAudio(false); });
 window.addEventListener('pagehide', () => { try { saveRound(); } catch (e) { } });
 window.addEventListener('pagehide', dropAudio);
