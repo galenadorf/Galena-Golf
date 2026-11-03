@@ -3653,7 +3653,7 @@ vec3 slopeGrid(vec3 col, float mask) {
   vec2 p = (vWPos.xz - sgBox.xy) * sgBox.z, id = floor(p), q = p - id - .5, fw = max(fwidth(p), vec2(1e-3));
   vec2 b = vWPos.xz - sgAim.xy; float al = clamp(dot(b, sgAim.zw), 0., sgLen), off = length(b - sgAim.zw * al), focus = mix(.4, 1., 1. - smoothstep(1.2, 2.8, off));
   vec2 e = (.5 - abs(q)) / fw; float ln = (1. - smoothstep(.4, 1.4, min(e.x, e.y))) * clamp(.05 / max(fw.x, fw.y), .15, 1.);
-  col = mix(col, vec3(1.), ln * .34 * focus * mask);
+  col = mix(col, vec3(1.), ln * .22 * focus * mask);
   vec4 s = texture2D(tSlope, (id + .5) * sgBox.w);
   if (s.b < .004 || id.x < 0. || id.y < 0. || id.x * sgBox.w >= 1. || id.y * sgBox.w >= 1.) return col;
   vec2 dir = normalize(s.rg * 2. - 1.), sp = vec2(1. / 3., .5); float aa = max(fw.x, fw.y), r = max(.0135, aa * .7);
