@@ -1,4 +1,4 @@
-ON-COURSE OBJECTS AND SOUNDS: what a player sees and hears in Galena!!! Golf right now
+ON-COURSE OBJECTS AND SOUNDS: what a player sees and hears in Galena!!! Pocket Edition right now
 =====================================================================================
 Current state only. Keep this file in step with index.html and courses/courses.json (see CLAUDE.md): whenever an object or a sound is added,
 removed or retuned, or a condition or frequency changes, update it in the same change, and delete entries for things that are gone.

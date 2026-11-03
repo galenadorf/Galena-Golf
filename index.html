@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><title>Galena!!! Golf</title>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><title>Galena!!! Pocket Edition</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -462,7 +462,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 <div id="specBar" class="glass"><span id="specInfo">Following</span><button class="btn" id="specResume">Resume play</button></div>
 <div id="ballTag" class="gtag"><div class="bt1"><span id="btD">0</span><small>YD</small></div><div class="bt2" id="btC"></div></div>
 <div class="layer on" id="title">
-  <div class="card logoCard"><div class="lt"><h1>Galena<span>!!!</span><br>Golf</h1></div><img src="crest.png" width="123" height="126" alt="Galena crest" decoding="async"></div>
+  <div class="card logoCard"><div class="lt"><h1>Galena<span>!!!</span><br>Pocket Edition</h1></div><img src="crest.png" width="123" height="126" alt="Galena crest" decoding="async"></div>
   <div class="tb">
     <div class="how">
       <div class="card"><svg class="tut" viewBox="0 0 90 100" aria-hidden="true"><rect x="31" y="6" width="28" height="88" rx="14" fill="#2f6b35"/><rect x="38" y="14" width="14" height="72" rx="7" fill="rgba(255,255,255,.16)"/><path class="tDown" d="M45 80V20" stroke="#ffe85a" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M17 34V62m0 0l-5-6m5 6l5-6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".75"/><path d="M73 68V40m0 0l-5 6m5-6l5 6" stroke="#ffe85a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".9"/><g class="tThumb"><circle r="9" fill="#fff" stroke="#1d3d22" stroke-width="2"/></g></svg><b>Left thumb · tempo</b><p>Slide down, then slide straight up. A tempo of 3:1 gets the best smash factor.</p></div>
@@ -5595,7 +5595,7 @@ function mpInit() {
   $('mpShare').onclick = async () => {
     if (!inPrivate()) { $('mpNew').click(); }
     const url = location.origin + location.pathname + '?room=' + MP.room;
-    try { if (navigator.share) { await navigator.share({ title: 'Galena!!! Golf', text: 'Play a live round with me · room ' + MP.room, url }); return; } } catch (e) { return; }
+    try { if (navigator.share) { await navigator.share({ title: 'Galena!!! Pocket Edition', text: 'Play a live round with me · room ' + MP.room, url }); return; } } catch (e) { return; }
     try { await navigator.clipboard.writeText(url); $('mpShare').textContent = 'Link copied'; setTimeout(() => $('mpShare').textContent = 'Share link', 1800); } catch (e) { prompt('Room link', url); }
   };
   const q = mpClean(new URLSearchParams(location.search).get('room'));
@@ -7932,7 +7932,7 @@ async function pidSend() {
   btn.disabled = true; btn.textContent = 'Sending\u2026';
   try {
     const res = await fetch(`https://api.github.com/repos/${GH_REPO}/issues`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + ghKey(), 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: `[register] ${name} ${PID.fp}`, body: 'ID request from Galena!!! Golf. The admin approves it in GitHub (Actions > Approve player).\n\n```json\n' + JSON.stringify({ v: 1, k: PID.pub, l: PID.label, name, fp: PID.fp }) + '\n```\n' }) });
+      body: JSON.stringify({ title: `[register] ${name} ${PID.fp}`, body: 'ID request from Galena!!! Pocket Edition. The admin approves it in GitHub (Actions > Approve player).\n\n```json\n' + JSON.stringify({ v: 1, k: PID.pub, l: PID.label, name, fp: PID.fp }) + '\n```\n' }) });
     if (res.ok) { try { localStorage.setItem('ssg-reqat', Date.now() + '|' + PID.fp); } catch (e) { } pidUi(); say('Sent \u2713 code ' + PID.fp); } else say("Couldn't send");
   } catch (e) { say("Couldn't send"); }
   btn.disabled = false;
@@ -7984,7 +7984,7 @@ async function postAuto(r) {
   try {
     const env = await signRound(r); if (!env) return false;
     const res = await fetch(`https://api.github.com/repos/${GH_REPO}/issues`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + k, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: `[score] ${r.name} ${fmtToPar(r.toPar)} (${r.strokes}) ${CO.short}`, body: 'Posted from Galena!!! Golf.\n\n```json\n' + JSON.stringify(env) + '\n```\n' }) });
+      body: JSON.stringify({ title: `[score] ${r.name} ${fmtToPar(r.toPar)} (${r.strokes}) ${CO.short}`, body: 'Posted from Galena!!! Pocket Edition.\n\n```json\n' + JSON.stringify(env) + '\n```\n' }) });
     if (!res.ok) return false;
     const loc = localRounds(CO.key), q = loc.find(x => x.at === r.at && x.name === r.name); if (q) { q.posted = true; try { localStorage.setItem(CO.board, JSON.stringify(sortRounds(loc).slice(0, 60))); } catch (e) { } }
     setTimeout(() => { Board.ghAt[CO.key] = 0; loadWorld(true, CO.key); }, 40000); refreshBoards(); return true;
