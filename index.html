@@ -1,4 +1,7 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><title>Galena!!! Pocket Edition</title>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.cfList{display:flex;flex-direction:column;gap:6px;max-height:48vh;overflow:auto}.cfRow{display:flex;flex-direction:column;align-items:flex-start;text-align:left;background:var(--soft);border-radius:14px;padding:9px 12px;font:600 16px var(--cond);text-transform:uppercase;color:var(--ink)}.cfRow small{font:500 12px var(--sans,system-ui);text-transform:none;color:var(--ink2)}.cfRow.k_season{box-shadow:inset 4px 0 #d9b23a}.cfRow.k_tournament{box-shadow:inset 4px 0 #2f6b35}.cfRow.k_event{box-shadow:inset 4px 0 #8aa}
+.cfBody{display:flex;flex-direction:column;gap:6px;max-height:56vh;overflow:auto;padding-bottom:4px}#compForm{overflow:hidden}.cfRow2{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--soft);border-radius:14px;padding:8px 12px;font:600 14px var(--cond);text-transform:uppercase;color:var(--ink)}.cfRow2 input,.cfRow2 select{flex:1;min-width:0;max-width:62%;height:36px;border:0;border-radius:10px;padding:0 10px;font:500 16px var(--sans,system-ui);background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair)}.cfRow2 .seg button{color:var(--ink2)}.cfRow2 .seg button.sel{background:#fff;color:var(--ink)}
+.cfHole{display:flex;gap:6px;align-items:center}.cfHole b{width:22px;text-align:center;font:600 14px var(--cond)}.cfHole select{flex:1;min-width:0;height:36px;border:0;border-radius:10px;padding:0 6px;background:var(--soft);color:var(--ink);font:500 14px var(--sans,system-ui)}.cfX{width:34px;height:34px;border-radius:10px;background:var(--soft);color:var(--ink)}.cfAdd{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.cfAdd select{flex:1 1 100%;height:36px;border:0;border-radius:10px;padding:0 6px;background:var(--soft);color:var(--ink)}.cfAdd .mpb{flex:1;background:var(--soft);color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair)}.mpInfo.bad{color:#c0392b}
+</style><title>Galena!!! Pocket Edition</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -496,6 +499,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
     <div class="mrow">Name<input id="mName" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="done"></div>
     <div class="mrow">Player ID<span id="pidState" style="opacity:.8">Guest</span></div>
     <div class="mpInfo" id="pidInfo"><span id="pidTxt"></span><div class="mpBtns"><button class="mpb" id="pidSend">Request ID</button><button class="mpb" id="pidChk">Check now</button></div><div class="mpBtns"><button class="mpb" id="pidReq">Copy ID request</button></div></div>
+    <div class="mrow" id="compRow" hidden>Competitions<button class="mpb" id="compOpen" style="flex:none">Open</button></div>
     <div class="mrow">Reverse controls<div class="seg" id="segRev"><button data-v="1">Yes</button><button data-v="0">No</button></div></div>
     <div class="mrow">Golfer<div class="seg" id="segHand"><button data-v="1">Righty</button><button data-v="-1">Lefty</button></div></div>
     <div class="mrow">Sound<div class="seg" id="segSnd"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
@@ -510,6 +514,8 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
   </div>
 </div>
 <div class="sheet" id="practiceSheet"><div class="grab"></div><div class="sht">Practice <small>Pick a hole · scores are not recorded</small></div><button class="pracPutt" id="pracPutt">Putting green<small>Chip and putt · four cups · nothing scored</small></button><button class="pracPutt" id="pracRange">Driving range<small>Any club · flags to aim at · nothing scored</small></button><label class="pracCourse" hidden><span>Holes</span><select class="courseSel" id="selCourseP" aria-label="Course to practise"></select></label><div class="pracGrid" id="pracGrid"></div></div>
+<div class="sheet" id="compSheet"><div class="grab"></div><div class="sht">Competitions <small>Admin only · not live</small></div><div id="compBody" class="cfList"></div><div class="cfAdd"><button class="mpb" id="compNewS">+ Season</button><button class="mpb" id="compNewT">+ Tournament</button><button class="mpb" id="compNewE">+ Event</button></div><div id="compMsg" class="mpInfo"></div></div>
+<div class="sheet" id="compForm"><div class="grab"></div><div class="sht"><span id="compFormTitle">Event</span></div><div id="compFormBody" class="cfBody"></div><div class="cfAdd"><button class="mpb" id="compSave">Save</button><button class="mpb" id="compDel" style="background:#c0392b;color:#fff">Delete</button></div><div id="cfMsg" class="mpInfo"></div></div>
 <div class="sheet" id="cardSheet"><div class="grab"></div><div id="cardBody"></div></div>
 <div class="sheet" id="boardSheet"><div class="grab"></div><div class="sht">Leaderboard <small id="boardName">Woodbine Bend Golf Course</small></div><div id="boardBody"></div></div>
 <div class="sheet" id="mapSheet"><div class="grab"></div><div class="sht"><span id="mapTitle">Hole map</span><small id="mapInfo"></small></div><div class="mapwrap"><canvas id="mapCv"></canvas></div><div class="maph"><span id="mapHint">Tap or drag to place your target</span><button class="mbtn dark" id="mapDone" style="height:44px;padding:0 22px">Done</button></div></div>
@@ -7329,7 +7335,7 @@ function syncMenu() {
   applyReverse();
   document.querySelectorAll('#segRev button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.reverse ? 1 : 0)));
   const mn = $('mName'); if (mn && document.activeElement !== mn) mn.value = settings.name || ''; if (mn) mn.readOnly = isReg(); // a registered player's name is the roster's
-  pidUi();
+  pidUi(); $('compRow').hidden = !isAdmin();
   document.querySelectorAll('#segHand button').forEach(b => b.classList.toggle('sel', +b.dataset.v === settings.hand));
   document.querySelectorAll('#segSnd button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.sound ? 1 : 0)));
   document.querySelectorAll('#segSong button').forEach(b => b.classList.toggle('sel', +b.dataset.v === songLevel()));
@@ -7897,7 +7903,7 @@ async function pidSync(force) { // resolves to 'reg', 'guest' (the roster answer
     try {
       const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/players.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' }); if (!r.ok) throw new Error('http');
       const a = await r.json(), me = (Array.isArray(a) ? a : []).find(q => q && Array.isArray(q.keys) && q.keys.some(k => k && k.k === PID.pub));
-      PID.reg = me ? { pid: String(me.id), name: cleanName(me.name) || 'Player', pub: PID.pub, label: String(me.keys.find(k => k.k === PID.pub).label || '') } : null;
+      PID.reg = me ? { pid: String(me.id), name: cleanName(me.name) || 'Player', admin: me.admin === true, pub: PID.pub, label: String(me.keys.find(k => k.k === PID.pub).label || '') } : null;
       try { if (PID.reg) localStorage.setItem('ssg-reg', JSON.stringify(PID.reg)); else localStorage.removeItem('ssg-reg'); } catch (e) { }
       if (PID.reg && settings.name !== PID.reg.name) { settings.name = PID.reg.name; saveSettings(); }
       res = PID.reg ? 'reg' : 'guest';
@@ -7973,6 +7979,131 @@ async function pidRounds(force) {
   } catch (e) { }
   return false;
 }
+/* ===== COMPETITIONS (admin only, foundation) ===== */
+// Events, tournaments and seasons are made by the admin (a player marked "admin": true in players.json) in Settings > Competitions, which nobody else sees.
+// An item is filed as a signed "[comp]" issue; .github/workflows/competitions.yml checks the signature and the item (tools/players/comp_validate.js) and
+// writes competitions/<id>.json and competitions/index.json. Nothing here reaches other players yet: no play, scoring or standings are wired up.
+const isAdmin = () => isReg() && PID.reg.admin === true;
+const COMP = { index: [], items: {}, at: 0, d: null, busy: false };
+const COMP_KINDS = { season: 'Season', tournament: 'Tournament', event: 'Event' };
+const COMP_FORMATS = { stroke: 'Stroke play', stableford: 'Stableford', match: 'Match play', skins: 'Skins', bestball: 'Best ball', scramble: 'Scramble' };
+const COMP_PLAYS = { either: 'Live or batched', live: 'Live only', batched: 'Batched only' };
+const compCourses = () => Object.values(COURSES).filter(c => !c.alpha && !(c.engine && c.engine.disc));
+const compDay = (n = 0) => { const d = new Date(Date.now() + n * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const compId = kind => ({ event: 'ev', tournament: 'tn', season: 'ss' }[kind]) + '-' + Math.random().toString(36).slice(2, 8).replace(/[^a-z0-9]/g, 'x').padEnd(6, 'x');
+async function compLoad(force) {
+  if (!force && COMP.at && Date.now() - COMP.at < 3e4) return;
+  COMP.at = Date.now();
+  try {
+    const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/competitions/index.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' });
+    if (r.ok) { const a = await r.json(); COMP.index = Array.isArray(a) ? a : []; }
+  } catch (e) { }
+  compList();
+}
+async function compItem(id) {
+  if (COMP.items[id]) return COMP.items[id];
+  try { const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/competitions/${id}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' }); if (r.ok) return (COMP.items[id] = await r.json()); } catch (e) { }
+  return null;
+}
+function compList() {
+  const b = $('compBody'); if (!b) return; b.innerHTML = '';
+  const row = (x, depth) => {
+    const d = document.createElement('button'); d.className = 'cfRow k_' + x.kind; d.style.marginLeft = depth * 14 + 'px';
+    d.innerHTML = '<b></b><small></small>'; d.firstChild.textContent = x.name; d.lastChild.textContent = COMP_KINDS[x.kind] + ' · ' + x.start + ' to ' + x.end;
+    d.onclick = async () => { const it = await compItem(x.id); if (it) compEdit(it); else compSay("Couldn't load it (it may still be saving)"); };
+    b.appendChild(d);
+    COMP.index.filter(y => y.parent === x.id).forEach(y => row(y, depth + 1));
+  };
+  const ids = new Set(COMP.index.map(x => x.id));
+  const roots = COMP.index.filter(x => !x.parent || !ids.has(x.parent));
+  if (!roots.length) { const e = document.createElement('div'); e.className = 'mpInfo'; e.textContent = 'Nothing yet. Make a season, a tournament or an event below.'; b.appendChild(e); }
+  roots.forEach(x => row(x, 0));
+}
+function compSay(t, bad) { const s = $('compMsg'); if (s) { s.textContent = t; s.className = 'mpInfo' + (bad ? ' bad' : ''); } const f = $('cfMsg'); if (f) { f.textContent = t; f.className = 'mpInfo' + (bad ? ' bad' : ''); } }
+function compNew(kind) {
+  compEdit({ id: compId(kind), kind, name: '', desc: '', start: compDay(), end: compDay(kind === 'season' ? 90 : kind === 'tournament' ? 7 : 1), invite: 'open', pals: true, hcp: 'gross', points: [100, 70, 50, 40, 30, 20, 10],
+    parent: null, format: 'stroke', play: 'either', team: 1, card: [], countBest: 0, _new: true });
+}
+function compEdit(it) {
+  COMP.d = JSON.parse(JSON.stringify(it)); compForm(); openSheet('compForm');
+}
+const cfEl = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+function cfField(label, input) { const r = cfEl('label', 'cfRow2'); r.appendChild(cfEl('span', '', label)); r.appendChild(input); return r; }
+function cfSelect(opts, val, on) { const s = cfEl('select'); Object.entries(opts).forEach(([k, v]) => { const o = cfEl('option', '', v); o.value = k; s.appendChild(o); }); s.value = val; s.onchange = () => on(s.value); return s; }
+function cfSeg(opts, val, on) { const g = cfEl('div', 'seg'); Object.entries(opts).forEach(([k, v]) => { const b = cfEl('button', val === k ? 'sel' : '', v); b.type = 'button'; b.onclick = () => { on(k); }; g.appendChild(b); }); return g; }
+function cfText(val, on, ph, type) { const i = cfEl('input'); i.type = type || 'text'; i.value = val == null ? '' : val; if (ph) i.placeholder = ph; i.oninput = () => on(i.value); return i; }
+function compForm() {
+  const d = COMP.d, b = $('compFormBody'); b.innerHTML = ''; $('compFormTitle').textContent = (d._new ? 'New ' : 'Edit ') + COMP_KINDS[d.kind].toLowerCase();
+  const re = () => { const y = b.scrollTop; compForm(); b.scrollTop = y; };
+  b.appendChild(cfField('Name', cfText(d.name, v => { d.name = v; }, 'e.g. Fall Classic')));
+  b.appendChild(cfField('About', cfText(d.desc, v => { d.desc = v; }, 'optional')));
+  b.appendChild(cfField('Starts', cfText(d.start, v => { d.start = v; }, '', 'date')));
+  b.appendChild(cfField('Ends', cfText(d.end, v => { d.end = v; }, '', 'date')));
+  if (d.kind !== 'season') {
+    const parents = COMP.index.filter(x => x.kind === (d.kind === 'event' ? 'tournament' : 'season')), o = { '': 'None' }; parents.forEach(x => o[x.id] = x.name);
+    b.appendChild(cfField(d.kind === 'event' ? 'In tournament' : 'In season', cfSelect(o, d.parent || '', v => { d.parent = v || null; })));
+    b.appendChild(cfField('Format', cfSelect(COMP_FORMATS, d.format, v => { d.format = v; d.team = v === 'scramble' || v === 'bestball' ? Math.max(2, d.team) : 1; re(); })));
+    if (d.format === 'scramble' || d.format === 'bestball') b.appendChild(cfField('Team size', cfSelect({ 2: '2', 3: '3', 4: '4' }, d.team, v => { d.team = +v; })));
+    b.appendChild(cfField('Play', cfSelect(COMP_PLAYS, d.play, v => { d.play = v; })));
+  } else b.appendChild(cfField('Best N count (0 = all)', cfText(d.countBest, v => { d.countBest = parseInt(v, 10) || 0; }, '0', 'number')));
+  b.appendChild(cfField('Handicap', cfSeg({ gross: 'Gross', net: 'Net (not live)' }, d.hcp, v => { d.hcp = v; re(); })));
+  b.appendChild(cfField('PALS Rules', cfSeg({ 1: 'On', 0: 'Off' }, d.pals ? '1' : '0', v => { d.pals = v === '1'; re(); })));
+  b.appendChild(cfField('Who plays', cfSeg({ open: 'Open', list: 'Invited' }, d.invite === 'open' ? 'open' : 'list', v => { d.invite = v === 'open' ? 'open' : (Array.isArray(d.invite) ? d.invite : []); re(); })));
+  if (d.invite !== 'open') b.appendChild(cfField('Player IDs', cfText(d.invite.join(', '), v => { d.invite = v.split(/[ ,]+/).map(s => s.trim().toUpperCase()).filter(Boolean); }, 'P001, P003')));
+  b.appendChild(cfField('Points by place', cfText(d.points.join(', '), v => { d.points = v.split(/[ ,]+/).map(s => parseInt(s, 10)).filter(n => Number.isInteger(n)); }, '100, 70, 50')));
+  if (d.kind === 'event') {
+    b.appendChild(cfEl('div', 'sub', 'Holes (' + d.card.length + ')'));
+    const cs = compCourses(), nm = {}; cs.forEach(c => nm[c.key] = c.short);
+    d.card.forEach((h, i) => {
+      const r = cfEl('div', 'cfHole'); r.appendChild(cfEl('b', '', String(i + 1)));
+      r.appendChild(cfSelect(nm, h.c, v => { h.c = v; re(); }));
+      const hn = {}; for (let k = 1; k <= COURSES[h.c].pars.length; k++) hn[k] = 'Hole ' + k + ' · par ' + COURSES[h.c].pars[k - 1];
+      r.appendChild(cfSelect(hn, h.h, v => { h.h = +v; }));
+      const x = cfEl('button', 'cfX', '✕'); x.type = 'button'; x.onclick = () => { d.card.splice(i, 1); re(); }; r.appendChild(x); b.appendChild(r);
+    });
+    const add = cfEl('div', 'cfAdd'), sel = cfSelect(nm, COMP.addC || cs[0].key, v => { COMP.addC = v; }); COMP.addC = sel.value; add.appendChild(sel);
+    [['+ Hole', 0, 0], ['Front 9', 1, 9], ['Back 9', 10, 18], ['All 18', 1, 18]].forEach(([t, a, z]) => {
+      const x = cfEl('button', 'mpb', t); x.type = 'button';
+      x.onclick = () => { const c = COMP.addC; if (!a) d.card.push({ c, h: 1 }); else for (let k = a; k <= z; k++) d.card.push({ c, h: k }); re(); };
+      add.appendChild(x);
+    });
+    b.appendChild(add);
+  }
+  $('compDel').hidden = !!d._new;
+}
+function compCheck(d) {
+  if (!d.name.trim()) return 'Give it a name.';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.start) || !/^\d{4}-\d{2}-\d{2}$/.test(d.end) || d.end < d.start) return 'Check the dates (the end is not before the start).';
+  if (d.kind === 'event' && !d.card.length) return 'Add at least one hole.';
+  if (d.invite !== 'open' && !d.invite.length) return 'List the invited player IDs, or make it open.';
+  return '';
+}
+async function compSend(act, d) {
+  if (COMP.busy) return; const k = ghKey(); await pidInit();
+  if (!isAdmin() || !k) { compSay('Not available.', true); return; }
+  let item = null; if (act === 'save') {
+    const e = compCheck(d); if (e) { compSay(e, true); return; }
+    item = {}; for (const key of Object.keys(d)) if (key[0] !== '_') item[key] = d[key];
+    item.name = item.name.trim(); item.desc = (item.desc || '').trim(); if (item.kind === 'season') { delete item.format; delete item.play; delete item.team; delete item.card; } else { delete item.countBest; } if (item.kind !== 'event') delete item.card;
+  }
+  COMP.busy = true; compSay('Sending…');
+  try {
+    const msg = JSON.stringify(act === 'save' ? { v: 1, act, pid: PID.reg.pid, at: Date.now(), item } : { v: 1, act, pid: PID.reg.pid, at: Date.now(), id: d.id });
+    const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, PID.key, new TextEncoder().encode(msg));
+    const res = await fetch(`https://api.github.com/repos/${GH_REPO}/issues`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + k, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: `[comp] ${act} ${d.kind} ${d.name.trim()}`.slice(0, 120), body: 'From Galena!!! Pocket Edition (admin).\n\n```json\n' + JSON.stringify({ msg, sig: b64(new Uint8Array(sig)), key: PID.pub }) + '\n```\n' }) });
+    if (!res.ok) { compSay("Couldn't send.", true); COMP.busy = false; return; }
+    const n = (await res.json()).number; compSay('Sent. Waiting for the check…');
+    for (let i = 0; i < 20; i++) { // the workflow answers in the issue's comments (about 20-40 s)
+      await new Promise(r => setTimeout(r, 4000));
+      try { const c = await (await fetch(`https://api.github.com/repos/${GH_REPO}/issues/${n}/comments`, { cache: 'no-store' })).json(); const q = Array.isArray(c) && c.find(x => /^[✅❌]/.test(x.body || ''));
+        if (q) { const ok = q.body[0] === '✅'; compSay(q.body.replace(/^[✅❌]\s*/, ''), !ok); COMP.busy = false; if (ok) { delete COMP.items[d.id]; COMP.at = 0; setTimeout(() => { compLoad(true); }, 5000); sheetBack(); } return; } } catch (e) { }
+    }
+    compSay('Sent, but no answer yet: check the Actions tab on GitHub.', true);
+  } catch (e) { compSay("Couldn't send.", true); }
+  COMP.busy = false;
+}
+function openComp() { if (!isAdmin()) return; openSheet('compSheet'); compSay(''); compList(); compLoad(true); }
 // returns true when the round was filed (no account needed)
 async function postAuto(r) {
   const k = ghKey(); if (!k || !isReg() || !Array.isArray(r.hs)) return false; // guests (and rounds from before per-hole data) stay on this device
@@ -8326,6 +8457,8 @@ function initInput() {
   document.querySelectorAll('#segSong button').forEach(b => b.onclick = () => { settings.song = +b.dataset.v; saveSettings(); syncMenu(); songLevelApply(); });
   document.querySelectorAll('#segZoom button').forEach(b => b.onclick = () => { settings.zoom = b.dataset.v === '1'; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segPals button').forEach(b => b.onclick = () => { settings.pals = b.dataset.v === '1'; saveSettings(); syncMenu(); });
+  $('compOpen').onclick = openComp; $('compNewS').onclick = () => compNew('season'); $('compNewT').onclick = () => compNew('tournament'); $('compNewE').onclick = () => compNew('event');
+  $('compSave').onclick = () => compSend('save', COMP.d); $('compDel').onclick = () => { if (confirm('Delete "' + COMP.d.name + '"?')) compSend('delete', COMP.d); };
   document.querySelectorAll('#segDrama button').forEach(b => b.onclick = () => { settings.drama = b.dataset.v === '1'; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segMus button').forEach(b => b.onclick = () => { settings.music = b.dataset.v === '1'; saveSettings(); syncMenu(); musicTick(); });
   $('skipBtn').onclick = e => { e.stopPropagation(); skipShot(); };

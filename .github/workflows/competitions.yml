@@ -1,0 +1,66 @@
+name: Competitions
+# The admin creates, edits and deletes events, tournaments and seasons in the game (Settings > Competitions, shown only to an admin). The game files an issue
+# titled "[comp] ..." whose JSON body is { msg, sig, key }: msg is { v: 1, act: "save" | "delete", pid, at, item | id } signed with a device key listed in players.json
+# under a player marked "admin": true. This workflow checks the signature and that the player is an admin, validates the item with tools/players/comp_validate.js
+# (the body is only ever data), writes competitions/<id>.json and the list competitions/index.json, and closes the issue. Nothing reads these files yet in the
+# game for anyone but the admin.
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: write
+  issues: write
+concurrency:
+  group: competitions
+  cancel-in-progress: false
+jobs:
+  save:
+    if: startsWith(github.event.issue.title, '[comp]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs'), crypto = require('crypto'), V = require('./tools/players/comp_validate.js');
+            const issue = context.payload.issue;
+            const finish = async (ok, msg) => {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: issue.number, body: (ok ? '✅ ' : '❌ ') + msg });
+              await github.rest.issues.update({ ...context.repo, issue_number: issue.number, state: 'closed', state_reason: ok ? 'completed' : 'not_planned' });
+            };
+            const m = /```json\s*([\s\S]*?)```/.exec(issue.body || '');
+            let env, r; try { env = JSON.parse(m[1]); r = JSON.parse(env.msg); } catch (e) { return finish(false, 'No valid JSON found in this issue.'); }
+            let players = []; try { players = JSON.parse(fs.readFileSync('players.json', 'utf8')); } catch (e) { }
+            const pl = players.find(p => p && p.id === r.pid);
+            if (!pl || pl.admin !== true || !Array.isArray(pl.keys) || typeof env.key !== 'string' || typeof env.sig !== 'string' || typeof env.msg !== 'string' || env.msg.length > 20000 || !pl.keys.some(k => k.k === env.key)) return finish(false, 'Only an admin can change competitions.');
+            try {
+              const pub = crypto.createPublicKey({ key: Buffer.from(env.key, 'base64'), format: 'der', type: 'spki' });
+              if (!crypto.verify('sha256', Buffer.from(env.msg), { key: pub, dsaEncoding: 'ieee-p1363' }, Buffer.from(env.sig, 'base64'))) throw new Error('bad');
+            } catch (e) { return finish(false, 'The signature does not match.'); }
+            if (r.v !== 1 || !Number.isInteger(r.at) || r.at > Date.now() + 10 * 60e3 || r.at < Date.now() - 36e5) return finish(false, 'The request is too old (or from the future).'); // (a replayed old save must not undo a newer one)
+            let REG = []; try { REG = JSON.parse(fs.readFileSync('courses/courses.json', 'utf8')).courses; } catch (e) { }
+            fs.mkdirSync('competitions', { recursive: true });
+            const items = {};
+            for (const f of fs.readdirSync('competitions')) if (/^(ev|tn|ss)-[a-z0-9]+\.json$/.test(f)) { try { const o = JSON.parse(fs.readFileSync('competitions/' + f, 'utf8')); items[o.id] = o; } catch (e) { } }
+            let note, touched;
+            if (r.act === 'save') {
+              const it = r.item, err = V.validate(it, { courses: REG, items, players });
+              if (err) return finish(false, err);
+              const old = items[it.id];
+              if (old && old.kind !== it.kind) return finish(false, 'The kind of an item cannot change.');
+              if (old) { const kids = V.children(it.id, items).filter(k => k.start < it.start || k.end > it.end); if (kids.length) return finish(false, 'Its dates must still cover ' + kids.map(k => k.name).join(', ') + '.'); }
+              items[it.id] = Object.assign({}, it, { name: it.name.trim(), by: r.pid, at: r.at });
+              touched = `competitions/${it.id}.json`; fs.writeFileSync(touched, JSON.stringify(items[it.id], null, 1) + '\n'); note = (old ? 'Updated ' : 'Created ') + it.kind + ' "' + it.name.trim() + '".';
+            } else if (r.act === 'delete') {
+              const it = items[r.id]; if (!it) return finish(true, 'Already gone.');
+              const kids = V.children(it.id, items); if (kids.length) return finish(false, 'Delete what is inside it first: ' + kids.map(k => k.name).join(', ') + '.');
+              touched = `competitions/${it.id}.json`; fs.unlinkSync(touched); delete items[it.id]; note = 'Deleted "' + it.name + '".';
+            } else return finish(false, 'Unknown action.');
+            const rows = Object.values(items).map(V.indexRow).sort((a, b) => a.start.localeCompare(b.start) || a.id.localeCompare(b.id));
+            fs.writeFileSync('competitions/index.json', JSON.stringify(rows) + '\n');
+            await exec.exec('git', ['config', 'user.name', 'github-actions[bot]']); await exec.exec('git', ['config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com']);
+            await exec.exec('git', ['add', '-A', 'competitions']); await exec.exec('git', ['commit', '-m', 'Competitions: ' + note]);
+            for (let k = 0; k < 4; k++) { try { await exec.exec('git', ['push', 'origin', 'HEAD:main']); break; } catch (e) { await exec.exec('git', ['pull', '--rebase', 'origin', 'main']); } }
+            await finish(true, note);
