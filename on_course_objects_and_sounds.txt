@@ -100,7 +100,7 @@ Practice areas
     They have all the GLOBAL sounds below and nothing course-specific; the practice green chimes on every holed putt.
 
 Putting
-  - On every golf course and the practice green: a white grid on the green with pure white to reddish pink dots flowing downhill (steeper is faster and pinker), and a chip saying uphill or downhill and which way the putt breaks.
+  - On every golf course and the practice green: faint dark contour lines on the green with pure white to reddish pink dots flowing downhill (steeper is faster and pinker), and a chip saying how much uphill or downhill it is and how much and which way the putt breaks.
 
 C. SOUNDS ON EVERY COURSE
 -------------------------

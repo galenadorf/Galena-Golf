@@ -3,7 +3,7 @@
 .cfHole{display:flex;gap:6px;align-items:center}.cfHole b{width:22px;text-align:center;font:600 14px var(--cond)}.cfHole select{flex:1;min-width:0;height:36px;border:0;border-radius:10px;padding:0 6px;background:var(--soft);color:var(--ink);font:500 14px var(--sans,system-ui)}.cfX{width:34px;height:34px;border-radius:10px;background:var(--soft);color:var(--ink)}.cfAdd{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.cfAdd select{flex:1 1 100%;height:36px;border:0;border-radius:10px;padding:0 6px;background:var(--soft);color:var(--ink)}.cfAdd .mpb{flex:1;background:var(--soft);color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair)}.mpInfo.bad{color:#c0392b}
 .playHead .pcName{font-size:16px;letter-spacing:.06em;color:#fff;margin-top:8px}.playHead #playPlace,.playHead #playPar{margin-top:2px;letter-spacing:.06em}.playHead #playPar{font-size:12px;letter-spacing:.03em}#playTop{margin-top:10px;display:flex;flex-direction:column;gap:2px}.ptRow{display:flex;gap:8px;font:600 13px/1.45 var(--cond);text-transform:uppercase;letter-spacing:.08em;color:var(--w2)}.ptRow .r{width:26px;flex:none}.ptRow .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ptRow .s{flex:none;font-variant-numeric:tabular-nums}.ptHead{font:700 13px var(--cond);text-transform:uppercase;letter-spacing:.08em;color:#fff;text-decoration:underline;text-underline-offset:3px;margin-bottom:2px}.ptEmpty{font:600 13px var(--cond);text-transform:uppercase;letter-spacing:.08em;color:var(--w2)}
 #boardSheet .boardSel,#practiceSheet .courseSel{color:var(--ink);text-shadow:none;background-color:var(--soft);box-shadow:inset 0 0 0 1px var(--hair);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2316211c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
-#puttRead{position:fixed;z-index:3;display:none;padding:7px 12px;border-radius:14px;color:#fff;font:600 14px/1.3 var(--cond);text-transform:uppercase;letter-spacing:.04em;text-shadow:var(--tsh)}#puttRead.on{display:block}body.swing #puttRead,body.flight #puttRead{opacity:0}body.spec #puttRead{display:none}
+#puttRead{position:fixed;z-index:3;display:none;white-space:pre-line;padding:7px 12px;border-radius:14px;color:#fff;font:600 14px/1.3 var(--cond);text-transform:uppercase;letter-spacing:.04em;text-shadow:var(--tsh)}#puttRead.on{display:block}body.swing #puttRead,body.flight #puttRead{opacity:0}body.spec #puttRead{display:none}
 </style><title>Galena!!! Pocket Edition</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -3428,7 +3428,14 @@ function renderTiltShift(dt) {
     else tgt = W.ring.visible || G.state === 'settle' ? W.ring.position : W.ball.position; // at rest, and while the camera moves into place for the next shot: the target
   }
   if (tgt) { P.v.copy(tgt).project(W.cam); if (P.v.z < 1) want = clamp(P.v.y * .5 + .5, .3, .8); }
+  // a putt: the sharp band reaches from the ball to the target, so the read stays crisp the whole way
+  let wantBand = .11;
+  if (tgt && (SG_U.sgOn.value || (inAir && sh && sh.L.putt))) {
+    const ty = P.v.y * .5 + .5, tz = P.v.z, by = P.v.copy(W.ball.position).project(W.cam).y * .5 + .5;
+    if (tz < 1 && P.v.z < 1) { want = (ty + by) / 2; wantBand = Math.max(.11, Math.abs(ty - by) / 2 + .06); }
+  }
   P.fy += (want - P.fy) * (1 - Math.exp(-dt * 2.2)); P.mat.uniforms.fy.value = P.fy;
+  P.band = P.band == null ? wantBand : P.band + (wantBand - P.band) * (1 - Math.exp(-dt * 2.2)); P.mat.uniforms.band.value = P.band;
   // camera speed (real time) -> motion blur strength, only while a full shot is in the air
   const nowT = performance.now(), cp = W.cam.position;
   if (P.t0) { const k = Math.max(.004, (nowT - P.t0) / 1000), v = cp.distanceTo(P.prev) / k; P.spd += (v - P.spd) * (1 - Math.exp(-k * 8)); }
@@ -3668,8 +3675,9 @@ vec3 slopeGrid(vec3 col, float mask) {
   if (mask < .01) return col;
   vec2 p = (vWPos.xz - sgBox.xy) * sgBox.z, id = floor(p), q = p - id - .5, fw = max(fwidth(p), vec2(1e-3));
   vec2 b = vWPos.xz - sgAim.xy; float al = clamp(dot(b, sgAim.zw), 0., sgLen), off = length(b - sgAim.zw * al), focus = mix(.4, 1., 1. - smoothstep(1.2, 2.8, off));
-  vec2 e = (.5 - abs(q)) / fw; float ln = (1. - smoothstep(.4, 1.4, min(e.x, e.y))) * clamp(.05 / max(fw.x, fw.y), .15, 1.);
-  col = mix(col, vec3(1.), ln * .22 * focus * mask);
+  // contour lines: faint dark lines at equal heights, every 6 cm of rise, so ridges and bowls show at a glance; they fade out where they would crowd together, far off or at a low angle
+  float ch = vWPos.y / .06, cw = max(fwidth(ch), 1e-4), ln = (1. - smoothstep(.5, 1.5, abs(fract(ch - .5) - .5) / cw)) * (1. - smoothstep(.2, .5, cw));
+  col = mix(col, col * .62, ln * focus * mask);
   vec4 s = texture2D(tSlope, (id + .5) * sgBox.w);
   if (s.b < .004 || id.x < 0. || id.y < 0. || id.x * sgBox.w >= 1. || id.y * sgBox.w >= 1.) return col;
   vec2 dir = normalize(s.rg * 2. - 1.), sp = vec2(1. / 3., .5); float aa = max(fw.x, fw.y), r = max(.015, aa * .7);
@@ -3761,7 +3769,7 @@ function terrainMatFrom(o) {
   const make = cut => {
   const mat = new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0x000000, shininess: 1 });
   mat.extensions = { derivatives: true };
-  mat.customProgramCacheKey = () => 'terrain-fields-8' + (cut ? '-cut' : '');
+  mat.customProgramCacheKey = () => 'terrain-fields-9' + (cut ? '-cut' : '');
 
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, U);
@@ -3872,14 +3880,16 @@ function slopeShow(on) {
 }
 window.addEventListener('resize', () => { if (SG_U.sgOn.value) slopeShow(true); });
 function slopeAim() { const d = aimDir(); SG_U.sgAim.value.set(G.ball.x, G.ball.z, d[0], d[1]); SG_U.sgLen.value = G.carry || 0; }
-// the chip, in words only so it does not give the putt away: uphill or downhill, and which way a pure putt struck straight at the hole at the right pace ends up (one simulated putt per ball and cup)
+// the chip, in graded words only so it does not give the putt away: how much uphill or downhill, and how far and which way a pure putt struck straight at the hole at the right pace ends up (one simulated putt per ball and cup)
 function puttReadFill() {
   const C = G.C, key = G.ball.x.toFixed(2) + ':' + G.ball.z.toFixed(2) + ':' + C.cup.x + ':' + C.cup.z; if (SG_U.key === key) return; SG_U.key = key;
   const d = distToPin(), yaw = Math.atan2(C.cup.x - G.ball.x, -(C.cup.z - G.ball.z)), L = computeLaunch(PUTTER, { p: clamp(puttEquiv() / G.puttRange, .02, 1.05), Tb: .4, Td: .2, range: G.puttRange }, { h: 0, v: 0 }, G.surf, yaw, settings.hand, G.teed);
   const r = simulateShot(C, { x: G.ball.x, y: G.ball.y, z: G.ball.z, v: L.v, w: L.w, putt: true, maxT: 20, noTrees: true, dt: 1 / 120 }), f = r.frames, ax = Math.sin(yaw), az = -Math.cos(yaw);
   let k = 1; while (k < r.n - 1 && (f[k * 5 + 1] - G.ball.x) * ax + (f[k * 5 + 3] - G.ball.z) * az < d) k++;
   const side = (f[k * 5 + 1] - G.ball.x) * -az + (f[k * 5 + 3] - G.ball.z) * ax, dh = C.cup.y - G.ball.y;
-  $('puttRead').textContent = [Math.abs(dh) < .03 ? '' : dh > 0 ? 'Uphill' : 'Downhill', Math.abs(side) < .08 ? 'Straight' : side > 0 ? 'Breaks right' : 'Breaks left'].filter(Boolean).join(' · ');
+  // graded words, no distances: how much the slope changes the pace (the share of the putt's length it adds or takes off), and how far one pure putt at the hole misses it
+  const pace = Math.abs(puttEquiv() - d) / Math.max(d, .5), sd = side > 0 ? 'right' : 'left', br = Math.abs(side);
+  $('puttRead').textContent = [Math.abs(dh) < .03 ? '' : (pace < .15 ? 'Slightly ' : pace > .35 ? 'Steeply ' : '') + (dh > 0 ? 'uphill' : 'downhill'), br < .08 ? 'Straight' : br < .25 ? 'Slight break ' + sd : br < .75 ? 'Breaks ' + sd : 'Big break ' + sd].filter(Boolean).join('\n');
 }
 function updateSea(t) {
   const s = W.sea; if (!s) return;
