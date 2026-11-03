@@ -8284,9 +8284,9 @@ function initInput() {
   }
   $('mapBtn').onclick = openMap;
   $('btnMenu').onclick = () => { syncMenu(); openSheet('menuSheet'); };
-  // the menu button stays reachable above the hole card, the scrim and every bottom sheet: a tap that lands on it is routed to it
+  // the menu button stays reachable above the hole card, the scrim and every bottom sheet: a tap that lands on it is routed to it (except a sheet's own X, which can sit right over it: closing the leaderboard reopened Settings)
   document.addEventListener('click', e => {
-    const bt = $('btnMenu'); if (!bt || e.target === bt || bt.contains(e.target) || $('hud').classList.contains('off') || document.body.classList.contains('replay') || $('menuSheet').classList.contains('on')) return;
+    const bt = $('btnMenu'); if (!bt || e.target === bt || bt.contains(e.target) || (e.target.closest && e.target.closest('.shX')) || $('hud').classList.contains('off') || document.body.classList.contains('replay') || $('menuSheet').classList.contains('on')) return;
     const r = bt.getBoundingClientRect(); if (!r.width || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
     e.stopPropagation(); e.preventDefault(); syncMenu(); openSheet('menuSheet');
   }, true);
