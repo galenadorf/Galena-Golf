@@ -11,10 +11,34 @@ const CORE = ['./', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-51
 
 // every course in courses/courses.json is kept too (courses/<key>.js), so any course plays offline, not only the ones opened so far
 const COURSE_FILES = () => fetch(new Request('courses/courses.json', { cache: 'reload' })).then(r => r.json()).then(j => j.courses.map(c => `courses/${c.key}.js`));
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => COURSE_FILES().then(cf => c.addAll(CORE.concat('courses/courses.json', cf).map(u => new Request(u, { cache: 'reload' })))))
-    .then(() => self.skipWaiting()));
-});
+// A deploy changes little, so a new build does not download everything again. tools/pages_hashes.py stamps HASHES (path -> hash of every file of this deploy; a local
+// copy has none and fetches all); each cache keeps its build's list under HASH_KEY, and a file whose hash has not changed is copied over from the older cache, the song
+// a player has already heard with it. An install that fails part way leaves the old worker running and keeps what it got, so the next try fetches only the rest.
+const HASHES = '__HASHES__', HASH_KEY = 'hashes.json', STAMPED = typeof HASHES === 'object';
+const relPath = url => new URL(url).pathname.slice(new URL(self.registration.scope).pathname.length);
+async function installFiles() {
+  const cache = await caches.open(CACHE);
+  if (STAMPED) for (const name of await caches.keys()) {
+    if (!name.startsWith('galena-') || name === CACHE) continue;
+    const old = await caches.open(name), list = await old.match(HASH_KEY); if (!list) continue;
+    const had = await list.json();
+    for (const req of await old.keys()) {
+      const p = relPath(req.url);
+      if (p !== HASH_KEY && HASHES[p] && had[p] === HASHES[p] && !(await cache.match(p))) await cache.put(p, await old.match(req));
+    }
+  }
+  const files = CORE.concat('courses/courses.json', await COURSE_FILES()), todo = [];
+  for (const f of files) if (f === './' || !STAMPED || !(await cache.match(f))) todo.push(f);
+  const worker = async () => {
+    for (let f; (f = todo.pop());) {
+      const r = await fetch(new Request(f, { cache: 'reload' })); if (!r.ok) throw new Error(f + ': ' + r.status);
+      await cache.put(f, r);
+    }
+  };
+  await Promise.all([1, 2, 3, 4, 5, 6].map(worker));
+  if (STAMPED) await cache.put(HASH_KEY, new Response(JSON.stringify(HASHES)));
+}
+self.addEventListener('install', e => { e.waitUntil(installFiles().then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('galena-') && k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));

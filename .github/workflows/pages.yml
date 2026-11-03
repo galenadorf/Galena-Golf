@@ -23,6 +23,7 @@ jobs:
           mkdir _site && cp index.html manifest.webmanifest sw.js *.png icon.svg _site/ && cp -r vendor fonts sounds courses _site/
           sed -i "s/__BUILD__/${GITHUB_SHA}/" _site/index.html _site/sw.js
           echo "${GITHUB_SHA}" > _site/version.txt
+          python3 tools/pages_hashes.py _site
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

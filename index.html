@@ -3515,6 +3515,7 @@ function initThree() {
   const cv = document.getElementById('gl');
   const ren = new THREE.WebGLRenderer({ canvas: cv, antialias: !window.WebGL2RenderingContext, powerPreference: 'default' }); // (the scene is drawn into a 2x multisampled target, so the screen buffer needs no antialiasing of its own)
   ren.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5)); // battery: 1.5x is plenty on a phone
+  ren.debug.checkShaderErrors = BUILD.startsWith('__');   // only a local copy asks for the shader logs: asking makes the page wait for the link
   ren.shadowMap.enabled = true; ren.shadowMap.type = THREE.PCFSoftShadowMap; ren.shadowMap.autoUpdate = false; ren.shadowMap.needsUpdate = true; // the shadow map is redrawn only when needed (see frame)
   const scene = new THREE.Scene();
   const fogC = 0xf3d9b4; scene.background = new THREE.Color(fogC); scene.fog = new THREE.Fog(fogC, 330, 1400);
@@ -3635,6 +3636,8 @@ function disposeGroup(grp) {
 }
 function buildHole(C) {
   W.stillDrawn = false;
+  // every compiled shader stays for the next hole: three.js drops a program with its last material, and relinking about 13 of them on each new hole is a stutter (their number is small and fixed)
+  for (const p of W.ren.info.programs) if (!p.kept) { p.kept = true; p.usedTimes++; }
   if (W.holeGroup) { W.scene.remove(W.holeGroup); disposeGroup(W.holeGroup); }
   const grp = new THREE.Group(); W.holeGroup = grp; W.scene.add(grp);
   W.treeOcc = null;
@@ -5138,12 +5141,22 @@ function loadSounds(a) {
     } catch (e) { }
   }
   // the recorded strikes and the cup (sounds/*.mp3, cached by sw.js); the embedded ones above stay as the fallback
-  for (const k of SND_FILES) {
-    try { fetch('sounds/' + k + '.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(buf => { if (buf) a.decodeAudioData(buf, b => { SND['s_' + k] = b; }, () => { }); }).catch(() => { }); } catch (e) { }
-  }
+  for (const k of SND_FILES) sndFetch(a, k);
 }
-const SND_FILES = ['driver', 'wood', 'iron', 'wedge', 'putter', 'cup', 'fart1', 'fart2', 'fart3', 'fart4', 'fart5', 'fart6', 'fart7', 'fart8', 'fart9', 'fart10', 'fart11', 'fart12', 'fart13', 'fart14', 'fart15', 'fart16', 'fart17', 'fart18', 'fart19', 'bird1', 'bird2', 'bird3', 'bird4', 'bird5', 'plane', 'truckhorn', 'truckrumble'];
-const BIRD_N = 5;   // birdsong recordings (see birdTick)
+function sndFetch(a, k, fail) {
+  const no = fail || (() => { });
+  try { fetch('sounds/' + k + '.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(buf => { if (buf) a.decodeAudioData(buf, b => { SND['s_' + k] = b; }, no); else no(); }).catch(no); } catch (e) { no(); }
+}
+// The rare and the long recordings are not all held decoded (about 15 MB between them): each pool keeps one ready, picked at random; once it has played the next is loaded.
+const FART_POOL = { n: Array.from({ length: 19 }, (_, i) => 'fart' + (i + 1)) }, BIRD_POOL = { n: [1, 2, 3, 4, 5].map(i => 'bird' + i), noRepeat: true }, TRUCK_POOL = { n: ['truckhorn', 'truckrumble'] };
+function poolNext(P, now) {
+  if (P.k || !AC || now < (P.retry || 0)) return;
+  let k; do k = P.n[Math.random() * P.n.length | 0]; while (P.noRepeat && k === P.last);
+  P.k = k; sndFetch(AC, k, () => { P.k = null; P.retry = performance.now() + 30000; });   // (offline without it cached: try again later)
+}
+const poolReady = P => P.k && SND['s_' + P.k] ? 's_' + P.k : null;
+function poolUsed(P) { delete SND['s_' + P.k]; P.last = P.k; P.k = null; poolNext(P, performance.now()); }   // (a sound that is playing keeps its own hold on the buffer)
+const SND_FILES = ['driver', 'wood', 'iron', 'wedge', 'putter', 'cup', 'plane'];
 function play(name, rate, vol, lp, delay) {
   if (!settings.sound || !SND[name]) return false; const a = audio(); if (!a) return false;
   const s = a.createBufferSource(); s.buffer = SND[name]; s.playbackRate.value = rate || 1; const g = a.createGain(); g.gain.value = vol == null ? 1 : vol; let n = s;
@@ -5306,23 +5319,24 @@ function fartSwing() {
   if (G.hole !== FART.hole) { FART.hole = G.hole; FART.n = 0; FART.at = ((G.fartHole === G.hole && !G.fartDone) || Math.random() < 1 / HOLE_DEFS.length) ? 1 + Math.floor(Math.random() * 3) : 0; }
   FART.n++;
   if (!FART.at || FART.n < FART.at || !settings.sound || document.hidden) return;
-  if (play('s_fart' + (1 + (Math.random() * 19 | 0)), 1, 1)) { FART.at = 0; if (G.hole === G.fartHole) G.fartDone = true; } // (a chance one on another hole does not use up the dealt one)
+  const fk = poolReady(FART_POOL);
+  if (fk && play(fk, 1, 1)) { poolUsed(FART_POOL); FART.at = 0; if (G.hole === G.fartHole) G.fartDone = true; } // (a chance one on another hole does not use up the dealt one)
 }
 // ---- soft birdsong: on every hole without a song, a recording of unseen birds plays now and then (sounds/bird1-5.mp3, picked at random) ----
 // Each clip is a 7-11 s bed of birds with its level baked in (quiet), panned to its own side; the next one comes after it ends plus a pause, never the same twice running.
-const BIRD = { next: 0, hole: -1, chk: 0, last: -1 };
+const BIRD = { next: 0, hole: -1, chk: 0 };
 function birdTick(now) {
   if (now - BIRD.chk < 300) return; BIRD.chk = now;
+  if (settings.sound && !document.hidden) { poolNext(FART_POOL, now); poolNext(BIRD_POOL, now); if (GC.hw) poolNext(TRUCK_POOL, now); }   // one of each kind ready (the truck only on a course with a road)
   if (G.hole !== BIRD.hole) { BIRD.hole = G.hole; BIRD.next = now + 1500 + Math.random() * 2500; }
   if (now < BIRD.next) return;
   if (!settings.sound || document.hidden || G.state === 'title' || holeSong(G.hole) || !AC || AC.state !== 'running') { BIRD.next = now + 1000; return; }
-  const have = []; for (let i = 1; i <= BIRD_N; i++) if (SND['s_bird' + i]) have.push(i);
-  if (!have.length) { BIRD.next = now + 3000; return; }   // (still loading, or offline without them cached)
-  let k = have[Math.random() * have.length | 0]; if (have.length > 1 && k === BIRD.last) k = have[(have.indexOf(k) + 1) % have.length]; BIRD.last = k;
-  const a = AC, buf = SND['s_bird' + k], rain = G.weather && G.weather.id === 'rain';
+  const bk = poolReady(BIRD_POOL);
+  if (!bk) { BIRD.next = now + 3000; return; }   // (still loading, or offline without them cached)
+  const a = AC, buf = SND[bk], rain = G.weather && G.weather.id === 'rain';
   const s = a.createBufferSource(); s.buffer = buf; const g = a.createGain(); g.gain.value = (rain ? .6 : 1) * (.75 + Math.random() * .25); let n = g;
   s.connect(g); if (a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = Math.random() * 1.2 - .6; g.connect(p); n = p; }
-  n.connect(a.destination); s.start(a.currentTime + .05);
+  n.connect(a.destination); s.start(a.currentTime + .05); poolUsed(BIRD_POOL);
   BIRD.next = now + buf.duration * 1000 + (rain ? 12000 + Math.random() * 14000 : 4000 + Math.random() * 12000);
 }
 /* ---------- live multiplayer: rooms ---------- */
@@ -5794,7 +5808,7 @@ const SFX = {
   cup() { if (play('s_cup', 1, .9) || play('cup', 1, .95)) return; [0, .07, .12].forEach((d, i) => tone(1500 - i * 220, .045, 'square', .05, null, d)); tone(230, .28, 'sine', .3, 130, .17); },
   splash() { noiseBurst(.55, .3, 650, .5); },
   // the truck's recorded sound (sounds/truckhorn.mp3 or truckrumble.mp3, one picked at random); k = loudness 0..1
-  honk(k) { if (k > .02) play('s_truck' + (Math.random() < .5 ? 'horn' : 'rumble'), 1, .3 * k); },   // .3: the recordings are sustained and were 10 dB louder than a strike
+  honk(k) { const tk = poolReady(TRUCK_POOL); if (k > .02 && tk && play(tk, 1, .3 * k)) poolUsed(TRUCK_POOL); },   // .3: the recordings are sustained and were 10 dB louder than a strike
   tree() { noiseBurst(.28, .13, 1800, .4); tone(320, .06, 'square', .06); },
   trunk() { tone(190, .09, 'triangle', .2, 120); noiseBurst(.05, .18, 900, 1.2); },
   leaves() { noiseBurst(.22, .09, 2000, .4); },
