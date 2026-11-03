@@ -3,6 +3,7 @@
 .cfHole{display:flex;gap:6px;align-items:center}.cfHole b{width:22px;text-align:center;font:600 14px var(--cond)}.cfHole select{flex:1;min-width:0;height:36px;border:0;border-radius:10px;padding:0 6px;background:var(--soft);color:var(--ink);font:500 14px var(--sans,system-ui)}.cfX{width:34px;height:34px;border-radius:10px;background:var(--soft);color:var(--ink)}.cfAdd{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.cfAdd select{flex:1 1 100%;height:36px;border:0;border-radius:10px;padding:0 6px;background:var(--soft);color:var(--ink)}.cfAdd .mpb{flex:1;background:var(--soft);color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair)}.mpInfo.bad{color:#c0392b}
 .playHead .pcName{font-size:16px;letter-spacing:.06em;color:#fff;margin-top:8px}.playHead #playPlace,.playHead #playPar{margin-top:2px;letter-spacing:.06em}.playHead #playPar{font-size:12px;letter-spacing:.03em}#playTop{margin-top:10px;display:flex;flex-direction:column;gap:2px}.ptRow{display:flex;gap:8px;font:600 13px/1.45 var(--cond);text-transform:uppercase;letter-spacing:.08em;color:var(--w2)}.ptRow .r{width:26px;flex:none}.ptRow .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ptRow .s{flex:none;font-variant-numeric:tabular-nums}.ptHead{font:700 13px var(--cond);text-transform:uppercase;letter-spacing:.08em;color:#fff;text-decoration:underline;text-underline-offset:3px;margin-bottom:2px}.ptEmpty{font:600 13px var(--cond);text-transform:uppercase;letter-spacing:.08em;color:var(--w2)}
 #boardSheet .boardSel,#practiceSheet .courseSel{color:var(--ink);text-shadow:none;background-color:var(--soft);box-shadow:inset 0 0 0 1px var(--hair);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2316211c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+#puttRead{position:fixed;z-index:3;display:none;padding:7px 12px;border-radius:14px;color:#fff;font:600 14px/1.3 var(--cond);text-transform:uppercase;letter-spacing:.04em;text-shadow:var(--tsh)}#puttRead.on{display:block}body.swing #puttRead,body.flight #puttRead{opacity:0}
 </style><title>Galena!!! Pocket Edition</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -463,7 +464,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 </div>
 <canvas id="fx"></canvas>
 <div id="pinTag" class="gtag">0 yd</div>
-<div id="pgBar" class="glass"><span id="pgTxt"></span><button id="pgCup">Cup 1</button><button id="pgRe">Redo</button><button id="pgChange">Change</button></div>
+<div id="pgBar" class="glass"><span id="pgTxt"></span><button id="pgCup">Cup 1</button><button id="pgRe">Redo</button><button id="pgRead" hidden>Grid</button><button id="pgChange">Change</button></div><div id="puttRead" class="glass"></div>
 <div id="mpPanel" class="glass"></div><div id="mpTags"></div>
 <div id="specBar" class="glass"><span id="specInfo">Following</span><button class="btn" id="specResume">Resume play</button></div>
 <div id="ballTag" class="gtag"><div class="bt1"><span id="btD">0</span><small>YD</small></div><div class="bt2" id="btC"></div></div>
@@ -3631,11 +3632,27 @@ const TERRAIN_GLSL = `
 uniform sampler2D tFA, tFB, tFC, tFar; uniform vec2 fO, fN; uniform float fInv, fR, wLo, wHi, seaLv, hasCoast, isLinks, isRocky, hasFar, isStraw;
 uniform vec4 farA, farB;
 uniform vec4 cupP[4];
+uniform sampler2D tSlope; uniform vec4 sgBox, sgAim; uniform float sgOn, sgT, sgLen;
 uniform vec3 cStraw, cRough, cDeep, cOut, cFirst, cFairA, cFairB, cGreenA, cGreenB, cFringe, cSand, cWaste, cTee, cPath, cBeach, cPond, cRock, cBed1, cBed2, cDune, cGranite;
 varying vec3 vWPos; varying vec3 vWN;
 float dcF(float v) { return (v * 2. - 1.) * fR; }
 float ins(float d) { float w = max(fwidth(d), 1e-3) * .75; return 1. - smoothstep(-w, w, d); }
 float lineAt(float d, float hw) { float w = max(fwidth(d), 1e-3) * .75; return 1. - smoothstep(hw - w, hw + w, abs(d)); }
+// the putting read, drawn on the green itself: a grid of SG_CELL squares, each with one bead that rolls downhill across its own square (so one texture read a pixel).
+// tSlope, one texel a square: rg downhill direction, b steepness (1 = SG_MAX), a the bead's phase; a steeper square's bead runs faster and turns from navy to red.
+vec3 slopeGrid(vec3 col, float mask) {
+  if (mask < .01) return col;
+  vec2 p = (vWPos.xz - sgBox.xy) * sgBox.z, id = floor(p), q = p - id - .5, fw = max(fwidth(p), vec2(1e-3));
+  vec2 b = vWPos.xz - sgAim.xy; float al = clamp(dot(b, sgAim.zw), 0., sgLen), off = length(b - sgAim.zw * al), focus = mix(.4, 1., 1. - smoothstep(1.2, 2.8, off));
+  vec2 e = (.5 - abs(q)) / fw; float ln = (1. - smoothstep(.4, 1.4, min(e.x, e.y))) * clamp(.05 / max(fw.x, fw.y), .15, 1.);
+  col = mix(col, vec3(1.), ln * .34 * focus * mask);
+  vec4 s = texture2D(tSlope, (id + .5) * sgBox.w);
+  if (s.b < .004 || id.x < 0. || id.y < 0. || id.x * sgBox.w >= 1. || id.y * sgBox.w >= 1.) return col;
+  vec2 dir = normalize(s.rg * 2. - 1.); float u = fract(sgT * (.22 + s.b * 1.5) + s.a), head = (u - .5) * .86, tail = .12 + s.b * .22;
+  float along = dot(q, dir), across = dot(q, vec2(-dir.y, dir.x)), ta = clamp(head - along, 0., tail), r = .055 * (1. - .75 * ta / tail), d = length(vec2(along - (head - ta), across));
+  float aa = max(fw.x, fw.y), bead = (1. - smoothstep(r - aa * .6, r + aa * .6, d)) * sqrt(sin(u * PI)) * mask * mix(.55, 1., focus);
+  return mix(col, mix(vec3(.03, .08, .2), vec3(.8, .04, .16), smoothstep(.45, .75, s.b)), bead);
+}
 // real courses: beyond the hole's own fields, a course-wide class map (2 m cells) colours the rest of the course
 vec3 farColor() {
   vec2 en = vec2(farA.x * vWPos.x + farA.y * vWPos.z, farA.z * vWPos.x + farA.w * vWPos.z) + farB.xy;
@@ -3671,6 +3688,7 @@ vec3 surfaceColor() {
   vec3 grn = mix(cGreenB, cGreenA, ins(sin((vWPos.x + vWPos.z) * .98175)));
   col = mix(col, grn, ins(gr));
   col *= 1. + .06 * lineAt(gr, .08);
+  if (sgOn > .5) col = slopeGrid(col, ins(gr));
   float isW = step(waste, sand + .02);
   col *= 1. - .16 * lineAt(sand - .2, .2) * (1. - isW);
   col = mix(col, mix(cSand, cWaste, isW), ins(sand));
@@ -3688,11 +3706,13 @@ vec3 surfaceColor() {
   return col;
 }`;
 const NO_FAR = { tex: null };
+const SG_U = { tSlope: { value: null }, sgBox: { value: new THREE.Vector4() }, sgAim: { value: new THREE.Vector4() }, sgOn: { value: 0 }, sgT: { value: 0 }, sgLen: { value: 0 } };   // the putting read (slopeGrid), shared by every terrain material
 // the shared terrain material: per-texel distance fields (A, B), stripes / water level / noise (T) and, for the real
 // course, an optional course-wide class map for everything beyond the fields
 function terrainMatFrom(o) {
   const { A, B, T, w, h, x0, z0, res, R, wlo, whi } = o;
   if (!NO_FAR.tex) { NO_FAR.tex = new THREE.DataTexture(new Uint8Array(4), 1, 1, THREE.RGBAFormat); NO_FAR.tex.needsUpdate = true; }
+  if (!SG_U.tSlope.value) SG_U.tSlope.value = NO_FAR.tex;
   const far = o.far || null;
   const tex = d => { const t = new THREE.DataTexture(d, w, h, THREE.RGBAFormat); t.magFilter = t.minFilter = THREE.LinearFilter; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.generateMipmaps = false; t.needsUpdate = true; return t; };
   const v3 = rgb => new THREE.Vector3(rgb[0], rgb[1], rgb[2]);
@@ -3701,7 +3721,7 @@ function terrainMatFrom(o) {
   const U = {
     tFA: { value: tex(A) }, tFB: { value: tex(B) }, tFC: { value: tex(T) }, fO: { value: new THREE.Vector2(x0, z0) }, fN: { value: new THREE.Vector2(w, h) }, fInv: { value: 1 / res }, fR: { value: R },
     wLo: { value: wlo }, wHi: { value: whi }, seaLv: { value: o.sea != null ? o.sea : -1e4 }, hasCoast: { value: o.sea != null ? 1 : 0 }, isLinks: { value: o.links ? 1 : 0 }, isRocky: { value: o.rocky ? 1 : 0 },
-    tFar: { value: far ? far.tex : NO_FAR.tex }, hasFar: { value: far ? 1 : 0 }, farA: { value: far ? far.A : new THREE.Vector4() }, farB: { value: far ? far.B : new THREE.Vector4(0, 0, 1, 1) }, cupP: CUP_U,
+    tFar: { value: far ? far.tex : NO_FAR.tex }, hasFar: { value: far ? 1 : 0 }, farA: { value: far ? far.A : new THREE.Vector4() }, farB: { value: far ? far.B : new THREE.Vector4(0, 0, 1, 1) }, cupP: CUP_U, tSlope: SG_U.tSlope, sgBox: SG_U.sgBox, sgAim: SG_U.sgAim, sgOn: SG_U.sgOn, sgT: SG_U.sgT, sgLen: SG_U.sgLen,
     // dry = a links-style course: sun-bleached, more olive and straw in the rough, a touch drier on the fairways (greens stay healthy)
     cRough: { value: pc(S.ROUGH, dr * .035, -dr * .05, -dr * .04) }, cDeep: { value: o.fescue ? v3(hslToRgb(...(o.longRough ? LONG_HSL : FESCUE_HSL))) : pc(S.DEEP, dr * .045, -dr * .06, -dr * .052) }, cFirst: { value: pc(S.FIRST, dr * .03, -dr * .035, -dr * .036) }, cFairA: { value: pc(S.FAIR, .045 + dr * .035, -dr * .03, -dr * .04) }, cFairB: { value: pc(S.FAIR, -.025 + dr * .025, -dr * .03, -dr * .04) },
     cGreenA: { value: pc(S.GREEN, .02 + dr * .008, -dr * .012, -dr * .026) }, cGreenB: { value: pc(S.GREEN, -.008 + dr * .008, -dr * .012, -dr * .026) }, cFringe: { value: pc(S.FRINGE, dr * .012, -dr * .025, -dr * .032) }, cSand: { value: pc(S.SAND) }, cWaste: { value: pc(S.SAND, -.05, -.08, .012) },
@@ -3714,7 +3734,7 @@ function terrainMatFrom(o) {
   U.cOut = { value: o.fescue ? U.cRough.value : U.cDeep.value }; // beyond the course and in woods: with a fescue map that is plain rough, the deep colour is only for the fescue
   const mat = new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0x000000, shininess: 1 });
   mat.extensions = { derivatives: true };
-  mat.customProgramCacheKey = () => 'terrain-fields-5';
+  mat.customProgramCacheKey = () => 'terrain-fields-6';
 
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, U);
@@ -3797,6 +3817,38 @@ function gableRoof(w, d, h, over) {
   const v = [-x, 0, z, x, 0, z, x, h, 0, -x, 0, z, x, h, 0, -x, h, 0, x, 0, -z, -x, 0, -z, -x, h, 0, x, 0, -z, -x, h, 0, x, h, 0, -x, 0, -z, -x, 0, z, -x, h, 0, x, 0, z, x, 0, -z, x, h, 0];
   g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); g.computeVertexNormals(); return g;
 }
+// The putting read: the grid and beads (slopeGrid in TERRAIN_GLSL) and the read chip. On trial on the practice green, where pgRead switches back to the arrows; the courses keep the arrows.
+const SG_CELL = 1.25, SG_MAX = .06, SG_FLAT = .003;
+const readGrid = () => !!(G.pg && !G.pg.range && settings.greenRead !== 'arrows');
+function slopeGridBake(C) {
+  if (SG_U.owner === C) return;
+  const gb = C.green, n = Math.min(256, Math.ceil(gb.R * 3.4 / SG_CELL)), x0 = Math.floor((gb.cx - n * SG_CELL / 2) / SG_CELL) * SG_CELL, z0 = Math.floor((gb.cz - n * SG_CELL / 2) / SG_CELL) * SG_CELL;
+  const d = new Uint8Array(n * n * 4), g = [0, 0], off = [[0, 0], [-.3, -.3], [.3, -.3], [-.3, .3], [.3, .3]];
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    let gx = 0, gz = 0, k = 0;
+    for (const o of off) { const x = x0 + (i + .5 + o[0]) * SG_CELL, z = z0 + (j + .5 + o[1]) * SG_CELL; if (C.surf(x, z) !== S.GREEN) continue; C.grad(x, z, g); gx += g[0]; gz += g[1]; k++; }
+    const sl = k ? Math.hypot(gx, gz) / k : 0, q = (j * n + i) * 4; if (sl < SG_FLAT) continue;
+    const l = Math.hypot(gx, gz); d[q] = Math.round((-gx / l * .5 + .5) * 255); d[q + 1] = Math.round((-gz / l * .5 + .5) * 255); d[q + 2] = Math.max(2, Math.round(Math.min(1, sl / SG_MAX) * 255)); d[q + 3] = hash2(i, j, 11) * 255 | 0;
+  }
+  const t = new THREE.DataTexture(d, n, n, THREE.RGBAFormat); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true;
+  if (SG_U.tex) SG_U.tex.dispose(); SG_U.tex = t; SG_U.owner = C; SG_U.tSlope.value = t; SG_U.sgBox.value.set(x0, z0, 1 / SG_CELL, 1 / n);
+}
+function slopeShow(on) {
+  const grid = !!on && readGrid(); if (W.slope) W.slope.mesh.visible = !!on && !grid;
+  if (grid) { slopeGridBake(G.C); slopeAim(); } SG_U.sgOn.value = grid ? 1 : 0;
+  $('puttRead').classList.toggle('on', grid); $('pgRead').hidden = !(G.pg && !G.pg.range); $('pgRead').textContent = settings.greenRead === 'arrows' ? 'Arrows' : 'Grid';
+  if (grid) { puttReadFill(); const q = $('strike').getBoundingClientRect(), e = $('puttRead').style; e.left = q.left + 'px'; e.width = q.width + 'px'; e.bottom = window.innerHeight - q.top + 8 + 'px'; } // (sits on the strike tile, clear of the flag)
+}
+function slopeAim() { const d = aimDir(); SG_U.sgAim.value.set(G.ball.x, G.ball.z, d[0], d[1]); SG_U.sgLen.value = G.carry || 0; }
+// the chip, in words only so it does not give the putt away: uphill or downhill, and which way a pure putt struck straight at the hole at the right pace ends up (one simulated putt per ball and cup)
+function puttReadFill() {
+  const C = G.C, key = G.ball.x.toFixed(2) + ':' + G.ball.z.toFixed(2) + ':' + C.cup.x + ':' + C.cup.z; if (SG_U.key === key) return; SG_U.key = key;
+  const d = distToPin(), yaw = Math.atan2(C.cup.x - G.ball.x, -(C.cup.z - G.ball.z)), L = computeLaunch(PUTTER, { p: clamp(puttEquiv() / G.puttRange, .02, 1.05), Tb: .4, Td: .2, range: G.puttRange }, { h: 0, v: 0 }, G.surf, yaw, settings.hand, G.teed);
+  const r = simulateShot(C, { x: G.ball.x, y: G.ball.y, z: G.ball.z, v: L.v, w: L.w, putt: true, maxT: 20, noTrees: true, dt: 1 / 120 }), f = r.frames, ax = Math.sin(yaw), az = -Math.cos(yaw);
+  let k = 1; while (k < r.n - 1 && (f[k * 5 + 1] - G.ball.x) * ax + (f[k * 5 + 3] - G.ball.z) * az < d) k++;
+  const side = (f[k * 5 + 1] - G.ball.x) * -az + (f[k * 5 + 3] - G.ball.z) * ax, dh = C.cup.y - G.ball.y;
+  $('puttRead').textContent = [Math.abs(dh) < .03 ? '' : dh > 0 ? 'Uphill' : 'Downhill', Math.abs(side) < .08 ? 'Straight' : side > 0 ? 'Breaks right' : 'Breaks left'].filter(Boolean).join(' · ');
+}
 // downhill chevrons on the green (shown while putting)
 function buildSlopeArrows(C, grp) {
   const g = new THREE.BufferGeometry();
@@ -3814,10 +3866,11 @@ function buildSlopeArrows(C, grp) {
   const c = new THREE.Color();
   pts.forEach((p, i) => { const t = clamp(p.sl / .035, 0, 1); c.setRGB(lerp(1, .2, t), lerp(1, .58, t), lerp(1, .74, t)); m.setColorAt(i, c); });
   m.count = pts.length; m.visible = false; m.frustumCulled = false; grp.add(m);
-  W.slope = { mesh: m, pts };
+  W.slope = { mesh: m, pts }; SG_U.sgOn.value = 0;
 }
 const _sm = new THREE.Matrix4(), _sq = new THREE.Quaternion(), _sv = new THREE.Vector3(), _ss = new THREE.Vector3(), _sy = new THREE.Vector3(0, 1, 0);
 function updateSlopeArrows(t) {
+  if (SG_U.sgOn.value) SG_U.sgT.value = t % 1000;
   const S2 = W.slope; if (!S2 || !S2.mesh.visible) return;
   S2.pts.forEach((p, i) => {
     const u = ((t * .45 + p.ph) % 1), off = (u - .5) * .7, s = 1.2 * (.5 + clamp(p.sl / .03, 0, 1) * .55);
@@ -5905,7 +5958,7 @@ function resumeRound(course) {
     W.cam.position.copy(cp); G.camLook.copy(lk); W.cam.lookAt(lk); camSnap();
     document.body.classList.add('flight'); if (G.rig) { G.rig.arr = null; G.rig.launch = null; }
     W.tracerT0 = performance.now(); resetTrail(); W.tracer.visible = !L.putt; W.tracer.material.opacity = .8; W.tracer.geometry.setDrawRange(0, 0);
-    W.aim.visible = W.ring.visible = W.peg.visible = false; if (W.slope) W.slope.mesh.visible = false; $('aimHint').classList.remove('on');
+    W.aim.visible = W.ring.visible = W.peg.visible = false; slopeShow(false); $('aimHint').classList.remove('on');
     G.state = 'flight'; G.playT = t; G.shake = 0; updateHUD();
     return true;
   }
@@ -6143,6 +6196,7 @@ function placeAimGeo() {
   const rx = G.ball.x + d[0] * L, rz = G.ball.z + d[1] * L;
   W.ring.position.set(rx, Math.max(groundY(rx, rz), C.wl(rx, rz)) + .07, rz);
   const rs = putt ? .62 : Math.max(1.4, L * .022); W.ring.scale.set(rs, rs, rs); W.ring.userData.s = rs;
+  if (SG_U.sgOn.value) { slopeAim(); puttReadFill(); }
 }
 function predictCarry() {
   const L = computeLaunch(G.club, { p: 1, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, G.yaw, settings.hand, G.teed);
@@ -6280,7 +6334,7 @@ function impact(tImp) {
   G.shot = { L, res, ei: 0, finished: false, summary: `${L.quality} · ${L.shape} · Tempo ${L.ratio.toFixed(1)}:1` + (Math.abs(SW.pathDeg) >= .3 ? ` · Path ${SW.pathDeg > 0 ? '←' : '→'}${Math.abs(SW.pathDeg).toFixed(1)}°` : '') + (L.putt ? '' : ` · Smash ${L.smash.toFixed(2)}`) };
   if (G.rig) { G.rig.arr = null; G.rig.launch = null; } W.tracerT0 = performance.now(); resetTrail(); W.tracer.visible = true; W.tracer.material.opacity = .8;
   G.state = 'flight'; G.playT = -.05; G.shake = L.putt ? 0 : .12; saveRound(); G.savedT = 0; mpShot(res);
-  W.aim.visible = W.ring.visible = false; W.peg.visible = false; if (W.slope) W.slope.mesh.visible = false; G.chip = null;
+  W.aim.visible = W.ring.visible = false; W.peg.visible = false; slopeShow(false); G.chip = null;
   $('aimHint').classList.remove('on');
   W.tracer.geometry.setDrawRange(0, 0);
   if (!L.putt && !L.disc) {
@@ -6449,7 +6503,7 @@ function replayLast() {
   W.cam.position.copy(a); G.camLook.copy(lk); W.cam.lookAt(lk); camSnap();
   W.tracerT0 = performance.now(); resetTrail(); W.tracer.visible = true; W.tracer.material.opacity = .8;
   W.tracer.geometry.setDrawRange(0, 0); G.state = 'flight'; G.playT = -2; G.shake = R.L.putt ? 0 : .12;
-  W.aim.visible = W.ring.visible = false; W.peg.visible = false; if (W.slope) W.slope.mesh.visible = false; G.chip = null; $('aimHint').classList.remove('on');
+  W.aim.visible = W.ring.visible = false; W.peg.visible = false; slopeShow(false); G.chip = null; $('aimHint').classList.remove('on');
   return true;
 }
 function endReplay() {
@@ -6777,7 +6831,7 @@ function enterAddress() {
   saveRound(); mpState(true);
   if (G.rig) G.rig.arr = null; G.state = 'address'; if (SW.sid == null && !SW.mouseR) SW.thumb = false; SW.mark = null; SW.looseSide = Math.random() < .5 ? -1 : 1; W.aim.visible = W.ring.visible = true; W.ball.visible = true;
   setFlags(!isPutt());
-  if (W.slope) W.slope.mesh.visible = isPutt() && (G.surf === S.GREEN || G.surf === S.FRINGE);
+  slopeShow(isPutt() && (G.surf === S.GREEN || G.surf === S.FRINGE));
   if (!settings.aimed) $('aimHint').classList.add('on');
   updateHUD();
 }
@@ -7331,7 +7385,7 @@ function openBag() {
   CLUBS.forEach((c, i) => {
     const bt = document.createElement('button'); if (i === G.club) bt.className = 'sel';
     bt.innerHTML = `<div class="bi">${({ Dr: 'DR', Pt: 'PUTT' })[c.id] || c.id}</div><div class="bn">${c.name}</div><div class="bd">${c.type === 'putter' ? 'On the green' : toLen(c.carry) + ' ' + lenU()}</div>${i === G.suggested ? '<span class="tip">TIP</span>' : ''}`;
-    bt.onclick = () => { G.club = i; if (c.type === 'putter') pickPuttRange(); G.carryKey = ''; updateAim(true); closeSheets(); SFX.blip(); if (W.slope) W.slope.mesh.visible = c.type === 'putter' && (G.surf === S.GREEN || G.surf === S.FRINGE); setFlags(c.type !== 'putter'); };
+    bt.onclick = () => { G.club = i; if (c.type === 'putter') pickPuttRange(); G.carryKey = ''; updateAim(true); closeSheets(); SFX.blip(); slopeShow(c.type === 'putter' && (G.surf === S.GREEN || G.surf === S.FRINGE)); setFlags(c.type !== 'putter'); };
     b.appendChild(bt);
   });
   openSheet('bagSheet');
@@ -7340,7 +7394,7 @@ function changeClub(d) {
   if (G.state !== 'address' && G.state !== 'settle') return;
   const n = clamp(G.club + d, 0, PUTTER); if (n === G.club) return;
   G.club = n; if (isPutt()) pickPuttRange(); SFX.blip(); G.carryKey = ''; updateAim(true);
-  if (W.slope) W.slope.mesh.visible = isPutt() && (G.surf === S.GREEN || G.surf === S.FRINGE);
+  slopeShow(isPutt() && (G.surf === S.GREEN || G.surf === S.FRINGE));
   setFlags(!isPutt());
   const el = $('clubName'); el.style.transform = `translateX(${d * 8}px)`; setTimeout(() => el.style.transform = '', 120);
 }
@@ -7376,6 +7430,7 @@ function openPractice() {
 }
 $('pracPutt').onclick = () => { SFX.blip(); startPuttingGreen(); };
 $('pracRange').onclick = () => { SFX.blip(); startPuttingGreen(true); };
+$('pgRead').onclick = () => { if (!G.pg || G.state !== 'address') return; settings.greenRead = settings.greenRead === 'arrows' ? 'grid' : 'arrows'; saveSettings(); SFX.blip(); slopeShow(isPutt() && (G.surf === S.GREEN || G.surf === S.FRINGE)); };
 $('pgCup').onclick = () => { if (!G.pg || G.state !== 'address') return; SFX.blip(); (G.pg.range ? rgAim : pgAim)((G.pg.cup + 1) % G.C.cups.length); };
 $('pgRe').onclick = () => { const pg = G.pg; if (pg && pg.range) { if (G.state === 'address' && G.C.spots.length > 1) { SFX.blip(); rgPlace((pg.spot + 1) % G.C.spots.length); } return; } if (!pg || !pg.from || G.state !== 'address') return; SFX.blip(); pgPlace(pg.from.x, pg.from.z); readoutNote('Back where you played from', 'ok'); };
 // practice: one hole at a time, nothing scored. Picking a hole ends the round in progress.
