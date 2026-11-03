@@ -3660,7 +3660,7 @@ vec3 slopeGrid(vec3 col, float mask) {
   vec2 dir = normalize(s.rg * 2. - 1.), sp = vec2(1. / 3., .5); float aa = max(fw.x, fw.y), r = max(.015, aa * .7);
   vec2 m = vec2(dot(q, dir) - sgT * .6 * (.06 + pow(s.b, 1.5)) - s.a, dot(q, vec2(-dir.y, dir.x))), g = (fract(m / sp) - .5) * sp, ed = .5 - abs(q);
   float bead = (1. - smoothstep(r - aa * .6, r + aa * .6, length(g))) * smoothstep(0., .06, min(ed.x, ed.y)) * clamp(sp.x / (aa * 3.), 0., 1.) * mask * mix(.55, 1., focus);
-  sgC = mix(vec3(1.), vec3(1., .2, .4), smoothstep(.45, .75, s.b)); sgA = bead;   // (laid over the lit result in the material: the low orange sun would dull them)
+  sgC = mix(vec3(1.), vec3(1., .16, .28), smoothstep(.45, .75, s.b)); sgA = bead;   // (laid over the lit result in the material: the low orange sun would dull them)
   return col;
 }
 // real courses: beyond the hole's own fields, a course-wide class map (2 m cells) colours the rest of the course
