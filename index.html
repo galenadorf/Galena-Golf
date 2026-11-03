@@ -1,6 +1,8 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.cfList{display:flex;flex-direction:column;gap:6px;max-height:48vh;overflow:auto}.cfRow{display:flex;flex-direction:column;align-items:flex-start;text-align:left;background:var(--soft);border-radius:14px;padding:9px 12px;font:600 16px var(--cond);text-transform:uppercase;color:var(--ink)}.cfRow small{font:500 12px var(--sans,system-ui);text-transform:none;color:var(--ink2)}.cfRow.k_season{box-shadow:inset 4px 0 #d9b23a}.cfRow.k_tournament{box-shadow:inset 4px 0 #2f6b35}.cfRow.k_event{box-shadow:inset 4px 0 #8aa}
 .cfBody{display:flex;flex-direction:column;gap:6px;max-height:56vh;overflow:auto;padding-bottom:4px}#compForm{overflow:hidden}.cfRow2{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--soft);border-radius:14px;padding:8px 12px;font:600 14px var(--cond);text-transform:uppercase;color:var(--ink)}.cfRow2 input,.cfRow2 select{flex:1;min-width:0;max-width:62%;height:36px;border:0;border-radius:10px;padding:0 10px;font:500 16px var(--sans,system-ui);background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair)}.cfRow2 .seg button{color:var(--ink2)}.cfRow2 .seg button.sel{background:#fff;color:var(--ink)}
 .cfHole{display:flex;gap:6px;align-items:center}.cfHole b{width:22px;text-align:center;font:600 14px var(--cond)}.cfHole select{flex:1;min-width:0;height:36px;border:0;border-radius:10px;padding:0 6px;background:var(--soft);color:var(--ink);font:500 14px var(--sans,system-ui)}.cfX{width:34px;height:34px;border-radius:10px;background:var(--soft);color:var(--ink)}.cfAdd{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.cfAdd select{flex:1 1 100%;height:36px;border:0;border-radius:10px;padding:0 6px;background:var(--soft);color:var(--ink)}.cfAdd .mpb{flex:1;background:var(--soft);color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair)}.mpInfo.bad{color:#c0392b}
+.playHead .pcName{font-size:16px;letter-spacing:.06em;color:#fff;margin-top:8px}.playHead #playPlace,.playHead #playPar{margin-top:2px;letter-spacing:.06em}.playHead #playPar{font-size:12px;letter-spacing:.03em}#playTop{margin-top:10px;display:flex;flex-direction:column;gap:2px}.ptRow{display:flex;gap:8px;font:600 13px/1.45 var(--cond);text-transform:uppercase;letter-spacing:.08em;color:var(--w2)}.ptRow .r{width:26px;flex:none}.ptRow .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ptRow .s{flex:none;font-variant-numeric:tabular-nums}.ptEmpty{font:600 13px var(--cond);text-transform:uppercase;letter-spacing:.08em;color:var(--w2)}
+#boardSheet .boardSel,#practiceSheet .courseSel{color:var(--ink);text-shadow:none;background-color:var(--soft);box-shadow:inset 0 0 0 1px var(--hair);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2316211c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
 </style><title>Galena!!! Pocket Edition</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -109,14 +111,14 @@ input{-webkit-user-select:text;user-select:text;touch-action:manipulation}
 #tempoCv{flex:1;min-height:0;width:100%;display:block}
 .pfoot{font:600 12.5px/1.3 var(--cond);text-transform:uppercase;text-align:center;letter-spacing:.01em;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--w1)}
 /* strike dial */
-#strike{position:absolute;right:calc(var(--sr) + 38px);bottom:calc(var(--sb) + 58px);width:clamp(196px,51vw,246px);padding:11px 10px 10px;pointer-events:none;display:flex;flex-direction:column;align-items:stretch;border-radius:28px}
+#strike{position:absolute;right:calc(var(--sr) + 10px);bottom:calc(var(--sb) + 10px);width:clamp(196px,51vw,246px);padding:11px 10px 10px;pointer-events:none;display:flex;flex-direction:column;align-items:stretch;border-radius:28px}
 .stitle{align-self:center;font:600 19px/1 var(--cond);text-transform:uppercase;letter-spacing:.01em;white-space:nowrap;margin:1px 0 7px}
 #strikeCv{width:100%;aspect-ratio:1/1;display:block;position:relative}
 body.swing #topbar{opacity:0}
 body.flight #tempo,body.flight #strike{opacity:.4;transition:opacity .4s}
 /* reverse controls: the tempo panel (swing thumb) on the right, the strike dial (contact thumb) on the left */
 body.rev #tempo{left:auto;right:calc(var(--sr) + 10px)}
-body.rev #strike{right:auto;left:calc(var(--sl) + 38px)}
+body.rev #strike{right:auto;left:calc(var(--sl) + 10px)}
 #skipBtn,#mullBtn{position:absolute;z-index:6;transform:translate(-50%,6px) scale(.9);opacity:0;pointer-events:none;transition:opacity .25s,transform .3s var(--spring);padding:7px 16px 8px;border-radius:18px;color:#fff;font:600 15px Oswald,"Arial Narrow",sans-serif;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:5px;cursor:pointer}
 #skipBtn.on,#mullBtn.on{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1)}
 #hud #skipBtn:not(.on),#hud #mullBtn:not(.on){pointer-events:none}   /* `#hud button` makes every button tappable, so a hidden one kept catching taps; the two sit at the same spot over the tempo bar, and the later (Mulligan) covered Next */
@@ -424,8 +426,8 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 @media (orientation:landscape){
   #readout{top:calc(var(--st) + 76px)}
   #tempo{height:calc(100% - var(--st) - var(--sb) - 110px);max-height:340px;width:134px}
-  #strike{width:min(220px,28vw);right:calc(var(--sr) + 60px);bottom:calc(var(--sb) + 30px)}
-  body.rev #strike{right:auto;left:calc(var(--sl) + 60px)}
+  #strike{width:min(220px,28vw);right:calc(var(--sr) + 10px);bottom:calc(var(--sb) + 10px)}
+  body.rev #strike{right:auto;left:calc(var(--sl) + 10px)}
   .icard{max-width:600px}
   #title,#play{flex-direction:row;align-items:flex-end;gap:20px}
   .logoCard,.playHead{align-self:flex-start}
@@ -479,7 +481,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
   </div>
 </div>
 <div class="layer" id="play">
-  <div class="card playHead"><button class="playBack" id="btnPlayBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><h1>Play</h1><p id="playCourse"></p></div></div>
+  <div class="card playHead"><button class="playBack" id="btnPlayBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><h1>Play</h1><p id="playCourse" class="pcName"></p><p id="playPlace"></p><p id="playPar"></p><div id="playTop"></div></div></div>
   <div class="tb">
     <label class="card nameRow courseRow" hidden><span>Course</span><select class="courseSel" id="selCourse" aria-label="Course"></select></label>
     <div class="playRow"><button class="btn alt" id="btnResume" style="display:none">Continue round<small id="resumeInfo"></small></button><button class="btn" id="btnNew">New round</button></div>
@@ -3216,7 +3218,7 @@ let RDC = null, COURSE = null;
 function courseList(reg) {
   for (const c of reg.courses) {
     const k = c.key;
-    COURSES[k] = { key: k, name: c.name, short: c.short, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: !!c.music,
+    COURSES[k] = { key: k, name: c.name, short: c.short, place: c.place || '', tee: c.tee || '', rating: c.rating || 0, slope: c.slope || 0, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: !!c.music,
       defs: null, best: 'ssg-best-' + k, board: 'ssg-board-' + k, coll: 'rounds-' + k };
   }
 }
@@ -3284,7 +3286,7 @@ function setCourse(key) {
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   G.hole = 0; G.submitted = false; G.practice = false; G.pg = null; document.body.classList.remove('pg');
   if (settings.course !== COURSE.key) { settings.course = COURSE.key; saveSettings(); }
-  $('playCourse').textContent = `${COURSE.name.replace(/ (Golf Course)$/, '\n$1')}\n${HOLE_DEFS.length} holes · Par ${PAR_TOTAL}`;
+  playFill();
   $('boardName').textContent = COURSE.name; $('aboutCourse').textContent = COURSE.about; $('musRow').hidden = !COURSE.music;
   document.querySelectorAll('.courseSel').forEach(el => { el.value = COURSE.key; });
   showBest(); refreshBoards(); try { loadWorld(); } catch (e) { } refreshResume();
@@ -7281,6 +7283,20 @@ function readoutNote(text, cls) {
   if (!r.classList.contains('on')) { r.classList.add('on'); UI.readT = 2.4; if ($('mpPanel').classList.contains('on')) mpPlace($('mpPanel')); }
 }
 /* ---------- sheets ---------- */
+// the play screen's tile: the course's full name, its town, par and the tee's rating and slope, then the best five rounds on the world board
+function playFill() {
+  const CO = COURSE; $('playCourse').textContent = CO.name; $('playPlace').textContent = CO.place;
+  $('playPar').textContent = ['Par ' + PAR_TOTAL, CO.slope ? 'Slope ' + CO.slope : '', CO.rating ? 'Rating ' + CO.rating : '', ''].filter(Boolean).join(' · ');
+  const box = $('playTop'); box.textContent = ''; if (CO.alpha) return;
+  const rows = worldRows(CO.key); if (!rows) return;
+  if (!rows.length) { const e = document.createElement('div'); e.className = 'ptEmpty'; e.textContent = 'No rounds posted yet'; box.appendChild(e); return; }
+  sortRounds(rows).slice(0, 5).forEach((r, i, a) => {
+    const rank = 1 + sortRounds(rows).findIndex(x => x.toPar === r.toPar), tied = rows.filter(x => x.toPar === r.toPar).length > 1;
+    const d = document.createElement('div'); d.className = 'ptRow';
+    [[(tied ? 'T' : '') + rank, 'r'], [r.name, 'n'], [fmtToPar(r.toPar) + ' (' + r.strokes + ')', 's']].forEach(([t, c]) => { const q = document.createElement('span'); q.className = c; q.textContent = t; d.appendChild(q); });
+    box.appendChild(d);
+  });
+}
 function sheetOpen() { return !!document.querySelector('.sheet.on'); }
 // Menus open on top of each other (Settings > Stats > Hole by hole): the sheet being left goes on SHEET_BACK, and the Back button at the top left of the
 // new one (shown only when there is something to go back to) shows it again as it was. Opening a sheet that is already on the stack pops back to it
@@ -8222,16 +8238,15 @@ function fillBoard(el, limit, key, pick) {
   }
   const shared = !!Board.db, tab = Board.tab || 'world';
   const head = document.createElement('div'); head.className = 'sub';
-  const lab = document.createElement('span'); lab.textContent = tab === 'world' ? 'World' : tab === 'all' ? 'Everyone' : 'This device'; head.appendChild(lab);
+  if (!pick) { const lab = document.createElement('span'); lab.textContent = tab === 'world' ? 'World' : tab === 'all' ? 'Everyone' : 'This device'; head.appendChild(lab); } // (the leaderboard sheet has no label: its switch is a bar like the others)
   {
-    const tabs = document.createElement('div'); tabs.className = 'tabs';
+    const tabs = document.createElement('div'); tabs.className = pick ? 'seg boardCourse' : 'tabs';
     for (const [k, t] of [['world', 'World']].concat(shared ? [['all', 'Everyone']] : [], [['device', 'This device']])) {
       const b = document.createElement('button'); b.textContent = t; if (k === tab) b.className = 'sel';
       b.onclick = () => { Board.tab = k; refreshBoards(); }; tabs.appendChild(b);
     }
-    head.appendChild(tabs);
+    if (pick) el.appendChild(tabs); else { head.appendChild(tabs); el.appendChild(head); }
   }
-  el.appendChild(head);
   if (pick) { // the period: every round on the board, or only the last 45 days
     const ps = document.createElement('div'); ps.className = 'seg boardCourse';
     for (const [k, t] of [['all', 'All time'], ['45', 'Last 45 days']]) {
@@ -8304,6 +8319,7 @@ function fillRecords(el, key) {
   el.appendChild(mk('div', 'lbnote', 'Full 18-hole rounds by registered players. Tap a record for the top 5.'));
 }
 function refreshBoards() {
+  try { playFill(); } catch (e) { }
   if ($('boardSheet').classList.contains('on')) fillBoard($('boardBody'), 40, Board.view, true);
   const fb = $('finalBoard'); if (fb && $('cardSheet').classList.contains('on')) fillBoard(fb, 10);
 }
