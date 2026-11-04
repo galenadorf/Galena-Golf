@@ -15,6 +15,7 @@ Plane.m4a -> sounds/plane.mp3: the banner plane's flyby (`SFX.plane`), trimmed t
 synthesised drone was), played at gain 1.
 Truck_horn.m4a -> sounds/truckhorn.mp3, Truck_rumble.m4a -> sounds/truckrumble.mp3: trimmed like the strikes, mono at 96 kbps (the rumble at 64), peak -3 dBFS;
 the truck on the road plays one of the two at random (`SFX.honk`, TRUCK_SND), each with its own level there.
+Cow_01..03.m4a -> sounds/cow1..3.mp3: the cows in the woods at Eagle Ridge South hole 3 (`makeCow`), trimmed like the strikes, mono at 96 kbps, peak -3 dBFS; the game sets the level by distance (`COW_POOL`).
 Rerun after replacing a recording; commit sounds/ (the game loads it, sw.js caches it)."""
 import os
 import sys
@@ -147,6 +148,15 @@ def trucks():
         print(f'{nm} -> sounds/{dst}.mp3  kept {a:.2f}-{b:.2f} s  (rms {20 * np.log10(np.sqrt((y ** 2).mean())):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
 
 
+def cows():
+    for i in (1, 2, 3):
+        p = os.path.join(SOUNDS_RAW, f'Cow_{i:02d}.m4a')
+        if not os.path.exists(p):
+            print('missing', p); continue
+        y, a, b = trim(load(p)); d = os.path.join(DEST, f'cow{i}.mp3'); write(y, d)
+        print(f'Cow_{i:02d} -> sounds/cow{i}.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / SR:.1f} s, {os.path.getsize(d) / 1024:.1f} KB)')
+
+
 def main():
     music()
     cartmusic()
@@ -154,6 +164,7 @@ def main():
     birds()
     plane()
     trucks()
+    cows()
     os.makedirs(DEST, exist_ok=True)
     for src, dst in MAP.items():
         p = os.path.join(SOUNDS_RAW, src + '.m4a')

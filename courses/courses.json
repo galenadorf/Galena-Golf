@@ -33,6 +33,8 @@
         "turkeys": 0.4,
         "bannerPlane": true,
         "groundhog": true,
+        "coyote": 0.15,
+        "cows": { "hole": 3, "enu": [-756, 556] },
         "traffic": true
       }
     },
@@ -48,6 +50,8 @@
         "turkeys": 0.4,
         "bannerPlane": true,
         "groundhog": true,
+        "deer": 0.25,
+        "coyote": 0.15,
         "traffic": true
       }
     },
@@ -63,6 +67,7 @@
         "turkeys": 0.4,
         "bannerPlane": true,
         "groundhog": true,
+        "coyote": 0.15,
         "traffic": true
       }
     },

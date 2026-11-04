@@ -29,7 +29,9 @@ A. WHICH COURSE HAS WHAT
   Wild turkeys                                    Y    Y    Y    Y    -    -    -    -    -    -    -
   Gopher (groundhog)                              Y    Y    Y    Y    -    -    -    -    -    -    -
   Banner plane                                    Y    Y    Y    Y    -    -    -    -    -    -    -
-  White-tailed deer                               -    -    -    -    Y    Y    Y    Y    Y    -    -
+  White-tailed deer                               -    -    Y    -    Y    Y    Y    Y    Y    -    -
+  Coyote (gray and white)                         -    Y    Y    Y    -    -    -    -    -    -    -
+  Cows in the woods (hole 3 only)                 -    Y    -    -    -    -    -    -    -    -    -
   Squirrels (3 on every hole)                     -    -    -    -    Y    Y    Y    Y    Y    -    -
   Highway with an 18-wheeler and 4 cars           Y    -    -    -    -    Y    -    -    -    -    -
   Cars (Subaru and Hyundai only) on side roads    -    Y    Y    Y    -    -    -    -    -    -    -
@@ -130,7 +132,7 @@ Hitting things
     ("In the chains!" on a disc course; no cup recording there, the chain shower is the sound). If the shot is skipped the cup sound still plays.
   - Putting green practice: the chime on every holed putt.
   - Record cards (New personal / world record, Record beaten): the same four-note chime with confetti.
-  - A ball that hits an animal, the plane or a cart: see each course (rustle for deer and birds, gobble for a turkey, squeak for a gopher, squirrel or the
+  - A ball that hits an animal, the plane or a cart: see each course (rustle for deer and birds, a yelp for a coyote, a moo for a cow, gobble for a turkey, squeak for a gopher, squirrel or the
     hot dog, thunk for the plane, the paraglider and a golf cart).
 Interface
   - A short 700 Hz blip on button presses: Play, Practice, Settings, opening a sheet, changing club or aim range, changing course, the Play Hole tap that ends
@@ -257,12 +259,15 @@ Cart paths: OSM's cart-path lines (about 8.5 km, 2.4 m wide; nobody painted them
 
 Cart-path bridges (ten; `CART_BRIDGES`): holes 3, 8 (two: from the tee box towards the fairway, and by the green), 9, 10 (two: the second path three-quarters of the way down, and by the green), 13, 14, between the 14th green and the 15th tee, and 18. A grey concrete deck 2.6 m wide and 9-21 m long (as long as the gap OSM leaves in the path), level with the higher bank and clear of the water, girders under it, a sill at each end, timber rails and posts. A ball that lands on the deck is on a cart path (hard, bounces and rolls as on any cart path, flat, never water); the rails and girders are scenery the ball passes through. Silent.
 
+Coyote (`scene.coyote` = .15: about 3 holes in 20 have one, and a quarter of those a pair): gray with a white belly, chest and muzzle, big upright ears, a bushy gray tail with a dark tip, about 0.6 m at the shoulder. It trots across the hole (2 m/s), stops to sniff with its nose down and look round, and bolts (9.5 m/s, tail streaming) when the ball lands or the golfer comes within about 20 m, or 50 m while the ball flies. Can be hit (the body, not the legs): "Wile E. would be proud!", the ball ricochets and it yelps and runs. Comes back 40-120 s after it leaves.
+Cows (`scene.cows`: hole 3 only, every round, never anywhere else): three, one brown, one black and one Holstein (white with black patches), standing about 20 ft (6 m) inside the woods south-west of the green, 40 m from the cup, within about 5 m of one spot. They graze with their heads down, lift them to look at the golfer for a few seconds, take a few slow steps between the trees (never out of the woods) and swish their tails. They never run off. One of them moos every 25-70 s (first 6-20 s after the hole loads), louder and clearer the nearer the camera is (nothing past 220 m). Can be hit (the body, not the legs; the trees round them mostly shield them): "Holy cow!", the ball ricochets and that cow moos.
 NOT here: highway, US 20 (about 2 km south, off the map), trucks, deer, squirrels, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
 
 SOUNDS
 ------
   - Banner plane drone: as at Woodbine.
-  - Ball hits: gobble (turkey), squeak (gopher), thunk (plane).
+  - Cow moos (hole 3 only): one of three recordings (sounds/cow1-3.mp3, 2-4 s, never the same twice running), every 25-70 s, duller and quieter with distance.
+  - Ball hits: gobble (turkey), squeak (gopher), thunk (plane), yelp (coyote), moo (cow).
   - NO horn, truck rumble, cart radio or hole song. The cars make no sound.
   - Plus all of GLOBAL, including birdsong on every hole.
 
@@ -285,11 +290,13 @@ Traffic on the roads (`scene.traffic`): exactly as at Eagle Ridge South: occasio
 Roads: every OSM road, drive and service road within 230 m of a hole (Eagle Ridge Drive, Walnut Hill Road, Thunder Bay Road and the housing streets), drawn and culled as at Eagle Ridge South.
 Cart paths: OSM's cart-path lines (about 8.7 km, 2.4 m wide), one connected network, drawn over a road where they cross it.
 Cart-path bridges (six): holes 11 (the long path crosses a stream OSM maps no bridge for), 13, 14, 15 (two) and 16 (five are OSM's own bridge=yes ways). Same deck and behaviour as at Eagle Ridge South.
-NOT here: highway and trucks, deer, squirrels, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+Coyote (`scene.coyote` = .15: about 3 holes in 20 have one, and a quarter of those a pair): gray with a white belly, chest and muzzle, big upright ears, a bushy gray tail with a dark tip, about 0.6 m at the shoulder. It trots across the hole (2 m/s), stops to sniff with its nose down and look round, and bolts (9.5 m/s, tail streaming) when the ball lands or the golfer comes within about 20 m, or 50 m while the ball flies. Can be hit (the body, not the legs): "Wile E. would be proud!", the ball ricochets and it yelps and runs. Comes back 40-120 s after it leaves.
+White-tailed deer (`scene.deer` = .25: about a quarter of the holes have them, per hole; the others none): a doe with a fawn (spotted, smaller) or a second doe, and on about a third of those holes a buck with antlers too: as at Stonehenge, but half as often.
+NOT here: highway and trucks, squirrels, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
 
 SOUNDS
 ------
-  - Banner plane drone as at Woodbine; gobble, squeak and thunk on hits. NO horn, truck rumble, cart radio or hole song. Plus all of GLOBAL.
+  - Banner plane drone as at Woodbine; gobble, squeak, thunk, rustle (deer) and yelp (coyote) on hits. NO horn, truck rumble, cart radio or hole song. Plus all of GLOBAL.
 
 SCENERY AND DATA
 ----------------
@@ -310,11 +317,12 @@ Wild turkeys, gopher, banner plane: all as at Eagle Ridge South and Woodbine (tu
 Traffic on the roads (`scene.traffic`): exactly as at Eagle Ridge South: occasional Subaru and Hyundai only, no truck, 28 mph, 25-65 s and 60-120 s to first set off, 45-135 s between trips.
 Roads: every OSM road, drive and service road within 230 m of a hole (Eagle Ridge Drive, West Longhollow Road, U.S. Grant Memorial Highway's link roads and the housing streets), drawn and culled as at Eagle Ridge South.
 Cart paths: OSM's cart-path lines (about 9.2 km, 2.4 m wide), drawn over a road where they cross it. Several short spurs run to tee boxes and end there; OSM maps no creek crossing on this course, so there are no cart-path bridges.
+Coyote (`scene.coyote` = .15: about 3 holes in 20 have one, and a quarter of those a pair): gray with a white belly, chest and muzzle, big upright ears, a bushy gray tail with a dark tip, about 0.6 m at the shoulder. It trots across the hole (2 m/s), stops to sniff with its nose down and look round, and bolts (9.5 m/s, tail streaming) when the ball lands or the golfer comes within about 20 m, or 50 m while the ball flies. Can be hit (the body, not the legs): "Wile E. would be proud!", the ball ricochets and it yelps and runs. Comes back 40-120 s after it leaves.
 NOT here: highway and trucks, deer, squirrels, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs, cart-path bridges.
 
 SOUNDS
 ------
-  - Banner plane drone as at Woodbine; gobble, squeak and thunk on hits. NO horn, truck rumble, cart radio or hole song. Plus all of GLOBAL.
+  - Banner plane drone as at Woodbine; gobble, squeak, thunk and yelp (coyote) on hits. NO horn, truck rumble, cart radio or hole song. Plus all of GLOBAL.
 
 SCENERY AND DATA
 ----------------
