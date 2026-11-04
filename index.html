@@ -430,6 +430,9 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
   #tempo{height:calc(100% - var(--st) - var(--sb) - 110px);max-height:340px;width:134px}
   #strike{width:min(220px,28vw);right:calc(var(--sr) + 10px);bottom:calc(var(--sb) + 10px)}
   body.rev #strike{right:auto;left:calc(var(--sl) + 10px)}
+  /* the practice panel: beside the tempo tile at the bottom, which the portrait spot would overlap */
+  #pgBar{top:auto;bottom:calc(var(--sb) + 10px);left:calc(var(--sl) + 152px)}
+  body.rev #pgBar{left:auto;right:calc(var(--sr) + 152px)}
   .icard{max-width:600px}
   #title,#play{flex-direction:row;align-items:flex-end;gap:20px}
   .logoCard,.playHead{align-self:flex-start}
