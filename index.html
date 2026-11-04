@@ -4453,7 +4453,7 @@ function makeCow(L, coat, x, z, yaw) {
     const dx = x0 - e.x, dz = z0 - e.z, sn = Math.sin(e.yaw), cs = Math.cos(e.yaw), fw = dx * sn + dz * cs, sd = dx * cs - dz * sn;
     if (Math.abs(fw) > 1.1 || Math.abs(sd) > e.r) return null; const l = Math.hypot(dx, dz) || 1; return { nx: dx / l, ny: .3, nz: dz / l };
   };
-  e.mooNow = () => { e.moo = 2.2; e.up = 3; if (settings.sound) { const k = poolReady(COW_POOL); if (k) { const d = Math.hypot(W.cam.position.x - e.x, W.cam.position.z - e.z), v = .55 * Math.pow(clamp(1 - d / 220, 0, 1), 1.6); if (v > .01 && play(k, .94 + Math.random() * .12, v, 2600 + 4000 * clamp(1 - d / 120, 0, 1))) poolUsed(COW_POOL); } } };
+  e.mooNow = () => { e.moo = 2.2; e.up = 3; if (settings.sound) { const k = poolReady(COW_POOL); if (k) { const d = Math.hypot(W.cam.position.x - e.x, W.cam.position.z - e.z), v = .385 * Math.pow(clamp(1 - d / 220, 0, 1), 1.6); if (v > .01 && play(k, .94 + Math.random() * .12, v, 2600 + 4000 * clamp(1 - d / 120, 0, 1))) poolUsed(COW_POOL); } } };
   e.onHit = () => { e.hitT = .6; e.mooNow(); };
   e.update = dt => {
     if (settings.sound && AC) poolNext(COW_POOL, performance.now());
@@ -4482,10 +4482,10 @@ function makeCow(L, coat, x, z, yaw) {
   };
   return e;
 }
-function cowMooTick(L, dt) {   // one of the herd moos every 25-70 s (not while the title is up)
+function cowMooTick(L, dt) {   // one of the herd moos every 45-120 s (not while the title is up)
   const cs = L.ents.filter(e => e.kind === 'cow'); if (!cs.length || G.state === 'title') return;
-  L.cowT = (L.cowT == null ? 6 + Math.random() * 14 : L.cowT) - dt;
-  if (L.cowT <= 0) { L.cowT = 25 + Math.random() * 45; if (poolReady(COW_POOL) || !settings.sound) cs[Math.random() * cs.length | 0].mooNow(); else L.cowT = 3; }
+  L.cowT = (L.cowT == null ? 12 + Math.random() * 28 : L.cowT) - dt;
+  if (L.cowT <= 0) { L.cowT = 45 + Math.random() * 75; if (poolReady(COW_POOL) || !settings.sound) cs[Math.random() * cs.length | 0].mooNow(); else L.cowT = 3; }
 }
 /* --- squirrels: grey and fox squirrels dash from tree to tree near the line of play, stop to sit up and flick their tails, and run up a trunk when the ball comes near (scene.squirrels) --- */
 function squirrelParts(fox) {
@@ -5215,7 +5215,8 @@ function buildLife(C, grp) {
     if (Math.random() < (RDC.scene.turkeys || 0)) L.ents.push(makeTurkey(L, true), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false)); // a tom and three hens, each on its own random timer; the flock visits only some holes
     initBirds(L, grp);
     L.balloon = makeBalloon(L); L.ents.push(L.balloon);
-    if (RDC.scene.cows && !G.pg && G.hole + 1 === RDC.scene.cows.hole) { const cw = RDC.scene.cows; [[0, 0], [4, -1.5], [-2.5, 3.5]].forEach((o, i) => { const q = C.loc(cw.enu[0] + o[0], cw.enu[1] + o[1]); L.ents.push(makeCow(L, COW_COATS[i % 3], q[0], -q[1], Math.random() * 6.283)); }); }   // the cows in the woods south-west of the green
+    if (RDC.scene.cows && !G.pg && G.hole + 1 === RDC.scene.cows.hole) { const cw = RDC.scene.cows; [[0, 0], [5, -4], [-4, 5]].forEach((o, i) => { let q = C.loc(cw.enu[0] + o[0], cw.enu[1] + o[1]); const tr = (W.treeOcc && W.treeOcc.list) || []; for (let k = 0; k < 12 && tr.some(t => Math.hypot(t.x - q[0], t.z + q[1]) < 1.8); k++) q = C.loc(cw.enu[0] + o[0] + (Math.random() - .5) * 8, cw.enu[1] + o[1] + (Math.random() - .5) * 8);   // (a spot clear of trunks)
+      L.ents.push(makeCow(L, COW_COATS[i % 3], q[0], -q[1], Math.random() * 6.283)); }); }   // the cows in the woods south-west of the green
     if (RDC.scene.bannerPlane) { L.plane = makePlane(L); L.ents.push(L.plane); }   // the banner plane and the gopher (groundhog) only where the course's scene asks for them
     if (RDC.scene.groundhog) { L.gopher = makeGopher(L); L.ents.push(L.gopher); }
     if (G.hole + 1 === RDC.scene.hotdogHole && Math.random() < HOTDOG_P) L.ents.push(makeHotDog(L));
