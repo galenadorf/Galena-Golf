@@ -23,7 +23,7 @@
     },
     {
       "key": "eagle_south",
-      "name": "Eagle Ridge South Course",
+      "name": "The South Course at Eagle Ridge",
       "short": "ER South", "place": "Galena, IL", "tee": "Gold", "rating": 71.8, "slope": 136,
       "pars": [4, 5, 3, 4, 4, 5, 3, 4, 4, 4, 5, 4, 3, 4, 4, 5, 3, 4],
       "recFrom": "2026-10-30",
@@ -40,7 +40,7 @@
     },
     {
       "key": "eagle_north",
-      "name": "Eagle Ridge North Course",
+      "name": "The North Course at Eagle Ridge",
       "short": "ER North", "place": "Galena, IL", "tee": "Gold", "rating": 71.4, "slope": 131,
       "pars": [4, 5, 4, 3, 5, 4, 4, 3, 4, 4, 5, 4, 3, 4, 5, 3, 4, 4],
       "recFrom": "2026-10-30",
@@ -57,7 +57,7 @@
     },
     {
       "key": "eagle_general",
-      "name": "Eagle Ridge The General Course",
+      "name": "The General at Eagle Ridge",
       "short": "ER The General (beta)", "place": "Galena, IL", "tee": "3-Star", "rating": 70.6, "slope": 132,
       "pars": [4, 3, 5, 4, 4, 3, 4, 4, 5, 4, 5, 3, 4, 4, 5, 3, 4, 4],
       "recFrom": "2026-11-01",
