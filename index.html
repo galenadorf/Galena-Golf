@@ -190,7 +190,7 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
 .btn.subBtn.light{background:rgba(255,255,255,.9);color:#2f6b35;text-shadow:none;box-shadow:0 6px 16px rgba(20,70,30,.25),inset 0 1px 0 rgba(255,255,255,.6)}
 .btn.subBtn:disabled{opacity:.45;filter:grayscale(1);box-shadow:none;pointer-events:none}
 .btn.danger{display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#d9604f,#a8362a);box-shadow:0 8px 20px rgba(120,30,20,.35),inset 0 1px 0 rgba(255,255,255,.35)}
-#quitAsk{z-index:12;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(10,30,18,.5)}
+#quitAsk,#restartAsk{z-index:12;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(10,30,18,.5)}
 .qcard{width:100%;max-width:340px;padding:22px 18px 18px;text-align:center;border-radius:28px}
 .qt{font:700 32px/1 var(--cond);text-transform:uppercase}
 .qcard p{margin:8px 0 18px;font:500 15px/1.35 var(--body);color:var(--w2)}
@@ -495,6 +495,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 <div class="layer" id="intro"><div class="card icard"><canvas id="introMap" width="172" height="288"></canvas><div class="ic-b"><div><div class="ic-k" id="icK">Hole 1 of 3</div><div class="ic-n" id="icN">Headland</div><div class="ic-i" id="icI"></div><div class="ic-f"><div>Par<b id="icPar">4</b></div><div>Length<b id="icLen">390 yd</b></div><div>Wind<b id="icWind">5 mph</b></div><div>Fairway<b id="icWx">Fine</b></div></div></div><button class="btn ic-go" id="icGo">Play hole</button></div></div></div>
 <div class="layer" id="done"><div class="card dcard"><div class="d1" id="d1">Birdie</div><div class="d2" id="d2">Hole 1 · 3 strokes · Par 4</div><div class="dstats" id="dstats"></div><button class="btn" id="dNext" style="width:100%">Next hole</button><button class="mbtn dark" id="dReplay" style="width:100%;margin-top:8px">▶ Replay last shot</button><button class="mbtn dark" id="dChange" style="width:100%;margin-top:8px;display:none">⛳ Change practice</button></div></div>
 <div class="layer" id="quitAsk"><div class="card qcard" role="alertdialog" aria-labelledby="qT"><div class="qt" id="qT">Are you sure?</div><p>Any progress will be lost.</p><div class="qb"><button class="btn danger" id="qYes">Yes I'm sure</button><button class="btn subBtn light" id="qNo">No</button></div></div></div>
+<div class="layer" id="restartAsk"><div class="card qcard" role="alertdialog" aria-labelledby="rT"><div class="qt" id="rT">Restart this round?</div><p>Your scores so far will be lost and you start again at hole 1.</p><div class="qb"><button class="btn danger" id="rYes">Yes I'm sure</button><button class="btn subBtn light" id="rNo">No</button></div></div></div>
 <div id="scrim"></div>
 <div class="sheet" id="bagSheet"><div class="grab"></div><div class="sht">Your bag <small id="bagLie">From the tee</small></div><div class="bag" id="bag"></div></div>
 <div class="sheet" id="menuSheet"><div class="grab"></div><div class="sht">Settings</div>
@@ -502,7 +503,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
     <div class="sub"><span>Players online</span></div><div class="mpList" id="mpList"></div>
     <label class="mrow" hidden>Course<select class="courseSel" id="selCourseM" aria-label="Course"></select></label>
   </div>
-  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mChange">⛳ Change practice</button><button class="mbtn dark wide" id="mQuit">Quit to Main Screen</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button><button class="mbtn dark wide" id="mRestart">↺ Restart round</button></div>
+  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mRestart">↺ Restart round</button><button class="mbtn dark wide" id="mChange">⛳ Change practice</button><button class="mbtn dark wide" id="mQuit">Quit to Main Screen</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
   <div class="mlist setBlock">
     <div class="mrow">Name<input id="mName" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="done"></div>
     <div class="mrow">Player ID<span id="pidState" style="opacity:.8">Guest</span></div>
@@ -7860,7 +7861,7 @@ function startPractice(i) {
 }
 // quit to the start screen: the round (or practice hole) in progress is abandoned entirely, nothing is scored or saved
 function quitToMain() {
-  $('quitAsk').classList.remove('on'); closeSheets(); slopeShow(false);
+  $('quitAsk').classList.remove('on'); $('restartAsk').classList.remove('on'); closeSheets(); slopeShow(false);
   const sp = MP.spec; MP.follow = null; if (sp) { MP.spec = null; mpWorld(sp.course); } // (following someone: back on my own course)
   G.rep = null; G.shot = null; G.practice = false; G.pg = null; G.submitted = true; G.strokes = 0; SW.phase = 'idle';
   document.body.classList.remove('flight', 'swing', 'replay', 'spec', 'pg');
@@ -9003,7 +9004,9 @@ function initInput() {
   $('mReplay').onclick = () => { closeSheets(); setTimeout(replayLast, 120); };
   $('mStats').onclick = () => openStats();
   $('mHelp').onclick = () => openSheet('helpSheet');
-  $('mRestart').onclick = () => { if (!confirm('Restart this round from hole 1? Your scores so far on this round will be lost.')) return; audio(); SFX.blip(); closeSheets(); startRound(); };
+  $('mRestart').onclick = () => { SFX.blip(); closeSheets(); $('restartAsk').classList.add('on'); };
+  $('rNo').onclick = () => { SFX.blip(); $('restartAsk').classList.remove('on'); };
+  $('rYes').onclick = () => { $('restartAsk').classList.remove('on'); audio(); SFX.blip(); startRound(); };
   $('mRound').onclick = () => { audio(); titleOff(); closeSheets(); startRound(); }; // (from the title screen's Settings too: the title must go, as with Tee off, or the round starts behind it)
   $('mQuit').onclick = () => { SFX.blip(); $('quitAsk').classList.add('on'); };
   $('mChange').onclick = () => { openPractice(); };
