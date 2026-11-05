@@ -4332,12 +4332,13 @@ function deerParts(kind) {
   return { body, head, leg, tail };
 }
 function makeDeer(L, kind) {
-  const P = deerParts(kind), mat = LIFE_MAT(), g = new THREE.Group(), head = new THREE.Group(), tail = new THREE.Group();
+  const elk = kind === 'bull-elk' || kind === 'cow-elk', P = elk ? elkParts(kind) : deerParts(kind), mat = LIFE_MAT(), g = new THREE.Group(), head = new THREE.Group(), tail = new THREE.Group();
   head.position.set(0, 1.08, .5); head.add(lmesh(P.head, mat)); tail.position.set(0, 1.12, -.64); tail.add(lmesh(P.tail, mat));
   const legs = [[-.11, .4], [.11, .4], [-.11, -.42], [.11, -.42]].map(p => { const lg = new THREE.Group(); lg.position.set(p[0], .8, p[1]); lg.add(lmesh(P.leg, mat)); g.add(lg); return lg; });
   g.add(lmesh(P.body, mat)); g.add(head); g.add(tail); g.visible = false; L.grp.add(g);
-  const e = { kind: 'deer', mat, g, head, tail, legs, st: 'gone', x: 0, z: 0, yaw: 0, spd: 0, ph: Math.random() * 6, tmr: 0, wp: null, respawn: 6 + Math.random() * 30, hitT: 0, scale: kind === 'buck' ? 1.12 : kind === 'fawn' ? .68 : 1, r: .45, h: 1.6, graze: false };
-  e.spawn = () => { const c = crossingPoints(L, 10); if (!c) { e.respawn = 8; return; } e.x = c.a[0]; e.z = c.a[1]; e.wp = c.b; e.st = 'walk'; e.spd = 0; e.tmr = 3 + Math.random() * 6; e.yaw = Math.atan2(c.b[0] - c.a[0], c.b[1] - c.a[1]); g.visible = true; };
+  const e = { kind: elk ? 'elk' : 'deer', elk, mat, g, head, tail, legs, st: 'gone', x: 0, z: 0, yaw: 0, spd: 0, ph: Math.random() * 6, tmr: 0, wp: null, respawn: 6 + Math.random() * 30, hitT: 0, scale: kind === 'bull-elk' ? 1.5 : kind === 'cow-elk' ? 1.32 : kind === 'buck' ? 1.12 : kind === 'fawn' ? .68 : 1, r: .45, h: 1.6, graze: false };
+  if (elk) { e.herd = L.elkHerd || (L.elkHerd = { wait: 3 + Math.random() * 7, c: null, at: 0 }); e.lead = kind === 'bull-elk'; e.lag = e.lead ? 0 : .8 + Math.random() * 1.6; }   // the herd comes and goes together (scene.elk)
+  e.spawn = () => { const hc = e.herd && e.herd.c, jit = e.lead || !hc ? 0 : 5, c0 = hc || crossingPoints(L, 10), c = c0 && (jit ? { a: [c0.a[0] + (Math.random() - .5) * jit, c0.a[1] + (Math.random() - .5) * jit], b: [c0.b[0] + (Math.random() - .5) * jit, c0.b[1] + (Math.random() - .5) * jit] } : c0); if (!c) { e.respawn = 8; return; } e.x = c.a[0]; e.z = c.a[1]; e.wp = c.b; e.st = 'walk'; e.spd = 0; e.tmr = 3 + Math.random() * 6; e.yaw = Math.atan2(c.b[0] - c.a[0], c.b[1] - c.a[1]); g.visible = true; };
   e.flee = (fx, fz) => { if (e.st === 'flee' || e.st === 'gone') return; e.st = 'flee'; e.tmr = 4 + Math.random() * 2; const a = Math.atan2(e.x - fx, e.z - fz) + (Math.random() - .5) * .7; e.yaw = a; e.wp = [e.x + Math.sin(a) * 120, e.z + Math.cos(a) * 120]; };
   e.hit = (x, y, z) => { // the ball hits the body (a box round the barrel, legs ignored)
     if (e.st === 'gone') return null; const gy = groundY(e.x, e.z), k = e.scale; if (y < gy + .45 * k || y > gy + e.h * k) return null;
@@ -4346,7 +4347,10 @@ function makeDeer(L, kind) {
   };
   e.onHit = () => { e.flee(L.T.x, L.T.z); e.hitT = .5; };
   e.update = dt => {
-    if (e.st === 'gone') { e.respawn -= dt; if (e.respawn <= 0) e.spawn(); return; }
+    if (e.st === 'gone') {
+      if (e.herd) { const H = e.herd; if (e.lead) { H.wait -= dt; if (H.wait <= 0 && !H.c) { H.c = elkCross(L); if (H.c) H.at = L.t; else H.wait = 3; } } if (H.c && L.t - H.at >= e.lag) e.spawn(); return; }
+      e.respawn -= dt; if (e.respawn <= 0) e.spawn(); return;
+    }
     if (threatened(L, e.x, e.z, 45, 18) && e.st !== 'flee') e.flee(L.T.x, L.T.z);
     let sp = 0;
     if (e.st === 'walk') { if (e.tmr > 0) { e.tmr -= dt; e.graze = true; } else { e.graze = false; sp = 1.2; if (Math.random() < dt * .12) e.tmr = 3 + Math.random() * 6; } } // stops to graze
@@ -4356,7 +4360,7 @@ function makeDeer(L, kind) {
       let nx = e.x + Math.sin(e.yaw) * sp * dt, nz = e.z + Math.cos(e.yaw) * sp * dt;
       if (!lifeWalkable(L, nx, nz)) { e.yaw += (Math.random() < .5 ? 1 : -1) * .9; nx = e.x; nz = e.z; if (e.st === 'walk') e.tmr = Math.max(e.tmr, .5); }
       e.x = nx; e.z = nz;
-      if (Math.hypot(e.wp[0] - e.x, e.wp[1] - e.z) < 3 || !C_in(L, e.x, e.z)) { e.st = 'gone'; e.g.visible = false; e.respawn = 30 + Math.random() * 60; return; }
+      if (Math.hypot(e.wp[0] - e.x, e.wp[1] - e.z) < 3 || !C_in(L, e.x, e.z)) { e.st = 'gone'; e.g.visible = false; e.respawn = 30 + Math.random() * 60; if (e.herd && e.lead) { e.herd.c = null; e.herd.wait = 45 + Math.random() * 60; } return; }
     }
     e.spd = lerp(e.spd, sp, Math.min(1, dt * 4)); const run = e.st === 'flee' && e.spd > 3;
     e.ph += dt * (run ? 7.5 : e.spd * 3.4);
@@ -4369,6 +4373,79 @@ function makeDeer(L, kind) {
     e.head.rotation.y = e.graze || run ? 0 : Math.sin(L.t * .37 + e.ph) * .35;   // looks round while walking
     e.tail.rotation.x = run ? -1.9 : -.15 + Math.sin(L.t * 2.1 + e.ph) * .1;      // the white flag goes up when it runs
     if (e.hitT > 0) { e.hitT -= dt; e.g.rotation.z = Math.sin(e.hitT * 30) * .2 * e.hitT; } else e.g.rotation.z = 0;
+  };
+  return e;
+}
+/* --- elk (Fossil Trace only, scene.elk.holes): a bull and two cows cross the hole together, graze and bolt when the ball or golfer comes near. Built on the deer's animation, 1.3-1.5x its size
+   (a cow is about 1.4 m at the shoulder and 2.2 m long, a bull 1.5 m with a 1.2 m rack): tan body, dark brown neck and legs, a pale rump patch --- */
+function elkCross(L) { for (let k = 0; k < 40; k++) { const c = crossingPoints(L, k < 20 ? 10 : 5); if (c) return c; } return null; }   // (the open ground on some holes rarely gives a clear crossing: try hard, with a narrower margin later)
+function elkParts(kind) {
+  const bull = kind === 'bull-elk', coat = 0xa07b52, dark = bull ? 0x3f2b1e : 0x4f372a, pale = 0xdcc9a4, hoof = 0x241d18, ant = 0xd9c8a2;
+  const body = mergeParts([lsp(.2, .25, .6, 0, .95, 0, coat, 8), lsp(.2, .27, .26, 0, .97, .36, coat, 7), lsp(.2, .26, .25, 0, .98, -.42, coat, 7), lsp(.15, .1, .42, 0, .8, .02, 0xc4ab82, 7), lsp(.17, .16, .13, 0, 1.0, -.62, pale, 7)]);
+  const hp = [lbx(.17, .56, .22, 0, .2, .06, dark, -.45), lsp(.1, .11, .19, 0, .46, .27, dark, 7), lbx(.09, .09, .16, 0, .41, .43, 0x6a4c36), lbx(.065, .045, .045, 0, .43, .52, hoof), lbx(.17, .07, .03, -.12, .57, .18, dark, 0, .3, .5), lbx(.17, .07, .03, .12, .57, .18, dark, 0, -.3, -.5)];
+  if (bull) for (const sd of [-1, 1]) {   // the rack: a beam sweeping up and back with five tines
+    hp.push(lbx(.04, .55, .04, sd * .1, .75, .16, ant, -.55, 0, sd * -.35), lbx(.035, .4, .035, sd * .2, 1.05, .05, ant, -.95, 0, sd * -.3));
+    for (let t = 0; t < 5; t++) hp.push(lbx(.03, .3 - t * .02, .03, sd * (.14 + t * .035), .68 + t * .1, .3 - t * .04, ant, .35, 0, sd * -.15));
+  }
+  const leg = mergeParts([lbx(.09, .4, .11, 0, -.2, 0, dark), lbx(.055, .36, .06, 0, -.57, 0, dark), lbx(.06, .06, .09, 0, -.77, .01, hoof)]);
+  const tail = mergeParts([lbx(.07, .12, .04, 0, -.05, 0, coat)]);
+  return { body, head: mergeParts(hp), leg, tail };
+}
+/* --- prairie dogs (Fossil Trace only, scene.prairieDogs.holes): a colony of 4-6 black-tailed prairie dogs beside the fairway, each at its own burrow mound. They stand up on their hind legs
+   to watch the golfer (about 30 cm tall, life size), bob and flick their tails, drop to all fours and dash to another mound now and then, and dive down their hole when the ball or the golfer comes close --- */
+function pdogParts() {
+  const fur = 0xb99a6b, belly = 0xe2d2ac, dark = 0x2a2118;
+  const body = mergeParts([lsp(.07, .12, .065, 0, .13, 0, fur, 7), lsp(.05, .09, .04, 0, .12, .045, belly, 6), lsp(.03, .02, .05, -.035, .015, .035, fur, 5), lsp(.03, .02, .05, .035, .015, .035, fur, 5),
+    lbx(.026, .075, .026, -.055, .16, .05, fur, .7), lbx(.026, .075, .026, .055, .16, .05, fur, .7)]);
+  const head = mergeParts([lsp(.056, .05, .06, 0, 0, .01, fur, 7), lsp(.03, .025, .036, 0, -.015, .06, belly, 6), lsp(.012, .01, .01, 0, -.003, .097, dark, 4), lsp(.011, .014, .012, -.035, .014, .046, dark, 4), lsp(.011, .014, .012, .035, .014, .046, dark, 4),
+    lsp(.014, .016, .008, -.042, .05, -.005, fur, 4), lsp(.014, .016, .008, .042, .05, -.005, fur, 4)]);
+  const tail = mergeParts([lsp(.016, .016, .07, 0, 0, -.05, fur, 5), lsp(.017, .017, .03, 0, 0, -.11, dark, 4)]);
+  return { body, head, tail };
+}
+function pdColony(L, n) {   // burrow mounds in the rough beside the fairway, 25-70 % of the way down the hole
+  const C = L.C, R = L.R;
+  for (let k = 0; k < 40; k++) {
+    const s = C.center.L * (.25 + R() * .45), f = fairHalfWidth(C, s), side = R() < .5 ? -1 : 1, off = f.hw + 3 + R() * 9, ex = (R() - .5) * 12;
+    const cx = f.p[0] + f.nx * off * side + f.tx * ex, cz = f.p[1] + f.nz * off * side + f.tz * ex, sf = C.surf(cx, cz);
+    if (!(sf === S.ROUGH || sf === S.FIRST || sf === S.DEEP) || !lifeWalkable(L, cx, cz)) continue;
+    const m = [];
+    for (let j = 0; j < n + 2 && m.length < n + 1; j++) { const a = R() * TAU, d = 1.2 + R() * 4.2, x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d; if (lifeWalkable(L, x, z) && m.every(q => Math.hypot(q[0] - x, q[1] - z) > 1.4)) m.push([x, z]); }
+    if (m.length >= Math.min(n, 4)) return m;
+  }
+  return null;
+}
+function makePrairieDog(L, mounds, i) {
+  const P = pdogParts(), mat = LIFE_MAT(), g = new THREE.Group(), pop = new THREE.Group(), head = new THREE.Group(), tail = new THREE.Group();
+  head.position.set(0, .26, .02); head.add(lmesh(P.head, mat)); tail.position.set(0, .06, -.06); tail.add(lmesh(P.tail, mat));
+  pop.add(lmesh(P.body, mat)); pop.add(head); pop.add(tail); g.add(pop); L.grp.add(g);
+  const e = { kind: 'prairiedog', mat, g, pop, head, tail, st: 'wait', mounds, hm: i % mounds.length, x: 0, z: 0, yaw: Math.random() * 6.28, tmr: 2 + Math.random() * 9, up: 0, ph: Math.random() * 6, wp: null, r: .22, h: .38, alpha: 0 };
+  const mm = new THREE.Mesh(mergeParts([lsp(.34, .08, .34, 0, -.01, 0, 0x7e6a4c, 9), lsp(.13, .035, .13, 0, .06, 0, 0x1b130d, 7)]), LIFE_MAT()); mm.frustumCulled = false; mm.position.set(mounds[e.hm][0], groundY(mounds[e.hm][0], mounds[e.hm][1]), mounds[e.hm][1]); L.grp.add(mm);
+  e.x = mounds[e.hm][0]; e.z = mounds[e.hm][1];
+  e.hit = (x, y, z) => { if (e.st === 'wait' || e.up < .4) return null; const gy = groundY(e.x, e.z), dx = x - e.x, dz = z - e.z, d = Math.hypot(dx, dz); if (d > e.r || y < gy || y > gy + e.h) return null; const l = d || 1; return { nx: dx / l, ny: .4, nz: dz / l }; };
+  e.dive = fast => { if (e.st === 'wait' || e.st === 'duck') return; e.st = 'duck'; e.tmr = fast ? .2 : .35; };
+  e.flee = () => e.dive(true);
+  e.onHit = () => e.dive(true);
+  e.update = dt => {
+    if (e.st === 'wait') { e.alpha = 0; e.tmr -= dt; if (e.tmr <= 0 && G.state !== 'title' && !threatened(L, e.x, e.z, 30, 14)) { e.st = 'up'; e.tmr = 4 + Math.random() * 9; e.alpha = 1; } return; }
+    e.alpha = 1; e.ph += dt;
+    if (threatened(L, e.x, e.z, 32, 15) && e.st !== 'duck') e.dive(false);
+    if (e.st === 'up') {
+      e.up = Math.min(1, e.up + dt * 3.5); e.tmr -= dt;
+      const want = Math.atan2(W.cam.position.x - e.x, W.cam.position.z - e.z) + Math.sin(e.ph * .5) * .5; e.yaw += clamp(angWrap(want - e.yaw), -dt * 2, dt * 2);   // watches the golfer
+      if (e.tmr <= 0) { if (Math.random() < .55 && e.mounds.length > 1) { let j; do j = Math.random() * e.mounds.length | 0; while (j === e.hm); e.hm = j; e.wp = e.mounds[j]; e.st = 'run'; e.tmr = 6; } else e.dive(false); }
+    } else if (e.st === 'run') {
+      e.up = Math.min(1, e.up + dt * 3.5); e.tmr -= dt; const da = angWrap(Math.atan2(e.wp[0] - e.x, e.wp[1] - e.z) - e.yaw); e.yaw += clamp(da, -dt * 8, dt * 8);
+      e.x += Math.sin(e.yaw) * 3.4 * dt; e.z += Math.cos(e.yaw) * 3.4 * dt;
+      if (Math.hypot(e.wp[0] - e.x, e.wp[1] - e.z) < .25 || e.tmr <= 0) { e.x = e.wp[0]; e.z = e.wp[1]; e.st = 'up'; e.tmr = 3 + Math.random() * 6; }
+    } else if (e.st === 'duck') {
+      e.up = Math.max(0, e.up - dt * 6); e.tmr -= dt;
+      if (e.up <= 0) { if (e.wp && e.st === 'duck') { e.x = e.mounds[e.hm][0]; e.z = e.mounds[e.hm][1]; } e.st = 'wait'; e.tmr = 7 + Math.random() * 12; e.alpha = 0; e.g.visible = false; e.wp = null; return; }
+    }
+    const run = e.st === 'run', y = groundY(e.x, e.z);
+    e.g.position.set(e.x, y, e.z); e.g.rotation.y = e.yaw;
+    e.pop.position.y = -.34 * (1 - e.up) + (run ? Math.abs(Math.sin(e.ph * 16)) * .03 : 0); e.pop.rotation.x = run ? 1.25 : Math.sin(e.ph * 1.3) * .03;
+    e.head.rotation.x = run ? -1 : Math.sin(e.ph * 2.1) * .1; e.head.rotation.y = run ? 0 : Math.sin(e.ph * .9) * .5;
+    e.tail.rotation.x = Math.sin(e.ph * 3 + i) > .93 ? -.9 : -.25;   // flicks it now and then
   };
   return e;
 }
@@ -4571,7 +4648,7 @@ function initBirds(L, grp) {
   if (SMALL_BIRDS_ON) for (let i = 0; i < 6; i++) { const b = add(i % 3 === 0 ? 1 : 0, 'gone'); b.pend = i < 3 ? 'ground' : 'perch'; b.tmr = Math.random() * 5; }
   // two flocks
   L.flocks = [];
-  for (let f = 0; f < 2; f++) { const n = f ? 8 : 11, kind = f ? 3 : 2, members = []; for (let i = 0; i < n; i++) members.push(add(kind, 'gone', { flock: f, off: [(Math.random() - .5) * 9, (Math.random() - .5) * 3.4, -Math.random() * 9 - (i === 0 ? 0 : 1)] })); members[0].off = [0, 0, 0]; L.flocks.push({ members, st: 'wait', tmr: 6 + f * 22 + Math.random() * 14, p: [0, 0, 0], dir: [0, 1], speed: 11, t: 0, T: 1, a: [0, 0], b: [0, 0], h: 30 }); }
+  for (let f = 0; f < (RDC.scene.flocks === false ? 0 : 2); f++) { const n = f ? 8 : 11, kind = f ? 3 : 2, members = []; for (let i = 0; i < n; i++) members.push(add(kind, 'gone', { flock: f, off: [(Math.random() - .5) * 9, (Math.random() - .5) * 3.4, -Math.random() * 9 - (i === 0 ? 0 : 1)] })); members[0].off = [0, 0, 0]; L.flocks.push({ members, st: 'wait', tmr: 6 + f * 22 + Math.random() * 14, p: [0, 0, 0], dir: [0, 1], speed: 11, t: 0, T: 1, a: [0, 0], b: [0, 0], h: 30 }); }
   // wheeling high over the hole
   if (CIRCLING_GULLS_ON) for (let i = 0; i < 4; i++) { add(2, 'circle', { ph: Math.random() * TAU, rad: 30 + Math.random() * 28, h: 34 + Math.random() * 14, sp: .16 + Math.random() * .07, off: [Math.random() * 16 - 8, Math.random() * 16 - 8], vis: 1 }); }
   L.cx = (I.minX + I.maxX) / 2; L.cz = (I.minZ + I.maxZ) / 2 + (I.maxZ - I.minZ) * .15; L.cbase = L.C.h(L.cx, L.cz);
@@ -5210,11 +5287,14 @@ function buildLife(C, grp) {
   try {
     initGround(L, grp);
     if (Math.random() < (RDC.scene.deer || 0)) { L.ents.push(makeDeer(L, 'doe'), makeDeer(L, Math.random() < .5 ? 'fawn' : 'doe')); if (Math.random() < .35) L.ents.push(makeDeer(L, 'buck')); } // a doe with a fawn or a second doe, sometimes a buck; only some holes
+    const ek = RDC.scene.elk, pdg = RDC.scene.prairieDogs;
+    if (ek && !G.pg && ek.holes.includes(G.hole + 1)) L.ents.push(makeDeer(L, 'bull-elk'), makeDeer(L, 'cow-elk'), makeDeer(L, 'cow-elk'));   // a herd on the chosen holes
+    if (pdg && !G.pg && pdg.holes.includes(G.hole + 1)) { const n = pdg.n[0] + (Math.random() * (pdg.n[1] - pdg.n[0] + 1) | 0), mo = pdColony(L, n); if (mo) for (let i = 0; i < n; i++) L.ents.push(makePrairieDog(L, mo, i)); }   // a colony on others
     if (Math.random() < (RDC.scene.coyote || 0)) { L.ents.push(makeCoyote(L)); if (Math.random() < .25) L.ents.push(makeCoyote(L)); } // one coyote, sometimes a pair; only some holes
     for (let i = 0; i < (RDC.scene.squirrels || 0); i++) L.ents.push(makeSquirrel(L)); // each on its own timer, among the trees by the hole
     if (Math.random() < (RDC.scene.turkeys || 0)) L.ents.push(makeTurkey(L, true), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false)); // a tom and three hens, each on its own random timer; the flock visits only some holes
     initBirds(L, grp);
-    L.balloon = makeBalloon(L); L.ents.push(L.balloon);
+    if (RDC.scene.balloon !== false) { L.balloon = makeBalloon(L); L.ents.push(L.balloon); }   // (scene.balloon / scene.flocks false: none on that course)
     if (RDC.scene.cows && !G.pg && G.hole + 1 === RDC.scene.cows.hole && Math.random() < RDC.scene.cows.chance) { const cw = RDC.scene.cows; [[0, 0], [5, -4], [-4, 5]].forEach((o, i) => { let q = C.loc(cw.enu[0] + o[0], cw.enu[1] + o[1]); const tr = (W.treeOcc && W.treeOcc.list) || []; for (let k = 0; k < 30 && (!C.isOB(q[0], -q[1]) || tr.some(t => Math.hypot(t.x - q[0], t.z + q[1]) < 1.8)); k++) q = C.loc(cw.enu[0] + o[0] + (Math.random() - .5) * 8, cw.enu[1] + o[1] + (Math.random() - .5) * 8);   // (a spot out of bounds, clear of trunks)
       L.ents.push(makeCow(L, COW_COATS[i % 3], q[0], -q[1], Math.random() * 6.283)); }); }   // the cows in the woods south-west of the green
     if (RDC.scene.bannerPlane) { L.plane = makePlane(L); L.ents.push(L.plane); }   // the banner plane and the gopher (groundhog) only where the course's scene asks for them
@@ -5282,9 +5362,9 @@ function deflectShot(sh, tt, hit) {
 }
 function lifeHitNote(hit) {
   const e = hit.e, bd = hit.h.bird, k = bd ? 'bird' : e ? e.kind : '';
-  const txt = { turkey: 'Clipped a turkey!', deer: 'Oh deer!', cow: 'Holy cow!', coyote: 'Wile E. would be proud!', squirrel: 'Nailed a squirrel!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!', gopher: 'A menace to the golfing industry...', hotdog: 'Revenge of The Choker!', golfcart: 'Off a golf cart!' }[k];
+  const txt = { turkey: 'Clipped a turkey!', deer: 'Oh deer!', elk: 'Clipped an elk!', prairiedog: 'Hit a prairie dog!', cow: 'Holy cow!', coyote: 'Wile E. would be proud!', squirrel: 'Nailed a squirrel!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!', gopher: 'A menace to the golfing industry...', hotdog: 'Revenge of The Choker!', golfcart: 'Off a golf cart!' }[k];
   if (txt) readoutNote(txt, 'bad');
-  try { if (k === 'plane' || k === 'glider' || k === 'golfcart') SFX.trunk(); else if (k === 'turkey') SFX.gobble(); else if (k === 'gopher' || k === 'hotdog' || k === 'squirrel') SFX.squeak(); else if (k === 'coyote') SFX.yelp(); else SFX.leaves(); } catch (er) { }
+  try { if (k === 'plane' || k === 'glider' || k === 'golfcart') SFX.trunk(); else if (k === 'turkey') SFX.gobble(); else if (k === 'gopher' || k === 'hotdog' || k === 'squirrel' || k === 'prairiedog') SFX.squeak(); else if (k === 'coyote') SFX.yelp(); else SFX.leaves(); } catch (er) { }
   if (bd) { bd.st = 'hit'; bd.t = 0; const n = hit.h; bd.hitV = [-n.nx * 3 + (Math.random() - .5) * 2, 3, -n.nz * 3 + (Math.random() - .5) * 2]; }
   else if (e && e.onHit) e.onHit();
 }

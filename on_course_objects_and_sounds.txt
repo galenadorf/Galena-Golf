@@ -25,14 +25,17 @@ A. WHICH COURSE HAS WHAT
   CM Chestnut Mountain (disc), AD Adler Park (disc). Details are in each course's section.
 
   OBJECTS                                         WB   ERS  ERN  ERG  FT   SH   TH   BS   LG   CM   AD
-  Bird flocks, hot air balloon, weather, rainbow  Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL)
+  Weather, rainbow                                Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL)
+  Bird flocks, hot air balloon                    Y    Y    Y    Y    -    Y    Y    Y    Y    Y    Y     (GLOBAL; off at Fossil Trace: `scene.flocks`, `scene.balloon` false)
   Wild turkeys                                    Y    Y    Y    Y    -    -    -    -    -    -    -
   Gopher (groundhog)                              Y    Y    Y    Y    -    -    -    -    -    -    -
   Banner plane                                    Y    Y    Y    Y    -    -    -    -    -    -    -
-  White-tailed deer                               -    -    Y    -    Y    Y    Y    Y    Y    -    -
+  White-tailed deer                               -    -    Y    -    -    Y    Y    Y    Y    -    -
   Coyote (gray and white)                         -    Y    Y    Y    -    -    -    -    -    -    -
+  Elk herd (holes 5 and 12 only)                  -    -    -    -    Y    -    -    -    -    -    -
+  Prairie dog colony (holes 8 and 16 only)        -    -    -    -    Y    -    -    -    -    -    -
   Cows in the woods (hole 3 only)                 -    Y    -    -    -    -    -    -    -    -    -
-  Squirrels (3 on every hole)                     -    -    -    -    Y    Y    Y    Y    Y    -    -
+  Squirrels (3 on every hole)                     -    -    -    -    -    Y    Y    Y    Y    -    -
   Highway with an 18-wheeler and 4 cars           Y    -    -    -    -    Y    -    -    -    -    -
   Cars (Subaru and Hyundai only) on side roads    -    Y    Y    Y    -    -    -    -    -    -    -
   Dancing hot dog (hole 10)                       Y    -    -    -    -    -    -    -    -    -    -
@@ -61,13 +64,13 @@ A. WHICH COURSE HAS WHAT
 
 B. OBJECTS ON EVERY COURSE
 --------------------------
-Bird flocks (2, high up, crossing the sky)
+Bird flocks (2, high up, crossing the sky) (not at Fossil Trace)
   - 11 gulls: first pass about 6-20 s into a hole.
   - 8 sparrows: first pass about 28-42 s into a hole.
   - Each returns 25-75 s after it passes, from a new direction. Most holes show at least one if you wait.
   - Can be hit in principle ("Birdie... literally!"), but they fly high. A hit bird plays the leaf-rustle sound (below).
 
-Hot air balloon (brown, red, orange and white stripes, wicker basket, burner flame; about 18 m across)
+Hot air balloon (brown, red, orange and white stripes, wicker basket, burner flame; about 18 m across) (not at Fossil Trace)
   - Drifts slowly downwind across the sky at 38-60 m up, taking about 80-130 s to cross, bobbing and turning gently.
   - Rare: per hole, a 60% chance one is scheduled 10-65 s after arriving, 40% none at first; after one leaves, the next is due 100-220 s later.
   - Cannot be hit: the ball passes through it. Silent.
@@ -339,14 +342,16 @@ Also everything in GLOBAL. High-desert look (engine `dry`): golden-tan native gr
 
 OBJECTS
 -------
-White-tailed deer and squirrels: as at Stonehenge, but the deer on twice as many holes (`scene.deer` = .5, `scene.squirrels` = 3).
+No deer or squirrels, and no bird flocks or hot air balloon in the sky (`scene.flocks` and `scene.balloon` false; the ambient birdsong, weather and rainbow stay).
+Elk (`scene.elk.holes` = 5 and 12: every visit to those two holes, nowhere else): a herd of three, a bull (about 1.5 m at the shoulder, with a five-point rack) and two cows (about 1.4 m), built on the deer and well over a third bigger than one. Tan body, dark brown neck and legs, a pale rump patch. They come in together across the hole 3-10 s after it loads, walk and graze (heads down, stopping now and then), bolt together when the ball lands near or the golfer comes within about 18 m (45 m while the ball flies), and come back 45-105 s after they leave. Can be hit (the body): "Clipped an elk!", the ball ricochets and they run; a leaf rustle sounds.
+Prairie dogs (`scene.prairieDogs.holes` = 8 and 16, `n` 4-6: every visit to those two holes, nowhere else): a colony of 4 to 6 black-tailed prairie dogs, life size (about 30 cm standing), each at its own dirt mound with a dark burrow hole, in the rough beside the fairway 25-70 % of the way down the hole (the spot is new each visit, on either side). They stand up on their hind legs to watch the golfer, bob, flick their tails, now and then drop to all fours and dash to another mound, and dive down their holes when the golfer comes within about 15 m or the ball flies within about 32 m (they come back 7-19 s later). Can be hit while up: "Hit a prairie dog!", a squeak, and it dives.
 Roads: every OSM road, drive and service road within 230 m of a hole (Illinois Street and the housing streets round the course), drawn and culled as at Eagle Ridge South. No traffic on them.
 Cart paths: OSM's cart-path lines (about 9.2 km, 2.4 m wide), drawn over a road where they cross it. Several spurs end at a tee or green; there are no cart-path bridges (OSM maps none).
-NOT here: highway and trucks, turkeys, gopher, banner plane, car traffic, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+NOT here: deer, squirrels, coyotes, cows, bird flocks, hot air balloon, highway and trucks, turkeys, gopher, banner plane, car traffic, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
 
 SOUNDS
 ------
-  - Ball hits: rustle (deer), squeak (squirrel). NO truck sounds, plane drone, cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
+  - Ball hits: rustle (elk), squeak (prairie dog). NO truck sounds, plane drone, cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
 
 SCENERY AND DATA
 ----------------
