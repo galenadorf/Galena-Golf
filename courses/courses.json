@@ -34,7 +34,7 @@
         "bannerPlane": true,
         "groundhog": true,
         "coyote": 0.15,
-        "cows": { "hole": 3, "chance": 0.3, "enu": [-737, 553] },
+        "cows": { "hole": 3, "chance": 0.5, "enu": [-737, 553] },
         "traffic": true
       }
     },
