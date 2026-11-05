@@ -4391,6 +4391,97 @@ function elkParts(kind) {
   const tail = mergeParts([lbx(.07, .12, .04, 0, -.05, 0, coat)]);
   return { body, head: mergeParts(hp), leg, tail };
 }
+/* --- black bear (Fossil Trace only, scene.bear): crosses the fairway about 75 yd in front of the golfer on a par 4 or 5, once, and is gone. As rare as the moving golf cart (CARTRIDE_P per par 4 / par 5
+   hole). Sized 1.2x an average adult black bear (about 1.15 m at the shoulder, 2 m nose to rump, ~140 kg). It sets off when the golfer presses Play Hole (bearGo), ambles across with the
+   bear's lateral-sequence walk and a low swinging head, stops once to stand and look at the golfer, and breaks into a lope if a ball comes near. Add ?bear to the page address to force it. --- */
+const BEAR_AHEAD = 75 * .9144, BEAR_K = 1.2;
+function bearParts() {
+  const F = [0x241d17, 0x1b1511, 0x2f261f, 0x120e0b], tan = 0x8f6e47, tanD = 0x6c5034, claw = 0xb9b09e, nose = 0x0a0908;
+  const bp = [lsp(.29, .30, .56, 0, .62, -.04, F[0], 10), lsp(.30, .30, .32, 0, .62, -.42, F[1], 10), lsp(.27, .27, .30, 0, .70, .26, F[2], 10), lsp(.245, .26, .25, 0, .56, .36, F[0], 9),
+    lsp(.24, .17, .52, 0, .40, -.04, F[3], 9), lsp(.055, .06, .05, 0, .68, -.76, F[1], 6)];
+  for (const sd of [-1, 1]) bp.push(lsp(.14, .25, .25, sd * .2, .5, -.42, F[2], 9), lsp(.12, .2, .22, sd * .19, .6, .3, F[1], 9));
+  for (let k = 0; k < 12; k++) { const z = -.6 + k * .1, x = ((k * 7) % 5 - 2) * .035; bp.push(lbx(.05, .13, .035, x, .88 + .07 * Math.exp(-(((z - .26) / .3) ** 2)) - .01, z, F[k % 4], .55 + (k % 3) * .1, (k % 2 ? .2 : -.2), 0)); }   // shaggy tufts along the back
+  const hp = [lsp(.2, .2, .24, 0, -.01, .12, F[0], 9), lsp(.145, .14, .17, 0, .0, .27, F[1], 9), lsp(.082, .07, .12, 0, -.05, .39, tan, 8), lsp(.043, .034, .03, 0, -.03, .5, nose, 6), lsp(.06, .035, .09, 0, -.1, .385, tanD, 6),
+    lsp(.1, .05, .05, 0, .06, .3, F[3], 6), lsp(.05, .045, .04, 0, -.115, .33, F[3], 5)];
+  for (const sd of [-1, 1]) hp.push(lsp(.058, .058, .032, sd * .115, .125, .2, F[2], 7), lsp(.032, .034, .016, sd * .115, .125, .222, tanD, 6), lsp(.015, .015, .015, sd * .088, .04, .36, 0x070504, 5), lsp(.024, .02, .012, sd * .086, .04, .352, 0x3a2812, 5),
+    lsp(.03, .03, .035, sd * .105, -.01, .31, F[1], 6));
+  const leg = (hind) => {
+    const w = hind ? 1.2 : 1, p = [lsp(.095 * w, .21, .10 * w, 0, -.14, hind ? -.02 : 0, F[hind ? 2 : 0], 8), lsp(.07 * w, .17, .075 * w, 0, -.34, .01, F[1], 7), lsp(.078 * w, .04, hind ? .16 : .13, 0, -.468, .07, F[3], 7)];
+    for (let k = 0; k < 4; k++) p.push(lbx(.013, .013, .055, (k - 1.5) * .03, -.478, hind ? .23 : .2, claw, .1, 0, 0));
+    return mergeParts(p);
+  };
+  return { body: mergeParts(bp), head: mergeParts(hp), fleg: leg(false), hleg: leg(true) };
+}
+// the crossing: from one side of the fairway to the other where the line of play is 75 yd (68.6 m) from the golfer; null when nothing clear is found
+function bearRoute(L) {
+  const C = L.C, b = G.ball, Lc = C.center.L; let s0 = -1;
+  for (let s = 0; s <= Lc; s += 1) { const p = polyAt(C.center, s); if (Math.hypot(p[0] - b.x, p[1] - b.z) >= BEAR_AHEAD) { s0 = s; break; } }
+  if (s0 < 0 || s0 > Lc - 25) return null;
+  const clear = (a, c) => { const n = Math.ceil(Math.hypot(c[0] - a[0], c[1] - a[1]) / 2); for (let i = 0; i <= n; i++) if (!lifeWalkable(L, lerp(a[0], c[0], i / n), lerp(a[1], c[1], i / n))) return false; return true; };
+  for (const ds of [0, -3, 3, -6, 6, -10, 10]) {
+    const s = s0 + ds; if (s < 20 || s > Lc - 20) continue; const f = fairHalfWidth(C, s);
+    for (const m of [7, 11, 16]) for (const side of L.R() < .5 ? [1, -1] : [-1, 1]) {
+      const w = f.hw + m, a = [f.p[0] + f.nx * side * w - f.tx * 4, f.p[1] + f.nz * side * w - f.tz * 4], c = [f.p[0] - f.nx * side * w + f.tx * 4, f.p[1] - f.nz * side * w + f.tz * 4];   // a slight diagonal, centred on the 75 yd mark
+      if (clear(a, c)) return { a, b: c };
+    }
+  }
+  return null;
+}
+function makeBear(L) {
+  const P = bearParts(), mat = LIFE_MAT(), g = new THREE.Group(), head = new THREE.Group();
+  g.rotation.order = 'YXZ'; head.position.set(0, .74, .46); head.add(lmesh(P.head, mat));
+  const legs = [[-.2, .3, P.fleg], [.2, .3, P.fleg], [-.21, -.42, P.hleg], [.21, -.42, P.hleg]].map(p => { const lg = new THREE.Group(); lg.position.set(p[0], .5, p[1]); lg.add(lmesh(p[2], mat)); g.add(lg); return lg; });   // left front, right front, left hind, right hind
+  g.add(lmesh(P.body, mat)); g.add(head); g.visible = false; L.grp.add(g);
+  const e = { kind: 'bear', mat, g, head, legs, st: 'wait', x: 0, z: 0, yaw: 0, spd: 0, ph: 0, tmr: 0, wp: null, scale: BEAR_K, hitT: 0, route: null, delay: 0, total: 1, looked: false, look: 0 };
+  e.start = () => { if (e.route || e.st !== 'wait') return; const R = bearRoute(L); if (R) { e.route = R; e.delay = 1.2; } };
+  e.flee = () => { if (e.st === 'walk' || e.st === 'look') { e.st = 'run'; e.tmr = 3.5; } };
+  e.onHit = () => { e.flee(); e.hitT = .5; };
+  e.hit = (x, y, z) => {   // the ball hits the body (a box round the barrel and shoulders)
+    if (e.st === 'wait' || e.st === 'gone') return null; const gy = groundY(e.x, e.z), k = e.scale; if (y < gy + .25 * k || y > gy + 1 * k) return null;
+    const dx = x - e.x, dz = z - e.z, sn = Math.sin(e.yaw), cs = Math.cos(e.yaw), fw = dx * sn + dz * cs, sd = dx * cs - dz * sn;
+    if (Math.abs(fw) > .85 * k || Math.abs(sd) > .33 * k) return null; const l = Math.hypot(dx, dz) || 1; return { nx: dx / l, ny: .3, nz: dz / l };
+  };
+  e.update = dt => {
+    if (e.st === 'gone') return;
+    if (e.st === 'wait') {
+      if (!e.route) return; e.delay -= dt; if (e.delay > 0) return;
+      const R = e.route; e.x = R.a[0]; e.z = R.a[1]; e.wp = R.b; e.total = Math.hypot(R.b[0] - R.a[0], R.b[1] - R.a[1]) || 1; e.yaw = Math.atan2(R.b[0] - R.a[0], R.b[1] - R.a[1]); e.st = 'walk'; e.spd = 0; return;
+    }
+    if (threatened(L, e.x, e.z, 34, 14)) e.flee();
+    const left = Math.hypot(e.wp[0] - e.x, e.wp[1] - e.z);
+    let sp = 0;
+    if (e.st === 'walk') { sp = 1.55; if (!e.looked && left < e.total * .5) { e.looked = true; e.st = 'look'; e.tmr = 3.6; } }
+    else if (e.st === 'look') { e.tmr -= dt; if (e.tmr <= 0) e.st = 'walk'; }
+    else if (e.st === 'run') { sp = 6.2; e.tmr -= dt; if (e.tmr <= 0) e.st = 'walk'; }
+    e.spd = lerp(e.spd, sp, Math.min(1, dt * (e.st === 'run' ? 2.5 : 3)));
+    if (e.spd > .05) {
+      const da = angWrap(Math.atan2(e.wp[0] - e.x, e.wp[1] - e.z) - e.yaw); e.yaw += clamp(da, -dt * 1.2, dt * 1.2);
+      e.x += Math.sin(e.yaw) * e.spd * dt; e.z += Math.cos(e.yaw) * e.spd * dt;
+    }
+    if (left < 2.5) { e.st = 'gone'; e.g.visible = false; return; }
+    const run = e.st === 'run' && e.spd > 3, sn0 = Math.sin(e.yaw), cs0 = Math.cos(e.yaw), d = .9 * e.scale;
+    e.ph += dt * e.spd * (run ? 1.9 : 4.4);
+    if (run) {   // a lope: the front pair, then the hind pair, the back rising and falling
+      const a = Math.sin(e.ph), b = Math.sin(e.ph - 1.7); e.legs[0].rotation.x = e.legs[1].rotation.x = a * .75; e.legs[2].rotation.x = e.legs[3].rotation.x = b * .8;
+    } else {   // an amble: lateral sequence, left hind, left front, right hind, right front
+      const k = Math.min(1, e.spd / 1.5), ph = [Math.PI / 2, 3 * Math.PI / 2, 0, Math.PI];
+      for (let i = 0; i < 4; i++) e.legs[i].rotation.x = Math.sin(e.ph - ph[i]) * (i < 2 ? .5 : .42) * k;
+    }
+    const gy = groundY(e.x, e.z), yf = groundY(e.x + sn0 * d, e.z + cs0 * d), yb = groundY(e.x - sn0 * d, e.z - cs0 * d);
+    e.g.position.set(e.x, gy + (run ? Math.abs(Math.sin(e.ph * .5)) * .12 * e.scale : Math.abs(Math.sin(e.ph)) * .018 * e.scale * Math.min(1, e.spd)), e.z);
+    e.g.rotation.y = e.yaw; e.g.rotation.x = -Math.atan2(yf - yb, 2 * d) + (run ? Math.sin(e.ph) * .06 : 0); e.g.rotation.z = Math.sin(e.ph) * .035 * Math.min(1, e.spd / 1.5);
+    e.g.scale.setScalar(e.scale);
+    if (e.st === 'look') {   // stands still, head up, turned to the golfer
+      const to = angWrap(Math.atan2(L.T.x - e.x, L.T.z - e.z) - e.yaw); e.look = lerp(e.look, clamp(to, -1.1, 1.1), Math.min(1, dt * 2.2));
+      e.head.rotation.x = lerp(e.head.rotation.x, -.28, Math.min(1, dt * 2)); e.head.rotation.y = e.look;
+    } else {   // nose low, swinging side to side as it walks
+      e.look = lerp(e.look, 0, Math.min(1, dt * 2)); e.head.rotation.x = lerp(e.head.rotation.x, run ? .05 : .3 + Math.sin(e.ph * .5 + 1) * .09, Math.min(1, dt * 3)); e.head.rotation.y = run ? e.look : Math.sin(e.ph * .5) * .3 + e.look;
+    }
+    if (e.hitT > 0) { e.hitT -= dt; e.g.rotation.z += Math.sin(e.hitT * 30) * .15 * e.hitT; }
+  };
+  return e;
+}
+function bearGo() { const L = W.life; if (L && L.bear && L.C === G.C) L.bear.start(); }   // from beginHole: the golfer pressed Play Hole
 /* --- prairie dogs (Fossil Trace only, scene.prairieDogs.holes): a colony of 4-6 black-tailed prairie dogs beside the fairway, each at its own burrow mound. They stand up on their hind legs
    to watch the golfer (about 30 cm tall, life size), bob and flick their tails, drop to all fours and dash to another mound now and then, and dive down their hole when the ball or the golfer comes close --- */
 function pdogParts() {
@@ -5301,6 +5392,7 @@ function buildLife(C, grp) {
     if (RDC.scene.bannerPlane) { L.plane = makePlane(L); L.ents.push(L.plane); }   // the banner plane and the gopher (groundhog) only where the course's scene asks for them
     if (RDC.scene.groundhog) { L.gopher = makeGopher(L); L.ents.push(L.gopher); }
     if (G.hole + 1 === RDC.scene.hotdogHole && Math.random() < HOTDOG_P) L.ents.push(makeHotDog(L));
+    if (RDC.scene.bear && C.def.par >= 4 && !G.pg && (Math.random() < CARTRIDE_P || /[?&]bear\b/.test(location.search))) { L.bear = makeBear(L); L.ents.push(L.bear); }   // the black bear (Fossil Trace): as rare as the moving cart
     if (RDC.scene.cartRide && C.def.par >= 4 && !G.pg && (Math.random() < CARTRIDE_P || /[?&]cart\b/.test(location.search))) { const R = cartRoute(C); if (R) { L.cartRide = makeCartRide(L, R); L.ents.push(L.cartRide); } }
     if (G.hole + 1 === RDC.scene.fountainHole) { const f = makeFountain(L); if (f) L.ents.push(f); }
     if (GC.hw) { const cg = carGeo(), sg = santaFeGeo(); L.traffic = [makeVehicle(L, 'car', cg, [2, 8], [6, 19]), makeVehicle(L, 'car', cg, [10, 16], [6, 19]), makeVehicle(L, 'car', sg, [4, 10], [6, 19]), makeVehicle(L, 'car', sg, [12, 16], [6, 19]), makeVehicle(L, 'truck', truckGeos(), [8, 25], [20, 40])]; L.ents.push(...L.traffic); } else if (RDC.scene.traffic) { const cg = carGeo(), sg = santaFeGeo(); L.traffic = [makeVehicle(L, 'car', cg, [25, 40], [45, 90]), makeVehicle(L, 'car', sg, [60, 60], [45, 90])]; L.ents.push(...L.traffic); } else L.traffic = [];
@@ -5363,7 +5455,7 @@ function deflectShot(sh, tt, hit) {
 }
 function lifeHitNote(hit) {
   const e = hit.e, bd = hit.h.bird, k = bd ? 'bird' : e ? e.kind : '';
-  const txt = { turkey: 'Clipped a turkey!', deer: 'Oh deer!', elk: 'Clipped an elk!', prairiedog: 'Hit a prairie dog!', cow: 'Holy cow!', coyote: 'Wile E. would be proud!', squirrel: 'Nailed a squirrel!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!', gopher: 'A menace to the golfing industry...', hotdog: 'Revenge of The Choker!', golfcart: 'Off a golf cart!' }[k];
+  const txt = { turkey: 'Clipped a turkey!', deer: 'Oh deer!', elk: 'Clipped an elk!', prairiedog: 'Hit a prairie dog!', cow: 'Holy cow!', bear: 'Oh bear!', coyote: 'Wile E. would be proud!', squirrel: 'Nailed a squirrel!', bird: 'Birdie… literally!', plane: 'Hit the plane!', glider: 'Hit the paraglider!', gopher: 'A menace to the golfing industry...', hotdog: 'Revenge of The Choker!', golfcart: 'Off a golf cart!' }[k];
   if (txt) readoutNote(txt, 'bad');
   try { if (k === 'plane' || k === 'glider' || k === 'golfcart') SFX.trunk(); else if (k === 'turkey') SFX.gobble(); else if (k === 'gopher' || k === 'hotdog' || k === 'squirrel' || k === 'prairiedog') SFX.squeak(); else if (k === 'coyote') SFX.yelp(); else SFX.leaves(); } catch (er) { }
   if (bd) { bd.st = 'hit'; bd.t = 0; const n = hit.h; bd.hitV = [-n.nx * 3 + (Math.random() - .5) * 2, 3, -n.nz * 3 + (Math.random() - .5) * 2]; }
@@ -7822,7 +7914,7 @@ function beginHole() {
   if (G.state !== 'intro') return;
   $('intro').classList.remove('on'); SFX.blip(); songArm();
   G.state = 'settle'; G.settleT = 0; G.camFrom = W.cam.position.clone(); G.lookFrom = G.camLook.clone();
-  cartRideGo();
+  cartRideGo(); bearGo();
 }
 function showDone(pickedUp) {
   const h = G.hole, par = G.C.def.par, s = G.scores[h], last = h === HOLE_DEFS.length - 1, d = s - par;

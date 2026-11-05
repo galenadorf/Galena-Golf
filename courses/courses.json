@@ -83,7 +83,8 @@
         "balloon": false,
         "flocks": false,
         "elk": { "holes": [5, 12] },
-        "prairieDogs": { "holes": [8, 16], "n": [4, 6] }
+        "prairieDogs": { "holes": [8, 16], "n": [4, 6] },
+        "bear": true
       }
     },
     {

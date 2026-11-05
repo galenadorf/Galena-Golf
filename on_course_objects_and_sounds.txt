@@ -41,6 +41,7 @@ A. WHICH COURSE HAS WHAT
   Dancing hot dog (hole 10)                       Y    -    -    -    -    -    -    -    -    -    -
   Fountain (hole 1)                               Y    -    -    -    -    -    -    -    -    -    -
   Moving golf cart with two men (rare)            Y    -    -    -    -    -    -    -    -    -    -
+  Black bear crossing the fairway (rare)          -    -    -    -    Y    -    -    -    -    -    -
   Parked golf carts, clubhouse model, washroom,
     porta-potties, parking lot, pump house,
     entrance sign, hole 7 sign                    Y    -    -    -    -    -    -    -    -    -    -
@@ -345,13 +346,17 @@ OBJECTS
 No deer or squirrels, and no bird flocks or hot air balloon in the sky (`scene.flocks` and `scene.balloon` false; the ambient birdsong, weather and rainbow stay).
 Elk (`scene.elk.holes` = 5 and 12: every visit to those two holes, nowhere else): a herd of three, a bull (about 1.8 m at the shoulder, with a five-point rack) and two cows (about 1.65 m), built on the deer and about 1.6-1.8x its size. Tan body, dark brown neck and legs, a pale rump patch. They come in together across the hole 3-10 s after it loads, walk and graze (heads down, stopping now and then), bolt together when the ball lands near or the golfer comes within about 18 m (45 m while the ball flies), and come back 45-105 s after they leave. Can be hit (the body): "Clipped an elk!", the ball ricochets and they run; a leaf rustle sounds.
 Prairie dogs (`scene.prairieDogs.holes` = 8 and 16, `n` 4-6: every visit to those two holes, nowhere else): a colony of 4 to 6 black-tailed prairie dogs, life size (about 30 cm standing), each at its own dirt mound with a dark burrow hole, in the rough beside the fairway 25-70 % of the way down the hole (the spot is new each visit, on either side). They stand up on their hind legs to watch the golfer, bob, flick their tails, now and then drop to all fours and dash to another mound, and dive down their holes when the golfer comes within about 15 m or the ball flies within about 32 m (they come back 7-19 s later). Can be hit while up: "Hit a prairie dog!", a squeak, and it dives.
+Black bear (`scene.bear`; as rare as the moving golf cart at Woodbine: each par 4 or par 5 hole has a 2.84% chance, CARTRIDE_P; never on a par 3, the putting green or the range; `?bear` on the page address forces it for testing): an adult black bear, 1.2x the average adult size (about 1.15 m at the shoulder, 2 m long), near-black coat with a tan muzzle, round ears, pale claws and the flat-footed, low-headed amble of a bear.
+  - Sets off 1.2 s after the golfer presses Play Hole and walks across the fairway where the line of play is 75 yd (68.6 m) from the golfer, from rough to rough on a slight diagonal, once; it fades in and out at the edges and does not come back.
+  - Halfway across it stops for about 3.6 s, stands with its head up and turns to look at the golfer, then goes on. A ball landing or flying near sends it into a lope (6 m/s) for 3.5 s, still toward its far side. A ball can hit it ("Oh bear!").
+  - Needs a clear crossing (no water, bunker, tree or green in the way) within 10 m of the 75 yd mark: none on holes 6 and 17, so no bear there.
 Roads: every OSM road, drive and service road within 230 m of a hole (Illinois Street and the housing streets round the course), drawn and culled as at Eagle Ridge South. No traffic on them.
 Cart paths: OSM's cart-path lines (about 9.2 km, 2.4 m wide), drawn over a road where they cross it. Several spurs end at a tee or green; there are no cart-path bridges (OSM maps none).
 NOT here: deer, squirrels, coyotes, cows, bird flocks, hot air balloon, highway and trucks, turkeys, gopher, banner plane, car traffic, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
 
 SOUNDS
 ------
-  - Ball hits: rustle (elk), squeak (prairie dog). NO truck sounds, plane drone, cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
+  - Ball hits: rustle (elk, bear), squeak (prairie dog). NO truck sounds, plane drone, cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
 
 SCENERY AND DATA
 ----------------
