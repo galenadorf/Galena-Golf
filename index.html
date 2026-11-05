@@ -502,7 +502,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
     <div class="sub"><span>Players online</span></div><div class="mpList" id="mpList"></div>
     <label class="mrow" hidden>Course<select class="courseSel" id="selCourseM" aria-label="Course"></select></label>
   </div>
-  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mChange">⛳ Change practice</button><button class="mbtn dark wide" id="mQuit">Quit to Main Screen</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
+  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mChange">⛳ Change practice</button><button class="mbtn dark wide" id="mQuit">Quit to Main Screen</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button><button class="mbtn dark wide" id="mRestart">↺ Restart round</button></div>
   <div class="mlist setBlock">
     <div class="mrow">Name<input id="mName" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="done"></div>
     <div class="mrow">Player ID<span id="pidState" style="opacity:.8">Guest</span></div>
@@ -6281,7 +6281,7 @@ function pinSheet(now) {
 function startRound() { newBuild(1500).then(reloading => { if (!reloading) beginRound(); }); }
 function beginRound() {
   UI.finalCard = false; clearRound();
-  G.practice = false; G.pg = null; document.body.classList.remove('pg'); G.submitted = false; G.planes = [0, 0, 1, 1, 1, 2, 2][(Math.random() * 7) | 0];
+  G.practice = false; G.pg = null; document.body.classList.remove('pg'); G.submitted = false; G.planes = [0, 0, 1, 1, 1, 2, 2][(Math.random() * 7) | 0]; G.rl = {}; if (isReg()) { pidRounds().catch(() => { }); loadRecords(COURSE.key).catch(() => { }); }
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   G.pins = pinSheet(); // the day's pin sheet, the same for everyone in the same lobby
   G.fartHole = Math.floor(Math.random() * HOLE_DEFS.length); G.fartDone = false; G.xr = {}; G.mull = [0, 0]; G.snap = null; // the hole where this round's rare sound plays (fartSwing)
@@ -7727,6 +7727,7 @@ function syncMenu() {
   document.querySelectorAll('#segMus button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.music !== false ? 1 : 0)));
   mpSync();
   $('mQuit').style.display = G.state === 'title' ? 'none' : ''; // nothing to quit from the start screen
+  $('mRestart').style.display = !G.practice && !G.pg && G.state !== 'title' && G.scores ? '' : 'none';   // only during a round
   $('mChange').style.display = G.practice && G.state !== 'title' ? '' : 'none';   // only while practising
 }
 // the Practice sheet (from the start screen): every hole with its par and length, of the course picked on it (`pracKey`: the course in play
@@ -8056,6 +8057,36 @@ async function recCheck(e) {
     if (more > 0) setTimeout(() => recordCard('More records!', '\u2026and ' + more + ' more record' + (more > 1 ? 's' : ''), '+' + more, cn + ' \u00b7 See them on the Stats sheet', ['#e8e8ff', '#9aa8ff', '#4a55c8', '#10143a']), 1500 + 3 * 400);
   } catch (er) { }
 }
+// Record pace, during the round: the marks that can only grow (the longest drive, holed shot and putt, lip-outs, birdies, greens, fairways, most putts and the
+// three streaks) are checked against the world's and my own records as they happen, one card per record per round (G.rl). Nothing counts until the round is
+// posted (recCheck still gives the real cards at the end); fewest putts and best nine can still be lost, so they wait for the end.
+const RLIVE = ['drive', 'holed', 'putt', 'lips', 'birdies', 'gir', 'fairways', 'mostPutts', 'birdStreak', 'girStreak', 'fwStreak'];
+function recLive() {
+  try {
+    if (!isReg() || G.practice || G.pg || !G.scores || (COURSES[COURSE.key] || {}).alpha) return;
+    const rf = (COURSES[COURSE.key] || {}).recFrom; if (rf && Date.now() < Date.parse(rf + 'T00:00:00Z')) return;
+    G.rl = G.rl || {}; const par = HOLE_DEFS.map(d => d.par), v = {}, x = G.xr || {};
+    let pt = 0, bi = 0, gi = 0, fw = 0, cb = 0, cg = 0, cf = 0, sb = 0, sg = 0, sf = 0;
+    G.scores.forEach((sc, i) => {
+      if (sc == null) return; pt += G.putts[i] || 0;
+      if (sc < par[i]) { bi++; cb++; sb = Math.max(sb, cb); } else cb = 0;
+      if (G.gir[i] === true) { gi++; cg++; sg = Math.max(sg, cg); } else cg = 0;
+      if (par[i] >= 4) { if (G.fir[i] === true) { fw++; cf++; sf = Math.max(sf, cf); } else cf = 0; }
+    });
+    for (const k of ['drive', 'holed', 'putt']) { const a = x[{ drive: 'd', holed: 'h', putt: 'p' }[k]]; if (a) v[k] = a[0]; }
+    if (x.l) v.lips = x.l;
+    Object.assign(v, { mostPutts: pt, birdies: bi, gir: gi, fairways: fw, birdStreak: sb, girStreak: sg, fwStreak: sf });
+    const key = COURSE.key, cn = COURSE.short, mine = myRec(key), wr = Rec.gh[key] ? Rec.gh[key].rec : null, out = [];
+    for (const k of RLIVE) {
+      const c = v[k]; if (!(c > 0) || G.rl[k]) continue; const d = REC[k], w = wr && wr[k] && wr[k][0], m = mine[k];
+      if (wr && (!w || c > w.v)) out.push([0, k, c, cn + ' · ' + (w ? 'World record is ' + d.f(w.v) + ' · ' + w.name : 'The first on the board') + ' · counts once the round is posted']);
+      else if (m && c > m[0]) out.push([1, k, c, cn + ' · Your best is ' + d.f(m[0]) + ' · counts once the round is posted']);
+    }
+    out.sort((a, b) => a[0] - b[0]);
+    out.slice(0, 3).forEach(([lv, k, c, sub], i) => { G.rl[k] = 1; setTimeout(() => recordCard(lv ? 'Personal record pace' : 'World record pace', REC[k].t, REC[k].f(c), sub, REC[k].c), 900 + i * 400); });
+    out.slice(3).forEach(([lv, k]) => { G.rl[k] = 1; });
+  } catch (e) { }
+}
 const recQueue = []; let recBusy = false;
 function recordCard(kicker, title, big, sub, theme, opt) {
   recQueue.push({ kicker, title, big, sub, theme, opt }); if (!recBusy) nextRecord();
@@ -8141,7 +8172,7 @@ function statsShot(sh, r) {
     const where = `Hole ${G.hole + 1} · ${COURSE.short}${G.practice ? ' · practice' : ''}`;
     if (G.strokes === 1) setTimeout(() => recordCard('Unreal!', isDisc() ? 'Ace' : 'Hole in one', toLen(d) + ' ' + lenU(), where, ['#ffffff', '#ffd166', '#ef476f', '#2b0a1a']), 500), ST.aces++;
   }
-  saveStats();
+  saveStats(); setTimeout(recLive, 1800);
 }
 // a hole finished in a real round
 function statsHole(h) {
@@ -8151,7 +8182,7 @@ function statsHole(h) {
   S.girTry++; if (G.gir[h] === true) { S.gir++; S.cur.gir++; } else S.cur.gir = 0;
   if (par >= 4) { S.fwTry++; if (G.fir[h] === true) { S.fwHit++; S.cur.fw++; } else S.cur.fw = 0; }
   if (d < 0) S.cur.bird++; else S.cur.bird = 0;
-  saveStats();
+  saveStats(); setTimeout(recLive, 2600);
 }
 function statsRound() { ST.rounds++; saveStats(); }
 const LEVELS = [[0, 'Rookie'], [18, 'Club Member'], [54, 'Fairway Regular'], [108, 'Scratch Hunter'], [216, 'Course Legend'], [432, 'Hall of Famer']];
@@ -8880,6 +8911,7 @@ function initInput() {
   $('mReplay').onclick = () => { closeSheets(); setTimeout(replayLast, 120); };
   $('mStats').onclick = () => openStats();
   $('mHelp').onclick = () => openSheet('helpSheet');
+  $('mRestart').onclick = () => { if (!confirm('Restart this round from hole 1? Your scores so far on this round will be lost.')) return; audio(); SFX.blip(); closeSheets(); startRound(); };
   $('mRound').onclick = () => { audio(); titleOff(); closeSheets(); startRound(); }; // (from the title screen's Settings too: the title must go, as with Tee off, or the round starts behind it)
   $('mQuit').onclick = () => { SFX.blip(); $('quitAsk').classList.add('on'); };
   $('mChange').onclick = () => { openPractice(); };
@@ -9031,7 +9063,11 @@ function newBuild(wait) {
   return wait ? Promise.race([f, new Promise(res => setTimeout(() => res(false), wait))]) : f;
 }
 function checkUpdate() { newBuild(0); }
-document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
+// unposted rounds are also sent when the network comes back and when the app returns to the foreground (not only at start); one pass at a time, at most every 20 s
+let retryBusy = false, retryAt = 0;
+function retryLater() { if (retryBusy || Date.now() - retryAt < 20000 || navigator.onLine === false) return; retryBusy = true; retryAt = Date.now(); retryUnposted().catch(() => { }).finally(() => { retryBusy = false; }); }
+window.addEventListener('online', retryLater);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { checkUpdate(); retryLater(); } });
 window.addEventListener('load', () => { checkUpdate(); });
 // Offline play: sw.js keeps every file solo play needs (see the comment there). Needs https or localhost.
 if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { }); });
