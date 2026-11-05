@@ -3956,7 +3956,7 @@ function slopeAim() { const d = aimDir(); SG_U.sgAim.value.set(G.ball.x, G.ball.
 // the chip, in graded words only so it does not give the putt away: how much uphill or downhill, and how far and which way a pure putt struck straight at the hole at the right pace ends up (one simulated putt per ball and cup)
 function puttReadFill() {
   const C = G.C, key = G.ball.x.toFixed(2) + ':' + G.ball.z.toFixed(2) + ':' + C.cup.x + ':' + C.cup.z; if (SG_U.key === key) return; SG_U.key = key;
-  const d = distToPin(), yaw = Math.atan2(C.cup.x - G.ball.x, -(C.cup.z - G.ball.z)), L = computeLaunch(PUTTER, { p: clamp(puttEquiv() / G.puttRange, .02, 1.05), Tb: .4, Td: .2, range: G.puttRange }, { h: 0, v: 0 }, G.surf, yaw, settings.hand, G.teed);
+  const d = distToPin(), yaw = Math.atan2(C.cup.x - G.ball.x, -(C.cup.z - G.ball.z)), L = computeLaunch(PUTTER, { p: clamp((puttEquiv() + PUTT_PAST) / G.puttRange, .02, 1.05), Tb: .4, Td: .2, range: G.puttRange }, { h: 0, v: 0 }, G.surf, yaw, settings.hand, G.teed);
   const r = simulateShot(C, { x: G.ball.x, y: G.ball.y, z: G.ball.z, v: L.v, w: L.w, putt: true, maxT: 20, noTrees: true, dt: 1 / 120 }), f = r.frames, ax = Math.sin(yaw), az = -Math.cos(yaw);
   let k = 1; while (k < r.n - 1 && (f[k * 5 + 1] - G.ball.x) * ax + (f[k * 5 + 3] - G.ball.z) * az < d) k++;
   const side = (f[k * 5 + 1] - G.ball.x) * -az + (f[k * 5 + 3] - G.ball.z) * ax, dh = C.cup.y - G.ball.y;
@@ -6412,6 +6412,8 @@ function autoClubAndAim() {
   G.carryKey = ''; updateAim(true);
 }
 // equivalent flat distance: uphill costs (5/7)·dh/μ metres of roll, downhill gives it back
+let AIM_ARC_K = .3;   // how much of the real flight height the aim line rises (all of it would run off the top of the screen from behind the ball)
+const PUTT_PAST = .4572;   // the tempo bar's putting mark is the stroke that would roll 18 in past the hole (the aim line itself ends at the hole)
 function puttEquiv() { const d = distToPin(), dh = G.C.cup.y - G.ball.y; return Math.max(.5, d + (5 / 7) * dh / SURF[S.GREEN].mu); }
 function pickPuttRange() { const e = puttEquiv(); G.puttRange = PUTT_RANGES.find(r => r >= e * 1.25) || PUTT_RANGES[PUTT_RANGES.length - 1]; }
 function cycleRange() { const i = PUTT_RANGES.indexOf(G.puttRange); G.puttRange = PUTT_RANGES[(i + 1) % PUTT_RANGES.length]; updateAim(true); SFX.blip(); }
@@ -6420,7 +6422,7 @@ let aimTimer = 0;
 function updateAim(full) {
   const c = CLUBS[G.club];
   const key = G.club + ':' + G.ball.x.toFixed(2) + ':' + G.ball.z.toFixed(2);
-  if (c.type === 'putter') { G.carry = Math.min(distToPin() + 1.2, G.puttRange); G.chip = chipPower(); }
+  if (c.type === 'putter') { G.carry = distToPin(); G.chip = chipPower(); }   // the line and its ring always end at the hole (they used to run 1.2 m past it and stop at the stroke range)
   else if (full || key !== G.carryKey) { G.carry = predictCarry(); G.carryKey = key; G.chip = chipPower(); }
   else { clearTimeout(aimTimer); aimTimer = setTimeout(() => { if (G.state === 'address' && !isPutt()) { G.carry = predictCarry(); G.chip = chipPower(); placeAimGeo(); updateHUD(); } }, 160); }
   placeAimGeo(); updateHUD();
@@ -6431,7 +6433,7 @@ function chipPower() {
   if (c.type === 'disc') return discChip(c);
   if (c.type === 'putter') {
     const br = Math.atan2(C.cup.x - G.ball.x, -(C.cup.z - G.ball.z)); if (Math.abs(angWrap(br - G.yaw)) > 20 * DEG) return null;
-    const p = puttEquiv() / G.puttRange; return p < 1.02 ? { p: clamp(p, .02, 1), d: distToPin() } : null;
+    const p = (puttEquiv() + PUTT_PAST) / G.puttRange; return p < 1.02 ? { p: clamp(p, .02, 1), d: distToPin() } : null;
   }
   const tgt = G.target || [C.cup.x, C.cup.z], br = Math.atan2(tgt[0] - G.ball.x, -(tgt[1] - G.ball.z));
   if (Math.abs(angWrap(br - G.yaw)) > 25 * DEG) return null;
@@ -6481,10 +6483,12 @@ function discChip(c) {
 }
 function placeAimGeo() {
   const C = G.C, c = CLUBS[G.club], d = aimDir(), L = G.carry, putt = c.type === 'putter';
-  const pa = W.aim.geometry.attributes.position.array, n = W.aimN;
+  const pa = W.aim.geometry.attributes.position.array, n = W.aimN, A = !putt && G.arc;
   const len = putt ? L : L * 1.06;
   for (let i = 0; i < n; i++) {
-    const s = .25 + (len - .25) * i / (n - 1), x = G.ball.x + d[0] * s, z = G.ball.z + d[1] * s, y = Math.max(C.h(x, z), C.wl(x, z)) + .06, w = putt ? .04 : .11 + s * .002;
+    const s = .25 + (len - .25) * i / (n - 1), x = G.ball.x + d[0] * s, z = G.ball.z + d[1] * s, w = putt ? .04 : .11 + s * .002;
+    let y = Math.max(C.h(x, z), C.wl(x, z)) + .06;
+    if (!putt && A && s < A[A.length - 2]) { let j = 2; while (j < A.length - 2 && A[j] < s) j += 2; const u = clamp((s - A[j - 2]) / Math.max(.01, A[j] - A[j - 2]), 0, 1); y = Math.max(y, A[1] + (lerp(A[j - 1], A[j + 1], u) - A[1]) * AIM_ARC_K); }   // lifts off with the loft and comes down at the ring
     const k = i * 6; pa[k] = x - d[1] * w; pa[k + 1] = y; pa[k + 2] = z + d[0] * w; pa[k + 3] = x + d[1] * w; pa[k + 4] = y; pa[k + 5] = z - d[0] * w;
   }
   W.aim.geometry.attributes.position.needsUpdate = true;
@@ -6496,7 +6500,10 @@ function placeAimGeo() {
 function predictCarry() {
   const L = computeLaunch(G.club, { p: 1, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, G.yaw, settings.hand, G.teed);
   const r = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, disc: L.disc, maxT: 12, noTrees: true });
-  return r.land ? r.land.carry : r.total;
+  const carry = r.land ? r.land.carry : r.total, f = r.frames, ax = Math.sin(G.yaw), az = -Math.cos(G.yaw), arc = [0, G.ball.y + (G.teed ? .03 : 0)];   // the flight's height along the aim line, which the aim line follows (the club's loft sets how steeply it climbs)
+  for (let k = 1; k < r.n; k += 2) { const d = (f[k * 5 + 1] - G.ball.x) * ax + (f[k * 5 + 3] - G.ball.z) * az; if (d > carry) break; if (d > arc[arc.length - 2]) arc.push(d, f[k * 5 + 2]); }
+  G.arc = arc.length > 4 ? arc : null;
+  return carry;
 }
 
 /* ---------- swing ---------- */
