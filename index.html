@@ -6709,7 +6709,7 @@ function impact(tImp) {
   measureFace();
   if (!G.practice && !G.pg) G.snap = { h: G.hole, strokes: G.strokes, putts: G.putts[G.hole], pens: G.pens[G.hole], fir: G.fir[G.hole], gir: G.gir[G.hole], xr: JSON.parse(JSON.stringify(G.xr || {})),
     st: { shots: ST.shots, dist: ST.dist, water: ST.water, ob: ST.ob, lost: ST.lost, trees: ST.trees, holedShots: ST.holedShots, chipins: ST.chipins, aces: ST.aces },
-    ball: { x: G.ball.x, z: G.ball.z, teed: !!G.teed }, prev: G.prev, club: G.club, yaw: G.yaw, target: G.target }; // what a mulligan goes back to
+    ball: { x: G.ball.x, z: G.ball.z, teed: !!G.teed }, prev: G.prev, club: G.club, yaw: G.yaw, target: G.target, pr: G.puttRange, sug: G.suggested }; // what a mulligan goes back to
   const Tb = Math.max(.05, (SW.tTop - SW.t0) / 1000), Td = Math.max(.03, (tImp - SW.tTop) / 1000);
   const st = strikeNow();
   SW.phase = 'done'; SW.mark = { x: st.x, y: st.y }; SW.resultT = performance.now(); SW.impactT = performance.now();
@@ -6776,7 +6776,9 @@ function mulliganTap() {
 function mulligan() {
   const s = G.snap, h = s.h; G.snap = null; G.mull[nineOf(h)]++;
   G.strokes = s.strokes; G.putts[h] = s.putts; G.pens[h] = s.pens; G.fir[h] = s.fir; G.gir[h] = s.gir; G.xr = s.xr; Object.assign(ST, s.st); saveStats();
-  placeBall(s.ball.x, s.ball.z, s.ball.teed); G.prev = s.prev; G.club = s.club; G.yaw = s.yaw; G.target = s.target; G.carryKey = '';
+  placeBall(s.ball.x, s.ball.z, s.ball.teed); G.prev = s.prev; G.club = s.club; G.yaw = s.yaw; G.target = s.target; G.carryKey = ''; G.suggested = s.sug;
+  if (isPutt()) { if (s.pr) G.puttRange = s.pr; else pickPuttRange(); }   // the tempo bar's putting range goes back with the putt (it had been re-picked for the lie the shot left)
+  puttLineClear(); resetTrail(); if (W.tracer) W.tracer.visible = false;   // the undone shot's putt line and trail go
   SW.phase = 'idle'; SW.mark = null; SW.p = 0; document.body.classList.remove('flight', 'swing');
   G.state = 'settle'; G.settleT = 0; G.camFrom = W.cam.position.clone(); G.lookFrom = G.camLook.clone(); // the camera travels back to the address view, as after any shot
   readout('<div class="r1">Mulligan</div><div class="r3"><span>Shot undone · no stroke</span></div>', 2.6); SFX.blip();
