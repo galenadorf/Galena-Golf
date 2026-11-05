@@ -131,7 +131,7 @@ Hitting things
   - A tree trunk: a dull thunk, "Off the trunk!".
   - A tree crown or building wall: a short crack, "Timber! Clipped the trees" (or the building's own note).
   - Water: a splash (noise burst), each time the ball enters water; with a random splash note ("Fed the fish!" etc.).
-  - Flagstick: a short metallic ping, "Off the flagstick!" / "...and in!". Cup rim: four quick ticks (also for a lip-out, "Lip out · too firm").
+  - Flagstick: a short metallic ping, "Off the flagstick!" / "...and in!". Cup rim and lip-out: no sound (a lip-out only shows "Lip out · too firm").
   - Holed on a golf course: the recorded cup sound (sounds/cup.mp3) as the ball drops, then the "In the hole!" card (no chime)
     ("In the chains!" on a disc course; no cup recording there, the chain shower is the sound). If the shot is skipped the cup sound still plays.
   - Putting green practice: the cup sound on every holed putt (no chime).

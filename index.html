@@ -6227,7 +6227,6 @@ const SFX = {
   },
   plane() { if (!play('s_plane', 1, 1)) { tone(92, 5.5, 'sawtooth', .03, 68); tone(184, 5.5, 'triangle', .018, 136, .1); } },   // the recording (sounds/plane.mp3); the synthesised drone only until it has loaded
   chime() { [523, 659, 784, 1047].forEach((f, i) => tone(f, .4, 'sine', .13, null, i * .09)); },
-  rim() { [0, .05, .1, .16].forEach((d, i) => tone(1300 + i * 90, .03, 'triangle', .05, null, d)); },
   pin() { tone(1900, .05, 'triangle', .09); tone(2500, .035, 'sine', .04, null, .01); noiseBurst(.05, .07, 2800, 2); },
   blip() { tone(700, .05, 'sine', .07); }
 };
@@ -6844,8 +6843,7 @@ function updateFlight(dt) {
     }
     else if (e.type === 'splash') { SFX.splash(); readoutNote(SPLASH_NOTES[(Math.random() * SPLASH_NOTES.length) | 0], 'bad'); burst(e.x, e.y + .05, e.z, 0, 0, [0xffffff, 0xcfeef5, 0x9fd6e2], 30, 2.6, 4.5); }
     else if (e.type === 'pin') { SFX.pin(); readoutNote(e.drop ? 'Off the flagstick and in!' : 'Off the flagstick!', e.drop ? 'good' : ''); }
-    else if (e.type === 'rim') SFX.rim();
-    else if (e.type === 'lip') { readoutNote('Lip out · too firm', 'ok'); SFX.rim(); }
+    else if (e.type === 'lip') { readoutNote('Lip out · too firm', 'ok'); }
     else if (e.type === 'lipin') { readoutNote('Lipped in!', 'good'); }
     else if (e.type === 'hop') readoutNote('Too hot · hopped the cup', 'ok');
     else if (e.type === 'cup') { SFX.cup(); buzz([20, 40, 20]); }
