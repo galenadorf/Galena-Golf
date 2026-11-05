@@ -4336,7 +4336,7 @@ function makeDeer(L, kind) {
   head.position.set(0, 1.08, .5); head.add(lmesh(P.head, mat)); tail.position.set(0, 1.12, -.64); tail.add(lmesh(P.tail, mat));
   const legs = [[-.11, .4], [.11, .4], [-.11, -.42], [.11, -.42]].map(p => { const lg = new THREE.Group(); lg.position.set(p[0], .8, p[1]); lg.add(lmesh(P.leg, mat)); g.add(lg); return lg; });
   g.add(lmesh(P.body, mat)); g.add(head); g.add(tail); g.visible = false; L.grp.add(g);
-  const e = { kind: elk ? 'elk' : 'deer', elk, mat, g, head, tail, legs, st: 'gone', x: 0, z: 0, yaw: 0, spd: 0, ph: Math.random() * 6, tmr: 0, wp: null, respawn: 6 + Math.random() * 30, hitT: 0, scale: kind === 'bull-elk' ? 1.5 : kind === 'cow-elk' ? 1.32 : kind === 'buck' ? 1.12 : kind === 'fawn' ? .68 : 1, r: .45, h: 1.6, graze: false };
+  const e = { kind: elk ? 'elk' : 'deer', elk, mat, g, head, tail, legs, st: 'gone', x: 0, z: 0, yaw: 0, spd: 0, ph: Math.random() * 6, tmr: 0, wp: null, respawn: 6 + Math.random() * 30, hitT: 0, scale: kind === 'bull-elk' ? 1.8 : kind === 'cow-elk' ? 1.58 : kind === 'buck' ? 1.12 : kind === 'fawn' ? .68 : 1, r: .45, h: 1.6, graze: false };
   if (elk) { e.herd = L.elkHerd || (L.elkHerd = { wait: 3 + Math.random() * 7, c: null, at: 0 }); e.lead = kind === 'bull-elk'; e.lag = e.lead ? 0 : .8 + Math.random() * 1.6; }   // the herd comes and goes together (scene.elk)
   e.spawn = () => { const hc = e.herd && e.herd.c, jit = e.lead || !hc ? 0 : 5, c0 = hc || crossingPoints(L, 10), c = c0 && (jit ? { a: [c0.a[0] + (Math.random() - .5) * jit, c0.a[1] + (Math.random() - .5) * jit], b: [c0.b[0] + (Math.random() - .5) * jit, c0.b[1] + (Math.random() - .5) * jit] } : c0); if (!c) { e.respawn = 8; return; } e.x = c.a[0]; e.z = c.a[1]; e.wp = c.b; e.st = 'walk'; e.spd = 0; e.tmr = 3 + Math.random() * 6; e.yaw = Math.atan2(c.b[0] - c.a[0], c.b[1] - c.a[1]); g.visible = true; };
   e.flee = (fx, fz) => { if (e.st === 'flee' || e.st === 'gone') return; e.st = 'flee'; e.tmr = 4 + Math.random() * 2; const a = Math.atan2(e.x - fx, e.z - fz) + (Math.random() - .5) * .7; e.yaw = a; e.wp = [e.x + Math.sin(a) * 120, e.z + Math.cos(a) * 120]; };
@@ -4504,6 +4504,7 @@ function makeCoyote(L) {
 }
 /* --- cows (Eagle Ridge South hole 3 only, scene.cows): three of them stand about 20 ft inside the woods south-west of the green, one brown, one black, one Holstein.
    They graze, lift their heads to watch the golfer, shift a few steps between the trees and now and then moo (sounds/cow1-3.mp3, quieter and duller with distance). They never leave. --- */
+const COW_K = 1.2;   // a Holstein modelled at 1.5 m at the withers, drawn 1.2x for the screen
 const COW_POOL = { n: ['cow1', 'cow2', 'cow3'], noRepeat: true }, COW_COATS = ['brown', 'black', 'holstein'];
 function cowParts(coat) {
   const base = coat === 'brown' ? 0x6e4527 : coat === 'black' ? 0x211f1e : 0xf3f1ea, pale = 0xe9c9c0, dark = 0x1e1c1b, horn = 0xe8e0c8;
@@ -4523,12 +4524,12 @@ function makeCow(L, coat, x, z, yaw) {
   head.position.set(0, 1.3, .95); head.add(lmesh(P.head, mat)); tail.position.set(0, 1.2, -.9); tail.add(lmesh(P.tail, mat));
   const legs = [[-.2, .6], [.2, .6], [-.2, -.58], [.2, -.58]].map(p => { const lg = new THREE.Group(); lg.position.set(p[0], 1.0, p[1]); lg.add(lmesh(P.leg, mat)); g.add(lg); return lg; });
   g.add(lmesh(P.body, mat)); g.add(head); g.add(tail); L.grp.add(g);
-  const e = { kind: 'cow', mat, g, head, tail, legs, st: 'graze', x, z, ax: x, az: z, yaw, spd: 0, ph: Math.random() * 6, tmr: 4 + Math.random() * 8, wp: null, moo: 0, hitT: 0, r: .62, h: 1.6, up: 0 };
+  const e = { kind: 'cow', mat, g, head, tail, legs, st: 'graze', x, z, ax: x, az: z, yaw, scale: COW_K, spd: 0, ph: Math.random() * 6, tmr: 4 + Math.random() * 8, wp: null, moo: 0, hitT: 0, r: .62, h: 1.6, up: 0 };
   const treeNear = (px, pz) => { const O = W.treeOcc && W.treeOcc.list; if (!O) return false; for (const t of O) if (Math.abs(t.x - px) < 1.4 && Math.abs(t.z - pz) < 1.4) return true; return false; };
   e.hit = (x0, y, z0) => {
-    const gy = groundY(e.x, e.z); if (y < gy + .3 || y > gy + e.h) return null;
+    const gy = groundY(e.x, e.z), k = e.scale; if (y < gy + .3 * k || y > gy + e.h * k) return null;
     const dx = x0 - e.x, dz = z0 - e.z, sn = Math.sin(e.yaw), cs = Math.cos(e.yaw), fw = dx * sn + dz * cs, sd = dx * cs - dz * sn;
-    if (Math.abs(fw) > 1.1 || Math.abs(sd) > e.r) return null; const l = Math.hypot(dx, dz) || 1; return { nx: dx / l, ny: .3, nz: dz / l };
+    if (Math.abs(fw) > 1.1 * k || Math.abs(sd) > e.r * k) return null; const l = Math.hypot(dx, dz) || 1; return { nx: dx / l, ny: .3, nz: dz / l };
   };
   e.mooNow = () => { e.moo = 2.2; e.up = 3; if (settings.sound) { const k = poolReady(COW_POOL); if (k) { const d = Math.hypot(W.cam.position.x - e.x, W.cam.position.z - e.z), v = .385 * Math.pow(clamp(1 - d / 300, 0, 1), 1.4); if (v > .01 && play(k, .94 + Math.random() * .12, v, 3200 + 3800 * clamp(1 - d / 120, 0, 1))) poolUsed(COW_POOL); } } };
   e.onHit = () => { e.hitT = .6; e.mooNow(); };
@@ -4549,7 +4550,7 @@ function makeCow(L, coat, x, z, yaw) {
     if (e.moo > 0) e.moo -= dt;
     e.spd = lerp(e.spd, sp, Math.min(1, dt * 3)); e.ph += dt * e.spd * 3.2; const k = Math.min(1, e.spd / .45), y = groundY(e.x, e.z);
     const sn = Math.sin(e.ph) * .32 * k; e.legs[0].rotation.x = e.legs[3].rotation.x = sn; e.legs[1].rotation.x = e.legs[2].rotation.x = -sn;
-    e.g.position.set(e.x, y, e.z); e.g.rotation.y = e.yaw;
+    e.g.position.set(e.x, y, e.z); e.g.rotation.y = e.yaw; e.g.scale.setScalar(e.scale);
     const raised = e.st === 'look' || e.moo > 0 || e.st === 'walk';
     const want = raised ? -.15 + (e.moo > 0 ? -.35 + Math.sin(L.t * 9) * .05 : 0) : 1.0 + Math.sin(L.t * .8 + e.ph) * .05;   // grazing: the head hangs to the grass
     e.head.rotation.x = lerp(e.head.rotation.x, want, Math.min(1, dt * 2.5));
