@@ -5215,7 +5215,7 @@ function buildLife(C, grp) {
     if (Math.random() < (RDC.scene.turkeys || 0)) L.ents.push(makeTurkey(L, true), makeTurkey(L, false), makeTurkey(L, false), makeTurkey(L, false)); // a tom and three hens, each on its own random timer; the flock visits only some holes
     initBirds(L, grp);
     L.balloon = makeBalloon(L); L.ents.push(L.balloon);
-    if (RDC.scene.cows && !G.pg && G.hole + 1 === RDC.scene.cows.hole) { const cw = RDC.scene.cows; [[0, 0], [5, -4], [-4, 5]].forEach((o, i) => { let q = C.loc(cw.enu[0] + o[0], cw.enu[1] + o[1]); const tr = (W.treeOcc && W.treeOcc.list) || []; for (let k = 0; k < 12 && tr.some(t => Math.hypot(t.x - q[0], t.z + q[1]) < 1.8); k++) q = C.loc(cw.enu[0] + o[0] + (Math.random() - .5) * 8, cw.enu[1] + o[1] + (Math.random() - .5) * 8);   // (a spot clear of trunks)
+    if (RDC.scene.cows && !G.pg && G.hole + 1 === RDC.scene.cows.hole && Math.random() < RDC.scene.cows.chance) { const cw = RDC.scene.cows; [[0, 0], [5, -4], [-4, 5]].forEach((o, i) => { let q = C.loc(cw.enu[0] + o[0], cw.enu[1] + o[1]); const tr = (W.treeOcc && W.treeOcc.list) || []; for (let k = 0; k < 12 && tr.some(t => Math.hypot(t.x - q[0], t.z + q[1]) < 1.8); k++) q = C.loc(cw.enu[0] + o[0] + (Math.random() - .5) * 8, cw.enu[1] + o[1] + (Math.random() - .5) * 8);   // (a spot clear of trunks)
       L.ents.push(makeCow(L, COW_COATS[i % 3], q[0], -q[1], Math.random() * 6.283)); }); }   // the cows in the woods south-west of the green
     if (RDC.scene.bannerPlane) { L.plane = makePlane(L); L.ents.push(L.plane); }   // the banner plane and the gopher (groundhog) only where the course's scene asks for them
     if (RDC.scene.groundhog) { L.gopher = makeGopher(L); L.ents.push(L.gopher); }

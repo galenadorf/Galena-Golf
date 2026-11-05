@@ -260,7 +260,7 @@ Cart paths: OSM's cart-path lines (about 8.5 km, 2.4 m wide; nobody painted them
 Cart-path bridges (ten; `CART_BRIDGES`): holes 3, 8 (two: from the tee box towards the fairway, and by the green), 9, 10 (two: the second path three-quarters of the way down, and by the green), 13, 14, between the 14th green and the 15th tee, and 18. A grey concrete deck 2.6 m wide and 9-21 m long (as long as the gap OSM leaves in the path), level with the higher bank and clear of the water, girders under it, a sill at each end, timber rails and posts. A ball that lands on the deck is on a cart path (hard, bounces and rolls as on any cart path, flat, never water); the rails and girders are scenery the ball passes through. Silent.
 
 Coyote (`scene.coyote` = .15: about 3 holes in 20 have one, and a quarter of those a pair): gray with a white belly, chest and muzzle, big upright ears, a bushy gray tail with a dark tip, about 0.6 m at the shoulder. It trots across the hole (2 m/s), stops to sniff with its nose down and look round, and bolts (9.5 m/s, tail streaming) when the ball lands or the golfer comes within about 20 m, or 50 m while the ball flies. Can be hit (the body, not the legs): "Wile E. would be proud!", the ball ricochets and it yelps and runs. Comes back 40-120 s after it leaves.
-Cows (`scene.cows`: hole 3 only, every round, never anywhere else): three, one brown, one black and one Holstein (white with black patches), standing in the woods south-west of the green (about 45 m from the cup), spread over a patch about 10 m across. They graze with their heads down, lift them to look at the golfer for a few seconds, take a few slow steps between the trees (never out of the woods) and swish their tails. They never run off. One of them moos every 45-120 s (first 12-40 s after the hole loads), louder and clearer the nearer the camera is (nothing past 220 m). Can be hit (the body, not the legs; the trees round them mostly shield them): "Holy cow!", the ball ricochets and that cow moos.
+Cows (`scene.cows`: hole 3 only, on 30% of visits to it (`chance` .3), never anywhere else): three, one brown, one black and one Holstein (white with black patches), standing in the woods south-west of the green (about 35 m from the cup), spread over a patch about 10 m across. They graze with their heads down, lift them to look at the golfer for a few seconds, take a few slow steps between the trees (never out of the woods) and swish their tails. They never run off. One of them moos every 45-120 s (first 12-40 s after the hole loads), louder and clearer the nearer the camera is (nothing past 220 m). Can be hit (the body, not the legs; the trees round them mostly shield them): "Holy cow!", the ball ricochets and that cow moos.
 NOT here: highway, US 20 (about 2 km south, off the map), trucks, deer, squirrels, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
 
 SOUNDS
@@ -291,7 +291,7 @@ Roads: every OSM road, drive and service road within 230 m of a hole (Eagle Ridg
 Cart paths: OSM's cart-path lines (about 8.7 km, 2.4 m wide), one connected network, drawn over a road where they cross it.
 Cart-path bridges (six): holes 11 (the long path crosses a stream OSM maps no bridge for), 13, 14, 15 (two) and 16 (five are OSM's own bridge=yes ways). Same deck and behaviour as at Eagle Ridge South.
 Coyote (`scene.coyote` = .15: about 3 holes in 20 have one, and a quarter of those a pair): gray with a white belly, chest and muzzle, big upright ears, a bushy gray tail with a dark tip, about 0.6 m at the shoulder. It trots across the hole (2 m/s), stops to sniff with its nose down and look round, and bolts (9.5 m/s, tail streaming) when the ball lands or the golfer comes within about 20 m, or 50 m while the ball flies. Can be hit (the body, not the legs): "Wile E. would be proud!", the ball ricochets and it yelps and runs. Comes back 40-120 s after it leaves.
-White-tailed deer (`scene.deer` = .25: about a quarter of the holes have them, per hole; the others none): a doe with a fawn (spotted, smaller) or a second doe, and on about a third of those holes a buck with antlers too: as at Stonehenge, but half as often.
+White-tailed deer (`scene.deer` = .25: about a quarter of the holes have them, per hole; the others none): a doe with a fawn (spotted, smaller) or a second doe, and on about a third of those holes a buck with antlers too: as at Stonehenge.
 NOT here: highway and trucks, squirrels, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
 
 SOUNDS
@@ -339,7 +339,7 @@ Also everything in GLOBAL. High-desert look (engine `dry`): golden-tan native gr
 
 OBJECTS
 -------
-White-tailed deer and squirrels: as at Stonehenge (`scene.deer` = .5, `scene.squirrels` = 3).
+White-tailed deer and squirrels: as at Stonehenge, but the deer on twice as many holes (`scene.deer` = .5, `scene.squirrels` = 3).
 Roads: every OSM road, drive and service road within 230 m of a hole (Illinois Street and the housing streets round the course), drawn and culled as at Eagle Ridge South. No traffic on them.
 Cart paths: OSM's cart-path lines (about 9.2 km, 2.4 m wide), drawn over a road where they cross it. Several spurs end at a tee or green; there are no cart-path bridges (OSM maps none).
 NOT here: highway and trucks, turkeys, gopher, banner plane, car traffic, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
@@ -366,7 +366,7 @@ Also everything in GLOBAL. Dark green long rough. OSM and lidar data only. Blue 
 
 OBJECTS
 -------
-White-tailed deer (`scene.deer` = .5: about half the holes have them, per hole; the others none): a doe with a fawn (spotted, smaller) or a second doe, and on about a third of those holes a buck with antlers too.
+White-tailed deer (`scene.deer` = .25: about a quarter of the holes have them, per hole; the others none): a doe with a fawn (spotted, smaller) or a second doe, and on about a third of those holes a buck with antlers too.
   - Each appears 6-36 s after arriving, walks across the line of play, stops to graze with its head down for 3-9 s at a time, looks round as it walks, leaves the far side, and is back 30-90 s later.
   - They bound away (10 m/s, white tail up) if the ball lands within about 18 m or flies within about 45 m, and walk again once the ball is 70 m off.
   - Can be hit (the body, not the legs): "Oh deer!", the ball ricochets.
@@ -403,7 +403,7 @@ Also everything in GLOBAL. Dark green long rough. OSM and lidar data only. Bronz
 
 OBJECTS
 -------
-White-tailed deer (`scene.deer` = .5) and squirrels (`scene.squirrels` = 3): the same animals, frequencies and behaviour as at Stonehenge.
+White-tailed deer (`scene.deer` = .5, twice as many holes as at Stonehenge) and squirrels (`scene.squirrels` = 3): the same animals and behaviour as at Stonehenge.
 Side roads (out of bounds, looks only, no traffic): Green Bay Road along the west, Lewis Avenue along the east (the clubhouse drive comes off it) and 33rd Street along the south.
 NOT here: any traffic at all (no highway, no side-road cars), turkeys, gopher, banner plane, cart paths, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
 
@@ -425,7 +425,7 @@ Also everything in GLOBAL. Dark green long rough. OSM and lidar data only. White
 
 OBJECTS
 -------
-White-tailed deer (.5) and squirrels (3 per hole): as at Stonehenge.
+White-tailed deer (.5, twice as many holes as at Stonehenge) and squirrels (3 per hole): otherwise as at Stonehenge.
 Side roads (out of bounds, looks only, no traffic): 231st Street along the north, East 226th Street along the south, Tollgate Road on the east, East Millcreek Road on the west, and the housing streets beside it (Sonoma Lane, Morse Landing Drive).
 NOT here: any traffic, turkeys, gopher, banner plane, cart paths, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
 
@@ -449,7 +449,7 @@ Memphis National Golf Club (Collierville TN) has two courses; only the Legends i
 
 OBJECTS
 -------
-White-tailed deer (`scene.deer` = .5) and squirrels (`scene.squirrels` = 3): the same animals, frequencies and behaviour as at Stonehenge.
+White-tailed deer (`scene.deer` = .5, twice as many holes as at Stonehenge) and squirrels (`scene.squirrels` = 3): the same animals and behaviour as at Stonehenge.
 Side roads (out of bounds, looks only, no traffic): Houston Levee Road along the west, and every OSM road near a hole (the housing streets the holes wind between).
 Cart paths: OSM's golf=cartpath lines (about 28), joined across the roads.
 NOT here: any traffic at all (no highway, no side-road cars), turkeys, gopher, banner plane, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
