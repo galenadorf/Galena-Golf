@@ -103,7 +103,7 @@ Man-made objects
 
 Practice areas
   - The practice green (four cups and flags, a close map) and the driving range (four flags, six hitting spots) are Woodbine Bend's whichever course is picked.
-    They have all the GLOBAL sounds below and nothing course-specific; the practice green chimes on every holed putt.
+    They have all the GLOBAL sounds below and nothing course-specific; the practice green plays the cup sound on every holed putt.
 
 Putting
   - On every golf course and the practice green: faint dark contour lines on the green with pure white to reddish pink dots flowing downhill (steeper is faster and pinker), and a chip saying how much uphill or downhill it is and how much and which way the putt breaks. The last putt's path stays on the green as a gold line until the next stroke.
@@ -132,9 +132,9 @@ Hitting things
   - A tree crown or building wall: a short crack, "Timber! Clipped the trees" (or the building's own note).
   - Water: a splash (noise burst), each time the ball enters water; with a random splash note ("Fed the fish!" etc.).
   - Flagstick: a short metallic ping, "Off the flagstick!" / "...and in!". Cup rim: four quick ticks (also for a lip-out, "Lip out · too firm").
-  - Holed on a golf course: the recorded cup sound (sounds/cup.mp3) as the ball drops, then a four-note chime and the "In the hole!" card
+  - Holed on a golf course: the recorded cup sound (sounds/cup.mp3) as the ball drops, then the "In the hole!" card (no chime)
     ("In the chains!" on a disc course; no cup recording there, the chain shower is the sound). If the shot is skipped the cup sound still plays.
-  - Putting green practice: the chime on every holed putt.
+  - Putting green practice: the cup sound on every holed putt (no chime).
   - Record cards (New personal / world record, Record beaten): the same four-note chime with confetti.
   - A ball that hits an animal, the plane or a cart: see each course (rustle for deer and birds, a yelp for a coyote, a moo for a cow, gobble for a turkey, squeak for a gopher, squirrel or the
     hot dog, thunk for the plane, the paraglider and a golf cart).
@@ -232,7 +232,7 @@ SOUNDS
   - Golf cart radio, "Around the World" (sounds/cartmusic.mp3), only when the moving cart appears (2.84% per par 4/5 hole with a path both sides, see Objects): starts when it sets off and plays from the cart until the next hole, looping. Loud within 20 m, fading with distance to nothing by 280 m, duller far away and panned to the side the cart is on. Scaled by Song volume; silent at Off.
   - Banner plane drone: a recording of a small plane (sounds/plane.mp3, about 6 s) once per flyby, when the plane starts its pass and the camera is within 260 m.
   - Ball hits: gobble (a turkey: two phrases of warbling chirps, synthesised), squeak (gopher or hot dog), thunk (the plane, a golf cart).
-  - Plus all of GLOBAL: strikes, landings, trees, water, cup and chime, interface blips, birdsong (not on hole 7), rainbow jingle, the rare unseen sound.
+  - Plus all of GLOBAL: strikes, landings, trees, water, cup, interface blips, birdsong (not on hole 7), rainbow jingle, the rare unseen sound.
 
 SCENERY AND DATA
 ----------------
@@ -493,7 +493,7 @@ NOT here: any animal (turkeys, gopher, deer, squirrels), banner plane, traffic, 
 SOUNDS
 ------
   - The disc sounds in GLOBAL: release whoosh at every throw; chain shower on a catch; graze, spit-out and cage clanks. No club strikes, putter tap or cup recording.
-  - NO plane drone, truck sounds, cart radio or hole song. Plus the rest of GLOBAL: landings, trees, water, "In the chains!" chime, blips, birdsong, rainbow jingle, the rare unseen sound.
+  - NO plane drone, truck sounds, cart radio or hole song. Plus the rest of GLOBAL: landings, trees, water, "In the chains!" card (no chime), blips, birdsong, rainbow jingle, the rare unseen sound.
 
 SCENERY AND DATA
 ----------------

@@ -6934,7 +6934,7 @@ function pgFinish(r) {
   const pg = G.pg, C = G.C; pg.shots++; G.strokes = 0; pg.from = { x: G.prev.x, z: G.prev.z };
   let big, sub = '';
   if (r.holed) {
-    pg.makes++; const c = r.cup || C.cup, pc = C.cups.indexOf(c); SFX.chime();
+    pg.makes++; const c = r.cup || C.cup, pc = C.cups.indexOf(c);
     // 2 ft from the cup it fell into, on the side the shot came from (any side on the green if that one is not)
     const ux = pg.from.x - c.x, uz = pg.from.z - c.z, ul = Math.hypot(ux, uz) || 1; let bx = c.x + ux / ul * .61, bz = c.z + uz / ul * .61;
     for (let k = 0; k < 12 && C.surf(bx, bz) !== S.GREEN; k++) { const a = Math.atan2(uz, ux) + (k % 2 ? 1 : -1) * Math.ceil((k + 1) / 2) * .5; bx = c.x + Math.cos(a) * .61; bz = c.z + Math.sin(a) * .61; }
@@ -7000,7 +7000,7 @@ function finishShot() {
     G.state = 'holed'; G.holedT = 0; G.scores[h] = G.strokes;
     if (G.gir[h] == null) G.gir[h] = G.strokes - 1 <= par - 2;
     if (first && par >= 4) G.fir[h] = false;
-    statsHole(h); saveRound(); mpState(true); SFX.chime(); readout(`<div class="r1 good">${isDisc() ? 'In the chains!' : 'In the hole!'}</div><div class="r3"><span>${sh.summary}</span></div>`, 2.2);
+    statsHole(h); saveRound(); mpState(true); readout(`<div class="r1 good">${isDisc() ? 'In the chains!' : 'In the hole!'}</div><div class="r3"><span>${sh.summary}</span></div>`, 2.2);
     setTimeout(() => { if (G.state === 'holed') showDone(false); }, 1300); updateHUD(); return;
   }
   let big = '', sub = '';
