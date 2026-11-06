@@ -632,32 +632,43 @@ SURF[S.PATH] = { name: 'Cart path', hard: true, k: .004, e: .8, keep: .86, spinS
 
 /* ---------- weather ---------- */
 // Weather only changes how the ball rolls on the fairway: how hard it bounces, how much pace it keeps and how far it runs out.
-// Each hole draws one; the rest of the course (rough, greens, bunkers, flight) is unaffected.
+// Each hole takes the weather of the moment it starts (from the clock, see wxClock); the rest of the course (rough, greens, bunkers, flight) is unaffected.
 const WEATHERS = [
-  { id: 'dry', name: 'Dry', note: 'Firm, fast fairway', mu: .72, k: .8, keep: 1.14, e: 1.12, p: .3 },
-  { id: 'fine', name: 'Fine', note: 'Normal fairway', mu: 1, k: 1, keep: 1, e: 1, p: .35 },
-  { id: 'damp', name: 'Damp', note: 'Soft fairway, less run', mu: 1.4, k: 1.2, keep: .84, e: .86, p: .2 },
-  { id: 'rain', name: 'Rain', note: 'Wet fairway, ball plugs', mu: 1.9, k: 1.4, keep: .68, e: .68, p: .15 }
+  { id: 'dry', name: 'Dry', note: 'Firm, fast fairway', mu: .72, k: .8, keep: 1.14, e: 1.12 },
+  { id: 'fine', name: 'Fine', note: 'Normal fairway', mu: 1, k: 1, keep: 1, e: 1 },
+  { id: 'damp', name: 'Damp', note: 'Soft fairway, less run', mu: 1.4, k: 1.2, keep: .84, e: .86 },
+  { id: 'rain', name: 'Rain', note: 'Wet fairway, ball plugs', mu: 1.9, k: 1.4, keep: .68, e: .68 }
 ];
 let WX = WEATHERS[1], FAIR_WX = SURF[S.FAIR];
 function setWeather(w) {
   WX = w; const f = SURF[S.FAIR];
   FAIR_WX = w.id === 'fine' ? f : Object.assign({}, f, { mu: f.mu * w.mu, k: f.k * w.k, keep: Math.min(.95, f.keep * w.keep), e: f.e * w.e });
 }
-// Weather moves in fronts: clear -> damp (clouds gather) -> rain -> damp -> fine; one spell lasts 6-9 holes
-const WX_NEXT = { dry: [['dry', .25], ['fine', .6], ['damp', .15]], fine: [['dry', .2], ['fine', .3], ['damp', .5]], damp: [['fine', .3], ['damp', .1], ['rain', .6]], rain: [['damp', .8], ['rain', .2]] };
-function nextWeather(prev, r) { let u = r(); for (const [id, p] of (WX_NEXT[prev] || WX_NEXT.fine)) { if ((u -= p) < 0) return WEATHERS.find(w => w.id === id); } return WEATHERS[1]; }
+// The sky follows the clock, per course: a smooth noise curve over time, seeded by the course key, so every player on a course (solo, practice, a multiplayer room)
+// sees the same weather at the same moment and restarting a hole or a round changes nothing. The curve is slow (WX_CELL: spells of 1-2 hours) and the weather is
+// the band it sits in: dry < fine < damp < rain, so a front always passes through the middle bands (clear -> damp -> rain -> damp -> fine). The thresholds are the
+// 30 / 65 / 85 % quantiles of the curve (dry 30 %, fine 35 %, damp 20 %, rain 15 % of the time, WX_TH) and 0.98 is its peak. A hole takes the weather at the moment it
+// starts. An event or tournament round will set its own weather and pins instead (creator-defined; not built yet).
+const WX_CELL = 90 * 60000, WX_TH = [.343, .621, .792], WX_TOP = .98;
+function wxSeed(k) { let h = 2166136261; for (let j = 0; j < k.length; j++) { h ^= k.charCodeAt(j); h = Math.imul(h, 16777619); } return h | 0; }
+function wxCurve(sd, t) { const x = t / WX_CELL, i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f); return hash2(i, 0, sd) * (1 - u) + hash2(i + 1, 0, sd) * u; }
+const wxBand = v => v < WX_TH[0] ? 0 : v < WX_TH[1] ? 1 : v < WX_TH[2] ? 2 : 3;
+// the weather of a course at a time (ms): the band, the curve value, and for damp spells whether the rain has just passed (the sun breaks through) or is about to come
+function wxClock(key, t) {
+  const sd = wxSeed(key), v = wxCurve(sd, t), b = wxBand(v), M = 15 * 60000;
+  const pass = b === 2 && [1, 2, 3].some(k => wxCurve(sd, t - k * M) >= WX_TH[2]), lead = b === 2 && [1, 2].some(k => wxCurve(sd, t + k * M) >= WX_TH[2]);
+  return { w: WEATHERS[b], v, pass, lead };
+}
 // what the sky is working toward right now: cloud cover and rain strength (0..1); rain builds from a drizzle, peaks mid-spell and eases off the same way,
 // the clouds gathering before the first drops and lingering after the last
 function wxTargets() {
-  const id = G.weather ? G.weather.id : 'fine', N = G.wxN || 8, k = G.wxK || 0, last = k >= N - 1, nx = G.wxNext && G.wxNext.id, pv = G.wxPrev;
-  if (id === 'rain') { const p = (k + .5) / N; return { cloud: 1, rain: clamp(.1 + .9 * Math.pow(Math.sin(Math.PI * p), 1.1), .08, 1) }; }
-  if (id === 'damp' && pv === 'rain') return k === 0 ? { cloud: .55, rain: .12 } : k === 1 ? { cloud: .5, rain: .08 } : { cloud: .42, rain: 0 }; // the rain passes, the sun breaks through
-  if (id === 'damp') { if (last && nx === 'rain') return { cloud: .9, rain: .12 }; return { cloud: pv === 'rain' && k === 1 ? .8 : .7, rain: 0 }; }
-  if (id === 'fine') return { cloud: last && nx === 'damp' ? .5 : .28, rain: 0 };
+  const id = G.weather ? G.weather.id : 'fine', v = G.wxV;
+  if (v == null) return id === 'rain' ? { cloud: 1, rain: .5 } : { cloud: .28, rain: 0 };
+  if (id === 'rain') return { cloud: 1, rain: clamp(.1 + .9 * smooth(0, 1, (v - WX_TH[2]) / (WX_TOP - WX_TH[2])), .08, 1) };
+  if (id === 'damp') return G.wxPass ? { cloud: .5, rain: .1 } : G.wxLead ? { cloud: .9, rain: .12 } : { cloud: .7, rain: 0 };
+  if (id === 'fine') return { cloud: .2 + .3 * smooth(WX_TH[0], WX_TH[1], v), rain: 0 };
   return { cloud: .1, rain: 0 };
 }
-function drawWeather(r) { let u = r(); for (const w of WEATHERS) { if ((u -= w.p) < 0) return w; } return WEATHERS[1]; }
 
 // 14 clubs — the legal maximum. carry = target carry (m) for a full, pure, 3:1 swing with a downswing under 0.35 s.
 const CLUBS = [
@@ -6274,7 +6285,7 @@ function saveRound() {
   const mid = G.scores[h] == null && (G.strokes > 0 || flying) ? {
     strokes: G.strokes, x: G.ball.x, z: G.ball.z, teed: !!G.teed, prev: G.prev || null, yaw: G.yaw, club: G.club, target: G.target || null,
     wind: G.wind, swirl: G.C.swirl || 0, sw: G.swirl || null,
-    wx: G.weather ? { id: G.weather.id, left: G.wxLeft, n: G.wxN, k: G.wxK, next: G.wxNext ? G.wxNext.id : null, prev: G.wxPrev || null } : null,
+    wx: G.weather ? { id: G.weather.id, v: G.wxV, pass: !!G.wxPass, lead: !!G.wxLead } : null,
     shot: flying ? { L: sh.L, x: G.prev.x, z: G.prev.z, teed: !!G.prev.teed, playT: Math.max(0, G.playT), summary: sh.summary } : null
   } : null;
   const r = { v: 1, course: COURSE.key, hole: h, scores: G.scores, putts: G.putts, fir: G.fir, gir: G.gir, pens: G.pens, pins: G.pins, planes: G.planes, fh: G.fartHole, fd: !!G.fartDone, xr: G.xr, ml: G.mull, at: Date.now(), mid };
@@ -6330,7 +6341,7 @@ function resumeRound(course) {
   if (!mid) return true;
   // back exactly where play stopped: the strokes, the weather and wind of the moment, then the ball at rest (aimed as it was) or in the air
   G.putts[h] = pu; G.pens[h] = pe; G.strokes = mid.strokes;
-  if (mid.wx) { const w = WEATHERS.find(x => x.id === mid.wx.id); if (w) { G.weather = w; setWeather(w); G.wxLeft = mid.wx.left; G.wxN = mid.wx.n; G.wxK = mid.wx.k; G.wxNext = WEATHERS.find(x => x.id === mid.wx.next) || G.wxNext; G.wxPrev = mid.wx.prev; } }
+  if (mid.wx) { const w = WEATHERS.find(x => x.id === mid.wx.id); if (w) { G.weather = w; setWeather(w); G.wxV = mid.wx.v; G.wxPass = mid.wx.pass; G.wxLead = mid.wx.lead; } }
   if (Array.isArray(mid.wind)) G.wind = mid.wind.slice(); if (mid.sw) G.swirl = mid.sw; G.C.swirl = mid.swirl || 0;
   G.prev = mid.prev || { x: mid.x, z: mid.z, teed: mid.teed };
   $('intro').classList.remove('on');
@@ -6395,16 +6406,8 @@ function startHole(i) {
   // it blows from 40-85 degrees round from the wind down low (simulateShot, C.swirl)
   G.swirl = G.C.def.swirl ? { a: wa, s: ws, ph: r() * TAU, t: 0 } : null;
   if (G.C.def.swirl) G.C.swirl = (r() < .5 ? -1 : 1) * (.7 + .78 * r());
-  // weather: random, but one spell lasts 6-9 holes (a replayed practice hole keeps it)
-  if (!G.practice || G.wxLeft == null) {
-    if (G.wxLeft == null || G.wxLeft <= 0) {
-      const prev = G.weather; G.wxPrev = prev ? prev.id : null;
-      G.weather = G.wxNext && prev ? G.wxNext : prev ? nextWeather(prev.id, r) : drawWeather(r);
-      G.wxN = 6 + Math.floor(r() * 4); G.wxLeft = G.wxN; G.wxK = 0; G.wxNext = nextWeather(G.weather.id, r);
-    } else G.wxK = (G.wxK || 0) + 1;
-    G.sinceRain = G.weather.id === 'rain' ? 0 : G.sinceRain == null ? 99 : G.sinceRain + 1;
-    G.wxLeft--;
-  }
+  // weather: from the clock and the course, the same for everyone (see wxClock)
+  { const wc = wxClock(COURSE.key, Date.now()); G.weather = wc.w; G.wxV = wc.v; G.wxPass = wc.pass; G.wxLead = wc.lead; }
   setWeather(G.weather);
   G.strokes = 0; G.putts[i] = 0; G.pens[i] = 0; G.shot = null; G.target = null;
   placeBall(G.C.startPos.x, G.C.startPos.z, true);

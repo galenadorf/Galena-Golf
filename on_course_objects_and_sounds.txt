@@ -78,7 +78,8 @@ Hot air balloon (brown, red, orange and white stripes, wicker basket, burner fla
 
 Sky and weather
   - Clouds drift across the sky and thicken as the weather changes.
-  - Weather spells last 6-9 holes: clear, damp, rain, damp, fine. Rain has falling drops and a darker sky. No rain sound (birdsong is only rarer in rain).
+  - Weather follows the clock, per course: the same for every player on a course at the same moment (solo, practice, multiplayer), so restarting changes nothing. Spells last about 1-2 hours
+    and move in fronts (dry, fine, damp, rain, damp, fine); about 30% dry, 35% fine, 20% damp, 15% rain. A hole takes the weather of the moment it starts. Rain has falling drops and a darker sky. No rain sound (birdsong is only rarer in rain).
   - Rainbow: a faint one in light rain when the sky is not too cloudy (as a spell builds or eases off); it sits low in the east and has its own jingle (see sounds).
   - Wind: the flag flutters and a wind arrow shows on screen. Wind changes every hole.
 
