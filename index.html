@@ -7740,7 +7740,7 @@ function readoutNote(text, cls) {
 /* ---------- sheets ---------- */
 // the play screen's tile: the course's full name, its town, par and the tee's rating and slope, then the best three rounds on the world board
 function playFill() {
-  const CO = COURSE; $('playCourse').textContent = CO.name.replace(' at Eagle Ridge', '\nat Eagle Ridge'); $('playPlace').textContent = CO.place;
+  const CO = COURSE; $('playCourse').textContent = CO.name.replace(' at Eagle Ridge', '\nat Eagle Ridge').replace(' Golf Course', '\nGolf Course'); $('playPlace').textContent = CO.place;
   $('playPar').textContent = ['Par ' + PAR_TOTAL, CO.slope ? 'Slope ' + CO.slope : '', CO.rating ? 'Rating ' + CO.rating : '', ''].filter(Boolean).join(' · ');
   const box = $('playTop'); box.textContent = ''; if (CO.alpha) return;
   const rows = worldRows(CO.key); if (!rows) return;
