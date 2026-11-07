@@ -57,6 +57,7 @@ def main():
     idx = ndi.distance_transform_edt(over, return_distances=False, return_indices=True)
     lab = lab[idx[0], idx[1]]
     S = {k: lab == i for i, k in enumerate(SURFACES, 1)}   # (all-false for a surface this course does not paint)
+    tr0 = Affine(fr['res'], 0, fr['e0'], 0, -fr['res'], fr['n1'])
     put = lambda name, geoms: json.dump([mapping(g) for g in geoms], open(os.path.join(OUT, name), 'w'))
     rep = {}
 
@@ -99,6 +100,32 @@ def main():
         tees = paint_read.blob_polys(ndi.binary_closing(S['tee'], iterations=2), fr, paint_read.MIN_TEE, True, True)
         put('tees_painted.json', tees)
         rep['tee'] = f'{len(tees)} tee boxes'
+    if has('fence'):   # hard out-of-bounds lines (a split-rail fence along the property lines where houses line a hole): build.py cuts the boundary back to them
+        import fence_read
+        fl = fence_read.lines_from_mask(M['fence'], fr)
+        json.dump([mapping(g) for g in fl], open(os.path.join(OUT, 'fence_lines.json'), 'w'))
+        rep['fence'] = f'{len(fl)} lines, {sum(g.length for g in fl):.0f} m'
+    if has('clump'):   # grass clumps: a dot is one clump, a bigger area is filled with them about 2 m apart
+        from site_paint import blobs
+        out_c = []
+        rng = np.random.default_rng(11)
+        for p in blobs(M['clump'], fr, tr0, 1.0):
+            if p.area <= 7:
+                out_c.append([round(p.centroid.x, 1), round(p.centroid.y, 1), round(float(np.clip(2 * np.sqrt(p.area / np.pi) / 1.5, .7, 1.5)), 2)])
+                continue
+            inner = p.buffer(-.6) if p.buffer(-.6).area > 1 else p
+            x0, y0, x1, y1 = inner.bounds
+            for x in np.arange(x0, x1, 2.0):
+                for y in np.arange(y0, y1, 2.0):
+                    q = Point(x + rng.uniform(-.35, .35), y + rng.uniform(-.35, .35))
+                    if inner.contains(q):
+                        out_c.append([round(q.x, 1), round(q.y, 1), round(float(rng.uniform(.85, 1.15)), 2)])
+        json.dump(out_c, open(os.path.join(OUT, 'clumps.json'), 'w'))
+        rep['clump'] = f'{len(out_c)} clumps'
+    if has('drain'):   # rock-lined drainage hazards
+        dr = fairways.from_mask(M['drain'], fr, min_area=8.0, smooth=1.0, tol=.1)
+        put('drains_painted.json', dr)
+        rep['drain'] = f'{len(dr)} drainage hazards, {round(sum(p.area for p in dr))} m2'
     if 'tee_dot' in M:   # optional: no dots means the tee sets are placed by the card yardages alone
         starts = [[round(p.centroid.x, 2), round(p.centroid.y, 2)] for p in paint_read.blob_polys(ndi.binary_closing(M['tee_dot'], iterations=2), fr, .2, False)]
         json.dump(starts, open(os.path.join(OUT, 'tee_starts.json'), 'w'))

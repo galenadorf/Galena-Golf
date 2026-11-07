@@ -43,7 +43,7 @@ ALT = {}  # no alternate tee lengths
 TREES_GONE = True   # trees_aerial.py: the lidar is from 2012, the aerial 2023; a lidar tree with no canopy on the aerial was felled since
 RELIEF_OFF_WATER = True   # build.py leaves the lidar relief off the ponds, creeks and their banks
 FAIRWAYS_FROM_AERIAL = True   # OSM maps only a few core stripes of fairway: trace.py's aerial fairways fill every par 4 and 5
-PAINT = ('fairway', 'green', 'tee', 'bunker', 'fescue', 'path', 'lot', 'wash', 'tee_dot')   # trees and cart paths stay as the data has them
+PAINT = ('fairway', 'green', 'tee', 'bunker', 'fescue', 'path', 'lot', 'wash', 'fence', 'clump', 'drain', 'tee_dot')   # trees and cart paths stay as the data has them
 # the game's four tee-marker slots: w is the set played, y/b/r the others (tee set, marker colour)
 MARKERS = {'w': ('white', 0xeeeeee), 'y': ('black', 0x26282b), 'b': ('gold', 0xd9b23a), 'r': ('green', 0x2f8f4f)}
 
@@ -70,10 +70,14 @@ ROOF_TRAIN = (-300, -300, 250, 0)   # the part of the course whose buildings are
 TRAFFIC = {'Frank Road': dict(cars=10, mph=40, colors=[0xf2f2f0, 0xb9bec4, 0x1b1c1f, 0xb3262e, 0x1f3f7a, 0x7b92ac, 0x2f5a3c, 0xc8b48a, 0x6b1f2a, 0x4a4f55])}   # a mix of body colours: white, silver, black, red, blue, light blue, green, tan, maroon, charcoal
 NO_FAIRWAY_HULL = True    # build.py: the painted fairways already touch the greens; the convex-hull link would fill notches and reach over water
 FAIRWAY_OFF_WATER = True  # build.py: fairway polygons are cut back from the ponds
+FAIRWAY_SETBACK = {3: 16.8}   # build.py: hole 3's fairway stays 10 yd (9.1 m) from the water the player sees (the game's water line lies about 5.5 m past the creek ribbon: dug banks) after the tee
 # out of bounds at the property lines where houses line a hole: a lot reaches HOUSE_LOTS m past a house's walls (rows of lots are joined), the clubhouse area is exempt;
 # the stretches of boundary along lots are drawn as a 2-rail split-rail cedar fence
 HOUSE_LOTS = 12
 HOUSE_LOTS_JOIN = 10
 HOUSE_LOTS_EXEMPT = [(-400, -70, 115)]   # the clubhouse, cart barns and lot
+# trees_fill.py: boxes (e0, n0, e1, n1) where pines the lidar and the canopy classifier missed are found on the aerial: the Frank Road border, and the trees south of the 18th tee
+TREES_FILL = [(-880, -548, 480, -478), (-470, 150, -140, 232)]
+ROAD_ROW_DEEP = 1.5   # build.py: deep rough under every row of trees lining a road, 5 ft beyond the crowns
 SMOOTH_MORE = True
 SMOOTH_PAINTED = True   # build.py: the painted bunkers and tee boxes are low-passed too, so no outline keeps a pixel staircase or a hull corner

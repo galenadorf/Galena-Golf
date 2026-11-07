@@ -649,6 +649,12 @@ def main():
     if getattr(course, 'FAIRWAY_OFF_WATER', False):   # no fairway over a pond (a painted edge, the smoothing and the link can all reach into one)
         wat = unary_union([w['poly'] for w in F['water']]).buffer(.3)
         fair = [g for q in fair for g in getattr(q.difference(wat), 'geoms', [q.difference(wat)]) if g.geom_type == 'Polygon' and g.area > 4]
+    for ref, back in getattr(course, 'FAIRWAY_SETBACK', {}).items():   # {hole: m}: that hole's fairway stays this far from the water (ponds and creek), 10 yd = 9.144 m
+        hh = [h for h in F['hole'] if h['ref'] == ref][0]
+        cut = unary_union([w['poly'] for w in F['water']] + creek_pieces()).buffer(back).intersection(hh['line'].buffer(45))
+        n0 = sum(q.area for q in fair)
+        fair = [g for q in fair for g in getattr(q.difference(cut), 'geoms', [q.difference(cut)]) if g.geom_type == 'Polygon' and g.area > 4]
+        print(f'hole {ref}: fairway kept {back:.1f} m from the water ({n0 - sum(q.area for q in fair):.0f} m2 cut)')
     print('fairway -> green links (hole, gap m, area added m2):', rep)
     cp = os.path.join(OUT, 'cartpaths.json')   # the cart paths: found on the aerial and corrected by hand (cartpaths_edit.py, cartpaths_read.py); trace.py's paths.json was only fragments
     paths = [shape(g) for g in json.load(open(cp))] if os.path.exists(cp) else []
@@ -708,6 +714,11 @@ def main():
         trees = [dict(t, d=gd[(t['e'], t['n'])]['d'], h=gd[(t['e'], t['n'])]['h']) if (t['e'], t['n']) in gd else t for t in trees]
         trees += ta['add']
         print(len(dk), 'lidar trees dropped,', sum((t['e'], t['n']) in gd for t in trees), 'crowns grown,', len(ta['add']), 'trees added by trees_aerial.json')
+    tfp = os.path.join(OUT, 'trees_fill.json')   # pines and the like the other steps missed, found on the aerial in course.TREES_FILL boxes (trees_fill.py)
+    if os.path.exists(tfp):
+        tf = json.load(open(tfp))['add']
+        trees += tf
+        print(len(tf), 'trees added by trees_fill.json')
     if os.path.exists(ppn):   # the trees painted on the practice-green map stand in for any lidar tree under them
         trees = [t for t in trees if not any(math.hypot(t['e'] - q['e'], t['n'] - q['n']) < .5 * q['d'] for q in pr['trees'])] + pr['trees']
     if os.path.exists(rpn):   # the trees painted on the range map stand in for any lidar tree under them
@@ -735,7 +746,20 @@ def main():
     bp = os.path.join(OUT, 'boundary.json')  # the hand-painted boundary (boundary.py) replaces the OSM outline as the out-of-bounds line
     bound = shape(json.load(open(bp))) if os.path.exists(bp) else round_osm(Polygon(course_poly.exterior), step=12)
     fence = []
-    if getattr(course, 'HOUSE_LOTS', 0):
+    flp = os.path.join(OUT, 'fence_lines.json')   # painted fence lines (all_read.py): out of bounds is behind them, on the house side
+    if os.path.exists(flp):
+        import fence_read
+        fl = [shape(g) for g in json.load(open(flp))]
+        houses = unary_union([b['poly'] for b in F['building'] if 90 <= b['poly'].area <= 1000])
+        play = unary_union(list(fair) + [t['poly'] for t in F['tee']] + [g['poly'] for g in F['green']] + [b['poly'] for b in F['bunker']] + [Point(h['tee']).buffer(8) for h in holes] + [Point(h['green']).buffer(8) for h in holes]).buffer(3)
+        a0 = bound.area
+        bound = fence_read.apply(bound, fl, houses, play)
+        for h in holes:
+            for q in (Point(h['tee']), Point(h['green'])):
+                assert bound.contains(q), f'the fence lines cut a tee or green off at {q.coords[0]}'
+        fence = [g for g in fl if g.length >= 8]
+        print(f'fence lines: {len(fl)} lines, {sum(g.length for g in fl):.0f} m; boundary {a0 / 1e4:.1f} -> {bound.area / 1e4:.1f} ha')
+    elif getattr(course, 'HOUSE_LOTS', 0):
         bound, fence = house_lots(bound, F, fair, holes)
     if getattr(course, 'MOWN_ROUGH', False) and not fescue:
         # OSM maps the mown rough (golf=rough) as well as the fairway: deep rough is only the native grass more than 8 m outside everything mown
@@ -745,6 +769,29 @@ def main():
         if getattr(course, 'SMOOTH_MORE', False):
             fescue = [smooth_poly(g, 3.0) for g in fescue]
         print('deep rough from the mown area:', len(fescue), 'pieces,', round(sum(g.area for g in fescue) / 1e4, 1), 'ha')
+    clumps, drains = [], []
+    cjp, djp = os.path.join(OUT, 'clumps.json'), os.path.join(OUT, 'drains_painted.json')   # painted grass clumps and rock-lined drainage hazards (all_read.py): both stand on deep rough
+    if os.path.exists(cjp):
+        clumps = json.load(open(cjp))
+        fescue = list(fescue) + [Point(e, n).buffer(.9 * k, quad_segs=6) for e, n, k in clumps]
+    if os.path.exists(djp):
+        drains = [shape(g) for g in json.load(open(djp))]
+        fescue = list(fescue) + drains
+    if getattr(course, 'ROAD_ROW_DEEP', 0):   # deep rough under the rows of trees that line a road, and this many m beyond their crowns (course.ROAD_ROW_DEEP = 1.5, i.e. 5 ft)
+        from scipy.spatial import cKDTree
+        ok = ('residential', 'service', 'unclassified', 'tertiary', 'secondary', 'primary', 'living_street')
+        rls = [r['line'] for r in F['road'] if r['tags'].get('highway') in ok and not r['tags'].get('golf') and r['line'].intersects(bound)]
+        rnear = unary_union(rls).buffer(getattr(course, 'ROAD_ROW_REACH', 9.0)) if rls else None
+        cand = [t for t in trees if rnear is not None and t['d'] >= 2.5 and rnear.contains(Point(t['e'], t['n']))]
+        if cand:
+            kd = cKDTree([(t['e'], t['n']) for t in cand])
+            row = [t for i, t in enumerate(cand) if len(kd.query_ball_point((t['e'], t['n']), 12.0)) >= 3]   # itself and at least two more within 12 m: a row, not a lone tree
+            blob = unary_union([Point(t['e'], t['n']).buffer(t['d'] / 2 + course.ROAD_ROW_DEEP, quad_segs=6) for t in row]).buffer(2.5, quad_segs=6).buffer(-2.5, quad_segs=6)
+            mown = unary_union(list(fair) + [t['poly'] for t in F['tee'] + F['green'] + F['bunker']] + [q for q in paths]).buffer(1.0)
+            blob = blob.difference(mown).difference(unary_union(rls).buffer(3.5)).intersection(bound)
+            add = [g for g in getattr(blob, 'geoms', [blob]) if g.geom_type == 'Polygon' and g.area > 6]
+            fescue = list(fescue) + add
+            print(f'road tree rows: {len(row)} trees in rows, {sum(g.area for g in add) / 1e4:.2f} ha of deep rough under them (+{course.ROAD_ROW_DEEP} m)')
     if os.path.exists(ppn):
         fescue = practice_read.merge_fescue(fescue, pr)
     fescue = [g for f in fescue for g in getattr(f.intersection(bound), 'geoms', [f.intersection(bound)]) if g.geom_type == 'Polygon' and not g.is_empty]
@@ -770,6 +817,7 @@ def main():
         forest=enc_polys(clip([f['poly'] for f in F['wood']])) if F['wood'] else enc_polys([]),
         orchard=enc_polys([]),
         boundary=enc_polys([bound]),
+        clumps=b64i16([int(round(v * 10)) for c in clumps for v in c]) if clumps else '', drains=enc_polys(drains) if drains else '',   # grass clumps [e, n, scale] in decimetres / tenths, drainage hazards
         fence=[enc_lines([g]) for g in fence],   # split-rail fence along the lots (course.HOUSE_LOTS), one encoded line each
         buildings=enc_polys(clip([f['poly'] for f in F['building']])),
         # the lidar trees cover the whole detail area: OSM woods only count beyond it

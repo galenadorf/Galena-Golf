@@ -143,7 +143,7 @@ def rows_from(masks, fr, F):
             if str(h['ref']) in tmarks:
                 t = Point(*tmarks[str(h['ref'])]['mid'])
         out.append(['sign', round(q.x, 1), round(q.y, 1), round(deg(t.x - q.x, t.y - q.y)), 1.5, .1, text, h['ref']])   # the 8th value is the hole it belongs to (the fly-over reads the sign)
-    for p in blobs(masks['lot'], fr, tr, 150.0):
+    for p in blobs(masks['lot'], fr, tr, 400.0):   # (a lot is at least 400 m2: a sliver or an island inside one is not a lot)
         out += lot_rows(p, F)
     for ref, e, n in skipped:
         print(f'  sign dot near hole {ref} (e {e}, n {n}) skipped: no line for hole {ref} in signs.txt')

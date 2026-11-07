@@ -458,7 +458,7 @@ SCENERY AND DATA
 #####################################################################################################
 LEGENDS AT MEMPHIS NATIONAL (legends)  "Legends (alpha)"
 #####################################################################################################
-Also everything in GLOBAL. Dark green long rough. OSM and lidar data only; alpha (no rounds are posted). White tees 6,274 yd, par 72; black, gold and green are the markers.
+Also everything in GLOBAL. Dark green long rough, only where it is painted (`engine.paintedDeep`): ground nobody has painted as deep rough is plain rough, however far it lies from play. OSM and lidar data plus painted layers; alpha (no rounds are posted). White tees 6,274 yd, par 72; black, gold and green are the markers.
 Memphis National Golf Club (Collierville TN) has two courses; only the Legends is built so far (OSM maps just its 18 holes; the Champions are not in the data).
 
 OBJECTS
@@ -470,7 +470,8 @@ Cart paths: OSM's golf=cartpath lines (about 28) checked against the aerial and 
 Cart-path bridges (4, short concrete decks with rails over the creek: 2 on hole 2, 1 on hole 1, 1 on hole 5).
 Clubhouse (`scene.clubhouse.style` 'memphis', after the club's photo): a long low charcoal building, low hipped dark-grey standing-seam roof with a taller hipped section behind, a gabled timber-trussed entrance with stone-footed columns and glass doors, glass along the front; in front a tan stamped-concrete forecourt with a lawn oval and tree, boxwood hedges, bollards, 2 parked golf carts, and the circular drive with a lawn island, tan and red-brick kerb and a flagpole with the US flag. The parking lot beside it (painted outline, stalls, 8 parked cars) and 2 cart barns (OSM buildings, the plain large building). A 2-door washroom NW of the 6th green (9.5 x 6 m, MEN / WOMEN doors, facing the nearest tee).
 Houses: about 330 footprints (Overture Maps) plus roofs found on the aerial, within 130 m of a hole line (or 110 m of a fairway, green or tee box); the back 9 is lined with them.
-Out of bounds runs at the property lines where houses line a hole (a house's lot reaches 12 m past its walls, rows of lots joined; the clubhouse area exempt), and those stretches (about 8 km) are a 2-rail split-rail cedar fence (posts every 3 m; scenery, the ball passes through; no white stakes beside it). Elsewhere the out-of-bounds line is the course outline with white stakes.
+Out of bounds runs along the hand-painted fence lines (about 7 km, on the house side of each) where houses line a hole: a 2-rail split-rail cedar fence (posts every 3 m; scenery, the ball passes through; no white stakes beside it). Elsewhere the out-of-bounds line is the course outline with white stakes.
+Deep rough: only where painted, plus 1.5 m (5 ft) round every row of trees that lines a road (`ROAD_ROW_DEEP`). Painted grass clumps (`clump`): large sawgrass / switchgrass, 5 ft tall and 5 ft across, straw and olive, swaying (scenery; the ground under one is deep rough). Painted drainage hazards (`drain`): rock-lined, a stony bed with a border of large rocks and loose stones over deep rough.
 NOT here: highway, turkeys, gopher, banner plane, parked carts, moving cart, hot dog, fountain, signs, songs.
 
 SOUNDS
@@ -481,7 +482,7 @@ SCENERY AND DATA
 ----------------
   - Water: OSM ponds and lakes (about 20 hazards beside most holes) and OSM streams.
   - Fairways: OSM maps 13 stripes; every par 4 and 5 is filled from the aerial.
-  - Trees: about 11,000 from the 2012 Shelby County lidar (USGS), checked against the October 2023 aerial (about 1,400 felled since, about 3,100 added).
+  - Trees: about 11,000 from the 2012 Shelby County lidar (USGS), checked against the October 2023 aerial (about 1,400 felled since, about 3,100 added), and about 240 pines found on the aerial along the Frank Road border and south of the 18th tee box (`TREES_FILL`, `trees_fill.py`).
   - Buildings: OSM's, plus Overture footprints and aerial-found roofs for the houses along the holes (see OBJECTS), all drawn plain (box and gable roof).
 
 

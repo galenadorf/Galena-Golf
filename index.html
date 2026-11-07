@@ -1557,6 +1557,8 @@ function realPrep() {
   }
   // azaleas: e, n (dm), clump radius (dm), colour index
   GC.flowers = [];
+  { const cl = D.clumps ? b64i16(D.clumps) : []; GC.clumps = []; for (let i = 0; i + 2 < cl.length; i += 3) GC.clumps.push([cl[i] / 10, cl[i + 1] / 10, cl[i + 2] / 10]); }   // painted grass clumps [east, north, scale]
+  GC.drains = D.drains ? decPolys(D.drains).map(p => p[0]) : [];   // painted rock-lined drainage hazards (outer rings, flat [e, n, ...])
   if (D.flowers) { const fa = b64i16(D.flowers); for (let i = 0; i < fa.length; i += 4) GC.flowers.push({ e: fa[i] / 10, n: fa[i + 1] / 10, r: fa[i + 2] / 10, c: fa[i + 3] }); }
   GC.cls = cls; GC.cov = cov;
   // woods beyond the maps: trees on a jittered 8.5 m lattice; orchards: rows of fruit trees
@@ -1768,8 +1770,8 @@ function makeRealCourse(idx, pin) {
   const dP = edtSq(play, w, h), deepF = new Float32Array(N), hasFescue = !!(GC.feat.fescue && GC.feat.fescue.length);
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
     const k = j * w + i, X = x0 + i * res, Z = z0 + j * res;
-    // positive: deep rough. A course with a painted fescue map (feat.fescue) has deep rough there and nowhere else; otherwise it is whatever lies well away from play
-    deepF[k] = hasFescue ? clamp(-F.fescue[k] + .9 * (vnoise(X * .4, Z * .4, seed + 7) - .5), -SD_R, SD_R) : !inB[k] ? SD_R : clamp(Math.sqrt(dP[k]) * res - (22 + 6 * vnoise(X * .03, Z * .03, seed + 5)), -SD_R, SD_R);
+    // positive: deep rough. A course with a painted fescue map (feat.fescue) has deep rough there and nowhere else (engine.paintedDeep: and none at all while nothing is painted); otherwise it is whatever lies well away from play
+    deepF[k] = hasFescue ? clamp(-F.fescue[k] + .9 * (vnoise(X * .4, Z * .4, seed + 7) - .5), -SD_R, SD_R) : RDC.paintedDeep ? -SD_R : !inB[k] ? SD_R : clamp(Math.sqrt(dP[k]) * res - (22 + 6 * vnoise(X * .03, Z * .03, seed + 5)), -SD_R, SD_R);
   }
   C.deepF = deepF;
   // ground: terrain model, then greens and tees built as platforms, ponds dug, bunkers cut
@@ -2684,6 +2686,8 @@ function buildRealDecor(C, grp) {
     reeds.instanceMatrix.needsUpdate = true; reeds.instanceColor.needsUpdate = true; reeds.castShadow = false; grp.add(reeds);
   }
   buildAzaleas(C, grp);
+  buildClumps(C, grp);
+  buildDrains(C, grp);
   buildCartBridges(C, grp);
   buildStoneBridges(C, grp);
   buildSwirlFx(C, grp);
@@ -2699,6 +2703,53 @@ function strawAt(C, X, Z) {
 }
 // azaleas in bloom along the edges of the pines: mounded clumps of pink, magenta, coral, white and pale pink, a little leaf showing through
 const AZALEA_COLS = [[0xe8679f, 0xf07aad, 0xdc5791], [0xc8287a, 0xb81f6c, 0xd13a86], [0xeb5560, 0xf06a63, 0xe0474f], [0xf8f2f4, 0xf1eaee, 0xfcf8f8], [0xf6b3cd, 0xf9c2d6, 0xf2a6c3]];
+// a large sawgrass / switchgrass clump (painted `clump` dots; course data `clumps`): 5 ft tall and 5 ft across at the top, blades fountaining from a tight base in straw and olive.
+// Scenery (the ball passes through); the ground under it is painted deep rough. One shared geometry, instanced, swaying a little in the wind.
+let CLUMP_GEO = null;
+function clumpGeo() {
+  if (CLUMP_GEO) return CLUMP_GEO;
+  const r = mulberry32(91), P = [], K = [], N = 64, H = 1.52, cb = new THREE.Color(), tmp = new THREE.Color();
+  const tint = [[0x6f7a3a, 0xa9a257, 0xe0c987], [0x7c7438, 0xb5a352, 0xe8d08a], [0x667a3e, 0x9fa45a, 0xd6c47f], [0x80733a, 0xbfa95a, 0xeed996]];
+  for (let i = 0; i < N; i++) {
+    const a = r() * TAU, r0 = .03 + .22 * r(), h = H * (.6 + .4 * r()), reach = Math.min(.75, r0 + .25 + .5 * r()), w0 = .045 + .03 * r(), t = tint[(r() * 4) | 0];
+    const ca = Math.cos(a), sa = Math.sin(a), tx = -sa, tz = ca;
+    const q0 = r0, q1 = r0 + (reach - r0) * .28, q2 = reach, wm = w0 * .75;
+    const pts = [[ca * q0 - tx * w0, 0, sa * q0 - tz * w0], [ca * q0 + tx * w0, 0, sa * q0 + tz * w0], [ca * q1 - tx * wm, h * .55, sa * q1 - tz * wm], [ca * q1 + tx * wm, h * .55, sa * q1 + tz * wm], [ca * q2, h, sa * q2]];
+    const tri = [[0, 1, 2], [1, 3, 2], [2, 3, 4]], colr = [t[0], t[0], t[1], t[1], t[2]];
+    for (const tr of tri) for (const k of tr) { P.push(...pts[k]); tmp.setHex(colr[k]); cb.copy(tmp); K.push(cb.r, cb.g, cb.b); }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(K, 3)); g.computeVertexNormals();
+  return CLUMP_GEO = g;
+}
+function buildClumps(C, grp) {
+  if (!GC.clumps || !GC.clumps.length) return;
+  const I = C.inner, list = [];
+  for (const c of GC.clumps) { const q = C.loc(c[0], c[1]), X = q[0], Z = -q[1]; if (X < I.minX - 70 || X > I.maxX + 70 || Z < I.minZ - 70 || Z > I.maxZ + 70 || C.wl(X, Z) > C.h(X, Z) - .05) continue; list.push([X, Z, c[2] || 1]); }
+  if (!list.length) return;
+  const im = new THREE.InstancedMesh(clumpGeo(), lifeMat(true, 420, 120), list.length), M = new THREE.Matrix4(), Q = new THREE.Quaternion(), V = new THREE.Vector3(), Sc = new THREE.Vector3(), r = mulberry32(C.def.seed + 731);
+  list.forEach((c, i) => { const k = c[2] * (.92 + .2 * r()); Q.setFromAxisAngle(V.set(0, 1, 0), r() * TAU); M.compose(V.set(c[0], C.h(c[0], c[1]) - .04, c[1]), Q, Sc.set(k, k * (.95 + .12 * r()), k)); im.setMatrixAt(i, M); });
+  im.instanceMatrix.needsUpdate = true; im.frustumCulled = false; im.castShadow = true; im.userData.keep = true; grp.add(im);
+}
+// rock-lined drainage hazards (painted `drain` areas; course data `drains`): a stony bed, a border of large rocks round the edge and loose stones over it. The ground is deep rough.
+function buildDrains(C, grp) {
+  if (!GC.drains || !GC.drains.length) return;
+  const I = C.inner, r = mulberry32(C.def.seed + 977), rocks = [];
+  for (const flat of GC.drains) {
+    const R = []; for (let i = 0; i + 1 < flat.length; i += 2) R.push([flat[i], flat[i + 1]]);
+    const P = sceneRing(C, R); let cx = 0, cz = 0; for (const q of P) { cx += q[0]; cz += q[1]; } cx /= P.length; cz /= P.length;
+    if (cx < I.minX - 80 || cx > I.maxX + 80 || cz < I.minZ - 80 || cz > I.maxZ + 80) continue;
+    grp.add(drapeMesh(C, P, (g, tp, k, cv) => { ringPath(g, tp, P); g.fillStyle = '#7e7b73'; g.fill(); g.save(); g.clip(); speckle(g, cv, 14000, .05); g.restore(); g.lineWidth = .5 * k; g.strokeStyle = '#4d4b46'; ringPath(g, tp, P); g.stroke(); }));
+    const inside = (x, z) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) if ((P[i][1] > z) !== (P[j][1] > z) && x < (P[j][0] - P[i][0]) * (z - P[i][1]) / (P[j][1] - P[i][1]) + P[i][0]) c = !c; return c; };
+    let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (const q of P) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); z0 = Math.min(z0, q[1]); z1 = Math.max(z1, q[1]); }
+    for (let x = x0; x <= x1; x += .55) for (let z = z0; z <= z1; z += .55) { const px = x + (r() - .5) * .5, pz = z + (r() - .5) * .5; if (inside(px, pz)) rocks.push([px, pz, .1 + .22 * r() * r(), 0]); }
+    for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]); for (let s = 0; s < L; s += .45) { const u = s / L, bx = a[0] + (b[0] - a[0]) * u + (r() - .5) * .3, bz = a[1] + (b[1] - a[1]) * u + (r() - .5) * .3; rocks.push([bx, bz, .22 + .22 * r(), 1]); } }
+  }
+  if (!rocks.length) return;
+  const im = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), lambert(0xffffff), rocks.length); im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(rocks.length * 3), 3);
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), V = new THREE.Vector3(), Sc = new THREE.Vector3(), col = new THREE.Color(), grey = [0x8d8a83, 0x77746e, 0xa19d94, 0x6b6963, 0x9a968c];
+  rocks.forEach((k, i) => { const s = k[2]; Q.setFromEuler(E.set(r() * 3, r() * 6, r() * 3)); M.compose(V.set(k[0], C.h(k[0], k[1]) + s * .35, k[1]), Q, Sc.set(s * (1 + .4 * r()), s * .65, s * (1 + .4 * r()))); im.setMatrixAt(i, M); col.setHex(grey[(r() * 5) | 0]); im.setColorAt(i, col); });
+  im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true; im.frustumCulled = false; im.castShadow = true; im.receiveShadow = true; im.userData.keep = true; grp.add(im);
+}
 function buildAzaleas(C, grp) {
   if (!GC.flowers || !GC.flowers.length) return;
   const I = C.inner, list = [];
