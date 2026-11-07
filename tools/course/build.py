@@ -735,6 +735,10 @@ def main():
         n0 = len(trees)
         trees = [t for t in trees if (round(t['e'], 2), round(t['n'], 2)) not in gone]
         print(n0 - len(trees), 'trees removed by trees_x_removed.json')
+    for (e0, n0, e1, n1), de, dn in getattr(course, 'TREE_SHIFT', []):   # course.TREE_SHIFT = [((e0, n0, e1, n1), east m, north m)]: trees in the box moved
+        for t in trees:
+            if e0 <= t['e'] <= e1 and n0 <= t['n'] <= n1:
+                t['e'] = round(t['e'] + de, 2); t['n'] = round(t['n'] + dn, 2)
     for (e0, n0, e1, n1), kind, k in getattr(course, 'TREE_HEIGHT', []):   # course.TREE_HEIGHT = [((e0, n0, e1, n1), kind, factor)]: trees of that kind in the box made taller (crown unchanged)
         for t in trees:
             if e0 <= t['e'] <= e1 and n0 <= t['n'] <= n1 and t['kind'] == kind:
