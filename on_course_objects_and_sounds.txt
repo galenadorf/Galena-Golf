@@ -297,10 +297,12 @@ Cart paths: OSM's cart-path lines (about 8.7 km, 2.4 m wide), one connected netw
 Cart-path bridges (six): holes 11 (the long path crosses a stream OSM maps no bridge for), 13, 14, 15 (two) and 16 (five are OSM's own bridge=yes ways). Same deck and behaviour as at Eagle Ridge South.
 Coyote (`scene.coyote` = .15: about 3 holes in 20 have one, and a quarter of those a pair): gray with a white belly, chest and muzzle, big upright ears, a bushy gray tail with a dark tip, about 0.6 m at the shoulder. It trots across the hole (2 m/s), stops to sniff with its nose down and look round, and bolts (9.5 m/s, tail streaming) when the ball lands or the golfer comes within about 20 m, or 50 m while the ball flies. Can be hit (the body, not the legs): "Wile E. would be proud!", the ball ricochets and it yelps and runs. Comes back 40-120 s after it leaves.
 White-tailed deer (`scene.deer` = .25: about a quarter of the holes have them, per hole; the others none): a doe with a fawn (spotted, smaller) or a second doe, and on about a third of those holes a buck with antlers too: as at Stonehenge.
+Giant corn cob (`scene.cornCob`, hole 9 only; the area is an ellipse painted on the course map, about 21 x 15 m, 10 m left of the middle of the hole): every time a ball comes to rest inside it, and the camera has moved to the next playing spot, a 1 m long yellow cob with a green husk and a stalk stub flies past the view from behind (4.8 m/s, 0.7 m to the left or right of the camera), bounces three times down the hole, rolls out and lies on its side, about 12 m on, until the hole ends. It changes nothing in the shot, score or stats. Not in practice.
 NOT here: highway and trucks, squirrels, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
 
 SOUNDS
 ------
+  - Giant corn cob (hole 9): a low whoosh as it passes and a dull thud on each bounce (synthesised, softer for the smaller bounces).
   - Banner plane drone as at Woodbine; gobble, squeak, thunk, rustle (deer) and yelp (coyote) on hits. NO horn, truck rumble, cart radio or hole song. Plus all of GLOBAL.
 
 SCENERY AND DATA

@@ -4494,6 +4494,74 @@ function makeBear(L) {
   return e;
 }
 function bearGo() { const L = W.life; if (L && L.bear && L.C === G.C) L.bear.start(); }   // from beginHole: the golfer pressed Play Hole
+/* --- the giant corn cob (scene.cornCob: { hole, enu: [e, n], rx, ry }, painted on Eagle Ridge North's hole 9): when a ball comes to rest inside that ellipse (local metres) and the camera has moved to the next
+   playing spot, an absurdly large cob (5 m, a husk at its base) whizzes past the view from behind, bounces a few times down the hole and lies where it stops, until the hole ends. Nothing in the rules or the
+   stats: the ball and the shot are untouched. `cornCheck` runs when the ball stops (finishShot), `cornGo` when the address view arrives (enterAddress). --- */
+const COB_K = .27 / 1.7, COB_R = 1.05 * COB_K, COB_G = 9.8 * COB_K;   // the cob is 1 m long (its husk and stalk 1.1 m more), every distance, speed and the gravity scaled with it, so it moves as it did at 7 m
+function cobGeo() {
+  const parts = [], pr = y => y > .9 ? Math.sqrt(Math.max(0, 1 - ((y - .9) / .95) ** 2)) * .62 : y < -1.55 ? .62 * Math.sqrt(Math.max(0, 1 - ((-1.55 - y) / .25) ** 2)) : .62;
+  const prof = []; for (let y = -1.8; y <= 1.85; y += .15) prof.push(new THREE.Vector2(Math.max(.02, pr(y) - .02), y));
+  parts.push({ g: new THREE.LatheGeometry(prof, 12), c: 0xe3a91c });   // the core, a little darker than the kernels
+  const rnd = mulberry32(77), q = new THREE.Quaternion(), qa = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1);
+  for (let i = 0, y = -1.3; y < 1.75; i++, y += .17) {   // rows of kernels round the tapering cob, every other row shifted half a kernel
+    const r = pr(y); if (r < .14) continue; const n = Math.max(5, Math.round(12 * r / .62));
+    for (let k = 0; k < n; k++) {
+      const a = (k + (i & 1) * .5) / n * TAU, m = new THREE.Matrix4(), sc = .15 * Math.max(.5, r / .62), y0 = y + (rnd() - .5) * .02, col = [.96 + rnd() * .04, .74 + rnd() * .1, .12 + rnd() * .06];
+      m.makeScale(sc * 1.1, sc * 1.05, sc * 1.1); m.setPosition(Math.cos(a) * r, y0, Math.sin(a) * r); parts.push({ g: new THREE.SphereGeometry(1, 5, 4), c: col, m });
+    }
+  }
+  for (let k = 0; k < 7; k++) {   // the husk: long blades hanging from the base, curling out
+    const a = k / 7 * TAU + .2, t = .28 + (k % 2) * .12, len = 2.5 + (k % 3) * .25;
+    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -a); qa.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -t); q.multiply(qa);
+    const m = new THREE.Matrix4().compose(new THREE.Vector3(0, -1.2 + len / 2 * .95, 0).applyQuaternion(q).add(new THREE.Vector3(Math.cos(a) * .5, 0, Math.sin(a) * .5)), q, one);
+    parts.push({ g: new THREE.BoxGeometry(.05, len, .85 - (k % 3) * .1), c: [.34 + (k % 2) * .06, .6 + (k % 3) * .04, .18], m });
+  }
+  parts.push({ g: new THREE.CylinderGeometry(.16, .22, .55, 6), c: 0x7a6a2c, m: new THREE.Matrix4().setPosition(0, -2.05, 0) });   // the stalk stub
+  return mergeParts(parts);
+}
+function makeCob(L) {
+  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true }), g = new THREE.Group(), body = lmesh(cobGeo(), mat);
+  g.add(body); g.visible = false; g.scale.setScalar(.27); L.grp.add(g);
+  const e = { kind: 'cob', g, st: 'wait', p: new THREE.Vector3(), v: new THREE.Vector3(), w: new THREE.Vector3(), q: new THREE.Quaternion(), qT: new THREE.Quaternion(), bounces: 0, rest: 0, tmr: 0, delay: 0 };
+  e.go = () => {   // from just behind and to the left of the camera, past its right shoulder, down the hole
+    const cam = W.cam.position, f = new THREE.Vector3(); W.cam.getWorldDirection(f); f.y = 0; if (f.lengthSq() < 1e-4) f.set(0, 0, -1); f.normalize();
+    const r = new THREE.Vector3(-f.z, 0, f.x), side = Math.random() < .5 ? -1 : 1;
+    e.p.copy(cam).addScaledVector(f, -24 * COB_K).addScaledVector(r, side * 4.5 * COB_K); e.p.y = Math.max(cam.y + 1.5 * COB_K, groundY(e.p.x, e.p.z) + 6 * COB_K);
+    e.v.copy(f).multiplyScalar(30 * COB_K).addScaledVector(r, -side * .9 * COB_K); e.v.y = 5.5 * COB_K;
+    e.w.set(5.5, 1.5, 3.2).multiplyScalar(1); e.q.setFromEuler(new THREE.Euler(Math.random() * 6, Math.random() * 6, Math.random() * 6));
+    e.bounces = 0; e.rest = 0; e.delay = .15; e.st = 'fly'; g.visible = false; e.sound = true;
+  };
+  e.update = dt => {
+    if (e.st !== 'fly' && e.st !== 'roll') return;
+    if (e.delay > 0) { e.delay -= dt; return; }
+    if (e.sound) { e.sound = false; noiseBurst(1.1, .3, 700, .7); tone(70, .9, 'sawtooth', .05, 140); }
+    g.visible = true; e.v.y -= COB_G * dt; e.p.addScaledVector(e.v, dt);
+    const gy = groundY(e.p.x, e.p.z) + COB_R;
+    if (e.p.y < gy && e.v.y < 0) {
+      e.p.y = gy; const hit = -e.v.y, big = hit > 2.2 * COB_K;
+      if (big) { e.bounces++; e.v.y = hit * .55; e.v.x *= .78; e.v.z *= .78; e.w.multiplyScalar(.85); const k = clamp(hit / (14 * COB_K), .25, 1); tone(95, .22, 'sine', .32 * k, 48); noiseBurst(.09, .16 * k, 450, 1); }
+      else { e.v.y = 0; const sp = Math.hypot(e.v.x, e.v.z), nsp = Math.max(0, sp - 2.4 * COB_K * dt * 3); if (sp > 1e-3) { e.v.x *= nsp / sp; e.v.z *= nsp / sp; } e.w.multiplyScalar(Math.max(0, 1 - dt * 2.5)); }
+      if (!big && Math.hypot(e.v.x, e.v.z) < .35 * COB_K) { e.st = 'roll'; e.rest += dt; }
+    } else if (e.st === 'roll') e.st = 'fly';
+    const wl = e.w.length(); if (wl > 1e-3) { const dq = new THREE.Quaternion().setFromAxisAngle(_pm.copy(e.w).normalize(), wl * dt); e.q.premultiply(dq); }
+    if (e.st === 'roll') {   // stopped: lies on its side, the long way across the fairway
+      if (!e.qs) { e.qs = true; e.qT.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(Math.cos(e.yaw0 = Math.random() * TAU), 0, Math.sin(e.yaw0))); }
+      e.q.slerp(e.qT, Math.min(1, dt * 5)); e.rest += dt; if (e.rest > 1.2) { e.st = 'done'; e.v.set(0, 0, 0); e.w.set(0, 0, 0); }
+    }
+    g.position.copy(e.p); g.quaternion.copy(e.q);
+  };
+  return e;
+}
+function cornCheck(f) {   // where a ball came to rest: is it in the painted ellipse?
+  G.cornPend = false; const cc = RDC.scene && RDC.scene.cornCob; if (!cc || G.pg || G.hole + 1 !== cc.hole || !G.C.enu) return;
+  const en = G.C.enu(f.x, f.z), a = (en[0] - cc.enu[0]) / cc.rx, b = (en[1] - cc.enu[1]) / cc.ry; G.cornPend = a * a + b * b <= 1;
+}
+function cornGo() {   // from enterAddress: the camera is at the next playing spot
+  if (!G.cornPend) return; G.cornPend = false; const L = W.life; if (!L || L.C !== G.C) return;
+  if (!L.cob) { L.cob = makeCob(L); L.ents.push(L.cob); } else { L.cob.st = 'wait'; }
+  L.cob.qs = false; L.cob.go();
+}
+const cobFlying = () => { const L = W.life, c = L && L.cob; return !!c && (c.st === 'fly' || c.st === 'roll'); };
 /* --- prairie dogs (Fossil Trace only, scene.prairieDogs.holes): a colony of 4-6 black-tailed prairie dogs beside the fairway, each at its own burrow mound. They stand up on their hind legs
    to watch the golfer (about 30 cm tall, life size), bob and flick their tails, drop to all fours and dash to another mound now and then, and dive down their hole when the ball or the golfer comes close --- */
 function pdogParts() {
@@ -6994,6 +7062,7 @@ function restsOnGreen(r) {
   return r.finalSurf === S.GREEN || (r.finalSurf === S.FRINGE && Math.hypot(G.C.cup.x - r.final.x, G.C.cup.z - r.final.z) < 14);
 }
 function finishShot() {
+  G.cornPend = false;
   const sh = G.shot, r = sh.res, C = G.C, h = G.hole, par = C.def.par, first = G.strokes === 1;
   document.body.classList.remove('flight'); if (r.cup) C.cup = r.cup;
   if (sh.L.putt) puttLineShow(r);
@@ -7027,7 +7096,7 @@ function finishShot() {
     G.strokes++; G.pens[h]++;
     placeBall(G.prev.x, G.prev.z, G.prev.teed); big = `<span class="bad">${r.lost ? 'Ball not found' : 'Out of bounds'}</span>`; sub = 'Stroke and distance';
   } else {
-    placeBall(r.final.x, r.final.z, false);
+    placeBall(r.final.x, r.final.z, false); cornCheck(r.final);
     big = SURF[G.surf].name; sub = sh.L.putt ? fmtDistShort(r.total) + ' putt' : `Total ${toLen(r.total)} ${lenU()} · carry ${toLen(r.carry)} ${lenU()}`;
     if (first && par >= 4) G.fir[h] = G.surf === S.FAIR;
   }
@@ -7231,7 +7300,7 @@ function updateCamera(dt) {
 // the flags stand in for every shot but a putt (on the practice green all four stay up, to aim at)
 function setFlags(on) { for (const f of W.flags || []) f.flag.visible = f.pole.visible = on || !!G.pg; }
 function enterAddress() {
-  saveRound(); mpState(true);
+  saveRound(); mpState(true); cornGo();
   if (G.rig) G.rig.arr = null; G.state = 'address'; if (SW.sid == null && !SW.mouseR) SW.thumb = false; SW.mark = null; SW.looseSide = Math.random() < .5 ? -1 : 1; W.aim.visible = W.ring.visible = true; W.ball.visible = true;
   setFlags(!isPutt());
   slopeShow(isPutt() && (G.surf === S.GREEN || G.surf === S.FRINGE));
@@ -9049,7 +9118,7 @@ let lastT = performance.now(), dueT = 0;
 const REST_FPS = 30, ACTIVE_FPS = 60;
 // a sheet is open and nothing in the scene is on the move: the last frame stays on screen and the scene is not drawn again until it closes
 function sceneStill() {
-  if (!sheetOpen()) return false;
+  if (!sheetOpen() || cobFlying()) return false;
   if (G.state === 'title') return true;
   if (G.state === 'holed') return G.holedT > 3;
   if (G.state !== 'address' || SW.phase !== 'idle') return false;
@@ -9061,7 +9130,7 @@ function frameGap(now) {
   if (sceneStill()) return rest;   // (a touch on the sheet does not bring back 60 fps either)
   if (G.state === 'title') return rest;
   if (G.state === 'holed') return G.holedT > 3 && now - UI.touchT >= 700 ? rest : active;
-  if (G.state !== 'address') return active;
+  if (G.state !== 'address' || cobFlying()) return active;
   if (SW.phase !== 'idle' || SW.id != null || SW.sid != null || SW.thumb || SW.mouseR || now - UI.touchT < 700) return active;
   const R = G.rig; if (R && (R.pv.length() > .03 || R.lv.length() > .03)) return active;
   return rest;

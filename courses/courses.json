@@ -52,7 +52,8 @@
         "groundhog": true,
         "deer": 0.25,
         "coyote": 0.15,
-        "traffic": true
+        "traffic": true,
+        "cornCob": { "hole": 9, "enu": [-487.8, 294.8], "rx": 10.3, "ry": 7.5 }
       }
     },
     {
