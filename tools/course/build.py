@@ -735,6 +735,10 @@ def main():
         n0 = len(trees)
         trees = [t for t in trees if (round(t['e'], 2), round(t['n'], 2)) not in gone]
         print(n0 - len(trees), 'trees removed by trees_x_removed.json')
+    for (e0, n0, e1, n1), kind, k in getattr(course, 'TREE_HEIGHT', []):   # course.TREE_HEIGHT = [((e0, n0, e1, n1), kind, factor)]: trees of that kind in the box made taller (crown unchanged)
+        for t in trees:
+            if e0 <= t['e'] <= e1 and n0 <= t['n'] <= n1 and t['kind'] == kind:
+                t['h'] = round(t['h'] * k, 1)
     json.dump(trees, open(os.path.join(OUT, 'trees_final.json'), 'w'))   # every tree the game gets (to look one up by position)
     tq = []
     for t in trees:  # e, n, crown diameter (dm), kind * 1000 + height (dm)
