@@ -311,6 +311,8 @@ def link_fairways(fair, F, reach=18.0):
     fair = [f for f in fair]
     report = []
     for hh in F['hole']:
+        if getattr(course, 'NO_FAIRWAY_HULL', False):   # the painted fairway already runs up to the green (Legends): no hull, which would fill the notches and cross water
+            break
         L = hh['line']
         g = min(F['green'], key=lambda q: q['poly'].distance(Point(L.coords[-1])))['poly']
         idx = [k for k, f in enumerate(fair) if f.distance(L) < 12 and f.distance(g) < 15]  # (a fairway further off is not this hole's approach)
@@ -414,6 +416,30 @@ def osm_cartpaths(F, roads):
         r = unary_union(parts).intersection(road.buffer(SIDE_ROAD_HW + .6))
         on_road = [g for g in getattr(r, 'geoms', [r]) if g.geom_type == 'LineString' and g.length > .5]
     return polys, on_road
+
+
+def house_lots(bound, F, fair, holes):
+    """Out of bounds at the property lines where houses line a hole (course.HOUSE_LOTS = the back-yard depth in m). A house's lot reaches that far past its
+    walls; the lots along a street are joined (HOUSE_LOTS_JOIN m closing), so the new boundary runs straight along the row instead of scalloping round
+    each house. Nothing mown, teed or green is ever cut off, and the clubhouse area (HOUSE_LOTS_EXEMPT = [(e, n, r)]) keeps its buildings in bounds.
+    Returns the boundary (one polygon, holes allowed) and the stretches of it that run along a lot: the split-rail fence (`fence` in the data)."""
+    depth, join = course.HOUSE_LOTS, getattr(course, 'HOUSE_LOTS_JOIN', 10)
+    ex = [Point(e, n).buffer(r) for e, n, r in getattr(course, 'HOUSE_LOTS_EXEMPT', [])]
+    houses = [b['poly'] for b in F['building'] if 90 <= b['poly'].area <= 1000 and not any(q.intersects(b['poly']) for q in ex)]
+    lots = unary_union([h.buffer(depth, quad_segs=6) for h in houses]).buffer(join, quad_segs=6).buffer(-join, quad_segs=6)
+    play = unary_union(list(fair) + [t['poly'] for t in F['tee']] + [g['poly'] for g in F['green']] + [b['poly'] for b in F['bunker']] + [Point(h['tee']).buffer(8) for h in holes] + [Point(h['green']).buffer(8) for h in holes]).buffer(7)
+    lots = lots.difference(play)
+    nb = bound.difference(lots)
+    nb = max(getattr(nb, 'geoms', [nb]), key=lambda g: g.area)
+    nb = nb.buffer(-1.5, quad_segs=6).buffer(1.5, quad_segs=6)
+    nb = max(getattr(nb, 'geoms', [nb]), key=lambda g: g.area)
+    for h in holes:
+        for q in (Point(h['tee']), Point(h['green'])):
+            assert nb.contains(q), f'house lots cut a tee or green off at {q.coords[0]}'
+    edge = unary_union([nb.exterior] + list(nb.interiors)).intersection(lots.buffer(2.0))
+    pieces = [g for g in getattr(edge, 'geoms', [edge]) if g.geom_type == 'LineString' and g.length >= 8]
+    print(f'house lots: {len(houses)} houses, boundary {bound.area / 1e4:.1f} -> {nb.area / 1e4:.1f} ha, fence {sum(g.length for g in pieces):.0f} m in {len(pieces)} pieces')
+    return nb, pieces
 
 
 def side_roads(F, hw, area=course.ROAD_AREA):
@@ -580,8 +606,9 @@ def main():
         if os.path.exists(pp):
             F[k] = [dict(poly=shape(g), tags={'painted': 'yes'}) for g in json.load(open(pp))]
     bdp = os.path.join(OUT, 'buildings_painted.json')   # buildings painted on the all-in-one map join OSM's (an OSM one mostly under a painted one gives way)
-    if os.path.exists(bdp):
-        nb = [shape(g) for g in json.load(open(bdp))]
+    bdd = os.path.join(OUT, 'buildings_detected.json')   # roofs found on the aerial that no footprint covers (buildings_detect.py)
+    if os.path.exists(bdp) or os.path.exists(bdd):
+        nb = [shape(g) for pth in (bdp, bdd) if os.path.exists(pth) for g in json.load(open(pth))]
         F['building'] = [b for b in F['building'] if not any(b['poly'].intersection(q).area > .5 * b['poly'].area for q in nb)] + [dict(poly=q, tags={'painted': 'yes'}) for q in nb]
     for k in ('bunker', 'tee', 'fairway'):   # OSM outlines (painted ones replace them below, already smoothed)
         for f in F[k]:
@@ -596,6 +623,11 @@ def main():
     tpn = os.path.join(OUT, 'tees_painted.json')  # hand-edited tee boxes (tee_boxes_paint.py) replace the OSM ones
     if os.path.exists(tpn):
         F['tee'] = [dict(poly=shape(g), tags={'painted': 'yes'}) for g in json.load(open(tpn))]
+    if getattr(course, 'SMOOTH_PAINTED', False):   # painted bunkers and tee boxes get the same low-pass as the OSM ones above (they replace OSM's after it), area kept
+        for k, sg in (('bunker', 1.6), ('tee', 2.0)):
+            for f in F[k]:
+                if f['tags'].get('painted'):
+                    f['poly'] = smooth_poly(f['poly'], sg)
     fp0 = os.path.join(OUT, 'fairways_painted.json')  # hand-corrected fairways (fairways.py) win over OSM's (Eagle Ridge), then trace.py's (Woodbine: OSM has none)
     if os.path.exists(fp0) or not F['fairway']:
         fair = [shape(g) for g in json.load(open(fp0 if os.path.exists(fp0) else os.path.join(OUT, 'fairways.json')))]
@@ -614,6 +646,9 @@ def main():
         fair = [q.buffer(5, quad_segs=8).buffer(-5, quad_segs=8).simplify(.04) for q in fair]
     if getattr(course, 'SMOOTH_MORE', False):
         fair = [smooth_poly(q, 3.0) for q in fair]
+    if getattr(course, 'FAIRWAY_OFF_WATER', False):   # no fairway over a pond (a painted edge, the smoothing and the link can all reach into one)
+        wat = unary_union([w['poly'] for w in F['water']]).buffer(.3)
+        fair = [g for q in fair for g in getattr(q.difference(wat), 'geoms', [q.difference(wat)]) if g.geom_type == 'Polygon' and g.area > 4]
     print('fairway -> green links (hole, gap m, area added m2):', rep)
     cp = os.path.join(OUT, 'cartpaths.json')   # the cart paths: found on the aerial and corrected by hand (cartpaths_edit.py, cartpaths_read.py); trace.py's paths.json was only fragments
     paths = [shape(g) for g in json.load(open(cp))] if os.path.exists(cp) else []
@@ -699,6 +734,9 @@ def main():
     fescue = [shape(g) for g in json.load(open(fp))] if os.path.exists(fp) else []
     bp = os.path.join(OUT, 'boundary.json')  # the hand-painted boundary (boundary.py) replaces the OSM outline as the out-of-bounds line
     bound = shape(json.load(open(bp))) if os.path.exists(bp) else round_osm(Polygon(course_poly.exterior), step=12)
+    fence = []
+    if getattr(course, 'HOUSE_LOTS', 0):
+        bound, fence = house_lots(bound, F, fair, holes)
     if getattr(course, 'MOWN_ROUGH', False) and not fescue:
         # OSM maps the mown rough (golf=rough) as well as the fairway: deep rough is only the native grass more than 8 m outside everything mown
         mown = unary_union([r['poly'] for r in F['rough']] + list(fair) + [t['poly'] for t in F['tee']] + [g['poly'] for g in F['green']] + [b['poly'] for b in F['bunker']]).buffer(8)
@@ -712,6 +750,14 @@ def main():
     fescue = [g for f in fescue for g in getattr(f.intersection(bound), 'geoms', [f.intersection(bound)]) if g.geom_type == 'Polygon' and not g.is_empty]
     hw, hw_slow = highway() if course.HIGHWAY else (None, None)
     roads = side_roads(F, hw)
+    road_busy = []   # per road: [cars, mph] where the course says it has steady traffic (course.TRAFFIC = {'Frank Road': dict(cars=7, mph=40)}), else 0
+    for rl in roads:
+        hit = 0
+        for nm, tv in getattr(course, 'TRAFFIC', {}).items():
+            on = sum(r['line'].intersection(rl.buffer(3)).length for r in F['road'] if r['tags'].get('name') == nm)
+            if on > .5 * rl.length:
+                hit = [tv['cars'], tv['mph'], tv.get('colors', [])]
+        road_busy.append(hit)
     path_road = []
     if not paths and getattr(course, 'OSM_CARTPATHS', False):   # nobody painted the cart paths: OSM's, joined across the roads
         paths, path_road = osm_cartpaths(F, roads)
@@ -724,12 +770,13 @@ def main():
         forest=enc_polys(clip([f['poly'] for f in F['wood']])) if F['wood'] else enc_polys([]),
         orchard=enc_polys([]),
         boundary=enc_polys([bound]),
+        fence=[enc_lines([g]) for g in fence],   # split-rail fence along the lots (course.HOUSE_LOTS), one encoded line each
         buildings=enc_polys(clip([f['poly'] for f in F['building']])),
         # the lidar trees cover the whole detail area: OSM woods only count beyond it
         cover=enc_polys([area] if trees else []),
         streams=enc_lines(clip_lines([f['line'] for f in F['stream']], box(*DETAIL))),   # clipped: a stream may run on for km (Stonehenge's Flint Creek)
         highway=enc_lines([hw] if hw else []), hwSlow=hw_slow,  # the highway with traffic (Woodbine: US 20 past the north edge); hwSlow = metres from its west end where the limit drops from 55 to 35 mph
-        relief=relief, prac=prac, drv=drv, roads=[enc_lines([r]) for r in roads], pathRoad=[enc_lines([r]) for r in path_road],
+        relief=relief, prac=prac, drv=drv, roads=[enc_lines([r]) for r in roads], roadBusy=road_busy if any(road_busy) else [], pathRoad=[enc_lines([r]) for r in path_road],
         cartBridges=[[round(e, 1), round(n, 1), L, 2.6, brg] for e, n, brg, L, _ in getattr(course, 'CART_BRIDGES', [])],   # cart-path bridges: [east, north, length, width, deck bearing]
         props=(json.load(open(os.path.join(OUT, 'site_props.json'))) if os.path.exists(os.path.join(OUT, 'site_props.json')) else []) + ([rr['shed']] if drv and rr.get('shed') else []),  # washrooms, porta-potties and signposts painted on the aerial (site_paint.py)
         # tee marker colours: w is the tee played, y/b/r the other sets (course.MARKERS)

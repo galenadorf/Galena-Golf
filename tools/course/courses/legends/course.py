@@ -27,7 +27,7 @@ HIGHWAY = None
 SIDE_ROADS = [('Houston Levee Road',)]
 ROUND_ROADS = True   # build.py rounds the side roads' corners
 ALL_ROADS = True     # build.py draws every OSM road near a hole, not just the SIDE_ROADS names (the game draws only what is in view)
-OSM_CARTPATHS = True  # no painted cart paths: build.py takes OSM's golf=cartpath lines, joined across the roads
+OSM_CARTPATHS = True  # (only if no cartpaths.json: the paths are painted now, see PAINT)
 
 # the scorecard (golfpass.com Legends card, the club's black/white/gold/green sets), yards. Men's stroke index. Ed Seay and Arnold Palmer, opened 1971
 # (renovated by Roy Case 1999 and 2016). Ratings (golfpass tee table, golfify for white): black 72.1/131, white 70.5/126, gold 67.6/121, green (women) 69.1/122.
@@ -43,8 +43,37 @@ ALT = {}  # no alternate tee lengths
 TREES_GONE = True   # trees_aerial.py: the lidar is from 2012, the aerial 2023; a lidar tree with no canopy on the aerial was felled since
 RELIEF_OFF_WATER = True   # build.py leaves the lidar relief off the ponds, creeks and their banks
 FAIRWAYS_FROM_AERIAL = True   # OSM maps only a few core stripes of fairway: trace.py's aerial fairways fill every par 4 and 5
-PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
+PAINT = ('fairway', 'green', 'tee', 'bunker', 'fescue', 'path', 'lot', 'wash', 'tee_dot')   # trees and cart paths stay as the data has them
 # the game's four tee-marker slots: w is the set played, y/b/r the others (tee set, marker colour)
 MARKERS = {'w': ('white', 0xeeeeee), 'y': ('black', 0x26282b), 'b': ('gold', 0xd9b23a), 'r': ('green', 0x2f8f4f)}
 
+# tee sets put in the tee box named by a point in it (build.py TEE_BOXES), by the user's reading of the boxes on the aerial: the card yardage puts them one box too far back
+# on these holes. Hole 18's most forward box (-452, 211) is the water drop zone, not a tee.
+TEE_BOXES = {
+    8: {'black': (-669.4, -485.1), 'white': (-673.5, -464.0)},   # white in the back-middle of the second box
+    9: {'white': (-717.1, 3.3), 'gold': (-677.4, 20.1), 'green': (-653.5, 24.5)},
+    18: {'black': (-269.8, 220.0), 'white': (-298.5, 214.8), 'gold': (-324.5, 211.1), 'green': (-355.8, 220.7)},
+}
+
+# cart-path bridges (e, n, bearing counter-clockwise from east, length m, hole): OSM's four bridge=yes ways, each checked on the aerial (a short concrete deck over the creek)
+CART_BRIDGES = [
+    (243.3, -310.0, -157.4, 17, 2),
+    (211.4, -302.7, 111.2, 15, 2),
+    (-419.8, -482.0, -61.8, 11, 5),
+    (-187.0, -397.7, 107.9, 14, 1),
+]
+
+# houses along the holes: Overture Maps footprints plus roofs found on the aerial (buildings_overture.py, buildings_detect.py), within this of a hole line (or 20 m less of a fairway, green, tee)
+OVERTURE_REACH = 130
+ROOF_TRAIN = (-300, -300, 250, 0)   # the part of the course whose buildings are all mapped: what the roof finder learns from
+# steady car traffic on a road (build.py roadBusy; the game's side-road cars, cars only): Frank Road runs along the south edge, tertiary, 40 mph
+TRAFFIC = {'Frank Road': dict(cars=10, mph=40, colors=[0xf2f2f0, 0xb9bec4, 0x1b1c1f, 0xb3262e, 0x1f3f7a, 0x7b92ac, 0x2f5a3c, 0xc8b48a, 0x6b1f2a, 0x4a4f55])}   # a mix of body colours: white, silver, black, red, blue, light blue, green, tan, maroon, charcoal
+NO_FAIRWAY_HULL = True    # build.py: the painted fairways already touch the greens; the convex-hull link would fill notches and reach over water
+FAIRWAY_OFF_WATER = True  # build.py: fairway polygons are cut back from the ponds
+# out of bounds at the property lines where houses line a hole: a lot reaches HOUSE_LOTS m past a house's walls (rows of lots are joined), the clubhouse area is exempt;
+# the stretches of boundary along lots are drawn as a 2-rail split-rail cedar fence
+HOUSE_LOTS = 12
+HOUSE_LOTS_JOIN = 10
+HOUSE_LOTS_EXEMPT = [(-400, -70, 115)]   # the clubhouse, cart barns and lot
 SMOOTH_MORE = True
+SMOOTH_PAINTED = True   # build.py: the painted bunkers and tee boxes are low-passed too, so no outline keeps a pixel staircase or a hull corner

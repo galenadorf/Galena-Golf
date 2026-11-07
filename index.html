@@ -1586,7 +1586,7 @@ function realPrep() {
     GC.hw = { e, n, s: sd, slowAt: D.hwSlow || 1e9, cell };
   }
   // the two side roads (East Center Road to the south, South Brown Road to the east), resampled the same way, with a bucket grid for "how far is this from them"
-  GC.sides = (D.roads || []).map(enc => {
+  GC.sides = (D.roads || []).map((enc, ri) => {
     const L0 = decLine(enc), e = [L0[0]], n = [L0[1]], cell = new Map(); let acc = 0, tot = 0;
     for (let i = 2; i < L0.length; i += 2) {
       const dx = L0[i] - L0[i - 2], dy = L0[i + 1] - L0[i - 1], len = Math.hypot(dx, dy);
@@ -1594,8 +1594,9 @@ function realPrep() {
       tot += len;
     }
     for (let i = 0; i < e.length; i++) { const key = Math.floor(e[i] / 24) * 4096 + Math.floor(n[i] / 24); if (!cell.has(key)) cell.set(key, []); cell.get(key).push(i); }
-    return { e, n, cell };
+    return { e, n, cell, busy: (D.roadBusy && D.roadBusy[ri]) || null };   // busy: [cars, mph] on a road with steady traffic (a course's TRAFFIC)
   });
+  GC.fence = (D.fence || []).map(decLine);   // the split-rail fence along house lots (the stretches of boundary beside lots), as polylines in ENU
   // the pieces of cart path that lie on a road (Eagle Ridge South), resampled every 1.5 m: drawn over the road so the path runs through the crossing
   GC.pathRoad = (D.pathRoad || []).map(enc => {
     const L0 = decLine(enc), e = [L0[0]], n = [L0[1]]; let acc = 0, tot = 0;
@@ -2165,7 +2166,7 @@ function buildSideRoads(C, grp) {
         YA[i] = pos[(i * 3 + 1) * 3 + 1];
         if (i) for (let k = 0; k < 2; k++) { const a0 = (i - 1) * 3 + k, b0 = i * 3 + k; idx.push(a0, a0 + 1, b0, a0 + 1, b0 + 1, b0); }
       }
-      if (S >= 60) W.roads.push({ X: Float32Array.from(run.X), Z: Float32Array.from(run.Z), Y: YA, S: SA, slow: new Uint8Array(n), len: S, fast: SIDE_V, lane: SIDE_LANE });
+      if (S >= 60) W.roads.push({ X: Float32Array.from(run.X), Z: Float32Array.from(run.Z), Y: YA, S: SA, slow: new Uint8Array(n), len: S, fast: R.busy ? R.busy[1] * .44704 : SIDE_V, lane: SIDE_LANE, busy: R.busy });
       const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
       const na = geo.attributes.normal; for (let i = 0; i < na.count; i++) if (na.getY(i) < 0) na.setXYZ(i, -na.getX(i), -na.getY(i), -na.getZ(i));
       const mesh = new THREE.Mesh(geo, mat); mesh.receiveShadow = true; mesh.userData.keep = true; mesh.frustumCulled = false; grp.add(mesh);
@@ -2510,6 +2511,32 @@ function realBuildingColliders(C, colliders) {
     C.colNames[id] = b.big ? 'Off the clubhouse!' : 'Off the building!';
   }
 }
+// the split-rail cedar fence along the property lines where houses line a hole (course data `fence`, the stretches of the out-of-bounds line that run along lots): posts every 3 m, two rails
+// between them, drawn only where it can be seen. It is scenery (the ball passes through); the line itself is the boundary.
+const FENCE_COLS = [0xc19163, 0xb58759, 0xcc9d70, 0xa98056];
+function buildFence(C, grp) {
+  const I = C.inner, segs = [], posts = [], rails = [], STEP = 3, lim = 140; C._fence = segs; if (!GC.fence || !GC.fence.length) return;
+  for (const ln of GC.fence) {
+    const P = []; for (let i = 0; i < ln.length; i += 2) { const q = C.loc(ln[i], ln[i + 1]); P.push([q[0], -q[1]]); }
+    const cum = [0]; for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+    const total = cum[cum.length - 1], n = Math.max(1, Math.round(total / STEP)), R = []; let k = 1;
+    for (let m = 0; m <= n; m++) { const s = total * m / n; while (k < cum.length - 1 && cum[k] < s) k++; const u = (s - cum[k - 1]) / ((cum[k] - cum[k - 1]) || 1), a = P[k - 1], b = P[k]; R.push([a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]); }
+    for (let m = 0; m < R.length; m++) {
+      const x = R[m][0], z = R[m][1]; if (x < I.minX - lim || x > I.maxX + lim || z < I.minZ - lim || z > I.maxZ + lim) continue;
+      posts.push([x, z]); if (m + 1 < R.length) { rails.push([x, z, R[m + 1][0], R[m + 1][1]]); segs.push(x, z, R[m + 1][0], R[m + 1][1]); }
+    }
+  }
+  if (!posts.length) return;
+  const mk = (geo, n) => { const im = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: 0xffffff }), n); im.frustumCulled = false; im.receiveShadow = true; return im; };
+  const postM = mk(new THREE.BoxGeometry(.13, 1.15, .13), posts.length), railM = mk(new THREE.BoxGeometry(1, .08, .07), rails.length * 2), d = new THREE.Object3D(), col = new THREE.Color(), rnd = mulberry32(5);
+  posts.forEach((p, i) => { d.position.set(p[0], groundY(p[0], p[1]) + .55, p[1]); d.rotation.set(0, 0, 0); d.scale.set(1, 1, 1); d.updateMatrix(); postM.setMatrixAt(i, d.matrix); col.setHex(FENCE_COLS[(rnd() * 4) | 0]); postM.setColorAt(i, col); });
+  let ri = 0;
+  for (const r of rails) {
+    const y1 = groundY(r[0], r[1]), y2 = groundY(r[2], r[3]), hd = Math.hypot(r[2] - r[0], r[3] - r[1]), L = Math.hypot(hd, y2 - y1);
+    for (const h of [.46, .88]) { d.position.set((r[0] + r[2]) / 2, (y1 + y2) / 2 + h, (r[1] + r[3]) / 2); d.rotation.set(0, Math.atan2(-(r[3] - r[1]), r[2] - r[0]), Math.atan2(y2 - y1, hd), 'YZX'); d.scale.set(L + .1, 1, 1); d.updateMatrix(); railM.setMatrixAt(ri, d.matrix); col.setHex(FENCE_COLS[(rnd() * 4) | 0]); railM.setColorAt(ri++, col); }
+  }
+  postM.castShadow = true; grp.add(postM, railM);
+}
 function buildRealDecor(C, grp) {
   const def = C.def, H0 = def.rh, cup = C.cup, r = mulberry32(def.seed + 3);
   // cup, flagstick and flag
@@ -2561,11 +2588,13 @@ function buildRealDecor(C, grp) {
     const post = new THREE.Mesh(new THREE.BoxGeometry(.15, 1.2, .15), lambert(0xc4a48d)); post.position.set(side[0], C.h(side[0], side[1]) + .5, side[1]); grp.add(post);
   }
   const stake = (x, z, c) => { const mt = lambert(c), wh = c === 0xffffff; if (wh) mt.emissive.setHex(0xffffff); /* out-of-bounds posts: pure white even in the low golden light */ const m = new THREE.Mesh(new THREE.BoxGeometry(wh ? .13 : .1, wh ? 1.15 : 1, wh ? .13 : .1), mt); m.position.set(x, C.h(x, z) + (wh ? .575 : .5), z); m.castShadow = !wh; grp.add(m); };
+  buildFence(C, grp);
+  const nearFence = (x, z) => { const s = C._fence || []; for (let i = 0; i < s.length; i += 4) { const ax = s[i], az = s[i + 1], bx = s[i + 2] - ax, bz = s[i + 3] - az, t = clamp(((x - ax) * bx + (z - az) * bz) / (bx * bx + bz * bz || 1), 0, 1); if (Math.hypot(x - ax - bx * t, z - az - bz * t) < 3) return true; } return false; };   // (a stake is not set in the fence)
   // white stakes along the course boundary (out of bounds)
   const I = C.inner, bnd = C.bnd || GC.boundary, nb = bnd.length >> 1;
   for (let i = 0; i < nb; i++) {
     const a = C.loc(bnd[2 * i], bnd[2 * i + 1]), b = C.loc(bnd[2 * ((i + 1) % nb)], bnd[2 * ((i + 1) % nb) + 1]), L = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    for (let s = 0; s < L; s += 12) { const u = s / L, x = a[0] + (b[0] - a[0]) * u, z = -(a[1] + (b[1] - a[1]) * u); if (x > I.minX - 20 && x < I.maxX + 20 && z > I.minZ - 20 && z < I.maxZ + 20) stake(x, z, 0xffffff); }
+    for (let s = 0; s < L; s += 12) { const u = s / L, x = a[0] + (b[0] - a[0]) * u, z = -(a[1] + (b[1] - a[1]) * u); if (x > I.minX - 20 && x < I.maxX + 20 && z > I.minZ - 20 && z < I.maxZ + 20 && !nearFence(x, z)) stake(x, z, 0xffffff); }
   }
   // white stakes along the midline where the neighbouring hole's side is out of bounds
   if (C.midOB) for (let s = 12; s < C.center.L; s += 12) {
@@ -3133,6 +3162,93 @@ function realSiteMeshes(C, grp) {
     g.position.set(b.X, 0, b.Z); g.rotation.y = b.yaw; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
   }
 }
+/* --- the Legends' clubhouse and its front drive (scene.clubhouse.style 'memphis', after the club's own photo): a long low building in charcoal board with a low hipped standing-seam roof in
+   dark grey and a taller hipped section behind, a gabled entrance with timber trusses and stone-footed columns over a tan stamped-concrete forecourt with a lawn oval, boxwood hedges and
+   bollards, and the circular drive in front with its lawn island, red-brick kerb and flagpole. scene.clubhouse.depth is the depth of the main block (the OSM outline also holds the wing). --- */
+function flagTexture() {
+  const cv = document.createElement('canvas'); cv.width = 130; cv.height = 68; const x = cv.getContext('2d');
+  for (let i = 0; i < 13; i++) { x.fillStyle = i % 2 ? '#f4f4f4' : '#b3202a'; x.fillRect(0, i * 68 / 13, 130, 68 / 13 + 1); }
+  x.fillStyle = '#243a78'; x.fillRect(0, 0, 54, 37); x.fillStyle = '#f4f4f4';
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 6; c++) x.fillRect(5 + c * 8.5, 4 + r * 6.6, 2, 2);
+  const t = new THREE.CanvasTexture(cv); t.anisotropy = 4; return t;
+}
+function buildClubhouseMN(C, grp, b, ch) {
+  const long = b.w >= b.d, W = long ? b.w : b.d, Dr = long ? b.d : b.w, D = Math.min(Dr, ch.depth || Dr), zc = (Dr - D) / 2, zf = Dr / 2, yb = b.lo - .8, Hw = 4.1, over = .8, parts = [];
+  const q = C.loc(ch.front[0], ch.front[1]), dx = q[0] - b.x, dz = -q[1] - b.z, a = -b.rot * DEG - (long ? 0 : Math.PI / 2);
+  const flip = dx * Math.sin(a) + dz * Math.cos(a) < 0, fs = flip ? -1 : 1;
+  const wz = (lx, lz) => [b.x + lx * Math.cos(a) + fs * lz * Math.sin(a), b.z - lx * Math.sin(a) + fs * lz * Math.cos(a)];
+  const fp = wz(0, zf + 6), y0 = C.h(fp[0], fp[1]) + .15, ey = y0 + Hw;
+  const bx = (w, h, d, x, y, z, c, rx, ry, rz) => parts.push(lbx(w, h, d, x, y, z, c, rx, ry, rz));
+  const wall = 0x3b3f45, roofC = 0x4b5057, trimC = 0x2d3034, timber = 0x4a382a, concrete = 0x8d8a82;
+  // the body, on a concrete plinth
+  bx(W, ey - yb, D, 0, (yb + ey) / 2, zc, wall); bx(W + .3, y0 - yb + .15, D + .3, 0, (yb + y0 + .15) / 2, zc, concrete);
+  const hip = (cx, cz, w, d, ey0, rise, col) => {
+    const rl = Math.max(0, (w - d) / 2), V = [[cx - w / 2, ey0, cz - d / 2], [cx + w / 2, ey0, cz - d / 2], [cx + w / 2, ey0, cz + d / 2], [cx - w / 2, ey0, cz + d / 2], [cx - rl, ey0 + rise, cz], [cx + rl, ey0 + rise, cz]], pos = [];
+    for (const v of V) pos.push(v[0], v[1], v[2]);
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex([3, 2, 5, 3, 5, 4, 1, 0, 4, 1, 4, 5, 0, 3, 4, 2, 1, 5]); parts.push({ g, c: col });
+  };
+  const rr = (D / 2 + over) * .3;
+  hip(0, zc, W + 2 * over, D + 2 * over, ey, rr, roofC);
+  const hb = ey + rr * .55;   // the taller hipped section behind the middle
+  bx(W * .34, hb - ey + .2, D * .42, 0, (ey + hb) / 2, zc - D * .1, wall); hip(0, zc - D * .1, W * .34 + 1.4, D * .42 + 1.4, hb, 2.6, roofC);
+  for (const sz of [1, -1]) bx(W + 2 * over, .28, .22, 0, ey - .02, zc + sz * (D / 2 + over), trimC);
+  for (const sx of [1, -1]) bx(.22, .28, D + 2 * over, sx * (W / 2 + over), ey - .02, zc, trimC);
+  // glass along the front and the back, in dark frames
+  const PW = 10.5, PD = 5.2, win = (x, z, sz) => { bx(4.7, 2.5, .12, x, y0 + 2.0, z + sz * .05, 0x24272b); bx(4.3, 2.1, .14, x, y0 + 2.0, z + sz * .07, 0x35505c); for (const m of [-1.45, 0, 1.45]) bx(.1, 2.1, .18, x + m, y0 + 2.0, z + sz * .08, 0x24272b); };
+  for (const sx of [-1, 1]) for (let x = PW / 2 + 3.6; x < W / 2 - 2.5; x += 6.2) win(sx * x, zf, 1);
+  for (let x = -W / 2 + 4; x < W / 2 - 2; x += 6.2) win(x, zc - D / 2, -1);
+  // the entrance: stamped-concrete porch, double glass doors, two stone-footed columns, a timber-trussed gable
+  bx(PW + 1.6, .12, PD + 1.2, 0, y0 + .06, zf + (PD + 1.2) / 2, 0xb7a58b);
+  bx(3.8, 2.8, .1, 0, y0 + 1.5, zf + .05, 0x24272b); bx(3.4, 2.5, .12, 0, y0 + 1.4, zf + .08, 0x35505c); bx(.1, 2.5, .16, 0, y0 + 1.4, zf + .1, 0x24272b);
+  for (const sx of [-1, 1]) { const cx = sx * (PW / 2 - .6), cz = zf + PD - .6; bx(1.15, 1.9, 1.15, cx, y0 + .95, cz, 0x8a8579); bx(.7, Hw + .95 - 1.9, .7, cx, y0 + 1.9 + (Hw + .95 - 1.9) / 2, cz, timber); }
+  const hw = PW / 2 + .8, ry0 = ey + .95, rs = hw * .55, z0 = zf - .3, z1 = zf + PD + .5, pos = [], idx = [0, 1, 2, 3, 5, 4, 0, 3, 2, 3, 5, 2, 1, 2, 4, 4, 2, 5];
+  for (const v of [[-hw, 0, z0], [hw, 0, z0], [0, rs, z0], [-hw, 0, z1], [hw, 0, z1], [0, rs, z1]]) pos.push(v[0], v[1] + ry0, v[2]);
+  const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); pg.setIndex(idx); parts.push({ g: pg, c: roofC });
+  const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute([-hw, ry0, z1 + .02, hw, ry0, z1 + .02, 0, ry0 + rs, z1 + .02], 3)); fg.setIndex([0, 1, 2]); parts.push({ g: fg, c: 0xb09672 });
+  const ang = Math.atan2(rs, hw), sl = Math.hypot(hw, rs);
+  bx(2 * hw, .24, .2, 0, ry0 + .25, z1 + .06, timber); bx(.2, rs * .8, .2, 0, ry0 + rs * .45, z1 + .06, timber);
+  for (const sx of [-1, 1]) { bx(sl, .2, .2, sx * hw / 2, ry0 + rs / 2, z1 + .06, timber, 0, 0, -sx * ang); bx(sl * .55, .14, .16, sx * hw * .3, ry0 + rs * .35, z1 + .06, timber, 0, 0, sx * ang * 1.3); }
+  bx(PW, .14, PD, 0, ey + .55, zf + PD / 2, 0x4a382a);
+  // the forecourt's furniture: boxwood hedges to the left, bollards by the porch, the courtyard gate at the right-hand end
+  for (const r of [0, 1]) bx(9.5, 1.0, 1.25, -W / 2 + 4 + r * 11, y0 + .5, zf + 13.5 + r * .4, 0x2d5f2e, 0, r * .05, 0);
+  for (let k = 0; k < 6; k++) bx(.28, .9, .28, PW / 2 + 1.8 + k * 1.3, y0 + .45, zf + 3 + k * .5, 0x33363b);
+  bx(.14, 2.3, 6.5, W / 2 + .4, y0 + 1.15, zf - 3.4, 0x6e747b); bx(.2, 2.5, .2, W / 2 + .4, y0 + 1.25, zf - .2, 0x4d5258); bx(.2, 2.5, .2, W / 2 + .4, y0 + 1.25, zf - 6.7, 0x4d5258);
+  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true });
+  const g = new THREE.Group(), cg = new THREE.Group(); cg.add(new THREE.Mesh(mergeParts(parts), mat)); cg.rotation.y = flip ? Math.PI : 0; g.add(cg);
+  C._clubFront = wz(0, zf + 6);
+  g.position.set(b.x, 0, b.z); g.rotation.y = a; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
+  // the ground in front, in world space (each patch follows the terrain and sits over the parking lot's asphalt)
+  const patch = (verts, tris, col, ord) => {
+    const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3)); gg.setIndex(tris); gg.computeVertexNormals();
+    const m = new THREE.Mesh(gg, new THREE.MeshLambertMaterial({ color: col, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -6 - ord, polygonOffsetUnits: -6 - ord })); m.receiveShadow = true; m.frustumCulled = false; m.userData.keep = true; grp.add(m);   // (keep: mergeStatic would fold it into the hole and lose its offset)
+  };
+  const disc = (cx, cz, rx, rz, rot, col, ord, r0) => {   // an ellipse (or ring from r0) draped on the ground
+    const n = 40, v = [], t = [], ca = Math.cos(rot), sa = Math.sin(rot); v.push(cx, groundY(cx, cz) +  LOT_LIFT + .05, cz);
+    for (let i = 0; i < n; i++) { const u = i / n * TAU, px = Math.cos(u) * rx, pz = Math.sin(u) * rz, x = cx + px * ca - pz * sa, z = cz + px * sa + pz * ca; v.push(x, groundY(x, z) +  LOT_LIFT + .05, z); t.push(0, 1 + i, 1 + (i + 1) % n); }
+    patch(v, t, col, ord);
+  };
+  const ring = (cx, cz, r0, r1, col, ord) => {
+    const n = 56, v = [], t = []; for (let i = 0; i <= n; i++) { const u = i / n * TAU; for (const r of [r0, r1]) { const x = cx + Math.cos(u) * r, z = cz + Math.sin(u) * r; v.push(x, groundY(x, z) +  LOT_LIFT + .05, z); } if (i) { const k = (i - 1) * 2; t.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); } }
+    patch(v, t, col, ord);
+  };
+  // the forecourt: tan stamped concrete from the porch out across the front, a darker edge, a lawn oval with a tree
+  const gx0 = -W / 2 - 2, gx1 = W / 2 + 4, gz0 = zf + .2, gz1 = zf + 10, nx = Math.round((gx1 - gx0) / 2.5), nz = 5, v = [], t = [];
+  for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) { const p = wz(gx0 + (gx1 - gx0) * i / nx, gz0 + (gz1 - gz0) * j / nz); v.push(p[0], groundY(p[0], p[1]) +  LOT_LIFT + .05, p[1]); if (i && j) { const k = j * (nx + 1) + i; t.push(k - nx - 2, k - nx - 1, k, k - nx - 2, k, k - 1); } }
+  patch(v, t, 0xc8aa86, 0);
+  const ov = wz(-W * .2, zf + 5.4);
+  disc(ov[0], ov[1], 6.3, 3.6, -a, 0xcdb99b, 1); disc(ov[0], ov[1], 5.8, 3.1, -a, 0x5b9a47, 2);
+  const tg = new THREE.Group(), tr = new THREE.Mesh(new THREE.CylinderGeometry(.14, .2, 2.2, 6), lambert(0x5a4330)); tr.position.y = 1.1; tg.add(tr);
+  const cn = new THREE.Mesh(new THREE.SphereGeometry(1.7, 7, 5), lambert(0x3f7a3c)); cn.position.y = 3.4; cn.scale.y = 1.2; tg.add(cn); tg.position.set(ov[0], groundY(ov[0], ov[1]), ov[1]); tg.traverse(o => { if (o.isMesh) o.castShadow = true; }); grp.add(tg);
+  // the circular drive: a tan-and-red-brick kerb round a lawn island with the flagpole
+  const dr = ch.drive;
+  if (dr) {
+    const qd = C.loc(dr.c[0], dr.c[1]), cx = qd[0], cz = -qd[1], ri = dr.island || 6;
+    ring(cx, cz, ri, ri + .55, 0xcdb99b, 1); ring(cx, cz, ri + .55, ri + 1.05, 0xa5624a, 1); disc(cx, cz, ri, ri, 0, 0x5b9a47, 2);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(.05, .08, 11, 6), lambert(0xeeeeee)); pole.position.set(cx, groundY(cx, cz) + 5.5, cz); pole.castShadow = true; grp.add(pole);
+    const fl = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.0, 6, 1), new THREE.MeshLambertMaterial({ map: flagTexture(), side: THREE.DoubleSide })); fl.geometry.translate(.95, 0, 0);
+    fl.position.set(cx, groundY(cx, cz) + 10.2, cz); fl.rotation.y = -1.2; fl.castShadow = false; grp.add(fl);
+  }
+}
 /* --- the clubhouse (scene.clubhouse: the one OSM building over minArea m2; front: ENU, the parking lot, which the front looks onto; sign: the
    three lines on its round sign). Woodbine Bend's, after the photos of its front: a long low building clad in rust-brown vertical board, green-framed windows, a grey-green
    shingle roof, and a gabled entrance with two limestone columns, a round "Woodbine Bend" sign in the gable and a brick-paver porch. The front faces the parking lot. --- */
@@ -3146,6 +3262,7 @@ function clubSignTexture(lines) {
   const t = new THREE.CanvasTexture(cv); t.anisotropy = 4; return t;
 }
 function buildClubhouse(C, grp, b, ch) {
+  if (ch.style === 'memphis') return buildClubhouseMN(C, grp, b, ch);
   // (the fitted rectangle may come out either way round in this hole's frame: the long side is always the model's x)
   const long = b.w >= b.d, W = long ? b.w : b.d, D = long ? b.d : b.w, yb = b.lo - .8, Hw = 4.3, over = .6, parts = [];
   const q = C.loc(ch.front[0], ch.front[1]), dx = q[0] - b.x, dz = -q[1] - b.z, a = -b.rot * DEG - (long ? 0 : Math.PI / 2);   // which long side the parking lot is on, in the building's own frame (the group is turned by a about y)
@@ -5276,18 +5393,18 @@ function roadPose(R, u, dir, o) {
 }
 // the road a vehicle sets off on: the highway where there is one; otherwise one of the roads in view (side roads at least 80 m long), the longer and nearer
 // to the tee the likelier. Cars on the course's side roads are the Subaru and the Hyundai only (RDC.scene.traffic); no truck, no horn.
-function pickRoad(L) {
+function pickRoad(L, busy) {   // busy: a car that drives only the roads with steady traffic (course data roadBusy)
   if (GC.hw) return W.road && W.road.len >= 300 ? W.road : null;
-  const rs = (W.roads || []).filter(R => R.len >= 80); if (!rs.length) return null;
+  const rs = (W.roads || []).filter(R => R.len >= 80 && (!busy || R.busy)); if (!rs.length) return null;
   const t = L.C.def.tee, wt = rs.map(R => { const k = R.X.length >> 1, d = t ? Math.hypot(R.X[k] - t.x, R.Z[k] + t.f) : 0; return R.len / (80 + d); });
   let a = Math.random() * wt.reduce((p, q) => p + q, 0); for (let i = 0; i < rs.length; i++) { a -= wt[i]; if (a <= 0) return rs[i]; } return rs[rs.length - 1];
 }
-function makeVehicle(L, kind, geo, first, wait) {
+function makeVehicle(L, kind, geo, first, wait, busy) {
   const truck = kind === 'truck', mat = LIFE_MAT(), g = new THREE.Group(), p = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, slow: 0 }, q = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, slow: 0 };
   const body = lmesh(truck ? geo.cab : geo, mat), trl = truck ? lmesh(geo.trl, mat) : null; g.add(body); if (trl) g.add(trl); g.visible = false; L.grp.add(g);
   const e = { kind, mat, g, st: 'wait', tmr: first[0] + Math.random() * first[1], dir: 1, u: 0, v: 0, spd: 1, front: truck ? 5.3 : 2.5, rear: truck ? 21 : 2.5 };
   e.start = () => {
-    const R = pickRoad(L); if (!R) { e.tmr = 15; return; }
+    const R = pickRoad(L, busy); if (!R) { e.tmr = 15; return; }
     const dir = Math.random() < .5 ? 1 : -1;
     for (const o of L.traffic) if (o !== e && o.st === 'drive' && o.R === R && o.dir === dir && o.u - o.rear < e.rear + e.front + 35) { e.tmr = 3; return; } // not on top of one that has just set off
     e.honkAt = truck && RDC.scene.truckHorn && Math.random() < .35 ? R.len * (.25 + Math.random() * .5) : -1; // semi-rare: about one trip in three has a honk, somewhere along the way
@@ -5475,7 +5592,11 @@ function buildLife(C, grp) {
     if (RDC.scene.bear && C.def.par >= 4 && !G.pg && (Math.random() < CARTRIDE_P || /[?&]bear\b/.test(location.search))) { L.bear = makeBear(L); L.ents.push(L.bear); }   // the black bear (Fossil Trace): as rare as the moving cart
     if (RDC.scene.cartRide && C.def.par >= 4 && !G.pg && (Math.random() < CARTRIDE_P || /[?&]cart\b/.test(location.search))) { const R = cartRoute(C); if (R) { L.cartRide = makeCartRide(L, R); L.ents.push(L.cartRide); } }
     if (G.hole + 1 === RDC.scene.fountainHole) { const f = makeFountain(L); if (f) L.ents.push(f); }
-    if (GC.hw) { const cg = carGeo(), sg = santaFeGeo(); L.traffic = [makeVehicle(L, 'car', cg, [2, 8], [6, 19]), makeVehicle(L, 'car', cg, [10, 16], [6, 19]), makeVehicle(L, 'car', sg, [4, 10], [6, 19]), makeVehicle(L, 'car', sg, [12, 16], [6, 19]), makeVehicle(L, 'truck', truckGeos(), [8, 25], [20, 40])]; L.ents.push(...L.traffic); } else if (RDC.scene.traffic) { const cg = carGeo(), sg = santaFeGeo(); L.traffic = [makeVehicle(L, 'car', cg, [25, 40], [45, 90]), makeVehicle(L, 'car', sg, [60, 60], [45, 90])]; L.ents.push(...L.traffic); } else L.traffic = [];
+    const roadCars = Math.max(0, ...(RDC.data.roadBusy || []).map(b => b ? b[0] : 0));
+    if (GC.hw) { const cg = carGeo(), sg = santaFeGeo(); L.traffic = [makeVehicle(L, 'car', cg, [2, 8], [6, 19]), makeVehicle(L, 'car', cg, [10, 16], [6, 19]), makeVehicle(L, 'car', sg, [4, 10], [6, 19]), makeVehicle(L, 'car', sg, [12, 16], [6, 19]), makeVehicle(L, 'truck', truckGeos(), [8, 25], [20, 40])]; L.ents.push(...L.traffic); } else if (RDC.scene.traffic || roadCars) { const cg = carGeo(), sg = santaFeGeo(); L.traffic = RDC.scene.traffic ? [makeVehicle(L, 'car', cg, [25, 40], [45, 90]), makeVehicle(L, 'car', sg, [60, 60], [45, 90])] : [];
+      const pal = ((RDC.data.roadBusy || []).find(Boolean) || [])[2] || [];   // the road's own body colours (course TRAFFIC colors): each car its own
+      for (let i = 0; i < roadCars; i++) { const bc = pal.length ? pal[(i * 3) % pal.length] : null; L.traffic.push(makeVehicle(L, 'car', i % 2 ? santaFeGeo(bc) : carGeo(bc), [i * 1.6, 3], [1, 8], true)); }   // a road with steady traffic (course TRAFFIC): cars only, each setting off again 1-9 s after it leaves the stretch in view
+      L.ents.push(...L.traffic); } else L.traffic = [];
     if (PARAGLIDER_ON) { L.glider = makeGlider(L); L.ents.push(L.glider); }
   } catch (e) { console.error('life', e); W.life = null; }
 }

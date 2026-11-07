@@ -37,7 +37,7 @@ A. WHICH COURSE HAS WHAT
   Cows in the woods (hole 3 only)                 -    Y    -    -    -    -    -    -    -    -    -
   Squirrels (3 on every hole)                     -    -    -    -    -    Y    Y    Y    Y    -    -
   Highway with an 18-wheeler and 4 cars           Y    -    -    -    -    Y    -    -    -    -    -
-  Cars (Subaru and Hyundai only) on side roads    -    Y    Y    Y    -    -    -    -    -    -    -
+  Cars (Subaru and Hyundai only) on side roads    -    Y    Y    Y    -    -    -    -    Y*   -    -     (* Legends: Frank Road only, steady)
   Dancing hot dog (hole 10)                       Y    -    -    -    -    -    -    -    -    -    -
   Fountain (hole 1)                               Y    -    -    -    -    -    -    -    -    -    -
   Moving golf cart with two men (rare)            Y    -    -    -    -    -    -    -    -    -    -
@@ -45,8 +45,9 @@ A. WHICH COURSE HAS WHAT
   Parked golf carts, clubhouse model, washroom,
     porta-potties, parking lot, pump house,
     entrance sign, hole 7 sign                    Y    -    -    -    -    -    -    -    -    -    -
+  Washroom, parking lot with cars (no other)       Y    -    -    -    -    -    -    -    Y    -    -
   Cart paths                                      Y    Y    Y    Y    Y    -    -    -    Y    -    -
-  Cart-path bridges                               -    10   6    -    -    -    -    -    -    -    -
+  Cart-path bridges                               -    10   6    -    -    -    -    -    4    -    -
   Roads drawn (out of bounds, for looks)           2    all* all* all*all*  1    3    5+  all*  1    2         (* every OSM road near a hole)
   Pool, water slide, playground                   -    -    -    -    -    -    -    -    -    -    Y
   Disc, basket, tee pad (no ball, cup, tee peg)   -    -    -    -    -    -    -    -    -    Y    Y
@@ -463,9 +464,14 @@ Memphis National Golf Club (Collierville TN) has two courses; only the Legends i
 OBJECTS
 -------
 White-tailed deer (`scene.deer` = .5, twice as many holes as at Stonehenge) and squirrels (`scene.squirrels` = 3): the same animals and behaviour as at Stonehenge.
-Side roads (out of bounds, looks only, no traffic): Houston Levee Road along the west, and every OSM road near a hole (the housing streets the holes wind between).
-Cart paths: OSM's golf=cartpath lines (about 28), joined across the roads.
-NOT here: any traffic at all (no highway, no side-road cars), turkeys, gopher, banner plane, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+Side roads (out of bounds, looks only): Houston Levee Road along the west, and every OSM road near a hole (the housing streets the holes wind between).
+Frank Road (the south edge, 40 mph): steady car traffic, cars only (the Subaru and Hyundai shapes, no truck, no horn): 10 cars, each its own body colour (white, silver, black, red, blue, light blue, green, tan, maroon, charcoal), each setting off again 1-9 s after it leaves the stretch in view, in both directions (`TRAFFIC` in the course's course.py, `roadBusy` in its data). Every other road is empty.
+Cart paths: OSM's golf=cartpath lines (about 28) checked against the aerial and painted as one connected network (about 10 km, no gaps: the three stretches the creek splits are joined by the 4 path bridges), joined across the roads.
+Cart-path bridges (4, short concrete decks with rails over the creek: 2 on hole 2, 1 on hole 1, 1 on hole 5).
+Clubhouse (`scene.clubhouse.style` 'memphis', after the club's photo): a long low charcoal building, low hipped dark-grey standing-seam roof with a taller hipped section behind, a gabled timber-trussed entrance with stone-footed columns and glass doors, glass along the front; in front a tan stamped-concrete forecourt with a lawn oval and tree, boxwood hedges, bollards, 2 parked golf carts, and the circular drive with a lawn island, tan and red-brick kerb and a flagpole with the US flag. The parking lot beside it (painted outline, stalls, 8 parked cars) and 2 cart barns (OSM buildings, the plain large building). A 2-door washroom NW of the 6th green (9.5 x 6 m, MEN / WOMEN doors, facing the nearest tee).
+Houses: about 330 footprints (Overture Maps) plus roofs found on the aerial, within 130 m of a hole line (or 110 m of a fairway, green or tee box); the back 9 is lined with them.
+Out of bounds runs at the property lines where houses line a hole (a house's lot reaches 12 m past its walls, rows of lots joined; the clubhouse area exempt), and those stretches (about 8 km) are a 2-rail split-rail cedar fence (posts every 3 m; scenery, the ball passes through; no white stakes beside it). Elsewhere the out-of-bounds line is the course outline with white stakes.
+NOT here: highway, turkeys, gopher, banner plane, parked carts, moving cart, hot dog, fountain, signs, songs.
 
 SOUNDS
 ------
@@ -476,7 +482,7 @@ SCENERY AND DATA
   - Water: OSM ponds and lakes (about 20 hazards beside most holes) and OSM streams.
   - Fairways: OSM maps 13 stripes; every par 4 and 5 is filled from the aerial.
   - Trees: about 11,000 from the 2012 Shelby County lidar (USGS), checked against the October 2023 aerial (about 1,400 felled since, about 3,100 added).
-  - Buildings: the OSM buildings on and beside the course (the housing the loop winds through), plain.
+  - Buildings: OSM's, plus Overture footprints and aerial-found roofs for the houses along the holes (see OBJECTS), all drawn plain (box and gable roof).
 
 
 #####################################################################################################
