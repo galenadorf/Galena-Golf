@@ -1862,7 +1862,7 @@ function makeRealCourse(idx, pin) {
     let mn = 1e9;
     for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) { const v = sd[j * ww + i]; if (v > .6 && v < 3) mn = Math.min(mn, Hw[(j + j0) * w + i + i0]); }
     if (mn > 1e8) return;
-    const lv = mn - .3;
+    const lv = mn - .3 - (RDC.waterDrop || 0);
     for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) {
       const v = sd[j * ww + i]; if (v >= 6) continue; const k = (j + j0) * w + i + i0;
       if (v < 0) Hg[k] = lv - .45 - 1.2 * smooth(0, 7, -v);
@@ -1877,7 +1877,7 @@ function makeRealCourse(idx, pin) {
     let mn = 1e9;
     for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) { const v = sd[j * ww + i]; if (v > .3 && v < 1.8) mn = Math.min(mn, Hw[(j + j0) * w + i + i0]); }
     if (mn > 1e8) return;
-    const lv = mn - .14;
+    const lv = mn - .14 - (RDC.waterDrop || 0);   // waterDrop (courses.json engine, m): the water sits this far under the banks (Legends: deep beds, 6 ft)
     for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) {
       const v = sd[j * ww + i]; if (v >= 2) continue; const k = (j + j0) * w + i + i0;
       if (v < 0) Hg[k] = Math.min(Hg[k], lv - .2 - .2 * smooth(0, 1.5, -v));
