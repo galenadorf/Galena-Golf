@@ -84,5 +84,5 @@ TREES_OFF_TEES_GREENS = True   # build.py: no tree stands in a tee box or on a g
 SMOOTH_MORE = True
 SMOOTH_PAINTED = True   # build.py: the painted bunkers and tee boxes are low-passed too, so no outline keeps a pixel staircase or a hull corner
 
-# hole 4: the trees crowding the tee boxes (south of them) moved 10 ft (3.05 m) south, toward Frank Road
-TREE_SHIFT = [((-10, -535, 90, -518), 0, -3.05)]
+# hole 4: the trees crowding the tee boxes (south of them) moved 20 ft (6.1 m) south, toward Frank Road
+TREE_SHIFT = [((-10, -535, 90, -518), 0, -6.1)]
