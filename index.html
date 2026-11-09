@@ -1958,6 +1958,7 @@ function makeRealCourse(idx, pin) {
   };
   const info = { surf: 0, stripe: 0, fwAlong: 0, water: -1, waste: false };
   C.info = info;
+  const FC_F = RDC.noFirstCut ? 0 : 2.8, FC_T = RDC.noFirstCut ? 0 : 3;   // first cut beside a fairway / a tee box (engine.noFirstCut: none, Legends); round the green it stays 6 m
   const fF = F.fair, fG = F.green, fT = F.tee, fS = F.sand, fP = F.path, fW = F.water, fR = F.range;
   const fCk = F.creek; // creeks (Augusta's Rae's Creek, Woodbine's creek) are penalty areas like the ponds
   function surfInfo(X, Z, hh) {
@@ -1984,7 +1985,7 @@ function makeRealCourse(idx, pin) {
     if (at(fP) < 0) { info.surf = S.PATH; return info; }
     const df = at(fF);
     if (df < 0) { info.surf = S.FAIR; info.stripe = Math.sin(Math.PI * -Z / 12) > 0 ? 1 : 0; info.fwAlong = -Z; return info; }
-    if (df < 2.8 || dg < 6 || dt < 3 || at(fR) < 0) { info.surf = S.FIRST; return info; }
+    if (df < FC_F || dg < 6 || dt < FC_T || at(fR) < 0) { info.surf = S.FIRST; return info; }
     if (at(deepF) > 0) { info.surf = S.DEEP; return info; }
     info.surf = S.ROUGH; return info;
   }
@@ -2230,6 +2231,7 @@ function realFarTex() {
 function realTerrainMat(C) {
   const FG = C.fg, w = FG.w, h = FG.h, n = w * h, R = SD_R, F = C.F, seed = C.def.seed;
   const A = new Uint8Array(n * 4), B = new Uint8Array(n * 4), T = new Uint8Array(n * 4);
+  const FC_F = RDC.noFirstCut ? 0 : 2.8, FC_T = RDC.noFirstCut ? 0 : 3;
   const enc = v => { const t = v / R * .5 + .5; return t <= 0 ? 0 : t >= 1 ? 255 : Math.round(t * 255); };
   let wlo = 1e9, whi = -1e9; for (const p of C.ponds) { wlo = Math.min(wlo, p.lv); whi = Math.max(whi, p.lv); }
   if (wlo > 1e8) { wlo = 0; whi = 1; } wlo -= 3; whi += .5;
@@ -2244,7 +2246,7 @@ function realTerrainMat(C) {
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
     const k = j * w + i, q = k * 4, X = FG.x0 + i * FG.res, Z = FG.z0 + j * FG.res;
     const fw = F.fair[k], gr = F.green[k], te = F.tee[k];
-    A[q] = enc(fw); A[q + 1] = enc(Math.min(fw - 2.8, gr - 6, te - 3, F.range[k])); A[q + 2] = enc(C.deepF[k]); A[q + 3] = enc(gr);
+    A[q] = enc(fw); A[q + 1] = enc(Math.min(fw - FC_F, gr - 6, te - FC_T, F.range[k])); A[q + 2] = enc(C.deepF[k]); A[q + 3] = enc(gr);
     B[q] = enc(F.sand[k]); B[q + 1] = straw ? enc(straw(X, Z)) : 255; B[q + 2] = enc(te); B[q + 3] = enc(F.path[k]);
     T[q] = Math.round((Math.sin(Math.PI * -Z / 12) * .5 + .5) * 255);
     const wl = C.wlGrid[k]; T[q + 1] = wl > -1e8 ? 1 + Math.round(clamp((wl - wlo) / (whi - wlo), 0, 1) * 254) : 0;
@@ -2372,6 +2374,22 @@ function buildRealTrees(C, grp) {
       can(t.X, cy, t.Z, .95 * R, 2.4, i); trunk(t.X, t.Z, cy - .4 * R, i, .09);
       plan.push({ x: t.X, z: t.Z, r: R, col: col.getHex(), far: !t.near });
       if (refs) occ.push({ x: t.X, z: t.Z, y0: y, y1: cy + .9 * R, r: R, refs, hid: false });
+      return;
+    }
+    if (t.kind === 6) {
+      // a tall raised-crown tree (Frank Road's spears, big oaks over a tee): a bare trunk to 30 ft (9.1 m), then the crown up to the top; the crown is a tall ellipsoid
+      const Ht = clamp(t.H > 0 ? t.H : 18.3, 8, 30), base = Math.min(9.1, .55 * Ht), hh = (Ht - base) / 2, cy = y + base + hh;
+      let Rh = clamp(t.d / 2, 1.2, 8);
+      if (!t.fill) { const dt = C.fieldAt(C.F.tee, t.X, t.Z), dg = C.fieldAt(C.F.green, t.X, t.Z); if (dt < -.3 || dg < -.3) return; Rh = Math.max(1, Math.min(Rh, Math.min(dt + 1, dg + 2))); }
+      col.setHex(hv < .78 ? REAL_TREE_COLS[(hv / .78 * REAL_TREE_COLS.length) | 0] : LEAF_COLS[((hv - .78) / .22 * LEAF_COLS.length) | 0]);
+      if (RDC.dry) col.offsetHSL(-.032, -.07, .03);
+      const ts = .34 + .05 * Rh;
+      put(tr, t.X, y - .2, t.Z, ts, base + hh * .5, ts, tcol, ry);
+      put(bl, t.X, cy, t.Z, Rh, hh, Rh, col, ry);
+      if (t.near) put(bl, t.X + Math.cos(ry) * .35 * Rh, cy + .35 * hh, t.Z + Math.sin(ry) * .35 * Rh, .66 * Rh, .5 * hh, .66 * Rh, col.clone().offsetHSL(0, 0, .04), ry + .7);
+      can(t.X, cy, t.Z, .98 * Rh, (.98 * Rh / hh) ** 2, i); trunk(t.X, t.Z, y + base, i, (.2 + .04 * Rh) ** 2);
+      plan.push({ x: t.X, z: t.Z, r: Rh, col: col.getHex(), far: !t.near });
+      if (refs) occ.push({ x: t.X, z: t.Z, y0: y, y1: y + Ht, r: Rh * 1.05, refs, hid: false });
       return;
     }
     let R, Ht, th;

@@ -615,6 +615,8 @@ def main():
             f['poly'] = round_osm(f['poly'])
     if getattr(course, 'SMOOTH_MORE', False):   # every mapped outline gets the low-pass too (bunkers, tees, fairways, greens, ponds), area kept
         for k, sg in (('bunker', 1.6), ('tee', 2.0), ('fairway', 3.0), ('green', 1.6), ('water', 2.5)):
+            if k == 'tee' and getattr(course, 'SHARP_TEES', False):   # square tee corners
+                continue
             for f in F[k]:
                 f['poly'] = smooth_poly(f['poly'], sg)
     bpn = os.path.join(OUT, 'bunkers_painted.json')  # hand-refined bunkers (bunkers_paint.py) replace the OSM and automatic ones
@@ -625,6 +627,8 @@ def main():
         F['tee'] = [dict(poly=shape(g), tags={'painted': 'yes'}) for g in json.load(open(tpn))]
     if getattr(course, 'SMOOTH_PAINTED', False):   # painted bunkers and tee boxes get the same low-pass as the OSM ones above (they replace OSM's after it), area kept
         for k, sg in (('bunker', 1.6), ('tee', 2.0)):
+            if k == 'tee' and getattr(course, 'SHARP_TEES', False):
+                continue
             for f in F[k]:
                 if f['tags'].get('painted'):
                     f['poly'] = smooth_poly(f['poly'], sg)
@@ -728,6 +732,11 @@ def main():
         n0 = len(trees)
         trees = [t for t in trees if not keep.contains(Point(t['e'], t['n']))]
         print(n0 - len(trees), 'trees taken out of tee boxes and greens (course.TREES_OFF_TEES_GREENS)')
+    xap = os.path.join(OUT, 'trees_x_added.json')   # trees added with coloured circles on the tree guide (trees_x.py read)
+    if os.path.exists(xap):
+        xa = json.load(open(xap))
+        trees += xa
+        print(len(xa), 'trees added by trees_x_added.json')
     json.dump(trees, open(os.path.join(OUT, 'trees_all.json'), 'w'))   # every tree before the hand-marked ones are taken out (trees_x.py works on this list)
     xp = os.path.join(OUT, 'trees_x_removed.json')   # trees marked with an X on the tree guide (trees_x.py read)
     if os.path.exists(xp):
@@ -743,6 +752,17 @@ def main():
         for t in trees:
             if e0 <= t['e'] <= e1 and n0 <= t['n'] <= n1 and t['kind'] == kind:
                 t['h'] = round(t['h'] * k, 1)
+    sp = getattr(course, 'TREE_SPEARS', None)   # tall, skinny raised-crown trees (kind 6) along a road: every tree of the given kinds within `reach` m of the road is converted
+    if sp:
+        rl = [r['line'] for r in F['road'] if r['tags'].get('name') == sp['road']]
+        if rl:
+            rl = unary_union(rl).buffer(sp['reach'])
+            k0 = 0
+            for t in trees:
+                if t['kind'] in sp['kinds'] and rl.contains(Point(t['e'], t['n'])):
+                    u = (math.sin(t['e'] * 12.9898 + t['n'] * 78.233) * 43758.5453) % 1.0
+                    t['kind'] = 6; t['h'] = round(sp['h'][0] + u * (sp['h'][1] - sp['h'][0]), 1); t['d'] = round(sp['d'][0] + (1 - u) * (sp['d'][1] - sp['d'][0]), 1); k0 += 1
+            print(k0, 'trees along', sp['road'], 'made spears (kind 6)')
     json.dump(trees, open(os.path.join(OUT, 'trees_final.json'), 'w'))   # every tree the game gets (to look one up by position)
     tq = []
     for t in trees:  # e, n, crown diameter (dm), kind * 1000 + height (dm)

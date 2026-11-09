@@ -1,9 +1,14 @@
-"""Take trees out by marking them with an X on a picture (any course whose out/ has all_guide.png: `all_edit.py` makes it).
+"""Take trees out by marking them with an X (and put trees in with coloured circles) on a picture (any course whose out/ has all_guide.png: `all_edit.py` makes it).
 
   trees_x.py guide   writes out/trees_guide.png: all_guide.png with every tree the game has drawn as a bold ring (yellow broadleaf, cyan
                      conifer, a number every 50th tree is not needed: use the grid and hole numbers), trees already removed in grey.
   trees_x.py read    reads out/trees_x.png (your painted copy of trees_guide.png or all_guide.png, same size, never resized or cropped) and
                      writes out/trees_x_removed.json and out/trees_x_check.png. Rerun build.py and install.py afterwards.
+
+To ADD trees paint a solid filled circle (any size, hard edge) in a tree colour: GREEN #008000 broadleaf, BLUE #0040FF conifer,
+PURPLE #800080 shrub. One circle up to ~10 m across is one tree sized to the circle (2.5-12 m crown, a shrub 1.5-4.5 m); a bigger blob or
+a painted area is filled with trees about 6 m apart (3.5 m for shrubs) that keep off existing trees. `read` writes out/trees_x_added.json,
+which build.py adds before the X marks are applied, so a painted circle that is also X'd out cancels.
 
 Paint a bold X (any size, from a few pixels to the width of the crown) in solid magenta #FF00FF with a hard-edged tool, over the tree's ring.
 Each X takes out ONE tree: the ring that contains the middle of the X (the nearest centre if two rings do), else the ring it touches. Keep
@@ -22,6 +27,8 @@ from common import OUT
 
 Image.MAX_IMAGE_PIXELS = None
 X_COL = (255, 0, 255)
+ADD_COL = {0: (0, 128, 0), 2: (0, 64, 255), 1: (128, 0, 128)}   # broadleaf, conifer, shrub (none of them is in the aerial or the guide)
+ADD_TOL = 20
 
 
 def frame():
@@ -92,6 +99,15 @@ def read():
         cd.ellipse([x - r, y - r, x + r, y + r], outline=(0, 255, 0), width=4)
         flag = f'  (the X is {size:.0f} m across: it took out one tree; mark each tree separately)' if size > max(14, 2.5 * t['d']) else ''
         notes.append(f'X at E{ce:.0f} N{cn:.0f} ({how}) -> tree at ({t["e"]}, {t["n"]}), crown {t["d"]} m, {"broadleaf" if t["kind"] == 0 else "conifer" if t["kind"] == 2 else "shrub"}{flag}')
+    # circles: trees to add
+    from trees_paint import from_masks
+    frm = dict(res=1 / ppm, e0=fr['e0'], n1=fr['n1'])
+    add = from_masks({k: np.abs(a - np.array(c)).max(axis=2) <= ADD_TOL for k, c in ADD_COL.items()}, frm, T)
+    json.dump(add, open(os.path.join(OUT, 'trees_x_added.json'), 'w'))
+    for g in add:
+        x, y = (g['e'] - fr['e0']) * ppm, (fr['n1'] - g['n']) * ppm; r = g['d'] / 2 * ppm + 4
+        cd.ellipse([x - r, y - r, x + r, y + r], outline=(255, 255, 255), width=3)
+        notes.append(f'circle -> {"broadleaf" if g["kind"] == 0 else "conifer" if g["kind"] == 2 else "shrub"} at ({g["e"]}, {g["n"]}), crown {g["d"]} m')
     seen = set(); uniq = []
     for g in out:
         k = (g['e'], g['n'])
@@ -99,7 +115,7 @@ def read():
             seen.add(k); uniq.append(g)
     json.dump(uniq, open(os.path.join(OUT, 'trees_x_removed.json'), 'w'))
     chk.save(os.path.join(OUT, 'trees_x_check.png'))
-    print('\n'.join(notes)); print(f'{len(uniq)} trees listed in out/trees_x_removed.json ({n} marks found); check picture: out/trees_x_check.png (green = removed, red box = nothing found)')
+    print('\n'.join(notes)); print(f'{len(uniq)} trees listed in out/trees_x_removed.json ({n} marks found); {len(add)} trees listed in out/trees_x_added.json; check picture: out/trees_x_check.png (green ring = removed, white ring = added, red box = X found nothing)')
 
 
 if __name__ == '__main__':

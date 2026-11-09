@@ -82,7 +82,10 @@ ROAD_ROW_DEEP = 1.5   # build.py: deep rough under every row of trees lining a r
 TREE_HEIGHT = [((-420, 108, -360, 130), 2, 2.0)]   # the four pines on the far shore of the lake from the 18th tee: twice as tall
 TREES_OFF_TEES_GREENS = True   # build.py: no tree stands in a tee box or on a green
 SMOOTH_MORE = True
+SHARP_TEES = True   # tee boxes keep square corners: all_read.py traces them without blur (paint_read.sharp_polys), build.py does not low-pass them
 SMOOTH_PAINTED = True   # build.py: the painted bunkers and tee boxes are low-passed too, so no outline keeps a pixel staircase or a hull corner
 
 # hole 4: the trees crowding the tee boxes (south of them) moved 20 ft (6.1 m) south, toward Frank Road
+# Frank Road's trees are tall, skinny deciduous 'spears' about 60 ft tall (kind 6: bare trunk to 30 ft, then a narrow crown); h and d are the range in m
+TREE_SPEARS = dict(road='Frank Road', reach=12.0, kinds=(0, 2), h=(16.5, 20.0), d=(3.0, 5.0))
 TREE_SHIFT = [((-10, -535, 90, -518), 0, -6.1)]

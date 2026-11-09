@@ -46,6 +46,23 @@ def blob_polys(m, fr, min_area, fill, smooth=False):
     return [shape(g).buffer(0) for g, v in features.shapes(m.astype(np.uint8), mask=m, transform=Affine(1 / ppm, 0, fr['e0'], 0, -1 / ppm, fr['n1'])) if v]
 
 
+def sharp_polys(m, fr, min_area, fit=.86):
+    """Tee boxes with square corners (course.SHARP_TEES): each blob's pixel outline, simplified to straight edges; a blob that is nearly a
+    rectangle (area within `fit` of its minimum rotated rectangle) becomes that rectangle exactly. Nothing is blurred, so corners stay sharp."""
+    out = []
+    for p in blob_polys(m, fr, min_area, True, False):
+        p = p.buffer(0)
+        if p.geom_type == 'MultiPolygon':
+            p = max(p.geoms, key=lambda q: q.area)
+        r = p.minimum_rotated_rectangle
+        if r.area > 0 and p.area / r.area >= fit:
+            out.append(r)
+        else:
+            q = p.simplify(.45, preserve_topology=True)
+            out.append(q if q.area > .8 * p.area else p)
+    return out
+
+
 def sheds(m, fr):
     """'shed' prop rows for the solid rectangles of a boolean mask (also used by all_read.py)."""
     ppm = fr['ppm']

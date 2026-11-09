@@ -13,6 +13,7 @@ underneath: its pixels take the area of the nearest pixel that is not a line or 
 """
 import json
 import os
+import sys
 
 import numpy as np
 from PIL import Image
@@ -34,7 +35,7 @@ import paint_read
 import site_paint
 import trees_paint
 from all_edit import LAYERS, SURFACES
-from common import OUT
+from common import OUT, course
 
 TOL = 40   # a pixel is a palette colour when every channel is within this of it
 
@@ -97,9 +98,12 @@ def main():
         put('bunkers_painted.json', bk)
         rep['bunker'] = f'{len(bk)} bunkers, {round(sum(p.area for p in bk))} m2'
     if has('tee', S['tee']):
-        tees = paint_read.blob_polys(ndi.binary_closing(S['tee'], iterations=2), fr, paint_read.MIN_TEE, True, True)
+        tm = ndi.binary_closing(S['tee'], iterations=2)
+        tees = paint_read.sharp_polys(tm, fr, paint_read.MIN_TEE) if getattr(course, 'SHARP_TEES', False) else paint_read.blob_polys(tm, fr, paint_read.MIN_TEE, True, True)   # SHARP_TEES: square corners
         put('tees_painted.json', tees)
         rep['tee'] = f'{len(tees)} tee boxes'
+    if '--tees' in sys.argv:   # only the tee boxes (tees_sharp: rereads the mask's tee layer without touching any other file)
+        print(rep); return
     if has('fence'):   # hard out-of-bounds lines (a split-rail fence along the property lines where houses line a hole): build.py cuts the boundary back to them
         import fence_read
         fl = fence_read.lines_from_mask(M['fence'], fr)
