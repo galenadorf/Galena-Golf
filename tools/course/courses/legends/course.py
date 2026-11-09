@@ -86,6 +86,8 @@ SHARP_TEES = True   # tee boxes keep square corners: all_read.py traces them wit
 SMOOTH_PAINTED = True   # build.py: the painted bunkers and tee boxes are low-passed too, so no outline keeps a pixel staircase or a hull corner
 
 # hole 4: the trees crowding the tee boxes (south of them) moved 20 ft (6.1 m) south, toward Frank Road
-# Frank Road's trees are tall, skinny deciduous 'spears' about 60 ft tall (kind 6: bare trunk to 30 ft, then a narrow crown); h and d are the range in m
-TREE_SPEARS = dict(road='Frank Road', reach=12.0, kinds=(0, 2), h=(16.5, 20.0), d=(3.0, 5.0))
+# Frank Road's trees on the course side are tall, skinny deciduous 'spears' about 60 ft tall (kind 6: bare trunk to 30 ft, then a narrow crown); h and d are the range in m
+CREEK_CUT = [(-310, -530, -240, -454.5)]   # build.py: no creek branch across hole 4's fairway: it stops just north of the cart path (the water 2.7 m off its edge, the dug bank reaching it) (the path's north edge is at n -460.4 there)
+CREEK_DEEP = 1.524   # build.py: deep rough on both banks of the creek, 5 ft past the top of the dug bank
+TREE_SPEARS = dict(road='Frank Road', reach=60.0, convert=12.0, into=4.57, gap=3.0, h=(16.5, 20.0), d=(3.0, 5.0))   # build.py: along the stretch of Frank Road beside the course, every tree on the course (north) side within 12 m of the road becomes a spear, and the strip from the shoulder to 15 ft (4.57 m) further north is packed with them 3 m apart; trees south of the road stay as they are
 TREE_SHIFT = [((-10, -535, 90, -518), 0, -6.1)]

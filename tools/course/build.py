@@ -15,7 +15,7 @@ import numpy as np
 import rasterio
 from scipy import ndimage as ndi
 from shapely import affinity
-from shapely.geometry import LineString, Point, Polygon, box, shape
+from shapely.geometry import LineString, Point, Polygon, box, mapping, shape
 from shapely.ops import linemerge, substring, unary_union
 
 import osm
@@ -338,8 +338,10 @@ def creek_pieces(hw=2.0, step=14.0):
     if not os.path.exists(p):
         return []
     out = []
-    for g in json.load(open(p)):
-        L = LineString(round_line(shape(g).coords))   # the centre line is rounded, so the ribbons bend smoothly
+    lines = [LineString(round_line(shape(g).coords)) for g in json.load(open(p))]   # the centre line is rounded, so the ribbons bend smoothly
+    for bx in getattr(course, 'CREEK_CUT', []):   # course.CREEK_CUT = [(e0, n0, e1, n1)]: the creek is taken out of these boxes (a branch the map has that the course does not)
+        lines = [q for L in lines for q in getattr(L.difference(box(*bx)), 'geoms', [L.difference(box(*bx))]) if q.geom_type == 'LineString' and q.length > 3]
+    for L in lines:
         n = max(1, int(round(L.length / (step / 2 if getattr(course, 'SMOOTH_MORE', False) else step))))   # (half-length pieces: the water level steps down in finer steps)
         for i in range(n):
             a, b = L.length * i / n, min(L.length, L.length * (i + 1) / n + .3)
@@ -752,21 +754,6 @@ def main():
         for t in trees:
             if e0 <= t['e'] <= e1 and n0 <= t['n'] <= n1 and t['kind'] == kind:
                 t['h'] = round(t['h'] * k, 1)
-    sp = getattr(course, 'TREE_SPEARS', None)   # tall, skinny raised-crown trees (kind 6) along a road: every tree of the given kinds within `reach` m of the road is converted
-    if sp:
-        rl = [r['line'] for r in F['road'] if r['tags'].get('name') == sp['road']]
-        if rl:
-            rl = unary_union(rl).buffer(sp['reach'])
-            k0 = 0
-            for t in trees:
-                if t['kind'] in sp['kinds'] and rl.contains(Point(t['e'], t['n'])):
-                    u = (math.sin(t['e'] * 12.9898 + t['n'] * 78.233) * 43758.5453) % 1.0
-                    t['kind'] = 6; t['h'] = round(sp['h'][0] + u * (sp['h'][1] - sp['h'][0]), 1); t['d'] = round(sp['d'][0] + (1 - u) * (sp['d'][1] - sp['d'][0]), 1); k0 += 1
-            print(k0, 'trees along', sp['road'], 'made spears (kind 6)')
-    json.dump(trees, open(os.path.join(OUT, 'trees_final.json'), 'w'))   # every tree the game gets (to look one up by position)
-    tq = []
-    for t in trees:  # e, n, crown diameter (dm), kind * 1000 + height (dm)
-        tq += [int(round(t['e'] * 10)), int(round(t['n'] * 10)), int(round(t['d'] * 10)), t['kind'] * 1000 + min(999, int(round(t['h'] * 10)))]
     water = [w['poly'] for w in F['water']]
     creek = creek_pieces()
     fp = os.path.join(OUT, 'fescue.json')
@@ -789,6 +776,53 @@ def main():
         print(f'fence lines: {len(fl)} lines, {sum(g.length for g in fl):.0f} m; boundary {a0 / 1e4:.1f} -> {bound.area / 1e4:.1f} ha')
     elif getattr(course, 'HOUSE_LOTS', 0):
         bound, fence = house_lots(bound, F, fair, holes)
+    json.dump(mapping(bound), open(os.path.join(OUT, 'boundary_final.json'), 'w'))   # the out-of-bounds line as the game gets it (after fence lines / house lots)
+    sp = getattr(course, 'TREE_SPEARS', None)   # tall, skinny raised-crown trees (kind 6) on the course side of a road, along the stretch within `reach` m of the out-of-bounds line (course.TREE_SPEARS)
+    if sp:
+        rls = [r['line'] for r in F['road'] if r['tags'].get('name') == sp['road']]
+        if rls:
+            road = unary_union(rls)
+            from shapely.ops import substring
+            near = []   # the stretches of road with the out-of-bounds line within `reach` m
+            for ln in getattr(road, 'geoms', [road]):
+                run = None
+                for s0 in np.arange(0, ln.length + 5, 5.0):
+                    ok = bound.exterior.distance(ln.interpolate(min(s0, ln.length))) <= sp['reach']
+                    if ok and run is None:
+                        run = s0
+                    if (not ok or s0 >= ln.length) and run is not None:
+                        if s0 - run > 10:
+                            near.append(substring(ln, run, min(s0, ln.length)))
+                        run = None
+            hl = unary_union([LineString(h['line']) for h in holes])
+            flip = [g.buffer(150, single_sided=True).intersection(hl).length > g.buffer(-150, single_sided=True).intersection(hl).length for g in near]   # (True: the course lies on the left of the stretch as drawn)
+            band = lambda w: unary_union([g.buffer(w if f else -w, single_sided=True) for g, f in zip(near, flip)])
+            mown = unary_union(list(fair) + [t['poly'] for t in F['tee'] + F['green'] + F['bunker']] + list(paths) + [w['poly'] for w in F['water']] + creek_pieces() + [b['poly'] for b in F['building']]).buffer(1.5)
+            sh = sp.get('shoulder', 5.8)
+            conv = band(sp['convert']).difference(road.buffer(sh * .5))   # every tree on the course side within `convert` m of the road becomes a spear
+            strip = band(sh + sp['into']).difference(road.buffer(sh)).difference(mown)   # and the strip from the shoulder to `into` m (15 ft) further onto the course is packed with them
+            print('spear strip: road stretches', round(sum(g.length for g in near)), 'm; strip', round(strip.area), 'm2')
+            spear = lambda t, u: t.update(kind=6, h=round(sp['h'][0] + u * (sp['h'][1] - sp['h'][0]), 1), d=round(sp['d'][0] + (1 - u) * (sp['d'][1] - sp['d'][0]), 1))
+            hsh = lambda e, n: (math.sin(e * 12.9898 + n * 78.233) * 43758.5453) % 1.0
+            k0 = 0
+            for t in trees:
+                if conv.contains(Point(t['e'], t['n'])):
+                    spear(t, hsh(t['e'], t['n'])); k0 += 1
+            # then packed in: a jittered grid `gap` m apart, a new tree only where no tree stands within .75 gap
+            from scipy.spatial import cKDTree
+            kd = cKDTree([(t['e'], t['n']) for t in trees]); g = sp['gap']; add = []
+            x0, y0, x1, y1 = strip.bounds
+            for x in np.arange(x0, x1, g):
+                for y in np.arange(y0, y1, g):
+                    e, n = x + (hsh(x, y) - .5) * .6 * g, y + (hsh(y, x) - .5) * .6 * g
+                    if strip.contains(Point(e, n)) and not kd.query_ball_point((e, n), .75 * g) and not any(math.hypot(e - a['e'], n - a['n']) < .75 * g for a in add[-60:]):
+                        t = dict(e=round(e, 2), n=round(n, 2)); spear(t, hsh(e, n)); add.append(t)
+            trees += add
+            print(f"{sp['road']}: {k0} trees on the course side made spears, {len(add)} spears added ({strip.area / 1e4:.2f} ha strip)")
+    json.dump(trees, open(os.path.join(OUT, 'trees_final.json'), 'w'))   # every tree the game gets (to look one up by position)
+    tq = []
+    for t in trees:  # e, n, crown diameter (dm), kind * 1000 + height (dm)
+        tq += [int(round(t['e'] * 10)), int(round(t['n'] * 10)), int(round(t['d'] * 10)), t['kind'] * 1000 + min(999, int(round(t['h'] * 10)))]
     if getattr(course, 'MOWN_ROUGH', False) and not fescue:
         # OSM maps the mown rough (golf=rough) as well as the fairway: deep rough is only the native grass more than 8 m outside everything mown
         mown = unary_union([r['poly'] for r in F['rough']] + list(fair) + [t['poly'] for t in F['tee']] + [g['poly'] for g in F['green']] + [b['poly'] for b in F['bunker']]).buffer(8)
@@ -805,6 +839,12 @@ def main():
     if os.path.exists(djp):
         drains = [shape(g) for g in json.load(open(djp))]
         fescue = list(fescue) + drains
+    if getattr(course, 'CREEK_DEEP', 0):   # deep rough along both banks of the creek: over the dug bank (the game cuts it 2 m out from the creek ribbon) and this many m past its top (course.CREEK_DEEP = 1.524, 5 ft)
+        cr = unary_union(creek_pieces())
+        band = cr.buffer(2.0 + course.CREEK_DEEP + .9, quad_segs=6).intersection(bound)   # (+.9: the game feathers deep rough's edge inward by 0 to .9 m (makeRealCourse deepF); the band runs under the water, which wins, so its creek-side edge is not feathered)
+        add = [g for g in getattr(band, 'geoms', [band]) if g.geom_type == 'Polygon' and g.area > 2]
+        fescue = list(fescue) + add
+        print(f'creek banks: {sum(g.area for g in add) / 1e4:.2f} ha of deep rough (2 m bank + {course.CREEK_DEEP} m each side)')
     if getattr(course, 'ROAD_ROW_DEEP', 0):   # deep rough under the rows of trees that line a road, and this many m beyond their crowns (course.ROAD_ROW_DEEP = 1.5, i.e. 5 ft)
         from scipy.spatial import cKDTree
         ok = ('residential', 'service', 'unclassified', 'tertiary', 'secondary', 'primary', 'living_street')
