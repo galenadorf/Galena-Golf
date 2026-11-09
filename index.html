@@ -492,7 +492,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
     <div class="playRow"><button class="btn alt" id="btnResume" style="display:none">Continue round<small id="resumeInfo"></small></button><button class="btn" id="btnNew">New round</button></div>
   </div>
 </div>
-<div class="layer" id="intro"><div class="card icard"><canvas id="introMap" width="172" height="288"></canvas><div class="ic-b"><div><div class="ic-k" id="icK">Hole 1 of 3</div><div class="ic-n" id="icN">Headland</div><div class="ic-i" id="icI"></div><div class="ic-f"><div>Par<b id="icPar">4</b></div><div>Length<b id="icLen">390 yd</b></div><div>Wind<b id="icWind">5 mph</b></div><div>Fairway<b id="icWx">Fine</b></div></div></div><button class="btn ic-go" id="icGo">Play hole</button></div></div></div>
+<div class="layer" id="intro"><div class="card icard"><canvas id="introMap" width="172" height="288"></canvas><div class="ic-b"><div><div class="ic-k" id="icK">Hole 1 of 3</div><div class="ic-n" id="icN">Headland</div><div class="ic-i" id="icI"></div><div class="ic-f"><div>Par<b id="icPar">4</b></div><div>Length<b id="icLen">390 yd</b></div><div>Wind<b id="icWind">5 mph</b></div><div>Ground<b id="icWx">Fine</b></div></div></div><button class="btn ic-go" id="icGo">Play hole</button></div></div></div>
 <div class="layer" id="done"><div class="card dcard"><div class="d1" id="d1">Birdie</div><div class="d2" id="d2">Hole 1 · 3 strokes · Par 4</div><div class="dstats" id="dstats"></div><button class="btn" id="dNext" style="width:100%">Next hole</button><button class="mbtn dark" id="dReplay" style="width:100%;margin-top:8px">▶ Replay last shot</button><button class="mbtn dark" id="dChange" style="width:100%;margin-top:8px;display:none">⛳ Change practice</button></div></div>
 <div class="layer" id="quitAsk"><div class="card qcard" role="alertdialog" aria-labelledby="qT"><div class="qt" id="qT">Are you sure?</div><p>Any progress will be lost.</p><div class="qb"><button class="btn danger" id="qYes">Yes I'm sure</button><button class="btn subBtn light" id="qNo">No</button></div></div></div>
 <div class="layer" id="restartAsk"><div class="card qcard" role="alertdialog" aria-labelledby="rT"><div class="qt" id="rT">Restart this round?</div><p>Your scores so far will be lost and you start again at hole 1.</p><div class="qb"><button class="btn danger" id="rYes">Yes I'm sure</button><button class="btn subBtn light" id="rNo">No</button></div></div></div>
@@ -619,8 +619,8 @@ const S = { TEE: 0, FAIR: 1, FIRST: 2, ROUGH: 3, DEEP: 4, FRINGE: 5, GREEN: 6, S
 const SURF = [];
 SURF[S.TEE] = { name: 'Tee', k: .012, e: .34, keep: .74, spinStop: 13000, mu: .12, lie: { speed: 1, spin: 1, launch: 0, wig: 1 } };
 SURF[S.FAIR] = { name: 'Fairway', k: .012, e: .34, keep: .74, spinStop: 13000, mu: .12, lie: { speed: 1, spin: 1, launch: 0, wig: 1 } };
-SURF[S.FIRST] = { name: 'First cut', k: .022, e: .28, keep: .58, spinStop: 16000, mu: .19, lie: { speed: .96, spin: .85, launch: .5, wig: 1.05 } };
-SURF[S.ROUGH] = { name: 'Rough', k: .045, e: .20, keep: .44, spinStop: 24000, mu: .34, lie: { speed: 1, spin: .7, launch: 1.5, wig: 1.15, dist: [.8, 1.1] } };
+SURF[S.FIRST] = { name: 'First cut', k: .018, e: .29, keep: .64, spinStop: 16000, mu: .17, lie: { speed: .96, spin: .85, launch: .5, wig: 1.05 } };
+SURF[S.ROUGH] = { name: 'Rough', k: .025, e: .24, keep: .54, spinStop: 24000, mu: .22, lie: { speed: 1, spin: .7, launch: 1.5, wig: 1.15, dist: [.8, 1.1] } };
 SURF[S.DEEP] = { name: 'Deep rough', k: .09, e: .12, keep: .30, spinStop: 40000, mu: .62, lie: { speed: 1, spin: .55, launch: 3, wig: 1.3, dist: [.7, 1.05] } };
 // rough lies (dist): each strike carries a random share of the same strike from the fairway, anywhere in [lo, hi] (a flyer
 // at the top end, a grabby lie at the bottom); aim previews and the caddie plan on the middle of that range
@@ -631,18 +631,20 @@ SURF[S.WATER] = { name: 'Water', k: 0, e: 0, keep: 0, spinStop: 1, mu: 9, lie: {
 SURF[S.PATH] = { name: 'Cart path', hard: true, k: .004, e: .8, keep: .86, spinStop: 30000, mu: .05, lie: { speed: .95, spin: .9, launch: 0, wig: 1.1 } };
 
 /* ---------- weather ---------- */
-// Weather only changes how the ball rolls on the fairway: how hard it bounces, how much pace it keeps and how far it runs out.
-// Each hole takes the weather of the moment it starts (from the clock, see wxClock); the rest of the course (rough, greens, bunkers, flight) is unaffected.
+// Weather only changes how the ball bounces and rolls on the ground (tee, fairway, first cut, rough, deep rough, fringe, green, sand: WX_GROUND): how hard
+// it bounces, how much pace it keeps and how far it runs out, by the same factors on each (the putting power line and read use the same surfaces, so they
+// follow it). Each hole takes the weather of the moment it starts (from the clock, see wxClock); cart paths and the flight are unaffected.
 const WEATHERS = [
-  { id: 'dry', name: 'Dry', note: 'Firm, fast fairway', mu: .72, k: .8, keep: 1.14, e: 1.12 },
-  { id: 'fine', name: 'Fine', note: 'Normal fairway', mu: 1, k: 1, keep: 1, e: 1 },
-  { id: 'damp', name: 'Damp', note: 'Soft fairway, less run', mu: 1.4, k: 1.2, keep: .84, e: .86 },
-  { id: 'rain', name: 'Rain', note: 'Wet fairway, ball plugs', mu: 1.9, k: 1.4, keep: .68, e: .68 }
+  { id: 'dry', name: 'Dry', note: 'Firm, fast ground and greens', mu: .72, k: .8, keep: 1.14, e: 1.12 },
+  { id: 'fine', name: 'Fine', note: 'Normal ground', mu: 1, k: 1, keep: 1, e: 1 },
+  { id: 'damp', name: 'Damp', note: 'Soft ground, slower greens', mu: 1.4, k: 1.2, keep: .84, e: .86 },
+  { id: 'rain', name: 'Rain', note: 'Wet ground, slow greens, ball plugs', mu: 1.9, k: 1.4, keep: .68, e: .68 }
 ];
-let WX = WEATHERS[1], FAIR_WX = SURF[S.FAIR];
+const WX_GROUND = [S.TEE, S.FAIR, S.FIRST, S.ROUGH, S.DEEP, S.FRINGE, S.GREEN, S.SAND];
+let WX = WEATHERS[1], SURF_WX = SURF;   // SURF_WX: the surfaces as the weather in play leaves them (simulateShot reads these)
 function setWeather(w) {
-  WX = w; const f = SURF[S.FAIR];
-  FAIR_WX = w.id === 'fine' ? f : Object.assign({}, f, { mu: f.mu * w.mu, k: f.k * w.k, keep: Math.min(.95, f.keep * w.keep), e: f.e * w.e });
+  WX = w;
+  SURF_WX = w.id === 'fine' ? SURF : SURF.map((f, i) => WX_GROUND.includes(i) ? Object.assign({}, f, { mu: f.mu * w.mu, k: f.k * w.k, keep: Math.min(.95, f.keep * w.keep), e: f.e * w.e }) : f);
 }
 // The sky follows the clock, per course: a smooth noise curve over time, seeded by the course key, so every player on a course (solo, practice, a multiplayer room)
 // sees the same weather at the same moment and restarting a hole or a round changes nothing. The curve is slow (WX_CELL: spells of 1-2 hours) and the weather is
@@ -755,7 +757,7 @@ function cupZone(C, o, x, yb, z, vx, vy, vz, t, fr, ev, mu, air, w, cup) {
     let rx = x - cup.x, rz = z - cup.z, rho = Math.hypot(rx, rz), ux = rho > 1e-6 ? rx / rho : 1, uz = rho > 1e-6 ? rz / rho : 0;
     if (rho >= R) {
       const d = C.h(x, z) + rb - Y;
-      if (d > 0) { C.grad(x, z, _g2); const l = Math.hypot(_g2[0], 1, _g2[1]); hit(-_g2[0] / l, 1 / l, -_g2[1] / l, d, SURF[S.GREEN].e, 'plane'); onPlane = any = true; }
+      if (d > 0) { C.grad(x, z, _g2); const l = Math.hypot(_g2[0], 1, _g2[1]); hit(-_g2[0] / l, 1 / l, -_g2[1] / l, d, SURF_WX[S.GREEN].e, 'plane'); onPlane = any = true; }
     } else {
       const px = cup.x + ux * R, pz = cup.z + uz * R, hr = C.h(px, pz);
       if (Y >= hr) {
@@ -888,7 +890,7 @@ function simulateShot(C, o) {
         const rx = x - cup.x, rz = z - cup.z;
         if (rx * rx + rz * rz < CUP_IN * CUP_IN && y - cup.y < 1.2) {
           if (!land) land = { x, y, z, t, carry: Math.hypot(x - sx, z - sz), angle: Math.atan2(-vy, Math.hypot(vx, vz)) / DEG, surf: S.GREEN };
-          _w3[0] = wx; _w3[1] = wy; _w3[2] = wz; const q = cupZone(C, o, x, y, z, vx, vy, vz, t, fr, ev, SURF[S.GREEN].mu, true, _w3, cup);
+          _w3[0] = wx; _w3[1] = wy; _w3[2] = wz; const q = cupZone(C, o, x, y, z, vx, vy, vz, t, fr, ev, SURF_WX[S.GREEN].mu, true, _w3, cup);
           t = q.t; x = q.x; y = q.yb; z = q.z;
           if (q.kind === 'in') { res.holed = true; res.cup = cup; break; }
           if (q.kind === 'stop') { ev.push({ t, type: 'stop', x, y, z }); break; }
@@ -919,7 +921,7 @@ function simulateShot(C, o) {
         const vn = vx * nx + vy * ny + vz * nz;
         if (vn < 0) {
           const surf = C.surf(x, z);
-          const sv = surf === S.FAIR ? FAIR_WX : SURF[surf];
+          const sv = SURF_WX[surf];
           let tvx = vx - vn * nx, tvy = vy - vn * ny, tvz = vz - vn * nz;
           const vt = Math.hypot(tvx, tvy, tvz), vtot = Math.hypot(vx, vy, vz);
           // backspin component about axis (vt x n)
@@ -951,7 +953,7 @@ function simulateShot(C, o) {
       // rolling
       const surf = C.surf(x, z);
       if (surf === S.WATER) { res.water = true; y = C.wl ? C.wl(x, z) : y; ev.push({ t, type: 'splash', x, y, z, s: Math.hypot(vx, vz) }); fr.push(t, x, y, z, 2); break; }
-      const sfr = surf === S.FAIR ? FAIR_WX : SURF[surf], mu = sfr.mu, kq = sfr.k;
+      const sfr = SURF_WX[surf], mu = sfr.mu, kq = sfr.k;
       C.grad(x, z, _g2);
       if (Math.hypot(_g2[0], _g2[1]) > 1.1 && drops < 8) { drops++; mode = 0; vy = 0; t += dt; step++; continue; } // rolls off a cliff edge
       const kx = -(5 / 7) * GRAV * _g2[0], kz = -(5 / 7) * GRAV * _g2[1];
@@ -1024,7 +1026,7 @@ function computeLaunch(ci, sw, st, surf, yaw, hand, teed, lieRoll) {
   if (c.type === 'putter') {
     const D = clamp(sw.p, 0, 1.08) * sw.range;
     // the stroke is sized for the green; the part of the roll that crosses the fringe (sw.fr metres of it along the line) costs more, so the stroke carries that extra
-    let vb = Math.sqrt(2 * GRAV * (SURF[S.GREEN].mu * Math.max(.05, D) + Math.min(D, sw.fr || 0) * (SURF[S.FRINGE].mu - SURF[S.GREEN].mu)));
+    let vb = Math.sqrt(2 * GRAV * (SURF_WX[S.GREEN].mu * Math.max(.05, D) + Math.min(D, sw.fr || 0) * (SURF_WX[S.FRINGE].mu - SURF_WX[S.GREEN].mu)));
     const sm = (1 - .22 * h * h - .06 * v * v) * (.95 + .05 * q);
     vb *= sm;
     const start = 1.4 * h * hand - (sw.pathDeg || 0);
@@ -1114,7 +1116,7 @@ function calibrateClubs() {
 // what each club does in the air of the course in play (AIR_K): the carry table for the tempo pad, the total, the chip share, the rough-lie factors, and
 // CLUBS[].carry itself (a full swing's flat carry here: the caddie, the club label and the aim ring all use it)
 function clubTables() {
-  const wx = WX, fw = FAIR_WX; WX = WEATHERS[1]; FAIR_WX = SURF[S.FAIR];   // (always measured in the same dry, calm conditions as at start-up, whatever the weather in play)
+  const wx = WX, fw = SURF_WX; WX = WEATHERS[1]; SURF_WX = SURF;   // (always measured in the same dry, calm conditions as at start-up, whatever the weather in play)
   for (const c of GOLF_BAG) {
     if (c.type === 'putter') continue;
     // carry table for the tempo pad (power -> carry)
@@ -1142,7 +1144,7 @@ function clubTables() {
       }
     }
   }
-  WX = wx; FAIR_WX = fw;
+  WX = wx; SURF_WX = fw;
 }
 function launchVec(speed, launch, rpm) {
   const cl = Math.cos(launch * DEG), sl = Math.sin(launch * DEG);
@@ -1361,14 +1363,14 @@ function calibrateDiscs() {
   AIR_K = k0; discTables();
 }
 function discTables() {   // each disc in the air of the course in play: power -> carry table, totals, and CLUBS[].carry
-  const wx = WX, fw = FAIR_WX; WX = WEATHERS[1]; FAIR_WX = SURF[S.FAIR];
+  const wx = WX, fw = SURF_WX; WX = WEATHERS[1]; SURF_WX = SURF;
   for (const c of DISC_BAG) {
     c.table = []; for (let k = 0; k <= 20; k++) c.table.push(k ? discFlat(c, c.ballSpeed * Math.pow(k / 20, POW_EXP), k / 20).carry : 0);
     c.carry = c.table[20];
     const full = discFlat(c, c.ballSpeed), ch = discFlat(c, c.ballSpeed * Math.pow(.25, POW_EXP), .25);
     c.total = full.total; c.roll = full.total - full.carry; c.chipCarry = ch.carry / ch.total;
   }
-  WX = wx; FAIR_WX = fw;
+  WX = wx; SURF_WX = fw;
 }
 
  // broad rolling ground (m), faded out around creeks and ponds
@@ -1762,6 +1764,7 @@ function makeRealCourse(idx, pin) {
     P.sand = P.sand.filter(q => { const r = q.px[0]; for (let i = 0; i < r.length; i += 2) if (Math.hypot((r[i] - .5) * res + x0, (r[i + 1] - .5) * res + z0) < 8) return false; return true; });
     F.tee = sdfField(w, h, res, P.tee.map(q => q.px), SD_R); F.sand = sdfField(w, h, res, P.sand.map(q => q.px), SD_R);
   }
+  { const cw = fringeW() + COLLAR_W; for (let k = 0; k < N; k++) if (F.green[k] - cw < F.fair[k]) F.fair[k] = F.green[k] - cw; }   // the fairway-height collar round every green (COLLAR_W past the fringe)
   C.F = F;
   const BND = RS ? RS.bnd : GC.boundary; C.bnd = BND;
   const inB = new Uint8Array(N), obIn = RS ? [] : GC.obIn; scanFill(inB, w, h, [toPx(BND)], 1); for (const r of obIn) scanFill(inB, w, h, [toPx(r)], 0); C.inB = inB;
@@ -1958,7 +1961,7 @@ function makeRealCourse(idx, pin) {
   };
   const info = { surf: 0, stripe: 0, fwAlong: 0, water: -1, waste: false };
   C.info = info;
-  const FC_F = RDC.noFirstCut ? 0 : 2.8, FC_T = RDC.noFirstCut ? 0 : 3, FR_W = RDC.fringe || 1.5, FC_G = RDC.noFirstCut ? FR_W : 6;   // first cut beside a fairway / a tee box / a green (engine.noFirstCut: none, Legends); the fringe collar round a green is engine.fringe m (default 1.5)
+  const FR_W = fringeW(), [FC_F, FC_T, FC_G, FC_X] = firstCutW(FR_W);   // first cut beside a fairway / a tee box / a green (firstCutW); the fringe round a green (fringeW)
   const fF = F.fair, fG = F.green, fT = F.tee, fS = F.sand, fP = F.path, fW = F.water, fR = F.range;
   const fCk = F.creek; // creeks (Augusta's Rae's Creek, Woodbine's creek) are penalty areas like the ponds
   function surfInfo(X, Z, hh) {
@@ -1985,7 +1988,7 @@ function makeRealCourse(idx, pin) {
     if (at(fP) < 0) { info.surf = S.PATH; return info; }
     const df = at(fF);
     if (df < 0) { info.surf = S.FAIR; info.stripe = Math.sin(Math.PI * -Z / 12) > 0 ? 1 : 0; info.fwAlong = -Z; return info; }
-    if (df < FC_F || dg < FC_G || dt < FC_T || at(fR) < 0) { info.surf = S.FIRST; return info; }
+    if ((df < FC_F && dg >= FC_X) || dg < FC_G || dt < FC_T || at(fR) < 0) { info.surf = S.FIRST; return info; }
     if (at(deepF) > 0) { info.surf = S.DEEP; return info; }
     info.surf = S.ROUGH; return info;
   }
@@ -2228,10 +2231,17 @@ function realFarTex() {
   }
   return GC.farTex;
 }
+// Round every green (every course, the practice green and the range's targets): the fringe (FRINGE_W, 3 ft), then a collar of fairway-height grass
+// (COLLAR_W, added to the fairway field in makeRealCourse), then rough. The first cut is a band beside the fairways only (FIRST_CUT [fair, tee,
+// green, clear] in m: none round tee boxes or greens, and none within `clear` of a green, so the band runs up the fairway to the green's collar and
+// stops there instead of wrapping the collar). engine.fringe / engine.firstCut can still override them per course; no course does.
+const FRINGE_W = .9, COLLAR_W = 1, FIRST_CUT = [2.8, 0, 0, 8];
+function fringeW() { return RDC && RDC.fringe || FRINGE_W; }
+function firstCutW(frW) { const f = RDC.firstCut || FIRST_CUT; return [f[0], f[1], Math.max(f[2], frW), f[3] || 0]; }
 function realTerrainMat(C) {
   const FG = C.fg, w = FG.w, h = FG.h, n = w * h, R = SD_R, F = C.F, seed = C.def.seed;
   const A = new Uint8Array(n * 4), B = new Uint8Array(n * 4), T = new Uint8Array(n * 4);
-  const FC_F = RDC.noFirstCut ? 0 : 2.8, FC_T = RDC.noFirstCut ? 0 : 3, FC_G = RDC.noFirstCut ? 0 : 6;
+  const [FC_F, FC_T, FC_G, FC_X] = firstCutW(fringeW());
   const enc = v => { const t = v / R * .5 + .5; return t <= 0 ? 0 : t >= 1 ? 255 : Math.round(t * 255); };
   let wlo = 1e9, whi = -1e9; for (const p of C.ponds) { wlo = Math.min(wlo, p.lv); whi = Math.max(whi, p.lv); }
   if (wlo > 1e8) { wlo = 0; whi = 1; } wlo -= 3; whi += .5;
@@ -2246,7 +2256,7 @@ function realTerrainMat(C) {
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
     const k = j * w + i, q = k * 4, X = FG.x0 + i * FG.res, Z = FG.z0 + j * FG.res;
     const fw = F.fair[k], gr = F.green[k], te = F.tee[k];
-    A[q] = enc(fw); A[q + 1] = enc(Math.min(fw - FC_F, gr - FC_G, te - FC_T, F.range[k])); A[q + 2] = enc(C.deepF[k]); A[q + 3] = enc(gr);
+    A[q] = enc(fw); A[q + 1] = enc(Math.min(Math.max(fw - FC_F, FC_X - gr), gr - FC_G, te - FC_T, F.range[k])); A[q + 2] = enc(C.deepF[k]); A[q + 3] = enc(gr);
     B[q] = enc(F.sand[k]); B[q + 1] = straw ? enc(straw(X, Z)) : 255; B[q + 2] = enc(te); B[q + 3] = enc(F.path[k]);
     T[q] = Math.round((Math.sin(Math.PI * -Z / 12) * .5 + .5) * 255);
     const wl = C.wlGrid[k]; T[q + 1] = wl > -1e8 ? 1 + Math.round(clamp((wl - wlo) / (whi - wlo), 0, 1) * 254) : 0;
@@ -4048,7 +4058,7 @@ function terrainMatFrom(o) {
   const dr = o.dry ? 1.7 : o.lush ? -.7 : 0; // (1 = a little dry; Alsace is pushed well toward straw and olive-yellow; below 0: lusher, deeper green, as at Augusta)
   const U = {
     tFA: { value: tex(A) }, tFB: { value: tex(B) }, tFC: { value: tex(T) }, fO: { value: new THREE.Vector2(x0, z0) }, fN: { value: new THREE.Vector2(w, h) }, fInv: { value: 1 / res }, fR: { value: R },
-    wLo: { value: wlo }, wHi: { value: whi }, seaLv: { value: o.sea != null ? o.sea : -1e4 }, hasCoast: { value: o.sea != null ? 1 : 0 }, isLinks: { value: o.links ? 1 : 0 }, isRocky: { value: o.rocky ? 1 : 0 }, frW: { value: RDC && RDC.fringe || 1.5 },
+    wLo: { value: wlo }, wHi: { value: whi }, seaLv: { value: o.sea != null ? o.sea : -1e4 }, hasCoast: { value: o.sea != null ? 1 : 0 }, isLinks: { value: o.links ? 1 : 0 }, isRocky: { value: o.rocky ? 1 : 0 }, frW: { value: fringeW() },
     tFar: { value: far ? far.tex : NO_FAR.tex }, hasFar: { value: far ? 1 : 0 }, farA: { value: far ? far.A : new THREE.Vector4() }, farB: { value: far ? far.B : new THREE.Vector4(0, 0, 1, 1) }, cupP: CUP_U, tSlope: SG_U.tSlope, sgBox: SG_U.sgBox, sgAim: SG_U.sgAim, sgOn: SG_U.sgOn, sgT: SG_U.sgT, sgLen: SG_U.sgLen,
     // dry = a links-style course: sun-bleached, more olive and straw in the rough, a touch drier on the fairways (greens stay healthy)
     cRough: { value: pc(S.ROUGH, dr * .035, -dr * .05, -dr * .04) }, cDeep: { value: o.fescue ? v3(hslToRgb(...(o.longRough ? LONG_HSL : FESCUE_HSL))) : pc(S.DEEP, dr * .045, -dr * .06, -dr * .052) }, cFirst: { value: pc(S.FIRST, dr * .03, -dr * .035, -dr * .036) }, cFairA: { value: pc(S.FAIR, .045 + dr * .035, -dr * .03, -dr * .04) }, cFairB: { value: pc(S.FAIR, -.025 + dr * .025, -dr * .03, -dr * .04) },
@@ -6860,7 +6870,7 @@ function autoClubAndAim() {
 // equivalent flat distance: uphill costs (5/7)·dh/μ metres of roll, downhill gives it back
 let AIM_ARC_K = .3;   // how much of the real flight height the aim line rises (all of it would run off the top of the screen from behind the ball)
 const PUTT_PAST = .4572;   // the tempo bar's putting mark is the stroke that would roll 18 in past the hole (the aim line itself ends at the hole)
-function puttEquiv() { const d = distToPin(), dh = G.C.cup.y - G.ball.y; return Math.max(.5, d + (5 / 7) * dh / SURF[S.GREEN].mu); }
+function puttEquiv() { const d = distToPin(), dh = G.C.cup.y - G.ball.y; return Math.max(.5, d + (5 / 7) * dh / SURF_WX[S.GREEN].mu); }
 function pickPuttRange() { const e = puttEquiv(); G.puttRange = PUTT_RANGES.find(r => r >= e * 1.25) || PUTT_RANGES[PUTT_RANGES.length - 1]; }
 function cycleRange() { const i = PUTT_RANGES.indexOf(G.puttRange); G.puttRange = PUTT_RANGES[(i + 1) % PUTT_RANGES.length]; updateAim(true); SFX.blip(); }
 function aimDir() { return [Math.sin(G.yaw), -Math.cos(G.yaw)]; }

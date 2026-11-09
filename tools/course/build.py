@@ -20,7 +20,7 @@ from shapely.ops import linemerge, substring, unary_union
 
 import osm
 import practice_read
-from common import ALTI_VAR, DETAIL, NAME, ORIGIN, OUT, RD_JS, RD_VAR, YD, cache, course, to_local
+from common import ALTI_VAR, DETAIL, NAME, ORIGIN, OUT, RD_JS, RD_VAR, YD, cache, course, tee_rect, to_local
 
 card = course   # the scorecard: PAR, HCP, TEES, MARKERS
 DEM_RES, DEM_AREA = 15, course.DEM_AREA
@@ -612,12 +612,12 @@ def main():
     if os.path.exists(bdp) or os.path.exists(bdd):
         nb = [shape(g) for pth in (bdp, bdd) if os.path.exists(pth) for g in json.load(open(pth))]
         F['building'] = [b for b in F['building'] if not any(b['poly'].intersection(q).area > .5 * b['poly'].area for q in nb)] + [dict(poly=q, tags={'painted': 'yes'}) for q in nb]
-    for k in ('bunker', 'tee', 'fairway'):   # OSM outlines (painted ones replace them below, already smoothed)
+    for k in ('bunker', 'fairway'):   # OSM outlines (painted ones replace them below, already smoothed; tee boxes are squared below instead)
         for f in F[k]:
             f['poly'] = round_osm(f['poly'])
     if getattr(course, 'SMOOTH_MORE', False):   # every mapped outline gets the low-pass too (bunkers, tees, fairways, greens, ponds), area kept
         for k, sg in (('bunker', 1.6), ('tee', 2.0), ('fairway', 3.0), ('green', 1.6), ('water', 2.5)):
-            if k == 'tee' and getattr(course, 'SHARP_TEES', False):   # square tee corners
+            if k == 'tee':   # tee boxes are squared below, never rounded
                 continue
             for f in F[k]:
                 f['poly'] = smooth_poly(f['poly'], sg)
@@ -629,11 +629,13 @@ def main():
         F['tee'] = [dict(poly=shape(g), tags={'painted': 'yes'}) for g in json.load(open(tpn))]
     if getattr(course, 'SMOOTH_PAINTED', False):   # painted bunkers and tee boxes get the same low-pass as the OSM ones above (they replace OSM's after it), area kept
         for k, sg in (('bunker', 1.6), ('tee', 2.0)):
-            if k == 'tee' and getattr(course, 'SHARP_TEES', False):
+            if k == 'tee':
                 continue
             for f in F[k]:
                 if f['tags'].get('painted'):
                     f['poly'] = smooth_poly(f['poly'], sg)
+    for f in F['tee']:   # every tee box, mapped or painted, on every course: straight edges and square corners (common.tee_rect)
+        f['poly'] = tee_rect(f['poly'])
     fp0 = os.path.join(OUT, 'fairways_painted.json')  # hand-corrected fairways (fairways.py) win over OSM's (Eagle Ridge), then trace.py's (Woodbine: OSM has none)
     if os.path.exists(fp0) or not F['fairway']:
         fair = [shape(g) for g in json.load(open(fp0 if os.path.exists(fp0) else os.path.join(OUT, 'fairways.json')))]

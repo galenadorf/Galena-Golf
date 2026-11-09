@@ -17,12 +17,11 @@ from PIL import Image
 from rasterio import features
 from rasterio.transform import Affine
 from scipy import ndimage as ndi
-from shapely import contains_xy
-from shapely.geometry import MultiPoint, Polygon, mapping, shape
+from shapely.geometry import MultiPoint, mapping, shape
 from shapely.ops import nearest_points
 
 import osm
-from common import OUT, smooth_polys
+from common import OUT, smooth_polys, tee_rect
 from paint_edit import KEY_BOX
 
 MIN_TEE = 3.0     # m2: smaller magenta specks are paint noise
@@ -48,25 +47,8 @@ def blob_polys(m, fr, min_area, fill, smooth=False):
 
 
 def sharp_polys(m, fr, min_area):
-    """Tee boxes as true rectangles (course.SHARP_TEES): each painted blob becomes the rectangle with the same centre, principal axis and
-    second moments (so a painted rectangle comes back exactly, and a rounded or wobbly one becomes the rectangle it was meant to be),
-    scaled to the painted area. Straight edges, square corners, nothing blurred."""
-    out = []
-    for p in blob_polys(m, fr, min_area, True, False):
-        p = p.buffer(0)
-        if p.geom_type == 'MultiPolygon':
-            p = max(p.geoms, key=lambda q: q.area)
-        x0, y0, x1, y1 = p.bounds
-        xs, ys = np.meshgrid(np.arange(x0, x1, .1), np.arange(y0, y1, .1))
-        P = np.stack([xs.ravel(), ys.ravel()], 1)
-        P = P[contains_xy(p, P[:, 0], P[:, 1])]
-        c = P.mean(0)
-        w, v = np.linalg.eigh(np.cov((P - c).T))
-        L, W = np.sqrt(12 * w[1]), np.sqrt(12 * w[0])
-        k = np.sqrt(p.area / (L * W))
-        u, n = v[:, 1] * L * k / 2, v[:, 0] * W * k / 2
-        out.append(Polygon([tuple(c - u - n), tuple(c + u - n), tuple(c + u + n), tuple(c - u + n)]))
-    return out
+    """Painted tee boxes, traced without blur, each made a rectangle (common.tee_rect: straight edges, square corners)."""
+    return [tee_rect(p) for p in blob_polys(m, fr, min_area, True, False)]
 
 
 def sheds(m, fr):

@@ -129,7 +129,7 @@
       "pars": [5, 4, 4, 4, 3, 4, 3, 5, 4, 4, 3, 5, 4, 4, 3, 5, 4, 4],
       "recFrom": "2026-11-03",
       "about": "The Legends Course at Memphis National Golf Club (Collierville, Tennessee; Ed Seay and Arnold Palmer, 1971; par 72) is played from the white tees (6,274 yd); black, gold and green are the markers (alpha: no rounds are posted). Hole lines, greens, tees, bunkers, ponds and cart paths from \u00a9 OpenStreetMap contributors (ODbL); fairways traced from the 2023 USDA NAIP aerial; trees from the 2012 Shelby County lidar (USGS), checked against the aerial; the ground from the USGS 3DEP 1 m elevation model.",
-      "engine": { "paintedDeep": true, "waterDrop": 1.83, "noFirstCut": true, "fringe": 0.9, "alt": 95, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -1050, "n0": -700, "res": 2, "W": 1000, "H": 1100 } },
+      "engine": { "paintedDeep": true, "waterDrop": 1.83, "alt": 95, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -1050, "n0": -700, "res": 2, "W": 1000, "H": 1100 } },
       "scene": { "houses": { "keep": [[-365, -3], [-380, 33]] }, "deer": 0.5, "squirrels": 3, "clubhouse": { "minArea": 1200, "front": [-406.5, -112.5], "style": "memphis", "depth": 27, "drive": { "c": [-406.5, -112.5], "island": 6.2 }, "sign": [] }, "parkedCarts": [[-391.7, -150.5, 44], [-393.4, -148.8, 44]] }
     },
     {

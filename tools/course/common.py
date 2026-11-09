@@ -88,6 +88,35 @@ def load_rd():
     return json.loads(js[js.index('{'):js.rindex('};\nconst ' + ALTI_VAR) + 1])
 
 
+def tee_rect(p, fit=.85):
+    """A tee box with straight edges and square corners (every course): the rectangle with the outline's centre, principal axis and second
+    moments, scaled to its area (a painted or mapped rectangle comes back exactly, a rounded or wobbly one becomes the rectangle it was meant
+    to be). A box that is not nearly a rectangle (an L, two tiers run together: less than `fit` of it inside that rectangle) keeps its own
+    shape with its outline simplified to straight edges instead, so no grass is added or lost."""
+    import numpy as np
+    from shapely import contains_xy
+    from shapely.geometry import Polygon
+    p = p.buffer(0)
+    if p.geom_type == 'MultiPolygon':
+        p = max(p.geoms, key=lambda q: q.area)
+    x0, y0, x1, y1 = p.bounds
+    xs, ys = np.meshgrid(np.arange(x0, x1, .1), np.arange(y0, y1, .1))
+    P = np.stack([xs.ravel(), ys.ravel()], 1)
+    P = P[contains_xy(p, P[:, 0], P[:, 1])]
+    if len(P) < 10:
+        return p
+    c = P.mean(0)
+    w, v = np.linalg.eigh(np.cov((P - c).T))
+    L, W = np.sqrt(12 * max(w[1], 1e-6)), np.sqrt(12 * max(w[0], 1e-6))
+    k = np.sqrt(p.area / (L * W))
+    u, n = v[:, 1] * L * k / 2, v[:, 0] * W * k / 2
+    r = Polygon([tuple(c - u - n), tuple(c + u - n), tuple(c + u + n), tuple(c - u + n)])
+    if p.intersection(r).area >= fit * p.area:
+        return r
+    q = p.simplify(.5, preserve_topology=True).buffer(0)
+    return q if q.geom_type == 'Polygon' and abs(q.area / p.area - 1) < .1 else p
+
+
 def smooth_polys(m, fr, smooth, level, min_area, tol, pad=4):
     """Polygons (local metres) from a boolean mask on the base-map grid `fr`. The painted edges are pixel staircases, so each outline is
     the sub-pixel contour of the mask blurred by `smooth` px, traced at `level` (.5 keeps straight edges where they are; a little less

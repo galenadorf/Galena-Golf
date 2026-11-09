@@ -35,7 +35,7 @@ import paint_read
 import site_paint
 import trees_paint
 from all_edit import LAYERS, SURFACES
-from common import OUT, course
+from common import OUT
 
 TOL = 40   # a pixel is a palette colour when every channel is within this of it
 
@@ -101,7 +101,7 @@ def main():
         rep['bunker'] = f'{len(bk)} bunkers, {round(sum(p.area for p in bk))} m2'
     if has('tee', S['tee']):
         tm = ndi.binary_closing(S['tee'], iterations=2)
-        tees = paint_read.sharp_polys(tm, fr, paint_read.MIN_TEE) if getattr(course, 'SHARP_TEES', False) else paint_read.blob_polys(tm, fr, paint_read.MIN_TEE, True, True)   # SHARP_TEES: square corners
+        tees = paint_read.sharp_polys(tm, fr, paint_read.MIN_TEE)   # SHARP_TEES: square corners
         put('tees_painted.json', tees)
         rep['tee'] = f'{len(tees)} tee boxes'
     if only:
