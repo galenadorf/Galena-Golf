@@ -17,7 +17,8 @@ from PIL import Image
 from rasterio import features
 from rasterio.transform import Affine
 from scipy import ndimage as ndi
-from shapely.geometry import MultiPoint, mapping, shape
+from shapely import contains_xy
+from shapely.geometry import MultiPoint, Polygon, mapping, shape
 from shapely.ops import nearest_points
 
 import osm
@@ -46,20 +47,25 @@ def blob_polys(m, fr, min_area, fill, smooth=False):
     return [shape(g).buffer(0) for g, v in features.shapes(m.astype(np.uint8), mask=m, transform=Affine(1 / ppm, 0, fr['e0'], 0, -1 / ppm, fr['n1'])) if v]
 
 
-def sharp_polys(m, fr, min_area, fit=.86):
-    """Tee boxes with square corners (course.SHARP_TEES): each blob's pixel outline, simplified to straight edges; a blob that is nearly a
-    rectangle (area within `fit` of its minimum rotated rectangle) becomes that rectangle exactly. Nothing is blurred, so corners stay sharp."""
+def sharp_polys(m, fr, min_area):
+    """Tee boxes as true rectangles (course.SHARP_TEES): each painted blob becomes the rectangle with the same centre, principal axis and
+    second moments (so a painted rectangle comes back exactly, and a rounded or wobbly one becomes the rectangle it was meant to be),
+    scaled to the painted area. Straight edges, square corners, nothing blurred."""
     out = []
     for p in blob_polys(m, fr, min_area, True, False):
         p = p.buffer(0)
         if p.geom_type == 'MultiPolygon':
             p = max(p.geoms, key=lambda q: q.area)
-        r = p.minimum_rotated_rectangle
-        if r.area > 0 and p.area / r.area >= fit:
-            out.append(r)
-        else:
-            q = p.simplify(.45, preserve_topology=True)
-            out.append(q if q.area > .8 * p.area else p)
+        x0, y0, x1, y1 = p.bounds
+        xs, ys = np.meshgrid(np.arange(x0, x1, .1), np.arange(y0, y1, .1))
+        P = np.stack([xs.ravel(), ys.ravel()], 1)
+        P = P[contains_xy(p, P[:, 0], P[:, 1])]
+        c = P.mean(0)
+        w, v = np.linalg.eigh(np.cov((P - c).T))
+        L, W = np.sqrt(12 * w[1]), np.sqrt(12 * w[0])
+        k = np.sqrt(p.area / (L * W))
+        u, n = v[:, 1] * L * k / 2, v[:, 0] * W * k / 2
+        out.append(Polygon([tuple(c - u - n), tuple(c + u - n), tuple(c + u + n), tuple(c - u + n)]))
     return out
 
 

@@ -62,15 +62,17 @@ def main():
     put = lambda name, geoms: json.dump([mapping(g) for g in geoms], open(os.path.join(OUT, name), 'w'))
     rep = {}
 
+    only = 'tee' if '--tees' in sys.argv else None   # --tees: read the tee layer alone, leave every other file as it is
+
     def has(k, m=None):   # a layer this course paints, with some paint on it
-        if k not in M:
+        if k not in M or (only and k != only):
             return False
         if not (M[k] if m is None else m).any():
             rep[k] = 'nothing painted: left as it is'
             return False
         return True
 
-    if 'boundary' in M:
+    if 'boundary' in M and not only:
         if M['boundary'].any():
             p, n = boundary.from_mask(M['boundary'], fr)
             json.dump(mapping(p), open(os.path.join(OUT, 'boundary.json'), 'w'))
@@ -102,7 +104,7 @@ def main():
         tees = paint_read.sharp_polys(tm, fr, paint_read.MIN_TEE) if getattr(course, 'SHARP_TEES', False) else paint_read.blob_polys(tm, fr, paint_read.MIN_TEE, True, True)   # SHARP_TEES: square corners
         put('tees_painted.json', tees)
         rep['tee'] = f'{len(tees)} tee boxes'
-    if '--tees' in sys.argv:   # only the tee boxes (tees_sharp: rereads the mask's tee layer without touching any other file)
+    if only:
         print(rep); return
     if has('fence'):   # hard out-of-bounds lines (a split-rail fence along the property lines where houses line a hole): build.py cuts the boundary back to them
         import fence_read
