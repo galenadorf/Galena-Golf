@@ -1958,7 +1958,7 @@ function makeRealCourse(idx, pin) {
   };
   const info = { surf: 0, stripe: 0, fwAlong: 0, water: -1, waste: false };
   C.info = info;
-  const FC_F = RDC.noFirstCut ? 0 : 2.8, FC_T = RDC.noFirstCut ? 0 : 3;   // first cut beside a fairway / a tee box (engine.noFirstCut: none, Legends); round the green it stays 6 m
+  const FC_F = RDC.noFirstCut ? 0 : 2.8, FC_T = RDC.noFirstCut ? 0 : 3, FR_W = RDC.fringe || 1.5, FC_G = RDC.noFirstCut ? FR_W : 6;   // first cut beside a fairway / a tee box / a green (engine.noFirstCut: none, Legends); the fringe collar round a green is engine.fringe m (default 1.5)
   const fF = F.fair, fG = F.green, fT = F.tee, fS = F.sand, fP = F.path, fW = F.water, fR = F.range;
   const fCk = F.creek; // creeks (Augusta's Rae's Creek, Woodbine's creek) are penalty areas like the ponds
   function surfInfo(X, Z, hh) {
@@ -1980,12 +1980,12 @@ function makeRealCourse(idx, pin) {
     }
     if (at(fS) < 0) { info.surf = S.SAND; return info; }
     const dg = at(fG); if (dg < 0) { info.surf = S.GREEN; return info; }
-    if (dg < 1.5) { info.surf = S.FRINGE; return info; }
+    if (dg < FR_W) { info.surf = S.FRINGE; return info; }
     const dt = at(fT); if (dt < 0) { info.surf = S.TEE; return info; }
     if (at(fP) < 0) { info.surf = S.PATH; return info; }
     const df = at(fF);
     if (df < 0) { info.surf = S.FAIR; info.stripe = Math.sin(Math.PI * -Z / 12) > 0 ? 1 : 0; info.fwAlong = -Z; return info; }
-    if (df < FC_F || dg < 6 || dt < FC_T || at(fR) < 0) { info.surf = S.FIRST; return info; }
+    if (df < FC_F || dg < FC_G || dt < FC_T || at(fR) < 0) { info.surf = S.FIRST; return info; }
     if (at(deepF) > 0) { info.surf = S.DEEP; return info; }
     info.surf = S.ROUGH; return info;
   }
@@ -2231,7 +2231,7 @@ function realFarTex() {
 function realTerrainMat(C) {
   const FG = C.fg, w = FG.w, h = FG.h, n = w * h, R = SD_R, F = C.F, seed = C.def.seed;
   const A = new Uint8Array(n * 4), B = new Uint8Array(n * 4), T = new Uint8Array(n * 4);
-  const FC_F = RDC.noFirstCut ? 0 : 2.8, FC_T = RDC.noFirstCut ? 0 : 3;
+  const FC_F = RDC.noFirstCut ? 0 : 2.8, FC_T = RDC.noFirstCut ? 0 : 3, FC_G = RDC.noFirstCut ? 0 : 6;
   const enc = v => { const t = v / R * .5 + .5; return t <= 0 ? 0 : t >= 1 ? 255 : Math.round(t * 255); };
   let wlo = 1e9, whi = -1e9; for (const p of C.ponds) { wlo = Math.min(wlo, p.lv); whi = Math.max(whi, p.lv); }
   if (wlo > 1e8) { wlo = 0; whi = 1; } wlo -= 3; whi += .5;
@@ -2246,7 +2246,7 @@ function realTerrainMat(C) {
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
     const k = j * w + i, q = k * 4, X = FG.x0 + i * FG.res, Z = FG.z0 + j * FG.res;
     const fw = F.fair[k], gr = F.green[k], te = F.tee[k];
-    A[q] = enc(fw); A[q + 1] = enc(Math.min(fw - FC_F, gr - 6, te - FC_T, F.range[k])); A[q + 2] = enc(C.deepF[k]); A[q + 3] = enc(gr);
+    A[q] = enc(fw); A[q + 1] = enc(Math.min(fw - FC_F, gr - FC_G, te - FC_T, F.range[k])); A[q + 2] = enc(C.deepF[k]); A[q + 3] = enc(gr);
     B[q] = enc(F.sand[k]); B[q + 1] = straw ? enc(straw(X, Z)) : 255; B[q + 2] = enc(te); B[q + 3] = enc(F.path[k]);
     T[q] = Math.round((Math.sin(Math.PI * -Z / 12) * .5 + .5) * 255);
     const wl = C.wlGrid[k]; T[q + 1] = wl > -1e8 ? 1 + Math.round(clamp((wl - wlo) / (whi - wlo), 0, 1) * 254) : 0;
@@ -3954,7 +3954,7 @@ function buildHole(C) {
 }
 /* ---------- terrain shading: smooth light, crisp per-pixel surface edges ---------- */
 const TERRAIN_GLSL = `
-uniform sampler2D tFA, tFB, tFC, tFar; uniform vec2 fO, fN; uniform float fInv, fR, wLo, wHi, seaLv, hasCoast, isLinks, isRocky, hasFar, isStraw;
+uniform sampler2D tFA, tFB, tFC, tFar; uniform vec2 fO, fN; uniform float fInv, fR, wLo, wHi, seaLv, hasCoast, isLinks, isRocky, hasFar, isStraw, frW;
 uniform vec4 farA, farB;
 uniform vec4 cupP[4];
 uniform sampler2D tSlope; uniform vec4 sgBox, sgAim; uniform float sgOn, sgT, sgLen;
@@ -4012,7 +4012,7 @@ vec3 surfaceColor() {
   col = mix(col, cPath, ins(path));
   col = mix(col, cTee, ins(tee));
   col *= 1. - .05 * lineAt(tee, .09);
-  col = mix(col, cFringe, ins(gr - 1.5));
+  col = mix(col, cFringe, ins(gr - frW));
   vec3 grn = mix(cGreenB, cGreenA, ins(sin((vWPos.x + vWPos.z) * .98175)));
   col = mix(col, grn, ins(gr));
   col *= 1. + .06 * lineAt(gr, .08);
@@ -4022,11 +4022,11 @@ vec3 surfaceColor() {
   col = mix(col, mix(cSand, cWaste, isW), ins(sand));
   // shoreline: damp sand just above the water, darker bed below it
   float hasW = step(.5 / 255., c.g) * inF, wl = wLo + (c.g * 255. - 1.) / 254. * (wHi - wLo);
-  col = mix(col, cBeach, ins(vWPos.y - (wl + .15)) * hasW * (1. - ins(fw)) * (1. - ins(gr - 1.5)) * (1. - ins(tee)) * (1. - ins(path)));
+  col = mix(col, cBeach, ins(vWPos.y - (wl + .15)) * hasW * (1. - ins(fw)) * (1. - ins(gr - frW)) * (1. - ins(tee)) * (1. - ins(path)));
   col = mix(col, mix(cBeach * .9, cPond, clamp((wl - vWPos.y) / 1.2, 0., 1.)), ins(vWPos.y - (wl - .08)) * hasW);
   float ny = normalize(vWN).y;
-  if (isLinks > .5) col = mix(col, cDune, smoothstep(.975, .9, ny) * (1. - ins(fw)) * (1. - ins(gr - 1.5)) * (1. - ins(sand)) * (1. - ins(tee)) * (1. - ins(path)));
-  if (isRocky > .5) col = mix(col, cGranite * (.86 + .28 * mix(.5, c.a, inF)), smoothstep(.9, .76, ny) * (1. - ins(fw)) * (1. - ins(gr - 1.5)) * (1. - ins(sand)) * (1. - ins(tee)) * (1. - ins(path)));
+  if (isLinks > .5) col = mix(col, cDune, smoothstep(.975, .9, ny) * (1. - ins(fw)) * (1. - ins(gr - frW)) * (1. - ins(sand)) * (1. - ins(tee)) * (1. - ins(path)));
+  if (isRocky > .5) col = mix(col, cGranite * (.86 + .28 * mix(.5, c.a, inF)), smoothstep(.9, .76, ny) * (1. - ins(fw)) * (1. - ins(gr - frW)) * (1. - ins(sand)) * (1. - ins(tee)) * (1. - ins(path)));
   if (hasCoast > .5) {
     col = mix(col, cRock * (vWPos.y < seaLv + 2. ? .84 : 1.), smoothstep(.7, .6, ny));
     col = mix(col, mix(cBed1, cBed2, clamp((seaLv - vWPos.y) / 7., 0., 1.)), ins(vWPos.y - (seaLv - .25)));
@@ -4048,7 +4048,7 @@ function terrainMatFrom(o) {
   const dr = o.dry ? 1.7 : o.lush ? -.7 : 0; // (1 = a little dry; Alsace is pushed well toward straw and olive-yellow; below 0: lusher, deeper green, as at Augusta)
   const U = {
     tFA: { value: tex(A) }, tFB: { value: tex(B) }, tFC: { value: tex(T) }, fO: { value: new THREE.Vector2(x0, z0) }, fN: { value: new THREE.Vector2(w, h) }, fInv: { value: 1 / res }, fR: { value: R },
-    wLo: { value: wlo }, wHi: { value: whi }, seaLv: { value: o.sea != null ? o.sea : -1e4 }, hasCoast: { value: o.sea != null ? 1 : 0 }, isLinks: { value: o.links ? 1 : 0 }, isRocky: { value: o.rocky ? 1 : 0 },
+    wLo: { value: wlo }, wHi: { value: whi }, seaLv: { value: o.sea != null ? o.sea : -1e4 }, hasCoast: { value: o.sea != null ? 1 : 0 }, isLinks: { value: o.links ? 1 : 0 }, isRocky: { value: o.rocky ? 1 : 0 }, frW: { value: RDC && RDC.fringe || 1.5 },
     tFar: { value: far ? far.tex : NO_FAR.tex }, hasFar: { value: far ? 1 : 0 }, farA: { value: far ? far.A : new THREE.Vector4() }, farB: { value: far ? far.B : new THREE.Vector4(0, 0, 1, 1) }, cupP: CUP_U, tSlope: SG_U.tSlope, sgBox: SG_U.sgBox, sgAim: SG_U.sgAim, sgOn: SG_U.sgOn, sgT: SG_U.sgT, sgLen: SG_U.sgLen,
     // dry = a links-style course: sun-bleached, more olive and straw in the rough, a touch drier on the fairways (greens stay healthy)
     cRough: { value: pc(S.ROUGH, dr * .035, -dr * .05, -dr * .04) }, cDeep: { value: o.fescue ? v3(hslToRgb(...(o.longRough ? LONG_HSL : FESCUE_HSL))) : pc(S.DEEP, dr * .045, -dr * .06, -dr * .052) }, cFirst: { value: pc(S.FIRST, dr * .03, -dr * .035, -dr * .036) }, cFairA: { value: pc(S.FAIR, .045 + dr * .035, -dr * .03, -dr * .04) }, cFairB: { value: pc(S.FAIR, -.025 + dr * .025, -dr * .03, -dr * .04) },
