@@ -668,6 +668,33 @@ def main():
         n0 = sum(q.area for q in fair)
         fair = [g for q in fair for g in getattr(q.difference(cut), 'geoms', [q.difference(cut)]) if g.geom_type == 'Polygon' and g.area > 4]
         print(f'hole {ref}: fairway kept {back:.1f} m from the water ({n0 - sum(q.area for q in fair):.0f} m2 cut)')
+    for ref, off in getattr(course, 'FAIRWAY_START', {}).items():   # {hole: m}: that hole's fairway starts on a straight line parallel to the creek it crosses, `off` m from the creek's centre (no point running down to the water), its corners rounded
+        hl = [h for h in F['hole'] if h['ref'] == ref][0]['line']
+        crk = unary_union(creek_pieces()); x = hl.intersection(crk)
+        if x.is_empty:
+            print(f'FAIRWAY_START: hole {ref} does not cross the creek'); continue
+        c = np.array(x.centroid.coords[0])
+        P = np.array([q for g in getattr(crk, 'geoms', [crk]) for q in g.exterior.coords if math.hypot(q[0] - c[0], q[1] - c[1]) < 40])
+        w_, v_ = np.linalg.eigh(np.cov((P - P.mean(0)).T)); dv = v_[:, 1]; nv = np.array([-dv[1], dv[0]])   # the creek's direction there, and across it
+        if np.dot(np.array(hl.coords[-1]) - c, nv) < 0:
+            nv = -nv   # (across, toward the green)
+        o = P.mean(0) + nv * off
+        keep = Polygon([tuple(o - dv * 400), tuple(o + dv * 400), tuple(o + dv * 400 + nv * 800), tuple(o - dv * 400 + nv * 800)])   # the green's side of the line
+        area = hl.buffer(60).intersection(Point(*c).buffer(off + 40))   # only round where this hole crosses the creek (a neighbouring hole's fairway on the tee side is left alone)
+        out = []
+        for q in fair:
+            if not q.intersects(area):
+                out.append(q); continue
+            r = q.difference(area.difference(keep))   # only near this hole: cut the start
+            if r.area > q.area - .5:
+                out.append(q); continue   # (this fairway does not reach the line: untouched)
+            near = LineString([tuple(o - dv * 400), tuple(o + dv * 400)]).buffer(8).intersection(area)   # and round the new corners (an opening of 3 m), nowhere else
+            rr = r.buffer(-3, quad_segs=8).buffer(3, quad_segs=8)
+            r = rr.intersection(near).union(r.difference(near.buffer(-.5))).buffer(0)   # (the two overlap by half a metre, so they join into one piece)
+            out += [g for g in getattr(r, 'geoms', [r]) if g.geom_type == 'Polygon' and g.area > 4]
+        print(f'hole {ref}: fairway starts {off} m from the creek, parallel to it ({sum(q.area for q in fair) - sum(q.area for q in out):.0f} m2 cut)')
+        fair = out
+    json.dump([mapping(q) for q in fair], open(os.path.join(OUT, 'fairways_final.json'), 'w'))   # the fairways as the game gets them (to check an outline by eye)
     print('fairway -> green links (hole, gap m, area added m2):', rep)
     cp = os.path.join(OUT, 'cartpaths.json')   # the cart paths: found on the aerial and corrected by hand (cartpaths_edit.py, cartpaths_read.py); trace.py's paths.json was only fragments
     paths = [shape(g) for g in json.load(open(cp))] if os.path.exists(cp) else []

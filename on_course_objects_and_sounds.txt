@@ -456,9 +456,9 @@ SCENERY AND DATA
 
 
 #####################################################################################################
-LEGENDS AT MEMPHIS NATIONAL (legends)  "Legends (alpha)"
+LEGENDS AT MEMPHIS NATIONAL (legends)  "Legends"
 #####################################################################################################
-Also everything in GLOBAL. Dark green long rough, only where it is painted (`engine.paintedDeep`): ground nobody has painted as deep rough is plain rough, however far it lies from play. OSM and lidar data plus painted layers; alpha (no rounds are posted). White tees 6,274 yd, par 72; black, gold and green are the markers.
+Also everything in GLOBAL. Dark green long rough, only where it is painted (`engine.paintedDeep`): ground nobody has painted as deep rough is plain rough, however far it lies from play. OSM and lidar data plus painted layers; a full course (rounds are posted and keep records, from 2026-11-09). White tees 6,274 yd, par 72; black, gold and green are the markers.
 Memphis National Golf Club (Collierville TN) has two courses; only the Legends is built so far (OSM maps just its 18 holes; the Champions are not in the data).
 
 OBJECTS

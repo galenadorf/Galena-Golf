@@ -70,6 +70,7 @@ ROOF_TRAIN = (-300, -300, 250, 0)   # the part of the course whose buildings are
 TRAFFIC = {'Frank Road': dict(cars=10, mph=40, colors=[0xf2f2f0, 0xb9bec4, 0x1b1c1f, 0xb3262e, 0x1f3f7a, 0x7b92ac, 0x2f5a3c, 0xc8b48a, 0x6b1f2a, 0x4a4f55])}   # a mix of body colours: white, silver, black, red, blue, light blue, green, tan, maroon, charcoal
 NO_FAIRWAY_HULL = True    # build.py: the painted fairways already touch the greens; the convex-hull link would fill notches and reach over water
 FAIRWAY_OFF_WATER = True  # build.py: fairway polygons are cut back from the ponds
+FAIRWAY_START = {3: 25.0}   # build.py: hole 3's fairway starts on a straight line parallel to the creek, 25 m from its centre (it ran to a point at the creek), corners rounded
 FAIRWAY_SETBACK = {3: 16.8}   # build.py: hole 3's fairway stays 10 yd (9.1 m) from the water the player sees (the game's water line lies about 5.5 m past the creek ribbon: dug banks) after the tee
 # out of bounds at the property lines where houses line a hole: a lot reaches HOUSE_LOTS m past a house's walls (rows of lots are joined), the clubhouse area is exempt;
 # the stretches of boundary along lots are drawn as a 2-rail split-rail cedar fence
