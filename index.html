@@ -3558,7 +3558,7 @@ let RDC = null, COURSE = null;
 function courseList(reg) {
   for (const c of reg.courses) {
     const k = c.key;
-    COURSES[k] = { key: k, name: c.name, short: c.short, place: c.place || '', tee: c.tee || '', rating: c.rating || 0, slope: c.slope || 0, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: !!c.music,
+    COURSES[k] = { key: k, name: c.name, card: c.card || '', short: c.short, place: c.place || '', tee: c.tee || '', rating: c.rating || 0, slope: c.slope || 0, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: !!c.music,
       defs: null, best: 'ssg-best-' + k, board: 'ssg-board-' + k, coll: 'rounds-' + k };
   }
 }
@@ -8143,7 +8143,8 @@ function readoutNote(text, cls) {
 /* ---------- sheets ---------- */
 // the play screen's tile: the course's full name, its town, par and the tee's rating and slope, then the best three rounds on the world board
 function playFill() {
-  const CO = COURSE; $('playCourse').textContent = CO.name.replace(' at Eagle Ridge', '\nat Eagle Ridge').replace(' Golf Course', '\nGolf Course'); $('playPlace').textContent = CO.place;
+  // the course's name on this card: courses.json `card` when it has one (\n for a new line), else the name split before 'at Eagle Ridge' / 'Golf Course'
+  const CO = COURSE; $('playCourse').textContent = CO.card || CO.name.replace(' at Eagle Ridge', '\nat Eagle Ridge').replace(' Golf Course', '\nGolf Course'); $('playPlace').textContent = CO.place;
   $('playPar').textContent = ['Par ' + PAR_TOTAL, CO.slope ? 'Slope ' + CO.slope : '', CO.rating ? 'Rating ' + CO.rating : '', ''].filter(Boolean).join(' · ');
   const box = $('playTop'); box.textContent = ''; if (CO.alpha) return;
   const rows = worldRows(CO.key); if (!rows) return;

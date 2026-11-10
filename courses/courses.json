@@ -124,6 +124,7 @@
     {
       "key": "legends",
       "name": "Legends at Memphis National Golf Club",
+      "card": "Legends Course\nat Memphis National GC",
       "short": "Legends", "place": "Collierville, TN", "tee": "White", "rating": 70.5, "slope": 126,
       "pars": [5, 4, 4, 4, 3, 4, 3, 5, 4, 4, 3, 5, 4, 4, 3, 5, 4, 4],
       "recFrom": "2026-11-09",
