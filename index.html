@@ -6706,6 +6706,7 @@ function finishRound() {
   if (G.practice || !G.scores || !G.scores.every(v => v != null)) return;
   clearRound();
   if (G.submitted) return; G.submitted = true;
+  if (COURSE.alpha) return;   // a course in alpha (courses.json) keeps nothing: no best score, stats, history, boards or post, so nothing waits to be posted once the course is promoted
   const tp = totalToPar();
   try { const best = +localStorage.getItem(BEST_KEY) || null; if (!best || tp.s < best) localStorage.setItem(BEST_KEY, tp.s); } catch (e) { }
   statsRound(); const e = { name: playerName(), strokes: tp.s, toPar: tp.d, holes: HOLE_DEFS.length, course: COURSE.key, at: Date.now(), v: 1, hs: roundHoles() };
@@ -8696,6 +8697,7 @@ function gimmeCard(d) {
 }
 // every finished shot (call once from finishShot)
 function statsShot(sh, r) {
+  if (COURSE.alpha) return;   // an alpha course keeps no stats
   const C = G.C, par = C.def.par, pv = G.prev || { x: G.ball.x, z: G.ball.z, teed: false }, putt = !!sh.L.putt;
   ST.shots++; ST.dist += r.holed ? Math.hypot(C.cup.x - pv.x, C.cup.z - pv.z) : (r.total || 0);
   if (r.water) ST.water++; if (r.lost) ST.lost++; else if (r.ob) ST.ob++;
@@ -8713,7 +8715,7 @@ function statsShot(sh, r) {
 }
 // a hole finished in a real round
 function statsHole(h) {
-  if (G.practice) return; const par = G.C.def.par, sc = G.scores[h], d = sc - par, S = ST;
+  if (G.practice || COURSE.alpha) return; const par = G.C.def.par, sc = G.scores[h], d = sc - par, S = ST;
   S.holes++; S.strokes += sc; S.putts += G.putts[h] || 0; if (G.weather && G.weather.id === 'rain') S.rainHoles++;
   if (sc === 1 && par > 1) { /* counted as an ace in statsShot */ } else if (d <= -2) S.eagles++; else if (d === -1) S.birdies++; else if (d === 0) S.pars++; else if (d === 1) S.bogeys++; else S.doubles++;
   S.girTry++; if (G.gir[h] === true) { S.gir++; S.cur.gir++; } else S.cur.gir = 0;

@@ -141,6 +141,13 @@ def load():
     for f in F['water_hazard'] + F['lateral_water_hazard']:
         if not any(w['poly'].intersection(f['poly']).area > .5 * f['poly'].area for w in F['water']):
             F['water'].append(dict(poly=f['poly'], tags=f['tags']))
+    # tee boxes OSM lacks (course.EXTRA_TEES: hole -> (east, north) of the box's middle, local metres): a 12 x 8 m box facing down the hole line
+    for ref, (te, tn) in getattr(course, 'EXTRA_TEES', {}).items():
+        h = next(h for h in F['hole'] if h['ref'] == ref)
+        (x0, y0), (x1, y1) = list(h['line'].coords)[:2]
+        L = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** .5; ux, uy = (x1 - x0) / L, (y1 - y0) / L
+        pts = [(te + ux * a - uy * b, tn + uy * a + ux * b) for a, b in ((-4, -6), (4, -6), (4, 6), (-4, 6))]
+        F['tee'].append(dict(poly=Polygon(pts), tags={'extra': 'yes'}))
     F['hole'].sort(key=lambda h: h['ref'])
     return F
 
