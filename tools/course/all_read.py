@@ -40,6 +40,26 @@ from common import OUT
 TOL = 40   # a pixel is a palette colour when every channel is within this of it
 
 
+def clumps_from(m, fr, tr):
+    """Grass clumps [e, n, scale] from a painted mask: a dot is one clump sized to the dot, a bigger area is filled with clumps about 2 m apart
+    (also used by extras_edit.py)."""
+    from site_paint import blobs
+    out_c = []
+    rng = np.random.default_rng(11)
+    for p in blobs(m, fr, tr, 1.0):
+        if p.area <= 7:
+            out_c.append([round(p.centroid.x, 1), round(p.centroid.y, 1), round(float(np.clip(2 * np.sqrt(p.area / np.pi) / 1.5, .7, 1.5)), 2)])
+            continue
+        inner = p.buffer(-.6) if p.buffer(-.6).area > 1 else p
+        x0, y0, x1, y1 = inner.bounds
+        for x in np.arange(x0, x1, 2.0):
+            for y in np.arange(y0, y1, 2.0):
+                q = Point(x + rng.uniform(-.35, .35), y + rng.uniform(-.35, .35))
+                if inner.contains(q):
+                    out_c.append([round(q.x, 1), round(q.y, 1), round(float(rng.uniform(.85, 1.15)), 2)])
+    return out_c
+
+
 def main():
     fr = json.load(open(os.path.join(OUT, 'all_edit.json')))
     a = np.array(Image.open(os.path.join(OUT, 'all_mask.png')).convert('RGB')).astype(int)
@@ -112,20 +132,7 @@ def main():
         json.dump([mapping(g) for g in fl], open(os.path.join(OUT, 'fence_lines.json'), 'w'))
         rep['fence'] = f'{len(fl)} lines, {sum(g.length for g in fl):.0f} m'
     if has('clump'):   # grass clumps: a dot is one clump, a bigger area is filled with them about 2 m apart
-        from site_paint import blobs
-        out_c = []
-        rng = np.random.default_rng(11)
-        for p in blobs(M['clump'], fr, tr0, 1.0):
-            if p.area <= 7:
-                out_c.append([round(p.centroid.x, 1), round(p.centroid.y, 1), round(float(np.clip(2 * np.sqrt(p.area / np.pi) / 1.5, .7, 1.5)), 2)])
-                continue
-            inner = p.buffer(-.6) if p.buffer(-.6).area > 1 else p
-            x0, y0, x1, y1 = inner.bounds
-            for x in np.arange(x0, x1, 2.0):
-                for y in np.arange(y0, y1, 2.0):
-                    q = Point(x + rng.uniform(-.35, .35), y + rng.uniform(-.35, .35))
-                    if inner.contains(q):
-                        out_c.append([round(q.x, 1), round(q.y, 1), round(float(rng.uniform(.85, 1.15)), 2)])
+        out_c = clumps_from(M['clump'], fr, tr0)
         json.dump(out_c, open(os.path.join(OUT, 'clumps.json'), 'w'))
         rep['clump'] = f'{len(out_c)} clumps'
     if has('drain'):   # rock-lined drainage hazards

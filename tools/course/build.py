@@ -334,13 +334,18 @@ def creek_pieces(hw=2.0, step=14.0):
     pp = os.path.join(OUT, 'creek_painted.json')  # the hand-corrected creek (creek_paint.py), already in pieces
     if os.path.exists(pp):
         return [shape(g) for g in json.load(open(pp))]
-    p = os.path.join(OUT, 'creek.json')
-    if not os.path.exists(p):
+    p, pa = os.path.join(OUT, 'creek.json'), os.path.join(OUT, 'creek_added.json')   # creek_added.json: creek painted on the extras map (extras_edit.py read), centre lines
+    if not os.path.exists(p) and not os.path.exists(pa):
         return []
     out = []
-    lines = [LineString(round_line(shape(g).coords)) for g in json.load(open(p))]   # the centre line is rounded, so the ribbons bend smoothly
+    lines = [LineString(round_line(shape(g).coords)) for g in json.load(open(p))] if os.path.exists(p) else []   # the centre line is rounded, so the ribbons bend smoothly
+    if os.path.exists(pa):
+        lines += [shape(g) for g in json.load(open(pa))]   # (already smoothed by the reader; never cut by CREEK_CUT below, which is for the mapped creek)
+    lines_mapped = len(lines) - (len(json.load(open(pa))) if os.path.exists(pa) else 0)
+    added, lines = lines[lines_mapped:], lines[:lines_mapped]
     for bx in getattr(course, 'CREEK_CUT', []):   # course.CREEK_CUT = [(e0, n0, e1, n1)]: the creek is taken out of these boxes (a branch the map has that the course does not)
         lines = [q for L in lines for q in getattr(L.difference(box(*bx)), 'geoms', [L.difference(box(*bx))]) if q.geom_type == 'LineString' and q.length > 3]
+    lines += added
     for L in lines:
         n = max(1, int(round(L.length / (step / 2 if getattr(course, 'SMOOTH_MORE', False) else step))))   # (half-length pieces: the water level steps down in finer steps)
         for i in range(n):
@@ -779,7 +784,7 @@ def main():
     elif getattr(course, 'HOUSE_LOTS', 0):
         bound, fence = house_lots(bound, F, fair, holes)
     json.dump(mapping(bound), open(os.path.join(OUT, 'boundary_final.json'), 'w'))   # the out-of-bounds line as the game gets it (after fence lines / house lots)
-    sp = getattr(course, 'TREE_SPEARS', None)   # tall, skinny raised-crown trees (kind 6) on the course side of a road, along the stretch within `reach` m of the out-of-bounds line (course.TREE_SPEARS)
+    sp = getattr(course, 'TREE_SPEARS', None)   # tall, skinny raised-crown trees (kind 6, or sp['kind']: Legends 7, crown from 5 ft) on the course side of a road, along the stretch within `reach` m of the out-of-bounds line (course.TREE_SPEARS)
     if sp:
         rls = [r['line'] for r in F['road'] if r['tags'].get('name') == sp['road']]
         if rls:
@@ -804,7 +809,7 @@ def main():
             conv = band(sp['convert']).difference(road.buffer(sh * .5))   # every tree on the course side within `convert` m of the road becomes a spear
             strip = band(sh + sp['into']).difference(road.buffer(sh)).difference(mown)   # and the strip from the shoulder to `into` m (15 ft) further onto the course is packed with them
             print('spear strip: road stretches', round(sum(g.length for g in near)), 'm; strip', round(strip.area), 'm2')
-            spear = lambda t, u: t.update(kind=6, h=round(sp['h'][0] + u * (sp['h'][1] - sp['h'][0]), 1), d=round(sp['d'][0] + (1 - u) * (sp['d'][1] - sp['d'][0]), 1))
+            spear = lambda t, u: t.update(kind=sp.get('kind', 6), h=round(sp['h'][0] + u * (sp['h'][1] - sp['h'][0]), 1), d=round(sp['d'][0] + (1 - u) * (sp['d'][1] - sp['d'][0]), 1))
             hsh = lambda e, n: (math.sin(e * 12.9898 + n * 78.233) * 43758.5453) % 1.0
             k0 = 0
             for t in trees:
@@ -837,6 +842,10 @@ def main():
     cjp, djp = os.path.join(OUT, 'clumps.json'), os.path.join(OUT, 'drains_painted.json')   # painted grass clumps and rock-lined drainage hazards (all_read.py): both stand on deep rough
     if os.path.exists(cjp):
         clumps = json.load(open(cjp))
+    cap = os.path.join(OUT, 'clumps_added.json')   # sawgrass painted on the extras map (extras_edit.py read), added to the all-in-one map's
+    if os.path.exists(cap):
+        clumps = clumps + json.load(open(cap))
+    if clumps:
         fescue = list(fescue) + [Point(e, n).buffer(.9 * k, quad_segs=6) for e, n, k in clumps]
     if os.path.exists(djp):
         drains = [shape(g) for g in json.load(open(djp))]

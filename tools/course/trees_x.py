@@ -61,11 +61,13 @@ def guide():
     print('out/trees_guide.png', g.size, '(yellow broadleaf, cyan conifer, green shrub, grey = already removed). Paint magenta #FF00FF X marks on a copy, save it as out/trees_x.png')
 
 
-def read():
+def read(path=None, add_col=None, write=True, check='trees_x_check.png'):
+    """The X marks and circles on a painted picture (out/trees_x.png, or extras_edit.py's out/extras_mask.png with its own add colours)."""
     fr = frame(); ppm = fr['ppm']
-    path = os.path.join(OUT, 'trees_x.png')
+    path = path or os.path.join(OUT, 'trees_x.png')
+    add_col = add_col or ADD_COL
     if not os.path.exists(path):
-        sys.exit('save your painted copy as out/trees_x.png')
+        sys.exit(f'save your painted copy as {os.path.relpath(path)}')
     im = Image.open(path).convert('RGB')
     a = np.asarray(im).astype(int)
     mask = np.abs(a - np.array(X_COL)).max(axis=2) < 60
@@ -102,8 +104,7 @@ def read():
     # circles: trees to add
     from trees_paint import from_masks
     frm = dict(res=1 / ppm, e0=fr['e0'], n1=fr['n1'])
-    add = from_masks({k: np.abs(a - np.array(c)).max(axis=2) <= ADD_TOL for k, c in ADD_COL.items()}, frm, T)
-    json.dump(add, open(os.path.join(OUT, 'trees_x_added.json'), 'w'))
+    add = from_masks({k: np.abs(a - np.array(c)).max(axis=2) <= ADD_TOL for k, c in add_col.items()}, frm, T)
     for g in add:
         x, y = (g['e'] - fr['e0']) * ppm, (fr['n1'] - g['n']) * ppm; r = g['d'] / 2 * ppm + 4
         cd.ellipse([x - r, y - r, x + r, y + r], outline=(255, 255, 255), width=3)
@@ -113,9 +114,13 @@ def read():
         k = (g['e'], g['n'])
         if k not in seen:
             seen.add(k); uniq.append(g)
+    if not write:
+        return uniq, add, notes, chk
+    json.dump(add, open(os.path.join(OUT, 'trees_x_added.json'), 'w'))
     json.dump(uniq, open(os.path.join(OUT, 'trees_x_removed.json'), 'w'))
-    chk.save(os.path.join(OUT, 'trees_x_check.png'))
-    print('\n'.join(notes)); print(f'{len(uniq)} trees listed in out/trees_x_removed.json ({n} marks found); {len(add)} trees listed in out/trees_x_added.json; check picture: out/trees_x_check.png (green ring = removed, white ring = added, red box = X found nothing)')
+    chk.save(os.path.join(OUT, check))
+    print('\n'.join(notes)); print(f'{len(uniq)} trees listed in out/trees_x_removed.json ({n} marks found); {len(add)} trees listed in out/trees_x_added.json; check picture: out/{check} (green ring = removed, white ring = added, red box = X found nothing)')
+    return uniq, add, notes, chk
 
 
 if __name__ == '__main__':

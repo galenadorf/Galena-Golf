@@ -2386,9 +2386,10 @@ function buildRealTrees(C, grp) {
       if (refs) occ.push({ x: t.X, z: t.Z, y0: y, y1: cy + .9 * R, r: R, refs, hid: false });
       return;
     }
-    if (t.kind === 6) {
-      // a tall raised-crown tree (Frank Road's spears, big oaks over a tee): a bare trunk to 30 ft (9.1 m), then the crown up to the top; the crown is a tall ellipsoid
-      const Ht = clamp(t.H > 0 ? t.H : 18.3, 8, 30), base = Math.min(9.1, .55 * Ht), hh = (Ht - base) / 2, cy = y + base + hh;
+    if (t.kind === 6 || t.kind === 7) {
+      // a tall raised-crown tree (kind 6, big oaks over a tee: a bare trunk to 30 ft (9.1 m); kind 7, Legends' Frank Road spears: leaves from 5 ft (1.5 m)),
+      // then the crown up to the top; the crown is a tall ellipsoid (a spear's about 10 ft across, so a tall narrow column)
+      const Ht = clamp(t.H > 0 ? t.H : 18.3, 8, 30), base = t.kind === 7 ? 1.5 : Math.min(9.1, .55 * Ht), hh = (Ht - base) / 2, cy = y + base + hh;
       let Rh = clamp(t.d / 2, 1.2, 8);
       if (!t.fill) { const dt = C.fieldAt(C.F.tee, t.X, t.Z), dg = C.fieldAt(C.F.green, t.X, t.Z); if (dt < -.3 || dg < -.3) return; Rh = Math.max(1, Math.min(Rh, Math.min(dt + 1, dg + 2))); }
       col.setHex(hv < .78 ? REAL_TREE_COLS[(hv / .78 * REAL_TREE_COLS.length) | 0] : LEAF_COLS[((hv - .78) / .22 * LEAF_COLS.length) | 0]);
