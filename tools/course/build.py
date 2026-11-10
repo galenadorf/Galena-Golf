@@ -944,6 +944,21 @@ def main():
     path_road = []
     if not paths and getattr(course, 'OSM_CARTPATHS', False):   # nobody painted the cart paths: OSM's, joined across the roads
         paths, path_road = osm_cartpaths(F, roads)
+    for key, (rc, ro) in getattr(course, 'FINAL_ROUND', {}).items():   # {layer: (close m, open m)}: a last pass over the finished outlines (the cuts, links and unions above leave cusps, thin slits and hard corners): closing rounds the inside corners and fills slits narrower than twice `rc`, opening rounds the outside corners and drops slivers narrower than twice `ro`; the area barely moves
+        def fin(q, rc=rc, ro=ro):
+            q = q.buffer(0)
+            if rc: q = q.buffer(rc, quad_segs=8).buffer(-rc, quad_segs=8)
+            if ro: q = q.buffer(-ro, quad_segs=8).buffer(ro, quad_segs=8)
+            q = q.simplify(.05)
+            return [g for g in getattr(q, 'geoms', [q]) if g.geom_type == 'Polygon' and g.area > 2]
+        if key == 'fair':   # (a fairway that reaches a green is rounded together with it, so the narrow ring of fairway grass round the green is not opened away)
+            gu = unary_union([g['poly'] for g in F['green']])
+            fair = [g for q in fair for g in fin(q.union(gu) if q.intersects(gu) else q)]
+            fair = [g for g in fair if not any(g.within(h) for h in fair if h is not g)]
+        elif key == 'water': water = [g for q in water for g in fin(q)]
+        elif key == 'fescue': fescue = [g for q in fescue for g in fin(q)]
+        elif key == 'bound': bound = max(fin(bound), key=lambda g: g.area)
+        print(f'FINAL_ROUND {key}: closed {rc} m, opened {ro} m')
     rd = dict(
         name=NAME, origin=list(ORIGIN), dem=dem, holes=holes,
         feat=dict(fair=enc_polys(fair), green=enc_polys([f['poly'] for f in F['green']]), tee=enc_polys([f['poly'] for f in F['tee']]),
