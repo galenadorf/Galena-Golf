@@ -101,3 +101,9 @@ TREE_EDIT = [dict(at=(-578.5, -311.4), d=6.0, h=12.7),
              dict(at=(-244.0, -435.1), d=15.3, h=34.8)]
 # hole 1, the two small trees on the line just past the bend (4 m crown, 18 and 16 m tall) are taken out
 TREE_DROP = [(-274.9, -403.9), (-266.8, -406.0)]
+
+# a 40 ft metal farm windmill on hole 8, 100 ft south-west of the restroom after hole 6 (its door is at (-643.8, -161.2)), 22 ft into the deep rough: 100 ft from the restroom at the bearing
+# (about 13 degrees west of south-west) where the deep rough is 22 ft deep; ['windmill', east, north, the way the wheel faces (degrees, east = 0, counter-clockwise), footing m, footing m, '']
+EXTRA_PROPS = [('windmill', -669.6, -177.4, 180, 3.1, 3.1, '')]
+# the washroom after hole 6 is a prop (site_props); OSM also maps it as a 37 m2 'shed', which the game drew as a red-roofed house round it
+BUILDINGS_DROP = [(-643.8, -161.7)]

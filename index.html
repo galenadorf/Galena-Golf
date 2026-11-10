@@ -2943,7 +2943,7 @@ function spotBeside(C, x, z, side, back) {
 // ---- site props painted on the aerial map (tools/course/site_paint.py): washrooms, porta-potties and signposts ----
 // GC.props rows: [kind, e, n, direction the front faces (degrees, east = 0, counter-clockwise), width m, depth m, text, extra]
 // (extra: for 'lot' {poly: outline [e, n]..., lines: stall edges [e1, n1, e2, n2]...}; for 'car' [model 'car' | 'suv', body colour])
-const SITE_NAMES = { wash: 'Off the washroom!', potty: 'Off the porta-potty!', shed: 'Off the pump house!', car: 'Off a parked car!', cart: 'Off a golf cart!', pool: 'Off the water slide!', play: 'Off the playground!' };
+const SITE_NAMES = { wash: 'Off the washroom!', potty: 'Off the porta-potty!', windmill: 'Off the windmill!', shed: 'Off the pump house!', car: 'Off a parked car!', cart: 'Off a golf cart!', pool: 'Off the water slide!', play: 'Off the playground!' };
 // two empty Club Car Precedents parked nose to tail on the cart path north-east of the practice green, facing up the path toward the first hole
 // (rows like GC.props: kind, e, n, front-facing degrees, width m, depth m, text, and 'riders' as the eighth field for a cart with two men in it)
 function realProps(C) {
@@ -2966,8 +2966,8 @@ function propGround(C, b, w, d) {
 function realSiteColliders(C, colliders) {
   for (const b of realProps(C)) {
     if (b.k === 'pool' || b.k === 'play') { parkColliders(C, b, colliders); continue; }
-    if (b.k !== 'wash' && b.k !== 'potty' && b.k !== 'shed' && b.k !== 'car' && b.k !== 'cart') continue;
-    const id = 200001 + b.i, gr = propGround(C, b, b.w, b.d), hgt = b.k === 'wash' ? 3.5 : b.k === 'shed' ? 3.2 : b.k === 'car' ? (b.a && b.a[0] === 'suv' ? 1.75 : 1.45) : b.k === 'cart' ? 1.9 : 2.4;
+    if (b.k !== 'wash' && b.k !== 'potty' && b.k !== 'shed' && b.k !== 'car' && b.k !== 'cart' && b.k !== 'windmill') continue;
+    const id = 200001 + b.i, gr = propGround(C, b, b.w, b.d), hgt = b.k === 'windmill' ? 12.2 : b.k === 'wash' ? 3.5 : b.k === 'shed' ? 3.2 : b.k === 'car' ? (b.a && b.a[0] === 'suv' ? 1.75 : 1.45) : b.k === 'cart' ? 1.9 : 2.4;
     colliders.push({ box: true, x: b.X, z: b.Z, r: Math.hypot(b.w, b.d) / 2, c: Math.cos(b.yaw), s: -Math.sin(b.yaw), hw: b.w / 2 + .1, hd: b.d / 2 + .1, y1: gr.hi + hgt, t: id });
     C.colNames[id] = SITE_NAMES[b.k];
   }
@@ -3207,7 +3207,43 @@ function parkColliders(C, b, colliders) {
   }
   C.colNames[id] = SITE_NAMES[b.k];
 }
+// a farm windmill, 40 ft (12.2 m) to the top of the wheel: a galvanised lattice tower, a gearbox head with a tail and vane, and an 8 ft wheel of 18 blades that turns with the wind
+// (the prop row: 'windmill', e, n, the way the wheel faces, 3.1 m footing, 3.1, ''; three draw calls: the tower, the head, the wheel)
+function realWindmillMesh(C, b, grp) {
+  const gy = C.h(b.X, b.Z), TH = 10.1, HUB = 10.97, RW = 1.22, parts = [], head = [], wheel = [], V = (x, y, z) => new THREE.Vector3(x, y, z), UP = V(0, 1, 0);
+  const rod = (list, a, c, r, col) => { const d = c.clone().sub(a), L = d.length(), m = new THREE.Matrix4().compose(a.clone().add(c).multiplyScalar(.5), new THREE.Quaternion().setFromUnitVectors(UP, d.normalize()), V(1, L, 1)); list.push({ g: WM_ROD(r), m, c: col }); };
+  const plate = (list, w, h, d, x, y, z, col, rx, ry, rz) => { const m = new THREE.Matrix4().compose(V(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx || 0, ry || 0, rz || 0)), V(w, h, d)); list.push({ g: unitBox, m, c: col }); };
+  const GAL = 0xb4bbbf, GAL2 = 0xa2aaae, RED = 0xa8382e;
+  const half = t => 1.55 - (1.55 - .5) * t, at = (i, t) => { const sx = i & 1 ? 1 : -1, sz = i & 2 ? 1 : -1, h = half(t); return V(sx * h, gy - .4 + (TH + .4) * t, sz * h); };
+  for (let i = 0; i < 4; i++) rod(parts, at(i, 0), at(i, 1), .06, GAL2);   // the four legs
+  const NP = 5;
+  for (let k = 0; k <= NP; k++) { const t = k / NP; for (const [i, j] of [[0, 1], [1, 3], [3, 2], [2, 0]]) rod(parts, at(i, t), at(j, t), .035, GAL); }   // the girts
+  for (let k = 0; k < NP; k++) { const t0 = k / NP, t1 = (k + 1) / NP; for (const [i, j] of [[0, 1], [1, 3], [3, 2], [2, 0]]) { const f = (k + i) & 1; rod(parts, at(f ? i : j, t0), at(f ? j : i, t1), .022, GAL); } }   // one diagonal brace a panel
+  plate(parts, 1.5, .07, 1.5, 0, gy + TH + .02, 0, GAL2);   // the platform
+  rod(parts, at(0, 1).setY(gy + TH), at(0, 1).setY(gy + TH + .9), .018, GAL); rod(parts, at(3, 1).setY(gy + TH), at(3, 1).setY(gy + TH + .9), .018, GAL);   // two rail posts
+  plate(head, .5, .5, .95, 0, gy + HUB, -.05, 0x5d6a6f);   // the gearbox
+  plate(head, .16, .6, .16, 0, gy + HUB - .45, -.05, GAL2);   // the post it turns on
+  rod(head, V(0, gy + HUB, -.5), V(0, gy + HUB, -2.1), .045, GAL2);   // the tail boom
+  plate(head, .03, .85, 1.35, 0, gy + HUB + .1, -2.8, RED);   // the vane
+  rod(head, V(0, gy + HUB, -1.5), V(0, gy + HUB + .42, -2.3), .02, GAL);
+  rod(wheel, V(0, 0, -.22), V(0, 0, .3), .1, 0x5d6a6f);   // the hub
+  const NB = 18;
+  for (let k = 0; k < NB; k++) {   // each blade: a flat plate along the radius, pitched about it
+    const a = k / NB * TAU, m = new THREE.Matrix4().compose(V(-Math.sin(a) * .87, Math.cos(a) * .87, .03), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, a)).multiply(new THREE.Quaternion().setFromAxisAngle(UP, .42)), V(.17, .74, .012));
+    wheel.push({ g: unitBox, m, c: GAL });
+  }
+  for (const [r0, w] of [[RW, .035], [.55, .03]]) { const m = new THREE.Matrix4().makeScale(1, 1, 1); wheel.push({ g: new THREE.TorusGeometry(r0, w, 4, 40), m, c: GAL2 }); }   // the rim and an inner ring
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  const mk = (list, cast) => { const m = new THREE.Mesh(mergeParts(list), mat); m.castShadow = cast; m.receiveShadow = false; return m; };
+  const g = new THREE.Group(); g.position.set(b.X, 0, b.Z); g.rotation.y = b.yaw;
+  g.add(mk(parts, true));
+  const hg = new THREE.Group(); hg.add(mk(head, true)); g.add(hg);
+  const w = mk(wheel, false); w.position.set(0, gy + HUB, .55); g.add(w); (C._wm = C._wm || []).push(w);
+  grp.add(g);
+}
+const WM_RODS = new Map(), WM_ROD = r => { let g = WM_RODS.get(r); if (!g) WM_RODS.set(r, g = new THREE.CylinderGeometry(r, r, 1, 5)); return g; };
 function realSiteMeshes(C, grp) {
+  C._wm = [];
   const box = (g, w, h, d, x, y, z, mat) => { const m = new THREE.Mesh(unitBox, mat); m.scale.set(w, h, d); m.position.set(x, y, z); g.add(m); return m; };
   const carMat = LIFE_MAT();
   for (const b of realProps(C)) {
@@ -3216,12 +3252,13 @@ function realSiteMeshes(C, grp) {
     if (b.k === 'play') { realPlayMesh(C, b, grp); continue; }
     if (b.k === 'car') { grp.add(realCarMesh(C, b, carMat)); continue; }
     if (b.k === 'cart') { grp.add(realCartMesh(C, b)); continue; }
+    if (b.k === 'windmill') { realWindmillMesh(C, b, grp); continue; }
     const g = new THREE.Group(), gr = propGround(C, b, b.w, b.d), base = gr.lo - .6;
     if (b.k === 'wash') { // a double washroom: block walls, a low pitched roof, two doors with MEN and WOMEN signs on the front (+z)
       const w = b.w, d = b.d, top = gr.hi + .15 + 2.6, doorM = lambert(0x2f5a4c);
       box(g, w + .3, gr.hi + .15 - base, d + .3, 0, (gr.hi + .15 + base) / 2, 0, lambert(0xa9a49a));
       box(g, w, top - (gr.hi + .15), d, 0, (top + gr.hi + .15) / 2, 0, lambert(0xd8d1c1));
-      const roof = new THREE.Mesh(gableRoof(w, d, .9, .45), new THREE.MeshLambertMaterial({ color: 0x5f4636, side: THREE.DoubleSide })); roof.position.y = top; g.add(roof);
+      const roof = new THREE.Mesh(gableRoof(w, d, .9, .45), new THREE.MeshLambertMaterial({ color: COURSE.key === 'legends' ? 0x35694a : 0x5f4636, side: THREE.DoubleSide })); roof.position.y = top; g.add(roof);   // (Legends: green metal)
       for (const sx of [-1, 1]) {
         const x = sx * w * .24, f = d / 2 + .04;
         box(g, 1.0, 2.05, .08, x, gr.hi + .15 + 1.03, f, doorM); box(g, 1.2, .12, .1, x, gr.hi + .15 + 2.12, f, lambert(0xece5d4)); box(g, .1, 2.05, .1, x - .6, gr.hi + .15 + 1.03, f, lambert(0xece5d4)); box(g, .1, 2.05, .1, x + .6, gr.hi + .15 + 1.03, f, lambert(0xece5d4));
@@ -5818,6 +5855,7 @@ function lifeFade(e, dt) {
 }
 function updateLife(dt, now) {
   const L = W.life; if (!L || L.C !== G.C) return; dt = Math.min(dt, .1); L.t += dt; LIFE_T.value = now;
+  if (G.C._wm) { const sp = Math.min(5, .7 + Math.hypot(G.wind[0], G.wind[1]) * .45); for (const w of G.C._wm) w.rotation.z -= sp * dt; }   // the farm windmill's wheel turns with the wind
   const b = W.ball.position, T = L.T; T.x = b.x; T.y = b.y; T.z = b.z; T.fly = G.state === 'flight' && !!G.shot && !G.shot.replay && !(G.shot.L && G.shot.L.putt);
   L.ballMovingAway = false;
   // grass around the camera and ball (rebuilt when they move on)

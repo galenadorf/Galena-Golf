@@ -653,6 +653,10 @@ def main():
     if os.path.exists(bdp) or os.path.exists(bdd):
         nb = [shape(g) for pth in (bdp, bdd) if os.path.exists(pth) for g in json.load(open(pth))]
         F['building'] = [b for b in F['building'] if not any(b['poly'].intersection(q).area > .5 * b['poly'].area for q in nb)] + [dict(poly=q, tags={'painted': 'yes'}) for q in nb]
+    for at in getattr(course, 'BUILDINGS_DROP', []):   # course.BUILDINGS_DROP = [(e, n)]: a building within 3 m of the spot is left out (a mapped building that is really a prop the game draws itself)
+        gone = [b for b in F['building'] if b['poly'].distance(Point(*at)) < 3]
+        F['building'] = [b for b in F['building'] if b not in gone]
+        print(f'BUILDINGS_DROP {at}: {len(gone)} building(s) dropped')
     if F['water']:   # a 'roof' found on the aerial (or painted) that lies mostly on a pond is the pond's glint, not a building: Legends had two houses standing in a lake
         wu = unary_union([w['poly'] for w in F['water']])
         wet = [b for b in F['building'] if b['poly'].intersection(wu).area > .3 * b['poly'].area]
@@ -1022,7 +1026,7 @@ def main():
         highway=enc_lines([hw] if hw else []), hwSlow=hw_slow,  # the highway with traffic (Woodbine: US 20 past the north edge); hwSlow = metres from its west end where the limit drops from 55 to 35 mph
         relief=relief, prac=prac, drv=drv, roads=[enc_lines([r]) for r in roads], roadBusy=road_busy if any(road_busy) else [], pathRoad=[enc_lines([r]) for r in path_road],
         cartBridges=[[round(e, 1), round(n, 1), L, 2.6, brg] for e, n, brg, L, _ in getattr(course, 'CART_BRIDGES', [])],   # cart-path bridges: [east, north, length, width, deck bearing]
-        props=(json.load(open(os.path.join(OUT, 'site_props.json'))) if os.path.exists(os.path.join(OUT, 'site_props.json')) else []) + ([rr['shed']] if drv and rr.get('shed') else []),  # washrooms, porta-potties and signposts painted on the aerial (site_paint.py)
+        props=(json.load(open(os.path.join(OUT, 'site_props.json'))) if os.path.exists(os.path.join(OUT, 'site_props.json')) else []) + [list(p) for p in getattr(course, 'EXTRA_PROPS', [])] + ([rr['shed']] if drv and rr.get('shed') else []),  # washrooms, porta-potties and signposts painted on the aerial (site_paint.py)
         # tee marker colours: w is the tee played, y/b/r the other sets (course.MARKERS)
         mkc={m: c for m, (_, c) in card.MARKERS.items()},
     )
