@@ -490,7 +490,7 @@ SCENERY AND DATA
 
 
 #####################################################################################################
-GALENA GOLF CLUB (galena)  "Galena GC"
+GALENA GOLF CLUB (galena)  "Galena GC (alpha)"
 #####################################################################################################
 Also everything in GLOBAL. Alpha: built from OpenStreetMap alone, posts no rounds. Dark green long rough. White tees 6,368 yd, par 72.
 
