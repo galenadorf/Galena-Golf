@@ -45,3 +45,9 @@ MARKERS = {'w': ('white', 0xeeeeee), 'y': ('blue', 0x2f6fd0), 'b': ('gold', 0xd9
 
 # tee boxes OSM does not map (read off the aerial): hole -> (east, north) of the box's middle
 EXTRA_TEES = {3: (121, -313), 4: (125, -478), 9: (-274, -291)}
+
+# tee sets put in the box named by a point in it (build.py TEE_BOXES): the card yardage is longer than OSM's straight hole line on 2 and 7, which put them in the next box back
+TEE_BOXES = {
+    2: {'blue': (-211, -255), 'white': (-208, -255), 'gold': (-205, -255), 'red': (-202, -255)},
+    7: {'blue': (-178, -385), 'white': (-175, -385), 'gold': (-172, -385), 'red': (-169, -385)},
+}
