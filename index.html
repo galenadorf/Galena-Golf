@@ -6142,6 +6142,7 @@ function birdTick(now) {
 // who they are, course, hole, score and where their ball lies (kept on the broker, cleared when they leave), and each shot's flight as a
 // path of points. On your own hole the others' balls are drawn with their name, and every shot of theirs flies with its tracer; a live
 // panel lists the room's scores. Nothing else is shared; there are no accounts.
+const MP_GHOST = 10 * 60e3;   // a player whose last state is older than this is gone (a dropped client leaves its retained state on the broker)
 const MP_BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
 // everyone not in a private room plays in their course's public lobby (e.g. LWOODBINE)
 const mpLobby = key => mpClean('L' + (key || COURSE.key)), mpIsLobby = r => !r || Object.keys(COURSES).some(k => mpLobby(k) === r);
@@ -6186,7 +6187,7 @@ function mpMsg(topic, buf) {
   if (kind === 's') {
     if (!txt) { const o = MP.objs.get(id); if (o) mpDrop(o); MP.objs.delete(id); MP.peers.delete(id); if (MP.follow === id) mpResume(); return; }
     let d; try { d = JSON.parse(txt); } catch (e) { return; }
-    if (!d || typeof d.n !== 'string' || Date.now() - (+d.at || 0) > 3 * 36e5) return; // ghosts of long-gone players are ignored
+    if (!d || typeof d.n !== 'string' || Date.now() - (+d.at || 0) > MP_GHOST) return; // ghosts of long-gone players are ignored (a live player's heartbeat is every 10 s)
     const pr = MP.peers.get(id) || { id, col: mpCol(id) }; pr.room = room;
     Object.assign(pr, { n: cleanName(d.n) || 'Player', c: String(d.c || ''), h: d.h | 0, tp: +d.tp || 0, th: d.th | 0, s: d.s | 0, x: +d.x, z: +d.z, at: +d.at, pin: d.pin | 0, fo: String(d.fo || ''), seen: Date.now() });
     MP.peers.set(id, pr);
@@ -6320,7 +6321,7 @@ function mpPanel() {
   const el = $('mpPanel');
   // (a crowded lobby lists those nearest first: on my hole, then on my course, then the rest)
   const near = pr => (pr.c === COURSE.key ? 0 : 2) + (pr.c === COURSE.key && pr.h === G.hole ? 0 : 1);
-  const others = [...MP.peers.values()].filter(pr => Date.now() - pr.at < 6 * 36e5 && (pr.room === MP.room || pr.id === MP.follow)).sort((a, b) => near(a) - near(b) || b.at - a.at).slice(0, 7);
+  const others = [...MP.peers.values()].filter(pr => Date.now() - pr.at < MP_GHOST && (pr.room === MP.room || pr.id === MP.follow)).sort((a, b) => near(a) - near(b) || b.at - a.at).slice(0, 7);
   // the public lobby's box only shows once someone else is in it with me (a private room always shows)
   const on = !!MP.room && G.state !== 'title' && G.state !== 'intro' && (!mpIsLobby(MP.room) || others.length > 0 || !!MP.spec);
   el.classList.toggle('on', on); if (!on) return;
@@ -6361,7 +6362,7 @@ function mpPlace(el) {
 // every player online, on every course (their course's public lobby) and in my room: tap Watch to follow them anywhere
 function mpList() {
   const el = $('mpList'); if (!el) return;
-  const all = [...MP.peers.values()].filter(pr => Date.now() - pr.at < 3 * 36e5 && COURSES[pr.c]).sort((a, b) => (a.c === COURSE.key ? 0 : 1) - (b.c === COURSE.key ? 0 : 1) || a.tp - b.tp);
+  const all = [...MP.peers.values()].filter(pr => Date.now() - pr.at < MP_GHOST && COURSES[pr.c]).sort((a, b) => (a.c === COURSE.key ? 0 : 1) - (b.c === COURSE.key ? 0 : 1) || a.tp - b.tp);
   const sig = all.map(pr => [pr.id, pr.n, pr.c, pr.h, pr.tp, pr.th].join(',')).join('|') + (MP.follow || '');
   if (sig === MP.listSig) return; MP.listSig = sig; el.textContent = '';
   if (!all.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = MP.st === 'on' ? 'No one else is playing right now.' : 'Not connected.'; el.appendChild(e); return; }
