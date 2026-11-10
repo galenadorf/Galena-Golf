@@ -26,7 +26,8 @@ A. WHICH COURSE HAS WHAT
 
   OBJECTS                                         WB   ERS  ERN  ERG  FT   SH   TH   BS   LG   CM   AD
   Weather, rainbow                                Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL)
-  Bird flocks, hot air balloon                    Y    Y    Y    Y    -    Y    Y    Y    Y    Y    Y     (GLOBAL; off at Fossil Trace: `scene.flocks`, `scene.balloon` false)
+  Bird flocks                                     Y    Y    Y    Y    -    Y    Y    Y    Y    Y    Y     (GLOBAL; off at Fossil Trace: `scene.flocks` false)
+  Hot air balloon                                 Y    Y    Y    Y    -    Y    Y    Y    -    Y    Y     (GLOBAL; off at Fossil Trace and Legends: `scene.balloon` false)
   Wild turkeys                                    Y    Y    Y    Y    -    -    -    -    -    -    -
   Gopher (groundhog)                              Y    Y    Y    Y    -    -    -    -    -    -    -
   Banner plane                                    Y    Y    Y    Y    -    -    -    -    -    -    -
@@ -72,7 +73,7 @@ Bird flocks (2, high up, crossing the sky) (not at Fossil Trace)
   - Each returns 25-75 s after it passes, from a new direction. Most holes show at least one if you wait.
   - Can be hit in principle ("Birdie... literally!"), but they fly high. A hit bird plays the leaf-rustle sound (below).
 
-Hot air balloon (brown, red, orange and white stripes, wicker basket, burner flame; about 18 m across) (not at Fossil Trace)
+Hot air balloon (brown, red, orange and white stripes, wicker basket, burner flame; about 18 m across) (not at Fossil Trace or Legends)
   - Drifts slowly downwind across the sky at 38-60 m up, taking about 80-130 s to cross, bobbing and turning gently.
   - Rare: per hole, a 60% chance one is scheduled 10-65 s after arriving, 40% none at first; after one leaves, the next is due 100-220 s later.
   - Cannot be hit: the ball passes through it. Silent.
@@ -472,7 +473,7 @@ Clubhouse (`scene.clubhouse.style` 'memphis', after the club's photo): a long lo
 Houses: about 330 footprints (Overture Maps) plus roofs found on the aerial, within 130 m of a hole line (or 110 m of a fairway, green or tee box); the back 9 is lined with them. Every building but the clubhouse, the two cart barns north of the parking lot and anything under 100 m2 (`scene.houses`) is drawn as a 1990s-2000s Memphis-suburb house: one or two storeys of painted siding (14 colours: beiges, tans, greige, sage, grey-blue, cream, white, khaki, pale yellow, taupe) over a brick skirt, some with a full brick front; a steep roof of dark asphalt shingles (charcoal, weathered wood, onyx, driftwood), hipped or side-gabled; a front cross gable over the door; a one-storey garage wing (mostly side-load); a brick chimney; white-trimmed windows front and back and a patio door on the course side. Solid ("Off the house!").
 Out of bounds runs along the hand-painted fence lines (about 7 km, on the house side of each) where houses line a hole: a 2-rail split-rail cedar fence (posts every 3 m; scenery, the ball passes through; no white stakes beside it). Elsewhere the out-of-bounds line is the course outline with white stakes.
 Deep rough: only where painted, plus 1.5 m (5 ft) round every row of trees that lines a road (`ROAD_ROW_DEEP`), plus both banks of the creek: over the dug bank and 5 ft past its top (`CREEK_DEEP`; fairways, tees, greens and paths that reach the creek keep their own surface). The creek branch that OSM runs south across hole 4's fairway is cut off: it ends just north of the cart path (`CREEK_CUT`). Painted grass clumps (`clump`): large sawgrass / switchgrass, 5 ft tall and 5 ft across, straw and olive, swaying (scenery; the ground under one is deep rough). Painted drainage hazards (`drain`): rock-lined, a stony bed with a border of large rocks and loose stones over deep rough.
-NOT here: highway, turkeys, gopher, banner plane, parked carts, moving cart, hot dog, fountain, signs, songs.
+NOT here: hot air balloon (`scene.balloon` false), highway, turkeys, gopher, banner plane, parked carts, moving cart, hot dog, fountain, signs, songs.
 
 SOUNDS
 ------
