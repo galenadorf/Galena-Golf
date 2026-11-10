@@ -100,7 +100,8 @@ TREE_EDIT = [dict(at=(-578.5, -311.4), d=6.0, h=12.7),
              # hole 1, before the creek where the fairway doglegs: the tree 10 m wide and 23 m tall made half as big again
              dict(at=(-244.0, -435.1), d=15.3, h=34.8)]
 # hole 1, the two small trees on the line just past the bend (4 m crown, 18 and 16 m tall) are taken out
-TREE_DROP = [(-274.9, -403.9), (-266.8, -406.0)]
+TREE_DROP = [(-274.9, -403.9), (-266.8, -406.0),
+             (-686.5, -188.5)]   # the big tree (14.6 m crown, 17.5 m) 20 m west-south-west of the hole 8 windmill
 
 # a 40 ft metal farm windmill on hole 8, 100 ft south-west of the restroom after hole 6 (its door is at (-643.8, -161.2)), 22 ft into the deep rough: 100 ft from the restroom at the bearing
 # (about 13 degrees west of south-west) where the deep rough is 22 ft deep; ['windmill', east, north, the way the wheel faces (degrees, east = 0, counter-clockwise), footing m, footing m, '']
