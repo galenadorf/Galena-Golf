@@ -830,6 +830,13 @@ def main():
                         t = dict(e=round(e, 2), n=round(n, 2)); spear(t, hsh(e, n)); add.append(t)
             trees += add
             print(f"{sp['road']}: {k0} trees on the course side made spears, {len(add)} spears added ({strip.area / 1e4:.2f} ha strip)")
+    for ed in getattr(course, 'TREE_EDIT', []):   # course.TREE_EDIT = [dict(at=(e, n), d=crown m, h=height m)]: one tree resized by hand (the nearest within 3 m); a broadleaf becomes kind 8, drawn at its own height
+        i = min(range(len(trees)), key=lambda j: math.hypot(trees[j]['e'] - ed['at'][0], trees[j]['n'] - ed['at'][1]))
+        t = trees[i]
+        if math.hypot(t['e'] - ed['at'][0], t['n'] - ed['at'][1]) > 3:
+            print('TREE_EDIT: no tree within 3 m of', ed['at']); continue
+        t.update(d=ed.get('d', t['d']), h=ed.get('h', t['h']), kind=8 if t['kind'] == 0 else t['kind'])
+        print('TREE_EDIT: tree at', ed['at'], 'now crown', t['d'], 'm, height', t['h'], 'm')
     if getattr(course, 'TREES_OFF_FAIRWAYS', False):   # no tree stands in a fairway (its trunk, the centre, inside one); trees painted in by hand (trees_x_added.json) stay
         fw = unary_union(list(fair)); mine = {(g['e'], g['n']) for g in json.load(open(xap))} if os.path.exists(xap) else set()
         n0 = len(trees)

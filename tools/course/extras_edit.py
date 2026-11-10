@@ -11,8 +11,8 @@ made for Legends). It replaces trees_x.png for the trees: its reader writes the 
                          out/extras_check.png. Then build.py and install.py.
 
 Paint with hard edges (the Pencil tool, no anti-aliasing) in these exact colours:
-  magenta #FF00FF  a bold X over a tree's ring takes it out, and any tree stacked under it (every ring the X's middle is on or within
-                   1 m of); nothing is planted back there (the Frank Road spear packing keeps clear of it)
+  magenta #FF00FF  a bold X over a tree's ring takes it out, and any tree stacked under it (every tree whose centre a stroke of the X
+                   crosses; X's that touch each still take their own tree); nothing is planted back there (the spear packing keeps clear)
   green   #008000  add a broadleaf tree: a filled circle the size of the crown (a big blob or area is filled with trees ~6 m apart)
   blue    #0040FF  add a conifer (the same way)
   purple  #800080  add shrubs (1.5-4.5 m; an area is filled ~3.5 m apart)

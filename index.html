@@ -1538,7 +1538,7 @@ function realPrep() {
   GC.forest = decPolys(D.forest); GC.orchard = decPolys(D.orchard); const bp = decPolys(D.boundary)[0]; GC.boundary = bp[0]; GC.obIn = bp.slice(1);   // the boundary's holes are out of bounds too (Adler Park: the fenced pool)
   GC.buildings = decPolys(D.buildings); GC.cover = decPolys(D.cover); GC.props = (D.props || []).concat((RDC.scene.parkedCarts || []).map(([e, n, rot]) => ['cart', e, n, rot, 1.25, 2.45, '']));   // scene.parkedCarts: [east, north, heading]
   const ta = b64i16(D.trees); GC.trees = [];
-  for (let i = 0; i < ta.length; i += 4) GC.trees.push({ e: ta[i] / 10, n: ta[i + 1] / 10, d: ta[i + 2] / 10, kind: Math.floor(ta[i + 3] / 1000), H: (ta[i + 3] % 1000) / 10 });
+  for (let i = 0; i < ta.length; i += 4) { const k = Math.floor(ta[i + 3] / 1000); GC.trees.push({ e: ta[i] / 10, n: ta[i + 1] / 10, d: ta[i + 2] / 10, kind: k === 8 ? 0 : k, H: (ta[i + 3] % 1000) / 10, own: k === 8 }); }   // kind 8: a broadleaf sized by hand (course.TREE_EDIT): drawn at its own height
   const W = GR.W, H = GR.H, cls = new Uint8Array(W * H), cov = new Uint8Array(W * H), wood = new Uint8Array(W * H);
   const toG = rings => rings.map(r => { const o = new Float64Array(r.length); for (let i = 0; i < r.length; i += 2) { o[i] = (r[i] - GR.e0) / GR.res; o[i + 1] = (r[i + 1] - GR.n0) / GR.res; } return o; });
   scanFill(cls, W, H, toG([GC.boundary]), GCL.ROUGH);
@@ -2406,7 +2406,7 @@ function buildRealTrees(C, grp) {
     let R, Ht, th;
     if (t.kind === 1) { R = clamp(t.d / 2, .9, 2.3); Ht = 2.2 * R + 1.2; th = .7; }
     else if (t.kind === 3 || t.kind === 5) { R = clamp(t.d / 2, 1.8, 2.8); Ht = 2.1 * R + 1.6; th = 1.5; }
-    else { R = clamp(t.d / 2, 1.6, 10.5); Ht = clamp(t.d * 1.05 + 3.2, 6, 30); th = Math.max(1.8, Ht - 1.8 * R); }
+    else { R = clamp(t.d / 2, 1.6, 10.5); Ht = clamp(t.own && t.H > 0 ? t.H : t.d * 1.05 + 3.2, 6, 30); th = Math.max(1.8, Ht - 1.8 * R); }   // (t.own: a hand-sized tree keeps its height)
     if (!t.fill) {
       // the club keeps its trees pruned back from tees and greens: crowns overhang a tee by a metre at most, a green by two
       const dt = C.fieldAt(C.F.tee, t.X, t.Z), dg = C.fieldAt(C.F.green, t.X, t.Z);

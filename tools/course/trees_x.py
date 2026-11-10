@@ -63,8 +63,9 @@ def guide():
 
 def read(path=None, add_col=None, write=True, check='trees_x_check.png', every=False):
     """The X marks and circles on a painted picture (out/trees_x.png, or extras_edit.py's out/extras_mask.png with its own add colours).
-    every: an X takes out every tree whose ring its middle is on or within 1 m of (stacked trees: a mapped crown and an aerial-found one
-    over it), not just the nearest (extras_edit.py)."""
+    every: an X takes out every tree whose centre one of its strokes crosses (within half the crown's radius, at least 1.5 m), so touching
+    X's that merge into one mark each take their own tree and stacked trees go together; failing that, the trees whose ring its middle is
+    on (extras_edit.py)."""
     fr = frame(); ppm = fr['ppm']
     path = path or os.path.join(OUT, 'trees_x.png')
     add_col = add_col or ADD_COL
@@ -85,7 +86,13 @@ def read(path=None, add_col=None, write=True, check='trees_x_check.png', every=F
         ce, cn = fr['e0'] + (xs.mean() + .5) / ppm, fr['n1'] - (ys.mean() + .5) / ppm
         size = max(xs.max() - xs.min(), ys.max() - ys.min()) / ppm
         dist = np.hypot(E - ce, N - cn)
-        inside = np.nonzero(dist <= R + (1.0 if every else 0))[0]
+        inside = np.nonzero(dist <= R)[0]
+        if every:   # every tree whose centre a stroke of the mark crosses or nearly crosses (touching X's merge into one mark: each still takes its own tree)
+            pe = fr['e0'] + (xs + .5) / ppm; pn = fr['n1'] - (ys + .5) / ppm
+            cand = np.nonzero((E > pe.min() - 12) & (E < pe.max() + 12) & (N > pn.min() - 12) & (N < pn.max() + 12))[0]
+            cov = [j for j in cand if np.min(np.hypot(pe - E[j], pn - N[j])) <= max(1.5, .5 * R[j])]
+            if cov:
+                inside = np.array(cov)
         if len(inside):
             i = int(inside[np.argmin(dist[inside])]); how = 'in'
             for j in (inside if every else []):

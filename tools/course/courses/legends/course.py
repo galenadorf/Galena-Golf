@@ -91,3 +91,5 @@ CREEK_CUT = [(-310, -530, -240, -454.5)]   # build.py: no creek branch across ho
 CREEK_DEEP = 1.524   # build.py: deep rough on both banks of the creek, 5 ft past the top of the dug bank
 TREE_SPEARS = dict(road='Frank Road', reach=60.0, convert=12.0, into=4.57, gap=3.0, h=(16.5, 20.0), d=(2.7, 3.3), kind=7)   # kind 7: the crown starts 5 ft up, about 10 ft across   # build.py: along the stretch of Frank Road beside the course, every tree on the course (north) side within 12 m of the road becomes a spear, and the strip from the shoulder to 15 ft (4.57 m) further north is packed with them 3 m apart; trees south of the road stay as they are
 TREE_SHIFT = [((-10, -535, 90, -518), 0, -6.1)]
+# hole 6: the lone broadleaf straight out from the tee (171 m, painted in on the extras map): a slightly bigger crown and 50 % taller (5.0 m crown drew 8.45 m tall)
+TREE_EDIT = [dict(at=(-578.5, -311.4), d=6.0, h=12.7)]
