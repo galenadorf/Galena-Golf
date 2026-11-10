@@ -121,7 +121,7 @@ def main():
         rep['bunker'] = f'{len(bk)} bunkers, {round(sum(p.area for p in bk))} m2'
     if has('tee', S['tee']):
         tm = ndi.binary_closing(S['tee'], iterations=2)
-        tees = paint_read.sharp_polys(tm, fr, paint_read.MIN_TEE)   # SHARP_TEES: square corners
+        tees = paint_read.sharp_polys(tm, fr, paint_read.MIN_TEE)   # square corners (every course: build.py squares every tee box too)
         put('tees_painted.json', tees)
         rep['tee'] = f'{len(tees)} tee boxes'
     if only:

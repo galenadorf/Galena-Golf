@@ -1,5 +1,5 @@
 """The practice green, from the hand-painted out/practice_mask.png (painted over out/practice_edit.png, same pixels; see practice_edit.py):
-GREEN #00FF00 the putting surface, CYAN #00FFFF the fringe (the game derives its own 1.5 m collar from the green, so this is only a guide),
+GREEN #00FF00 the putting surface, CYAN #00FFFF the fringe (the game cuts its own fringe, 0.9 m, and fairway-height collar round the green, so this is only a guide),
 MAGENTA #FF00FF deep fescue, ORANGE #FF8000 bunkers, RED #FF0000 the four cups (dots), YELLOW #FFFF00 broadleaf trees (one dot, one tree,
 as wide as its crown). Writes out/practice.json (polygons in local metres): green, bunkers, fescue (painted, with the edges that run off
 the map carried on past it so they join the course's own fescue), cups, trees. build.py adds them to the course data (merge_fescue).

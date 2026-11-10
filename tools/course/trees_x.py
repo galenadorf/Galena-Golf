@@ -74,6 +74,11 @@ def read(path=None, add_col=None, write=True, check='trees_x_check.png', every=F
     im = Image.open(path).convert('RGB')
     a = np.asarray(im).astype(int)
     mask = np.abs(a - np.array(X_COL)).max(axis=2) < 60
+    gp = os.path.join(OUT, 'trees_guide.png')   # magenta that the guide itself has (a course's fescue outlines on all_guide.png) is not an X:
+    if os.path.basename(path) == 'trees_x.png' and os.path.exists(gp):   # reading it as one took 36 of Legends' trees out by mistake
+        ga = np.asarray(Image.open(gp).convert('RGB')).astype(int)
+        if ga.shape == a.shape:
+            mask &= np.abs(a - ga).max(axis=2) > 30
     lab, n = ndi.label(ndi.binary_closing(mask, iterations=2), structure=np.ones((3, 3)))
     T = trees_all()
     E = np.array([t['e'] for t in T]); N = np.array([t['n'] for t in T]); R = np.array([max(1.5, t['d'] / 2) for t in T])

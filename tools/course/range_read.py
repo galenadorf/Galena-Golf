@@ -1,5 +1,5 @@
 """The driving range, from the hand-painted out/range_mask.png (painted over out/range_start.png, same pixels; see range_edit.py):
-GREEN #00FF00 mown range grass (the game's fairway), CYAN #00FFFF a target green (the game cuts its own 1.5 m collar), MAGENTA #FF00FF deep fescue,
+GREEN #00FF00 mown range grass (the game's fairway), CYAN #00FFFF a target green (the game cuts its own fringe and collar), MAGENTA #FF00FF deep fescue,
 ORANGE #FF8000 bunkers, BLUE #0000FF dots the hitting spots, RED #FF0000 dots the flags, YELLOW #FFFF00 broadleaf trees (circles; touching ones are
 split, each as wide as its circle), AZURE #0080FF a long metal shed (a 'shed' prop, sized and turned like the painted rectangle).
 The paint under a dot or the shed is whatever lies around it. Writes out/range.json (local metres): fair, greens, bunkers, fescue, boundary (everything
