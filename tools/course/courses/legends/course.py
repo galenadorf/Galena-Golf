@@ -80,6 +80,7 @@ HOUSE_LOTS_EXEMPT = [(-400, -70, 115)]   # the clubhouse, cart barns and lot
 TREES_FILL = [(-880, -548, 480, -478), (-470, 150, -140, 232)]
 ROAD_ROW_DEEP = 1.5   # build.py: deep rough under every row of trees lining a road, 5 ft beyond the crowns
 TREE_HEIGHT = [((-420, 108, -360, 130), 2, 2.0)]   # the four pines on the far shore of the lake from the 18th tee: twice as tall
+TREES_OFF_FAIRWAYS = True   # build.py: no tree stands in a fairway (its centre inside one)
 TREES_OFF_TEES_GREENS = True   # build.py: no tree stands in a tee box or on a green
 SMOOTH_MORE = True
 SMOOTH_PAINTED = True   # build.py: the painted bunkers and tee boxes are low-passed too, so no outline keeps a pixel staircase or a hull corner

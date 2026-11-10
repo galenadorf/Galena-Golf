@@ -11,7 +11,8 @@ made for Legends). It replaces trees_x.png for the trees: its reader writes the 
                          out/extras_check.png. Then build.py and install.py.
 
 Paint with hard edges (the Pencil tool, no anti-aliasing) in these exact colours:
-  magenta #FF00FF  a bold X over a tree's ring takes that ONE tree out (see trees_x.py for how an X picks its tree)
+  magenta #FF00FF  a bold X over a tree's ring takes it out, and any tree stacked under it (every ring the X's middle is on or within
+                   1 m of); nothing is planted back there (the Frank Road spear packing keeps clear of it)
   green   #008000  add a broadleaf tree: a filled circle the size of the crown (a big blob or area is filled with trees ~6 m apart)
   blue    #0040FF  add a conifer (the same way)
   purple  #800080  add shrubs (1.5-4.5 m; an area is filled ~3.5 m apart)
@@ -153,7 +154,7 @@ def read():
     path = os.path.join(OUT, 'extras_mask.png')
     if not os.path.exists(path):
         sys.exit('save your painted copy of out/extras_start.png as out/extras_mask.png')
-    rem, add, notes, chk = trees_x.read(path, ADD, write=False)
+    rem, add, notes, chk = trees_x.read(path, ADD, write=False, every=True)
     lp = os.path.join(OUT, 'trees_x_legacy.json')   # trees that stay out whatever the picture says (Legends: the 38 the old guide's magenta outlines took out)
     if os.path.exists(lp):
         have = {(round(t['e'], 2), round(t['n'], 2)) for t in rem}

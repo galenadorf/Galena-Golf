@@ -61,8 +61,10 @@ def guide():
     print('out/trees_guide.png', g.size, '(yellow broadleaf, cyan conifer, green shrub, grey = already removed). Paint magenta #FF00FF X marks on a copy, save it as out/trees_x.png')
 
 
-def read(path=None, add_col=None, write=True, check='trees_x_check.png'):
-    """The X marks and circles on a painted picture (out/trees_x.png, or extras_edit.py's out/extras_mask.png with its own add colours)."""
+def read(path=None, add_col=None, write=True, check='trees_x_check.png', every=False):
+    """The X marks and circles on a painted picture (out/trees_x.png, or extras_edit.py's out/extras_mask.png with its own add colours).
+    every: an X takes out every tree whose ring its middle is on or within 1 m of (stacked trees: a mapped crown and an aerial-found one
+    over it), not just the nearest (extras_edit.py)."""
     fr = frame(); ppm = fr['ppm']
     path = path or os.path.join(OUT, 'trees_x.png')
     add_col = add_col or ADD_COL
@@ -83,9 +85,15 @@ def read(path=None, add_col=None, write=True, check='trees_x_check.png'):
         ce, cn = fr['e0'] + (xs.mean() + .5) / ppm, fr['n1'] - (ys.mean() + .5) / ppm
         size = max(xs.max() - xs.min(), ys.max() - ys.min()) / ppm
         dist = np.hypot(E - ce, N - cn)
-        inside = np.nonzero(dist <= R)[0]
+        inside = np.nonzero(dist <= R + (1.0 if every else 0))[0]
         if len(inside):
             i = int(inside[np.argmin(dist[inside])]); how = 'in'
+            for j in (inside if every else []):
+                if j != i:
+                    t = T[j]; out.append(dict(e=t['e'], n=t['n'], d=t['d'], kind=t['kind']))
+                    x, y = (t['e'] - fr['e0']) * ppm, (fr['n1'] - t['n']) * ppm; r = R[j] * ppm + 5
+                    cd.ellipse([x - r, y - r, x + r, y + r], outline=(0, 255, 0), width=4)
+                    notes.append(f'X at E{ce:.0f} N{cn:.0f} (stacked) -> tree at ({t["e"]}, {t["n"]}), crown {t["d"]} m')
         else:   # the nearest ring any pixel of the X touches
             pe = fr['e0'] + (xs[::max(1, len(xs) // 200)] + .5) / ppm; pn = fr['n1'] - (ys[::max(1, len(ys) // 200)] + .5) / ppm
             dm = np.min(np.hypot(E[:, None] - pe[None, :], N[:, None] - pn[None, :]), axis=1)
@@ -104,7 +112,9 @@ def read(path=None, add_col=None, write=True, check='trees_x_check.png'):
     # circles: trees to add
     from trees_paint import from_masks
     frm = dict(res=1 / ppm, e0=fr['e0'], n1=fr['n1'])
-    add = from_masks({k: np.abs(a - np.array(c)).max(axis=2) <= ADD_TOL for k, c in add_col.items()}, frm, T)
+    ap = os.path.join(OUT, 'trees_x_added.json')   # trees_all.json already holds the circles' trees from the last read: leave them out, or a reread would find the spot taken
+    prev = {(round(g['e'], 2), round(g['n'], 2)) for g in json.load(open(ap))} if os.path.exists(ap) else set()
+    add = from_masks({k: np.abs(a - np.array(c)).max(axis=2) <= ADD_TOL for k, c in add_col.items()}, frm, [t for t in T if (round(t['e'], 2), round(t['n'], 2)) not in prev])
     for g in add:
         x, y = (g['e'] - fr['e0']) * ppm, (fr['n1'] - g['n']) * ppm; r = g['d'] / 2 * ppm + 4
         cd.ellipse([x - r, y - r, x + r, y + r], outline=(255, 255, 255), width=3)

@@ -818,14 +818,24 @@ def main():
             # then packed in: a jittered grid `gap` m apart, a new tree only where no tree stands within .75 gap
             from scipy.spatial import cKDTree
             kd = cKDTree([(t['e'], t['n']) for t in trees]); g = sp['gap']; add = []
+            gone = json.load(open(xp)) if os.path.exists(xp) else []   # trees X'd out by hand: no spear is packed where one stood (its crown, plus half a gap)
+            kg = cKDTree([(t['e'], t['n']) for t in gone]) if gone else None
+            gr_ = max([max(1.5, t['d'] / 2) for t in gone], default=0) + .5 * g
+            cleared = lambda e, n: kg is not None and any(math.hypot(e - gone[i]['e'], n - gone[i]['n']) < max(1.5, gone[i]['d'] / 2) + .5 * g for i in kg.query_ball_point((e, n), gr_))
             x0, y0, x1, y1 = strip.bounds
             for x in np.arange(x0, x1, g):
                 for y in np.arange(y0, y1, g):
                     e, n = x + (hsh(x, y) - .5) * .6 * g, y + (hsh(y, x) - .5) * .6 * g
-                    if strip.contains(Point(e, n)) and not kd.query_ball_point((e, n), .75 * g) and not any(math.hypot(e - a['e'], n - a['n']) < .75 * g for a in add[-60:]):
+                    if strip.contains(Point(e, n)) and not kd.query_ball_point((e, n), .75 * g) and not cleared(e, n) and not any(math.hypot(e - a['e'], n - a['n']) < .75 * g for a in add[-60:]):
                         t = dict(e=round(e, 2), n=round(n, 2)); spear(t, hsh(e, n)); add.append(t)
             trees += add
             print(f"{sp['road']}: {k0} trees on the course side made spears, {len(add)} spears added ({strip.area / 1e4:.2f} ha strip)")
+    if getattr(course, 'TREES_OFF_FAIRWAYS', False):   # no tree stands in a fairway (its trunk, the centre, inside one); trees painted in by hand (trees_x_added.json) stay
+        fw = unary_union(list(fair)); mine = {(g['e'], g['n']) for g in json.load(open(xap))} if os.path.exists(xap) else set()
+        n0 = len(trees)
+        out_fw = [t for t in trees if (t['e'], t['n']) not in mine and fw.contains(Point(t['e'], t['n']))]
+        trees = [t for t in trees if (t['e'], t['n']) in mine or not fw.contains(Point(t['e'], t['n']))]
+        print(n0 - len(trees), 'trees taken out of the fairways (course.TREES_OFF_FAIRWAYS):', ', '.join(f"E{t['e']:.0f} N{t['n']:.0f} (kind {t['kind']}, {t['d']} m)" for t in out_fw))
     json.dump(trees, open(os.path.join(OUT, 'trees_final.json'), 'w'))   # every tree the game gets (to look one up by position)
     tq = []
     for t in trees:  # e, n, crown diameter (dm), kind * 1000 + height (dm)
