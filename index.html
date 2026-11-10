@@ -2628,8 +2628,9 @@ function buildRealDecor(C, grp) {
     markers.push(p);
     // markers square to the line from this tee to the green
     const dx = C.green.cx - p[0], dz = C.green.cz - p[1], dl = Math.hypot(dx, dz) || 1, px = -dz / dl, pz = dx / dl;
+    let mx = px, mz = pz; if (H0.mkd) { const fr = C.frame, de = H0.mkd[0], dn = H0.mkd[1]; mx = de * fr.rx + dn * fr.ry; mz = -(de * fr.ux + dn * fr.uy); } // course data with mkd (Legends): the pair stands along the tee box's own front edge, the same way for every tee set
     const hw = H0.mkh && H0.mkh[k] ? H0.mkh[k] : k === 'w' && H0.mkw ? H0.mkw : 2.6; // the marker gap the data allows for this tee box (a narrow box gets a narrower gap)
-    for (const sd of [-hw, hw]) { let x = p[0] + px * sd, z = p[1] + pz * sd; const sn = snapTee(x, z); if (sn) { x = sn[0]; z = sn[1]; } /* a marker never stands outside its tee box */ const m = new THREE.Mesh(new THREE.IcosahedronGeometry(.17, 1), lambert(MC[k])); m.position.set(x, C.h(x, z) + .2, z); m.castShadow = true; grp.add(m); }
+    for (const sd of [-hw, hw]) { let x = p[0] + mx * sd, z = p[1] + mz * sd; const sn = snapTee(x, z); if (sn) { x = sn[0]; z = sn[1]; } /* a marker never stands outside its tee box */ const m = new THREE.Mesh(new THREE.IcosahedronGeometry(.17, 1), lambert(MC[k])); m.position.set(x, C.h(x, z) + .2, z); m.castShadow = true; grp.add(m); }
   }
   // tee sign beside the white tee (switched off but kept: only the signs painted for signs.txt are shown; set TEE_SIGNS_ON true to bring these back)
   const TEE_SIGNS_ON = false;

@@ -181,7 +181,36 @@ def point_at_remaining(L, D):
     return Point(x0 - (x1 - x0) / l * -s, y0 - (y1 - y0) / l * -s)
 
 
-def snap_to_tee(p, tees, L=None, hw=2.6, max_d=40, min_hw=.8):
+def hole_dir(L, reach=110.0):
+    """The way a hole plays off its tee, a unit vector (east, north): from the start of the hole's line to the point `reach` m along it (down the fairway)."""
+    a, b = L.interpolate(0), L.interpolate(min(L.length, reach))
+    d = math.hypot(b.x - a.x, b.y - a.y) or 1
+    return ((b.x - a.x) / d, (b.y - a.y) / d)
+
+
+def tee_face(poly, u):
+    """A tee box turned to face down its hole: a rectangle keeps its size, its edges now parallel and square to `u` (the side that was nearer
+    the line of play stays the depth); any other shape is turned about its centre by the smallest turn that lines its long axis up with u or across it."""
+    from shapely import affinity
+    from shapely.geometry import Polygon
+    c = poly.centroid
+    P = list(poly.exterior.coords)
+    if len(P) == 5:
+        e0 = (P[1][0] - P[0][0], P[1][1] - P[0][1]); e1 = (P[2][0] - P[1][0], P[2][1] - P[1][1])
+        l0, l1 = math.hypot(*e0), math.hypot(*e1)
+        d0 = abs(e0[0] * u[0] + e0[1] * u[1]) / (l0 or 1)   # how much edge 0 runs along the hole
+        along, across = (l0, l1) if d0 > .7071 else (l1, l0)
+        n = (-u[1], u[0])
+        a, b = along / 2, across / 2
+        return Polygon([(c.x - u[0] * a - n[0] * b, c.y - u[1] * a - n[1] * b), (c.x + u[0] * a - n[0] * b, c.y + u[1] * a - n[1] * b),
+                        (c.x + u[0] * a + n[0] * b, c.y + u[1] * a + n[1] * b), (c.x - u[0] * a + n[0] * b, c.y - u[1] * a + n[1] * b)])
+    mr = poly.minimum_rotated_rectangle; Q = list(mr.exterior.coords)
+    ang = math.atan2(Q[1][1] - Q[0][1], Q[1][0] - Q[0][0]); want = math.atan2(u[1], u[0])
+    turn = (want - ang + math.pi / 4) % (math.pi / 2) - math.pi / 4
+    return affinity.rotate(poly, math.degrees(turn), origin=(c.x, c.y))
+
+
+def snap_to_tee(p, tees, L=None, hw=2.6, max_d=40, min_hw=.8, across=None):
     """Move a tee-set position into a tee box so that the two markers beside it (hw m either side, square to the line to the green)
     are inside the box too: the nearest box to p that is close to the hole line, and in it the nearest point whose markers sit at least
     .4 m inside. A box too narrow for the gap gets a smaller gap (down to min_hw). Returns the point and the marker half-gap used."""
@@ -194,9 +223,12 @@ def snap_to_tee(p, tees, L=None, hw=2.6, max_d=40, min_hw=.8):
     def fits(q, w):
         if tgt is None:
             return core.contains(q)
-        dx, dy = tgt.x - q.x, tgt.y - q.y
-        dl = math.hypot(dx, dy) or 1
-        ox, oy = -dy / dl * w, dx / dl * w
+        if across:   # (course.TEE_FACE: the markers stand along the tee box's own front edge)
+            ox, oy = across[0] * w, across[1] * w
+        else:
+            dx, dy = tgt.x - q.x, tgt.y - q.y
+            dl = math.hypot(dx, dy) or 1
+            ox, oy = -dy / dl * w, dx / dl * w
         return core.contains(q) and core.contains(Point(q.x + ox, q.y + oy)) and core.contains(Point(q.x - ox, q.y - oy))
     x0, y0, x1, y1 = best.bounds
     grid = [Point(x, y) for x in np.arange(x0, x1, .25) for y in np.arange(y0, y1, .25)]
@@ -269,22 +301,24 @@ def build_holes(F, demZ1):
         c[-1] = (gc.x, gc.y)
         L = LineString(c)
         pos, gap = {}, {}
+        fu = hole_dir(hh['line']) if getattr(course, 'TEE_FACE', False) else None
+        fn = (-fu[1], fu[0]) if fu else None   # across the tee boxes (the markers' line)
         sets = [card.MARKERS[m][0] for m in 'wybr']   # the set played, then the other three
         play = sets[0]
         for k in sets:
             yd = card.TEES[k][2][i]
             raw = point_at_remaining(L, yd * YD)
-            p, gap[k] = snap_to_tee(raw, tees, L)
+            p, gap[k] = snap_to_tee(raw, tees, L, across=fn)
             if p.distance(raw) > 8:
                 print(f'  hole {hh["ref"]} {k}: {yd} yd is {p.distance(raw):.0f} m from the nearest tee box; placed in the box')
             pos[k] = (round(p.x, 2), round(p.y, 2))
         for k, xy in getattr(course, 'TEE_BOXES', {}).get(hh['ref'], {}).items():   # a tee set put in the box named by its centre (course.TEE_BOXES), where the nearest-box rule picks the wrong one
             raw = Point(xy)
-            q, gap[k] = snap_to_tee(raw, [min(tees, key=lambda t: t.distance(raw))], L)
+            q, gap[k] = snap_to_tee(raw, [min(tees, key=lambda t: t.distance(raw))], L, across=fn)
             pos[k] = (round(q.x, 2), round(q.y, 2))
         if i in starts:
             pos[play] = starts[i]
-            q, gap[play] = snap_to_tee(Point(starts[i]), tees, L, marks[str(hh['ref'])]['half'] if str(hh['ref']) in marks else 2.6)
+            q, gap[play] = snap_to_tee(Point(starts[i]), tees, L, marks[str(hh['ref'])]['half'] if str(hh['ref']) in marks else 2.6, across=fn)
             if q.distance(Point(starts[i])) > .05:
                 print(f'  hole {hh["ref"]}: the painted start moved {q.distance(Point(starts[i])):.1f} m to keep its markers inside the tee box')
             pos[play] = (round(q.x, 2), round(q.y, 2))
@@ -298,6 +332,8 @@ def build_holes(F, demZ1):
                  tee=list(tee), green=[round(gc.x, 2), round(gc.y, 2)], line=[list(p) for p in line],
                  mk={m: list(pos[k]) for m, k in zip('wybr', sets)})
         h['mkh'] = {m: round(gap[k], 2) if k in gap else 2.6 for m, k in zip('wybr', sets)}   # the half-gap between a set's two markers: as wide as its box allows, up to 2.6 m
+        if fn:
+            h['mkd'] = [round(fn[0], 4), round(fn[1], 4)]   # the markers' line, a unit (east, north): the game stands each pair along it
         h['desc'] = describe(dict(tee=tee, green=(gc.x, gc.y), L=LineString(line), par=h['par']), demZ1, None, F, None)
         h['_green_poly'] = g
         out.append(h)
@@ -646,6 +682,10 @@ def main():
                     f['poly'] = smooth_poly(f['poly'], sg)
     for f in F['tee']:   # every tee box, mapped or painted, on every course: straight edges and square corners (common.tee_rect)
         f['poly'] = tee_rect(f['poly'])
+    if getattr(course, 'TEE_FACE', False):   # every tee box faces down its hole: front and back edges square to the way the hole plays (hole_dir)
+        for f in F['tee']:
+            hl = min(F['hole'], key=lambda hh: hh['line'].distance(f['poly']))
+            f['poly'] = tee_face(f['poly'], hole_dir(hl['line']))
     fp0 = os.path.join(OUT, 'fairways_painted.json')  # hand-corrected fairways (fairways.py) win over OSM's (Eagle Ridge), then trace.py's (Woodbine: OSM has none)
     if os.path.exists(fp0) or not F['fairway']:
         fair = [shape(g) for g in json.load(open(fp0 if os.path.exists(fp0) else os.path.join(OUT, 'fairways.json')))]

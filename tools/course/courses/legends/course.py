@@ -85,6 +85,7 @@ TREE_HEIGHT = [((-420, 108, -360, 130), 2, 2.0)]   # the four pines on the far s
 TREES_OFF_FAIRWAYS = True   # build.py: no tree stands in a fairway (its centre inside one)
 TREES_OFF_TEES_GREENS = True   # build.py: no tree stands in a tee box or on a green
 SMOOTH_MORE = True
+TEE_FACE = True   # build.py: every tee box faces down its hole (front and back edges square to the way the hole plays) and the tee markers stand along that front edge
 FINAL_ROUND = dict(fair=(3, 3), water=(2.5, 0), fescue=(3, 1.5), bound=(3, 3))   # build.py: a last rounding pass over the finished fairways, ponds, deep rough and out-of-bounds line (cusps, slits, hard corners)
 SMOOTH_PAINTED = True   # build.py: the painted bunkers and tee boxes are low-passed too, so no outline keeps a pixel staircase or a hull corner
 
