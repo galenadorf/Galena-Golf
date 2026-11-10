@@ -21,8 +21,7 @@ GLOBAL
 
 A. WHICH COURSE HAS WHAT
 ------------------------
-  GA Galena (alpha) sits between BS and CM in the picker.
-  GA Galena (alpha) sits between BS and CM in the picker.
+  GA Galena GC (an alpha course: it keeps no rounds) sits between BS and CM in the picker.
   BS Bear Slide, CM Chestnut Mountain (disc), AD Adler Park (disc). Details are in each course's section.
 
   OBJECTS                                       WB   ERS  ERN  LG   ERG  FT   SH   TH   BS   GA   CM   AD
