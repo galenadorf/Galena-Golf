@@ -498,6 +498,7 @@ OBJECTS
 -------
 White-tailed deer (`scene.deer` = .4: about two in five holes have them, per hole) and squirrels (`scene.squirrels` = 3 per hole): the same animals and behaviour as at Stonehenge.
 Highway with traffic: US 20 (also IL 84) runs past the west side, 50 mph, an 18-wheeler and cars, as at Stonehenge.
+Cart garages (five, by the clubhouse and between holes 1 and 10; not in OSM, measured off the aerial: `EXTRA_PROPS` 'cartgarage'): long 35 x 7 m buildings with pale walls, a white-grey gable roof and a row of 12 single-stall overhead doors on one long side (the two pairs back to back, doors facing out). Solid (a ball that hits one says "Off the cart garage!").
 Side roads (out of bounds, looks only, no traffic): every OSM road near a hole (the housing streets north of holes 17 and 18, East Golf View Drive, Putter Lane and the others).
 Cart paths: OSM maps the whole network as private paved `highway=path` ways (`PATHS_ARE_CARTPATHS`), about 7.8 km, drawn as asphalt like the other OSM-path courses, with three creek bridges (holes 4, 13, 15).
 NOT here: turkeys, gopher, banner plane, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.

@@ -2943,7 +2943,7 @@ function spotBeside(C, x, z, side, back) {
 // ---- site props painted on the aerial map (tools/course/site_paint.py): washrooms, porta-potties and signposts ----
 // GC.props rows: [kind, e, n, direction the front faces (degrees, east = 0, counter-clockwise), width m, depth m, text, extra]
 // (extra: for 'lot' {poly: outline [e, n]..., lines: stall edges [e1, n1, e2, n2]...}; for 'car' [model 'car' | 'suv', body colour])
-const SITE_NAMES = { wash: 'Off the washroom!', potty: 'Off the porta-potty!', windmill: 'Off the windmill!', shed: 'Off the pump house!', car: 'Off a parked car!', cart: 'Off a golf cart!', pool: 'Off the water slide!', play: 'Off the playground!' };
+const SITE_NAMES = { wash: 'Off the washroom!', potty: 'Off the porta-potty!', windmill: 'Off the windmill!', shed: 'Off the pump house!', cartgarage: 'Off the cart garage!', car: 'Off a parked car!', cart: 'Off a golf cart!', pool: 'Off the water slide!', play: 'Off the playground!' };
 // two empty Club Car Precedents parked nose to tail on the cart path north-east of the practice green, facing up the path toward the first hole
 // (rows like GC.props: kind, e, n, front-facing degrees, width m, depth m, text, and 'riders' as the eighth field for a cart with two men in it)
 function realProps(C) {
@@ -2966,8 +2966,8 @@ function propGround(C, b, w, d) {
 function realSiteColliders(C, colliders) {
   for (const b of realProps(C)) {
     if (b.k === 'pool' || b.k === 'play') { parkColliders(C, b, colliders); continue; }
-    if (b.k !== 'wash' && b.k !== 'potty' && b.k !== 'shed' && b.k !== 'car' && b.k !== 'cart' && b.k !== 'windmill') continue;
-    const id = 200001 + b.i, gr = propGround(C, b, b.w, b.d), hgt = b.k === 'windmill' ? 12.2 : b.k === 'wash' ? 3.5 : b.k === 'shed' ? 3.2 : b.k === 'car' ? (b.a && b.a[0] === 'suv' ? 1.75 : 1.45) : b.k === 'cart' ? 1.9 : 2.4;
+    if (b.k !== 'wash' && b.k !== 'potty' && b.k !== 'shed' && b.k !== 'cartgarage' && b.k !== 'car' && b.k !== 'cart' && b.k !== 'windmill') continue;
+    const id = 200001 + b.i, gr = propGround(C, b, b.w, b.d), hgt = b.k === 'windmill' ? 12.2 : b.k === 'wash' ? 3.5 : b.k === 'shed' || b.k === 'cartgarage' ? 3.2 : b.k === 'car' ? (b.a && b.a[0] === 'suv' ? 1.75 : 1.45) : b.k === 'cart' ? 1.9 : 2.4;
     colliders.push({ box: true, x: b.X, z: b.Z, r: Math.hypot(b.w, b.d) / 2, c: Math.cos(b.yaw), s: -Math.sin(b.yaw), hw: b.w / 2 + .1, hd: b.d / 2 + .1, y1: gr.hi + hgt, t: id });
     C.colNames[id] = SITE_NAMES[b.k];
   }
@@ -3241,6 +3241,23 @@ function realWindmillMesh(C, b, grp) {
   const w = mk(wheel, false); w.position.set(0, gy + HUB, .55); g.add(w); (C._wm = C._wm || []).push(w);
   grp.add(g);
 }
+// a golf cart garage: a long low building of pale ribbed walls under a white-grey metal gable roof, a row of single-stall overhead doors along the front (+z) and
+// plain ends (the prop row: 'cartgarage', e, n, the way the doors face, length 35 m, depth 7 m, ''; one draw call)
+function realCartGarageMesh(C, b, grp) {
+  const gr = propGround(C, b, b.w, b.d), y0 = gr.hi + .12, WH = 3.0, w = b.w, d = b.d, parts = [], N = Math.max(4, Math.round(w / 2.9)), pitch = w / N;
+  parts.push(lbx(w + .3, y0 - (gr.lo - .6), d + .3, 0, (y0 + gr.lo - .6) / 2, 0, 0x9a9a93));   // the slab
+  parts.push(lbx(w, WH, d, 0, y0 + WH / 2, 0, 0xdad6c8));   // the walls
+  parts.push({ g: gableRoof(w, d, .95, .35), c: 0xc4c9ce, m: new THREE.Matrix4().makeTranslation(0, y0 + WH, 0) });   // the roof
+  parts.push(lbx(w + .1, .1, d + .1, 0, y0 + WH - .05, 0, 0x8d9398));   // the eave trim
+  for (let i = 0; i < N; i++) {
+    const x = -w / 2 + (i + .5) * pitch;
+    parts.push(lbx(2.5, 2.4, .1, x, y0 + 1.2, d / 2 + .03, 0x3b4146));   // the frame
+    parts.push(lbx(2.3, 2.25, .1, x, y0 + 1.15, d / 2 + .08, 0xf1f1ec));   // the overhead door
+    parts.push(lbx(2.0, .12, .06, x, y0 + 1.62, d / 2 + .15, 0xc8ccd0));   // its window row
+  }
+  const m = new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ vertexColors: true })); m.castShadow = true; m.receiveShadow = true;
+  const g = new THREE.Group(); g.position.set(b.X, 0, b.Z); g.rotation.y = b.yaw; g.add(m); grp.add(g);
+}
 const WM_RODS = new Map(), WM_ROD = r => { let g = WM_RODS.get(r); if (!g) WM_RODS.set(r, g = new THREE.CylinderGeometry(r, r, 1, 5)); return g; };
 function realSiteMeshes(C, grp) {
   C._wm = [];
@@ -3253,6 +3270,7 @@ function realSiteMeshes(C, grp) {
     if (b.k === 'car') { grp.add(realCarMesh(C, b, carMat)); continue; }
     if (b.k === 'cart') { grp.add(realCartMesh(C, b)); continue; }
     if (b.k === 'windmill') { realWindmillMesh(C, b, grp); continue; }
+    if (b.k === 'cartgarage') { realCartGarageMesh(C, b, grp); continue; }
     const g = new THREE.Group(), gr = propGround(C, b, b.w, b.d), base = gr.lo - .6;
     if (b.k === 'wash') { // a double washroom: block walls, a low pitched roof, two doors with MEN and WOMEN signs on the front (+z)
       const w = b.w, d = b.d, top = gr.hi + .15 + 2.6, doorM = lambert(0x2f5a4c);

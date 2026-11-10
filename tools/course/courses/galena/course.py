@@ -60,6 +60,25 @@ CART_BRIDGES = [
     (670.5, 106.0, 74.3, 20, 13),
 ]
 
-# gaps in OSM's cart-path network closed by hand (build.py PATH_JOINS): the 60 m stretch by the clubhouse, the 75 m link on the west side between the south holes and the north loop, and the short spur to hole 3's tee
-PATH_JOINS = [[(-485.7, -207.0), (-513.2, -153.6)], [(135.2, -293.4), (110.2, -293.8)], [(-613.0, -237.4), (-583.4, -168.8)]]
+# gaps in OSM's cart-path network closed by hand (build.py PATH_JOINS), traced off the aerial: the ring of road and path round the cart garages by the clubhouse, and the short spur to hole 3's tee
+PATH_JOINS = [
+    [(-485.7, -207.0), (-481.0, -187.0), (-487.0, -165.0), (-513.2, -153.6)],   # the gravel road up the east side of the garages
+    [(-513.2, -153.6), (-528.7, -153.0), (-547.5, -157.4), (-562.5, -161.8), (-578.8, -165.5), (-583.4, -168.8)],   # the road across their north end
+    [(-583.4, -168.8), (-582.0, -178.0), (-583.8, -193.0), (-585.0, -215.5), (-580.0, -228.0), (-586.3, -235.8), (-605.0, -238.5), (-613.0, -237.4)],   # the road down their west side to the clubhouse
+    [(-485.7, -207.0), (-497.5, -211.1), (-522.5, -218.6), (-547.5, -223.6), (-566.2, -226.1), (-580.0, -228.0)],   # the concrete path along their south side, back to the clubhouse: the ring is closed
+    [(135.2, -293.4), (122.7, -295.4), (110.2, -293.8)],   # the short spur to hole 3's tee
+]
 ROUND_PATH_ENDS = True   # build.py: cart-path ends are round, so the hand joins above overlap the paths they meet
+
+FINAL_ROUND = dict(fair=(3, 3), water=(2.5, 0), fescue=(3, 1.5), bound=(3, 3))   # build.py: a last rounding pass over the finished fairways, ponds, deep rough and out-of-bounds line (cusps, slits, hard corners)
+SMOOTH_PAINTED = True   # build.py: bunkers and tee boxes are low-passed too, so no outline keeps a hard corner
+
+# the cart garages beside the clubhouse (not in OSM): five 35 x 7 m metal-roofed buildings with a row of single-stall doors, measured off the 2023 aerial
+# (prop rows: kind, east, north, the way the doors face (degrees ccw from east), length, depth, text). The pairs are back to back with their doors facing out.
+EXTRA_PROPS = [
+    ('cartgarage', -593.1, -165.1, 10.8, 35.0, 7.0, ''),
+    ('cartgarage', -565.0, -193.2, 190.8, 35.0, 7.0, ''),
+    ('cartgarage', -553.6, -191.0, 10.8, 35.0, 7.0, ''),
+    ('cartgarage', -531.7, -186.7, 190.8, 35.0, 7.0, ''),
+    ('cartgarage', -520.3, -184.5, 10.8, 35.0, 7.0, ''),
+]
