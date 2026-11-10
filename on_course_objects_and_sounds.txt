@@ -48,8 +48,8 @@ A. WHICH COURSE HAS WHAT
     porta-potties, parking lot, pump house,
     entrance sign, hole 7 sign                  Y    -    -    -    -    -    -    -    -    -    -    -
   Washroom, parking lot with cars (no other)    Y    -    -    Y    -    -    -    -    -    -    -    -
-  Cart paths                                    Y    Y    Y    Y    Y    Y    -    -    -    -    -    -
-  Cart-path bridges                             -    10   6    4    -    -    -    -    -    -    -    -
+  Cart paths                                    Y    Y    Y    Y    Y    Y    -    -    -    Y    -    -
+  Cart-path bridges                             -    10   6    4    -    -    -    -    -    3    -    -
   Roads drawn (out of bounds, for looks)          2    all* all* all* all* 1    3    5+   all* all* 1    2     (* every OSM road near a hole)
   Pool, water slide, playground                 -    -    -    -    -    -    -    -    -    -    -    Y
   Disc, basket, tee pad (no ball, cup, tee peg) -    -    -    -    -    -    -    -    -    -    Y    Y
@@ -491,7 +491,7 @@ SCENERY AND DATA
 
 
 #####################################################################################################
-GALENA GOLF CLUB (galena)  "Galena (alpha)"
+GALENA GOLF CLUB (galena)  "Galena GC"
 #####################################################################################################
 Also everything in GLOBAL. Alpha: built from OpenStreetMap alone, posts no rounds. Dark green long rough. White tees 6,368 yd, par 72.
 
@@ -500,7 +500,8 @@ OBJECTS
 White-tailed deer (`scene.deer` = .4: about two in five holes have them, per hole) and squirrels (`scene.squirrels` = 3 per hole): the same animals and behaviour as at Stonehenge.
 Highway with traffic: US 20 (also IL 84) runs past the west side, 50 mph, an 18-wheeler and cars, as at Stonehenge.
 Side roads (out of bounds, looks only, no traffic): every OSM road near a hole (the housing streets north of holes 17 and 18, East Golf View Drive, Putter Lane and the others).
-NOT here: turkeys, gopher, banner plane, cart paths (OSM maps none), clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+Cart paths: OSM maps the whole network as private paved `highway=path` ways (`PATHS_ARE_CARTPATHS`), about 7.8 km, drawn as asphalt like the other OSM-path courses, with three creek bridges (holes 4, 13, 15).
+NOT here: turkeys, gopher, banner plane, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
 
 SOUNDS
 ------

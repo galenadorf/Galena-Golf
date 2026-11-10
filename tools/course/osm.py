@@ -59,6 +59,8 @@ def load():
                 F['building'].append(dict(poly=p, tags=t))
         elif t.get('waterway') in ('stream', 'ditch', 'drain', 'river'):
             F['stream'].append(dict(line=LineString(coords(w)), tags=t))
+        elif t.get('highway') == 'path' and getattr(course, 'PATHS_ARE_CARTPATHS', False) and t.get('surface') in ('paved', 'asphalt', 'concrete'):   # Galena: OSM maps the cart paths as private paved highway=path
+            F['cartpath_line'].append(dict(line=LineString(coords(w)), tags=t))
         elif 'highway' in t:
             c = coords(w)
             if len(c) >= 2:

@@ -21,6 +21,9 @@ from preview import E0, N1, load_rgb
 
 PATH_W = 2.4
 BOX = (-420, -520, 420, 520)
+if not os.path.exists(os.path.join(OUT, 'boundary.json')):   # no painted boundary: the map covers the course outline
+    _b = osm.load()['course'][0]['poly'].buffer(30).bounds
+    BOX = (round(_b[0]), round(_b[1]), round(_b[2]), round(_b[3]))
 PPM = 3
 YD = .9144
 
@@ -35,7 +38,8 @@ def found_centres(rgb, res, F):
     inside = np.zeros((h, w), bool)
     from rasterio import features as rfeat
     from rasterio.transform import from_origin
-    bound = shape(json.load(open(os.path.join(OUT, 'boundary.json')))).buffer(2)
+    bp = os.path.join(OUT, 'boundary.json')   # the painted boundary, else the course outline (OSM-only courses such as Galena)
+    bound = (shape(json.load(open(bp))) if os.path.exists(bp) else F['course'][0]['poly']).buffer(2)
     tr = from_origin(E0, N1, res, res)
     inside = rfeat.rasterize([(bound, 1)], out_shape=(h, w), transform=tr, dtype='uint8').astype(bool)
     greens = [g['poly'] for g in F['green']]

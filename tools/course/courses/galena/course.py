@@ -51,3 +51,15 @@ TEE_BOXES = {
     2: {'blue': (-211, -255), 'white': (-208, -255), 'gold': (-205, -255), 'red': (-202, -255)},
     7: {'blue': (-178, -385), 'white': (-175, -385), 'gold': (-172, -385), 'red': (-169, -385)},
 }
+PATHS_ARE_CARTPATHS = True   # osm.py: OSM's private paved highway=path ways are the cart paths (build.py draws them through OSM_CARTPATHS)
+
+# cart-path bridges over the creek (e, n, bearing counter-clockwise from east, length m, hole): where OSM's cart paths cross its streams
+CART_BRIDGES = [
+    (-145.3, -424.3, -166.4, 17, 4),
+    (78.4, 454.5, -167.3, 14, 15),
+    (670.5, 106.0, 74.3, 20, 13),
+]
+
+# gaps in OSM's cart-path network closed by hand (build.py PATH_JOINS): the 60 m stretch by the clubhouse, the 75 m link on the west side between the south holes and the north loop, and the short spur to hole 3's tee
+PATH_JOINS = [[(-485.7, -207.0), (-513.2, -153.6)], [(135.2, -293.4), (110.2, -293.8)], [(-613.0, -237.4), (-583.4, -168.8)]]
+ROUND_PATH_ENDS = True   # build.py: cart-path ends are round, so the hand joins above overlap the paths they meet
