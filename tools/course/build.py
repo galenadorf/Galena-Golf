@@ -910,6 +910,11 @@ def main():
                         t = dict(e=round(e, 2), n=round(n, 2)); spear(t, hsh(e, n)); add.append(t)
             trees += add
             print(f"{sp['road']}: {k0} trees on the course side made spears, {len(add)} spears added ({strip.area / 1e4:.2f} ha strip)")
+    for at in getattr(course, 'TREE_DROP', []):   # course.TREE_DROP = [(e, n)]: the nearest tree within 3 m is taken out
+        i = min(range(len(trees)), key=lambda j: math.hypot(trees[j]['e'] - at[0], trees[j]['n'] - at[1]))
+        if math.hypot(trees[i]['e'] - at[0], trees[i]['n'] - at[1]) > 3:
+            print('TREE_DROP: no tree within 3 m of', at); continue
+        print('TREE_DROP: tree at', at, 'taken out (crown', trees[i]['d'], 'm, height', trees[i]['h'], 'm)'); del trees[i]
     for ed in getattr(course, 'TREE_EDIT', []):   # course.TREE_EDIT = [dict(at=(e, n), d=crown m, h=height m)]: one tree resized by hand (the nearest within 3 m); a broadleaf becomes kind 8, drawn at its own height
         i = min(range(len(trees)), key=lambda j: math.hypot(trees[j]['e'] - ed['at'][0], trees[j]['n'] - ed['at'][1]))
         t = trees[i]
