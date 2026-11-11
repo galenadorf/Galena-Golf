@@ -8246,12 +8246,14 @@ function readoutNote(text, cls) {
 // the trip log's line for this course (courses.json blurb + trip: rounds, years and the champion of each trip); the text shrinks until it fits the space with no scroll
 const tripYears = ys => { const o = []; for (let i = 0; i < ys.length; i++) { let j = i; while (j + 1 < ys.length && ys[j + 1] === ys[j] + 1) j++; o.push(j - i >= 2 ? ys[i] + '\u2013' + ys[j] : ys.slice(i, j + 1).join(', ')); i = j; } return o.join(', '); };
 function playBlurbFill() {
+  // every course with a description shows the same sections: the joke, a rounds line only when the crew has played it (trip.n > 0), and always a champs line
+  // (the champions, or "none yet" when the crew has not played it or no champion is recorded)
   const CO = COURSE, t = CO.trip; $('pbJoke').textContent = CO.blurb || '';
-  $('pbStat').textContent = !CO.blurb || !t ? '' : `${t.n} ${t.n === 1 ? 'round' : 'rounds'} \u00b7 ${tripYears(t.years)}`;   // (a course the crew has not played has no rounds line)
+  $('pbStat').textContent = !CO.blurb || !t || !t.n ? '' : `${t.n} ${t.n === 1 ? 'round' : 'rounds'} \u00b7 ${tripYears(t.years)}`;
   const w = $('pbWin'); w.textContent = '';
-  if (CO.blurb && (!t || t.win.length)) {
+  if (CO.blurb) {
     const b = document.createElement('b'); b.textContent = 'Trip champs '; w.appendChild(b);
-    w.append(t ? t.win.map(([n, y]) => n + ' ' + y.map(v => '\u2019' + String(v).slice(2)).join(' ')).join(' \u00b7 ') : 'none yet, the Brown Jacket awaits');
+    w.append(t && t.win && t.win.length ? t.win.map(([n, y]) => n + ' ' + y.map(v => '\u2019' + String(v).slice(2)).join(' ')).join(' \u00b7 ') : 'none yet, the Brown Jacket awaits');
   }
 }
 function playFill() {

@@ -11,7 +11,8 @@ Bob Lohmann’s links-style layout (2002) rolls through the driftless farmland o
 # WHAT THE GAME ADDS UNDER EACH DESCRIPTION (not edited here)
 #   - The rounds, years and trip champions come from the trip spreadsheet (the "trip" data in courses/courses.json). The # notes below each description show what
 #     the game will print there, for reference only; editing those notes changes nothing.
-#   - A course the crew has not played shows only "Trip champs: none yet, the Brown Jacket awaits".
+#   - Every course shows the same sections: the description, a "N rounds - years" line only when the crew has played it, and a "Trip champs" line always (the champions,
+#     or "none yet, the Brown Jacket awaits" when the crew has not played it or no champion is recorded).
 #
 # APPLYING YOUR EDITS
 #   - Push this file: the deploy copies it into the game automatically.
