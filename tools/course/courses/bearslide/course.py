@@ -43,3 +43,4 @@ PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 MARKERS = {'w': ('white', 0xe8e8e8), 'y': ('black', 0x26282b), 'b': ('blue', 0x2f4fa8), 'r': ('red', 0xa8323c)}
 
 SMOOTH_MORE = True   # build.py low-passes every mapped line and outline (creeks, roads, cart paths; bunkers, tees, fairways, greens, ponds), area kept
+FAIRWAYS_FROM_AERIAL = True   # OSM's fairways here are only landing-area blobs (hole 12's is 1/6 of the mown strip): the aerial-traced fairway is merged with them for every par 4 and 5 (fairways_fill.py)
