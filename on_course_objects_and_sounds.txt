@@ -112,7 +112,7 @@ Practice areas
 Eagle and albatross (every golf course, real rounds only; not practice, not a hole in one, which has its own card; also on alpha courses)
   - When the hole card opens on a score of 2 under par (eagle) or 3 under (albatross): a public-domain photo of a bald eagle (img/eagle.webp, U.S. Fish and Wildlife Service,
     credit in img/CREDITS.txt) flashes across the screen from the left and then from the right with a white flash and "EAGLE!" in big gold letters, about 2.5 s.
-    An albatross has a bigger bird, a third pass, "ALBATROSS!" and about 4 s. Under "reduce motion" only the words show. Always, once per hole finished.
+    An albatross shows a Laysan albatross instead (img/albatross.webp, CC0, Alan Schmierer), a third pass, "ALBATROSS!" and about 4 s. Under "reduce motion" only the words show. Always, once per hole finished.
 
 Putting
   - On every golf course and the practice green: faint dark contour lines on the green with pure white to reddish pink dots flowing downhill (steeper is faster and pinker), and a chip saying how much uphill or downhill it is and how much and which way the putt breaks. The last putt's path stays on the green as a gold line until the next stroke.
@@ -155,7 +155,7 @@ Ambient
     (everywhere except Woodbine hole 7). The first one starts 1.5-4 s after the hole loads; after each, the next comes 4-16 s after it ends (26-38 s while it
     rains, and 40% quieter). Very quiet (level baked in), panned to its own side. Silent on the title screen, with the Sound switch off or the page hidden.
     Until the files have loaded (or offline, if not cached) there is no birdsong.
-  - Eagle screech (sounds/eagle.mp3, synthesised by tools/course/eagle_sound.py, about 2 s): a harsh hawk-style scream that jumps to about 3 kHz and falls to 1.5 kHz. Plays once
+  - Eagle screech (sounds/eagle.mp3, synthesised by tools/course/eagle_sound.py, about 2 s): a hawk-style scream, softened (low-passed at 5.5 kHz, light rasp), that jumps to about 2.8 kHz and falls to 1.4 kHz. Plays once
     with the "EAGLE!" effect, twice (the second lower and later) with "ALBATROSS!". Follows the Sound setting; until the file has loaded a plain falling tone plays instead.
   - Rainbow jingle (synthesised): a rising run of bell tones ending in a held sparkle, about 2 s. Plays once each time a rainbow appears, only once it
     is well faded in and only while the camera is facing it (it sits low in the east).
