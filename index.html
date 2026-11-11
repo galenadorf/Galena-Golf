@@ -132,6 +132,19 @@ body.rev #strike{right:auto;left:calc(var(--sl) + 10px)}
 /* ---------- overlays ---------- */
 .layer{position:fixed;inset:0;z-index:6;opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
 .layer.on{opacity:1;pointer-events:auto}
+.btn.subBtn.glbBtn{width:100%;height:36px;font-size:15px;letter-spacing:.14em;text-transform:uppercase;border-radius:14px}
+#glb{display:flex;flex-direction:column;gap:10px;padding:calc(var(--st) + 26px) calc(var(--sr) + 16px) calc(var(--sb) + 8px) calc(var(--sl) + 16px);background:linear-gradient(180deg,rgba(10,40,20,.5),rgba(10,40,20,.72))}
+.glbHead .pcName{font-size:24px;line-height:1.05;letter-spacing:.04em;color:#fff;margin:0}
+#glbList{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px;padding-bottom:6px}
+.glbCard{flex:none;padding:2px 6px 10px;cursor:pointer;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 12px rgba(0,0,0,.65),0 0 3px rgba(0,0,0,.6)}
+.glbCard h3{margin:0 0 4px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,.45);font:700 26px/1.1 var(--cond);text-transform:uppercase;letter-spacing:.06em;color:#ffe9a6;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.glbCard h3 small{font:600 12px var(--cond);letter-spacing:.1em;color:#fff;opacity:.8;white-space:nowrap}
+.glbRow{display:grid;grid-template-columns:34px 1fr auto 46px;align-items:center;gap:8px;padding:5px 2px;font:600 22px var(--cond);font-variant-numeric:tabular-nums}
+.glbRow .rk{font-size:17px;opacity:.85}.glbRow .top{color:#ffd84a;opacity:1}
+.glbRow .nm{text-transform:uppercase;letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.glbRow .nm small{display:block;font:600 11px var(--cond);letter-spacing:.1em;opacity:.8}
+.glbRow .tp{font:700 24px var(--cond)}.glbRow .st{text-align:right;opacity:.9;font-size:18px}
+.glbMsg{padding:18px 12px;text-align:center;font:600 14px var(--cond);letter-spacing:.06em;text-transform:uppercase;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
 #title,#play{display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--st) + 26px) calc(var(--sr) + 16px) calc(var(--sb) + 8px) calc(var(--sl) + 16px);background:linear-gradient(180deg,rgba(10,40,20,0) 45%,rgba(10,40,20,.32) 100%)}
 .logoCard{align-self:stretch;flex:none;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;gap:4px;text-align:left;padding:14px 14px 14px 24px;border-radius:28px}
 .logoCard .lt{min-width:0}
@@ -462,6 +475,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
   .logoCard,.playHead{align-self:flex-start}
   .tb{width:min(440px,55%)}
 }
+@media (orientation:landscape){#glb{flex-direction:column}}
 @media (orientation:portrait){#title{justify-content:center;gap:10px}#title .logoCard{margin-bottom:0}#title .tb{gap:10px}}   /* the home tiles float together in the middle, 10 px apart */
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -506,8 +520,13 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
     <label class="card nameRow" id="nameRow"><span>Player</span><input id="nameIn" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="go"></label>
     <div class="playRow"><button class="btn" id="btnPlay">Tee off</button></div>
     <div class="playRow"><button class="btn subBtn" id="btnPractice">Practice</button><button class="btn subBtn" id="btnSettings">Settings</button></div>
+    <div class="playRow"><button class="btn subBtn glbBtn" id="btnGlobal">Global leaderboard</button></div>
     <div class="best" id="best"></div>
   </div>
+</div>
+<div class="layer" id="glb">
+  <div class="card playHead glbHead"><button class="playBack" id="btnGlbBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><p class="pcName">Global leaderboard</p><p>Top 3 rounds on every course, all time</p></div></div>
+  <div id="glbList"></div>
 </div>
 <div class="layer" id="play">
   <div class="playLeft"><div class="card playHead"><button class="playBack" id="btnPlayBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><p id="playCourse" class="pcName"></p><p id="playPlace"></p><p id="playPar"></p><div id="playTop"></div></div></div>
@@ -6801,7 +6820,7 @@ function savedRound(course) {
 }
 // the hole to go back to: the one being played, else the next one not yet finished
 function resumeHole(r) { if (r.scores[r.hole] == null) return r.hole; for (let k = 1; k <= r.scores.length; k++) { const i = (r.hole + k) % r.scores.length; if (r.scores[i] == null) return i; } return 0; }
-function titleOff() { $('title').classList.remove('on'); $('play').classList.remove('on'); }   // (a round or practice starts from the title or the play screen: both go)
+function titleOff() { $('title').classList.remove('on'); $('play').classList.remove('on'); $('glb').classList.remove('on'); }   // (a round or practice starts from the title or the play screen: both go)
 function refreshResume() {
   recNoticeFlush();
   const b = $('btnResume'); if (!b) return; const r = savedRound();
@@ -9340,12 +9359,46 @@ function fillRecords(el, key) {
   }
   el.appendChild(mk('div', 'lbnote', 'Full 18-hole rounds by registered players. Tap a record for the top 5.'));
 }
+// the Global leaderboard page on the title screen: the top 3 rounds (all time) of every course that has any, from each course's world board
+function glbOpen() {
+  $('title').classList.remove('on'); $('glb').classList.add('on'); $('glbList').scrollTop = 0;
+  for (const c of Object.values(COURSES)) if (!c.alpha) loadWorld(false, c.key);
+  glbFill();
+}
+function glbFill() {
+  const el = $('glbList'); if (!el || !$('glb').classList.contains('on')) return;
+  const keep = el.scrollTop; el.textContent = '';
+  const mk = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
+  let shown = 0, wait = 0, fail = 0;
+  for (const c of Object.values(COURSES)) {
+    if (c.alpha) continue;   // a course in alpha posts no rounds
+    const w = worldRows(c.key);
+    if (w == null) { if (Board.gh[c.key] === null) fail++; else wait++; continue; }
+    const all = sortRounds(w); if (!all.length) continue;
+    const rank = all.map(r => all.findIndex(x => x.toPar === r.toPar) + 1);   // equal scores share a rank
+    const card = mk('div', 'glbCard'), h = card.appendChild(mk('h3', null, c.short.replace(/ \((beta|alpha)\)$/i, '')));
+    h.appendChild(mk('small', null, all.length + (all.length === 1 ? ' round' : ' rounds')));
+    all.slice(0, 3).forEach((r, i) => {
+      const tie = (i > 0 && rank[i - 1] === rank[i]) || (i + 1 < all.length && rank[i + 1] === rank[i]);
+      const row = mk('div', 'glbRow'), nm = mk('span', 'nm', r.name);
+      nm.appendChild(mk('small', null, new Date(r.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })));
+      row.append(mk('span', 'rk' + (rank[i] === 1 ? ' top' : ''), tie ? 'T' + rank[i] : rank[i] === 1 ? '★' : String(rank[i])), nm, mk('span', 'tp', fmtToPar(r.toPar)), mk('span', 'st', r.strokes));
+      card.appendChild(row);
+    });
+    card.onclick = () => { SFX.blip(); openBoard(c.key); };
+    el.appendChild(card); shown++;
+  }
+  if (!shown) el.appendChild(mk('div', 'glbMsg', wait ? 'Loading…' : fail ? 'The world boards could not be reached.' : 'No rounds posted yet.'));
+  else if (wait) el.appendChild(mk('div', 'glbMsg', 'Loading more…'));
+  el.scrollTop = keep;
+}
 function refreshBoards() {
   try { playFill(); } catch (e) { }
+  try { glbFill(); } catch (e) { }
   if ($('boardSheet').classList.contains('on')) fillBoard($('boardBody'), 40, Board.view, true);
   const fb = $('finalBoard'); if (fb && $('cardSheet').classList.contains('on')) fillBoard(fb, 10);
 }
-function openBoard() { Board.view = COURSE.key; loadWorld(); loadRecords(Board.view).then(ch => { if (ch) refreshBoards(); }); fillBoard($('boardBody'), 40, Board.view, true); openSheet('boardSheet'); }
+function openBoard(key) { Board.view = (typeof key === 'string' && COURSES[key]) ? key : COURSE.key; loadWorld(false, Board.view); loadRecords(Board.view).then(ch => { if (ch) refreshBoards(); }); fillBoard($('boardBody'), 40, Board.view, true); openSheet('boardSheet'); }
 
 /* ================= INPUT + LOOP ================= */
 function initInput() {
@@ -9496,6 +9549,8 @@ function initInput() {
     audio(); SFX.blip(); refreshResume(); $('title').classList.remove('on'); $('play').classList.add('on');
   };
   $('btnNew').onclick = () => { audio(); SFX.blip(); titleOff(); startRound(); };
+  $('btnGlobal').onclick = () => { SFX.blip(); glbOpen(); };
+  $('btnGlbBack').onclick = () => { SFX.blip(); $('glb').classList.remove('on'); $('title').classList.add('on'); };
   $('btnPlayBack').onclick = () => { SFX.blip(); $('play').classList.remove('on'); $('title').classList.add('on'); };
   $('mBoard').onclick = openBoard;
   document.querySelectorAll('#segRev button').forEach(b => b.onclick = () => { settings.reverse = +b.dataset.v === 1; saveSettings(); syncMenu(); });
