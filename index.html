@@ -151,15 +151,15 @@ body.rev #strike{right:auto;left:calc(var(--sl) + 10px)}
 .playHead{align-self:stretch;flex:none;display:flex;align-items:center;gap:12px;padding:14px 20px 14px 14px;border-radius:28px;text-align:left}
 .playHead .lt{min-width:0}
 .playLeft{flex:1 1 auto;min-height:0;min-width:0;align-self:stretch;display:flex;flex-direction:column;gap:6px}
-/* what the trip log says about this course: plain floating text over the course scene, no tile (--pbk shrinks it until it fits without scrolling: fitBlurb) */
-#playBlurb{flex:1 1 0;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:calc(7px*var(--pbk,1));padding:4px 6px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 12px rgba(0,0,0,.65),0 0 3px rgba(0,0,0,.6)}
+/* what the trip log says about this course: plain floating text over the course scene, no tile (it wraps at a fixed size; it scrolls only if it ever outgrows the space) */
+#playBlurb{flex:1 1 0;min-height:0;overflow-y:auto;touch-action:pan-y;display:flex;flex-direction:column;justify-content:safe center;gap:7px;padding:4px 6px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 12px rgba(0,0,0,.65),0 0 3px rgba(0,0,0,.6)}
 #playBlurb p{margin:0}
-#playBlurb .pbJoke{font:600 calc(15px*var(--pbk,1))/1.36 var(--body)}
-#playBlurb .pbStat{font:700 calc(12px*var(--pbk,1))/1.3 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:#ffe9a6}
-#playBlurb .pbWin{font:500 calc(12.5px*var(--pbk,1))/1.4 var(--body);color:#f4f1e4}
+#playBlurb .pbJoke{font:600 18px/1.36 var(--body)}
+#playBlurb .pbStat{font:700 14px/1.3 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:#ffe9a6}
+#playBlurb .pbWin{font:500 15px/1.4 var(--body);color:#f4f1e4}
 #playBlurb .pbWin b{font-weight:700;color:#ffd84a;text-transform:uppercase;letter-spacing:.06em}
 /* a thin line between the description, the rounds line and the champions line */
-#playBlurb .pbStat,#playBlurb .pbWin{border-top:1px solid rgba(255,255,255,.42);padding-top:calc(7px*var(--pbk,1));box-shadow:0 -1px 0 rgba(0,0,0,.28)}
+#playBlurb .pbStat,#playBlurb .pbWin{border-top:1px solid rgba(255,255,255,.42);padding-top:7px;box-shadow:0 -1px 0 rgba(0,0,0,.28)}
 #playBlurb:empty,#playBlurb .pbWin:empty,#playBlurb .pbStat:empty{display:none}
 .playHead h1{margin:0;font:700 38px/.95 var(--cond);text-transform:uppercase;letter-spacing:.01em}
 .playHead p{margin:7px 0 0;font:600 13px/1.45 var(--cond);text-transform:uppercase;letter-spacing:.14em;color:var(--w2);white-space:pre-line}
@@ -219,7 +219,6 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
 .qt{font:700 32px/1 var(--cond);text-transform:uppercase}
 .qcard p{margin:8px 0 18px;font:500 15px/1.35 var(--body);color:var(--w2)}
 .qb{display:flex;flex-direction:column;gap:10px}
-.best{text-align:center;font:600 13px var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--w1);text-shadow:var(--tsh);min-height:16px}
 #intro,#done{display:flex;align-items:flex-end;justify-content:center;padding:0 calc(var(--sr) + 12px) calc(var(--sb) + 12px) calc(var(--sl) + 12px)}
 #intro{background:linear-gradient(180deg,rgba(10,40,20,0) 55%,rgba(10,40,20,.28))}
 .icard{width:100%;max-width:520px;padding:16px;display:flex;gap:14px;transform:translateY(30px);transition:transform .5s var(--spring);border-radius:28px}
@@ -521,7 +520,6 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
     <div class="playRow"><button class="btn" id="btnPlay">Tee off</button></div>
     <div class="playRow"><button class="btn subBtn" id="btnPractice">Practice</button><button class="btn subBtn" id="btnSettings">Settings</button></div>
     <div class="playRow"><button class="btn subBtn glbBtn" id="btnGlobal">Global leaderboard</button></div>
-    <div class="best" id="best"></div>
   </div>
 </div>
 <div class="layer" id="glb">
@@ -7775,7 +7773,7 @@ function VH() { return window.innerHeight; }
 // iOS can pan the visual viewport (or leave it scrolled after the keyboard or a gesture), which would shift the drawn UI against the touch areas: keep it at the origin
 function pinViewport() { try { if (window.scrollX || window.scrollY) window.scrollTo(0, 0); const vv = window.visualViewport; if (vv && (vv.offsetTop || vv.offsetLeft) && !document.activeElement.matches('input')) window.scrollTo(0, 0); } catch (e) { } }
 ['scroll', 'resize', 'orientationchange', 'pageshow', 'focus'].forEach(ev => window.addEventListener(ev, pinViewport)); if (window.visualViewport) { visualViewport.addEventListener('resize', pinViewport); visualViewport.addEventListener('scroll', pinViewport); }
-document.addEventListener('touchmove', e => { if (!e.target.closest || !e.target.closest('.sheet, input, #glbList')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', e => { if (!e.target.closest || !e.target.closest('.sheet, input, #glbList, #playBlurb')) e.preventDefault(); }, { passive: false });
 // SH() is the 3D canvas height (equal to the viewport height).
 let FILL = false; try { localStorage.removeItem('ssg-fill'); } catch (e) { } // (the optional Fill view moved the touch areas on iOS and is gone)
 let SHV = 0;
@@ -8248,10 +8246,6 @@ function readoutNote(text, cls) {
 // the play screen's tile: the course's full name, its town, par and the tee's rating and slope, then the best three rounds on the world board
 // the trip log's line for this course (courses.json blurb + trip: rounds, years and the champion of each trip); the text shrinks until it fits the space with no scroll
 const tripYears = ys => { const o = []; for (let i = 0; i < ys.length; i++) { let j = i; while (j + 1 < ys.length && ys[j + 1] === ys[j] + 1) j++; o.push(j - i >= 2 ? ys[i] + '\u2013' + ys[j] : ys.slice(i, j + 1).join(', ')); i = j; } return o.join(', '); };
-function fitBlurb() {
-  const el = $('playBlurb'); if (!el || !el.clientHeight) return; let k = 1; el.style.setProperty('--pbk', 1);
-  while (el.scrollHeight > el.clientHeight + 1 && k > .6) { k -= .04; el.style.setProperty('--pbk', k.toFixed(2)); }
-}
 function playBlurbFill() {
   const CO = COURSE, t = CO.trip; $('pbJoke').textContent = CO.blurb || '';
   $('pbStat').textContent = !CO.blurb || !t ? '' : `${t.n} ${t.n === 1 ? 'round' : 'rounds'} \u00b7 ${tripYears(t.years)}`;   // (a course the crew has not played has no rounds line)
@@ -8260,10 +8254,7 @@ function playBlurbFill() {
     const b = document.createElement('b'); b.textContent = 'Trip champs '; w.appendChild(b);
     w.append(t ? t.win.map(([n, y]) => n + ' ' + y.map(v => '\u2019' + String(v).slice(2)).join(' ')).join(' \u00b7 ') : 'none yet, the Brown Jacket awaits');
   }
-  fitBlurb(); requestAnimationFrame(() => { fitBlurb(); requestAnimationFrame(fitBlurb); });
 }
-try { new ResizeObserver(() => fitBlurb()).observe($('playBlurb')); } catch (e) { }   // (the box changes size when the leaders rows load or the phone turns; its content never changes its size, so this cannot loop)
-window.addEventListener('resize', () => { try { fitBlurb(); } catch (e) { } }); window.addEventListener('orientationchange', () => [150, 600].forEach(ms => setTimeout(() => { try { fitBlurb(); } catch (e) { } }, ms)));
 function playFill() {
   // the course's name on this card: courses.json `card` when it has one (\n for a new line), else the name split before 'at Eagle Ridge' / 'Golf Course'
   playBlurbFill();
@@ -8429,7 +8420,7 @@ function showScorecard(final) {
   openSheet('cardSheet'); UI.finalCard = !!final;
   if (final) { $('scAgain').onclick = () => { UI.finalCard = false; closeSheets(); startRound(); }; $('scClose').onclick = closeSheets; }
 }
-function showBest() { const ni = $('nameIn'); if (ni && document.activeElement !== ni) ni.value = settings.name || ''; if (ni) ni.readOnly = isReg(); let b = null; try { b = +localStorage.getItem(BEST_KEY) || null; } catch (e) { } $('best').textContent = b ? `Best round ${b} (${fmtToPar(b - PAR_TOTAL)})` : ''; }
+function showBest() { const ni = $('nameIn'); if (ni && document.activeElement !== ni) ni.value = settings.name || ''; if (ni) ni.readOnly = isReg(); }
 /* ---------- intro & hole done ---------- */
 function showIntro() {
   const C = G.C, d = C.def;
@@ -9453,7 +9444,7 @@ function initInput() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) lost(null); });
   window.addEventListener('blur', () => lost(null));
   document.addEventListener('pointerout', e => { if (e.pointerType === 'mouse' && !e.relatedTarget) SW.mouseR = false; });
-  document.addEventListener('touchmove', e => { const t = e.target; if (!(t && t.closest && t.closest('.sheet, #glbList'))) e.preventDefault(); }, { passive: false });
+  document.addEventListener('touchmove', e => { const t = e.target; if (!(t && t.closest && t.closest('.sheet, #glbList, #playBlurb'))) e.preventDefault(); }, { passive: false });
   document.addEventListener('gesturestart', e => e.preventDefault());
   // keyboard: hold Space = backswing, release = top, press again = strike
   let kbHeld = false;
