@@ -421,6 +421,19 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 .help div{background:var(--soft);border-radius:16px;padding:11px 13px;font:500 14.5px/1.4 var(--body);color:var(--ink2)}
 .help b{display:block;font:600 17px var(--cond);text-transform:uppercase;color:var(--ink);margin-bottom:2px}
 #confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:9}
+#eagleFx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:30}
+#eagleFx .fl{position:absolute;inset:0;background:#fff;opacity:0;animation:eagleFlash .35s ease-out forwards}
+#eagleFx img{position:absolute;top:14%;left:0;width:min(86vw,560px);height:auto;opacity:0;filter:drop-shadow(0 12px 18px rgba(0,0,0,.5));will-change:transform}
+#eagleFx img.big{width:min(100vw,720px)}
+#eagleFx img.ltr{animation:eagleLtr .95s cubic-bezier(.25,.6,.3,1) forwards}
+#eagleFx img.rtl{animation:eagleRtl .95s cubic-bezier(.25,.6,.3,1) forwards}
+#eagleFx .et{position:absolute;left:0;right:0;top:44%;text-align:center;font:800 clamp(44px,15vw,104px)/1 Oswald,"Arial Narrow",Impact,sans-serif;letter-spacing:.04em;color:#ffd84a;-webkit-text-stroke:3px #2b1a05;paint-order:stroke fill;text-shadow:0 6px 0 #2b1a05,0 12px 24px rgba(0,0,0,.55);animation:eagleText 2.6s ease-out forwards}
+#eagleFx .et small{display:block;margin-top:6px;font-size:.3em;letter-spacing:.2em;color:#fff;-webkit-text-stroke:2px #2b1a05}
+@keyframes eagleLtr{0%{opacity:1;transform:translate(-105%,34%) rotate(-14deg) scale(.55)}55%{opacity:1;transform:translate(6%,0) rotate(-3deg) scale(1.08)}100%{opacity:1;transform:translate(112%,-26%) rotate(8deg) scale(1.25)}}
+@keyframes eagleRtl{0%{opacity:1;transform:translate(112%,34%) rotate(14deg) scale(-.55,.55)}55%{opacity:1;transform:translate(-6%,0) rotate(3deg) scale(-1.08,1.08)}100%{opacity:1;transform:translate(-112%,-26%) rotate(-8deg) scale(-1.25,1.25)}}
+@keyframes eagleFlash{0%{opacity:.55}100%{opacity:0}}
+@keyframes eagleText{0%{opacity:0;transform:scale(.3)}12%{opacity:1;transform:scale(1.18)}22%{transform:scale(1)}78%{opacity:1}100%{opacity:0;transform:scale(1.06)}}
+@media (prefers-reduced-motion:reduce){#eagleFx .fl{display:none}#eagleFx .et{opacity:1}}
 #confetti i{position:absolute;top:-14px;width:9px;height:14px;border-radius:3px;animation:fall linear forwards}
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
 @media (max-width:430px){.pb-n{display:none}}
@@ -6011,7 +6024,7 @@ function poolNext(P, now) {
 }
 const poolReady = P => P.k && SND['s_' + P.k] ? 's_' + P.k : null;
 function poolUsed(P) { delete SND['s_' + P.k]; P.last = P.k; P.k = null; poolNext(P, performance.now()); }   // (a sound that is playing keeps its own hold on the buffer)
-const SND_FILES = ['driver', 'wood', 'iron', 'wedge', 'putter', 'cup', 'plane'];
+const SND_FILES = ['driver', 'wood', 'iron', 'wedge', 'putter', 'cup', 'plane', 'eagle'];
 function play(name, rate, vol, lp, delay) {
   if (!settings.sound || !SND[name]) return false; const a = audio(); if (!a) return false;
   const s = a.createBufferSource(); s.buffer = SND[name]; s.playbackRate.value = rate || 1; const g = a.createGain(); g.gain.value = vol == null ? 1 : vol; let n = s;
@@ -6694,6 +6707,7 @@ const SFX = {
     tone(4186, 1.1, 'sine', .05, null, n.length * .085); tone(5274, .7, 'sine', .025, null, n.length * .085 + .12); tone(6272, .5, 'sine', .015, null, n.length * .085 + .25);
   },
   plane() { if (!play('s_plane', 1, 1)) { tone(92, 5.5, 'sawtooth', .03, 68); tone(184, 5.5, 'triangle', .018, 136, .1); } },   // the recording (sounds/plane.mp3); the synthesised drone only until it has loaded
+  eagle(delay, rate) { if (!play('s_eagle', rate || 1, 1, null, delay || 0)) { tone(2600, 1.1, 'sawtooth', .05, 1500, delay || 0); tone(3100, .8, 'square', .02, 1900, (delay || 0) + .05); } },   // the screech (sounds/eagle.mp3); a plain falling tone only until it has loaded
   chime() { [523, 659, 784, 1047].forEach((f, i) => tone(f, .4, 'sine', .13, null, i * .09)); },
   pin() { tone(1900, .05, 'triangle', .09); tone(2500, .035, 'sine', .04, null, .01); noiseBurst(.05, .07, 2800, 2); },
   blip() { tone(700, .05, 'sine', .07); }
@@ -8391,6 +8405,20 @@ function showDone(pickedUp) {
   $('dNext').textContent = G.practice ? 'Play again' : last ? 'Final scorecard' : 'Next hole'; $('dChange').style.display = G.practice ? '' : 'none';
   $('done').classList.add('on');
   if (!pickedUp && d <= -1) burstConfetti();
+  if (!pickedUp && !G.practice && !MP.spec && s !== 1 && d <= -2) eagleShow(d <= -3);   // an eagle or better (a hole in one has its own card)
+}
+// an eagle (2 under) or an albatross (3 under): a public-domain bald eagle (img/eagle.webp) flashes in from the left and then the right while it screeches
+// (sounds/eagle.mp3, synthesised); the albatross gets a bigger bird, a third pass and a second screech. Under reduced motion only the words show.
+let eagleT = 0;
+function eagleShow(big) {
+  let box = $('eagleFx'); if (!box) { box = document.createElement('div'); box.id = 'eagleFx'; document.body.appendChild(box); }
+  clearTimeout(eagleT); const passes = big ? 3 : 2, step = .8;
+  let h = '<div class="fl"></div>';
+  for (let i = 0; i < passes; i++) h += `<img src="img/eagle.webp" alt="" class="${i % 2 ? 'rtl' : 'ltr'}${big ? ' big' : ''}" style="animation-delay:${(i * step).toFixed(2)}s">`;
+  h += `<div class="et">${big ? 'ALBATROSS!' : 'EAGLE!'}</div>`;
+  box.innerHTML = h;
+  try { SFX.eagle(0, 1); if (big) SFX.eagle(1.3, .9); } catch (e) { }
+  eagleT = setTimeout(() => { box.innerHTML = ''; }, (big ? 4.4 : 3.2) * 1000);
 }
 function burstConfetti() {
   const box = $('confetti'); box.innerHTML = '';

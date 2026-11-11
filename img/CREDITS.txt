@@ -1,0 +1,3 @@
+eagle.webp: "Adult bald eagle in flight at Eastern Neck National Wildlife Refuge" (U.S. Fish and Wildlife Service, Mid-Atlantic, Flickr 34252248632),
+public domain (work of the U.S. federal government); on Wikimedia Commons as File:Adult bald eagle in flight at Eastern Neck National Wildlife Refuge (34252248632).jpg.
+The sky was keyed out and the edge cleaned; the photo is otherwise unchanged. The eagle's screech (sounds/eagle.mp3) is synthesised by tools/course/eagle_sound.py.
