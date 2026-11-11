@@ -135,7 +135,7 @@ body.rev #strike{right:auto;left:calc(var(--sl) + 10px)}
 .btn.subBtn.glbBtn{width:100%;height:36px;font-size:15px;letter-spacing:.14em;text-transform:uppercase;border-radius:14px}
 #glb{display:flex;flex-direction:column;gap:10px;padding:calc(var(--st) + 26px) calc(var(--sr) + 16px) calc(var(--sb) + 8px) calc(var(--sl) + 16px);background:linear-gradient(180deg,rgba(10,40,20,.5),rgba(10,40,20,.72))}
 .glbHead .pcName{font-size:24px;line-height:1.05;letter-spacing:.04em;color:#fff;margin:0}
-#glbList{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px;padding-bottom:6px}
+#glbList{touch-action:pan-y;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px;padding-bottom:6px}
 .glbCard{flex:none;padding:2px 6px 10px;cursor:pointer;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 12px rgba(0,0,0,.65),0 0 3px rgba(0,0,0,.6)}
 .glbCard h3{margin:0 0 4px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,.45);font:700 26px/1.1 var(--cond);text-transform:uppercase;letter-spacing:.06em;color:#ffe9a6;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .glbCard h3 small{font:600 12px var(--cond);letter-spacing:.1em;color:#fff;opacity:.8;white-space:nowrap}
@@ -7775,7 +7775,7 @@ function VH() { return window.innerHeight; }
 // iOS can pan the visual viewport (or leave it scrolled after the keyboard or a gesture), which would shift the drawn UI against the touch areas: keep it at the origin
 function pinViewport() { try { if (window.scrollX || window.scrollY) window.scrollTo(0, 0); const vv = window.visualViewport; if (vv && (vv.offsetTop || vv.offsetLeft) && !document.activeElement.matches('input')) window.scrollTo(0, 0); } catch (e) { } }
 ['scroll', 'resize', 'orientationchange', 'pageshow', 'focus'].forEach(ev => window.addEventListener(ev, pinViewport)); if (window.visualViewport) { visualViewport.addEventListener('resize', pinViewport); visualViewport.addEventListener('scroll', pinViewport); }
-document.addEventListener('touchmove', e => { if (!e.target.closest || !e.target.closest('.sheet, input')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', e => { if (!e.target.closest || !e.target.closest('.sheet, input, #glbList')) e.preventDefault(); }, { passive: false });
 // SH() is the 3D canvas height (equal to the viewport height).
 let FILL = false; try { localStorage.removeItem('ssg-fill'); } catch (e) { } // (the optional Fill view moved the touch areas on iOS and is gone)
 let SHV = 0;
@@ -9453,7 +9453,7 @@ function initInput() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) lost(null); });
   window.addEventListener('blur', () => lost(null));
   document.addEventListener('pointerout', e => { if (e.pointerType === 'mouse' && !e.relatedTarget) SW.mouseR = false; });
-  document.addEventListener('touchmove', e => { const t = e.target; if (!(t && t.closest && t.closest('.sheet'))) e.preventDefault(); }, { passive: false });
+  document.addEventListener('touchmove', e => { const t = e.target; if (!(t && t.closest && t.closest('.sheet, #glbList'))) e.preventDefault(); }, { passive: false });
   document.addEventListener('gesturestart', e => e.preventDefault());
   // keyboard: hold Space = backswing, release = top, press again = strike
   let kbHeld = false;
