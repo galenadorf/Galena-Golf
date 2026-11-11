@@ -149,7 +149,7 @@
     {
       "key": "galena",
       "name": "Galena Golf Club",
-      "short": "Galena GC (alpha)", "alpha": true, "place": "Galena, IL", "tee": "White", "rating": 71.4, "slope": 122,
+      "short": "Galena GC (beta)", "place": "Galena, IL", "tee": "White", "rating": 71.4, "slope": 122,
       "pars": [4, 4, 3, 5, 4, 4, 4, 3, 4, 5, 3, 4, 4, 3, 5, 4, 4, 5],
       "recFrom": "2026-11-10",
       "about": "Galena Golf Club (Galena, Illinois; par 72) is played from the white tees (6,368 yd); blue, gold and red are the markers. Alpha: built from OpenStreetMap alone. Hole lines, greens, bunkers, fairways, the pond and streams from \u00a9 OpenStreetMap contributors (ODbL); three tee boxes OSM lacks placed off the aerial; trees from the 2019 Jo Daviess lidar (USGS), checked against the 2023 USDA NAIP aerial; the ground from the USGS 3DEP 1 m elevation model.",

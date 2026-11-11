@@ -497,9 +497,9 @@ SCENERY AND DATA
 
 
 #####################################################################################################
-GALENA GOLF CLUB (galena)  "Galena GC (alpha)"
+GALENA GOLF CLUB (galena)  "Galena GC (beta)"
 #####################################################################################################
-Also everything in GLOBAL. Alpha: built from OpenStreetMap alone, posts no rounds. Dark green long rough. White tees 6,368 yd, par 72.
+Also everything in GLOBAL. Beta: built from OpenStreetMap alone; rounds post and keep records as normal. Dark green long rough. White tees 6,368 yd, par 72.
 
 OBJECTS
 -------
