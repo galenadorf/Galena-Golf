@@ -35,6 +35,7 @@ ALT = {}
 RELIEF_OFF_WATER = True
 PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 TREES_OFF_TEES_GREENS = True
+TREES_OFF_TEE_FRONT = (45, 7)   # no tree in a 14 m wide, 45 m long corridor out of each (guessed) tee, along its hole line
 SMOOTH_MORE = True
 FINAL_ROUND = dict(fair=(3, 3), water=(2.5, 0), fescue=(3, 1.5), bound=(3, 3))
 SMOOTH_PAINTED = True
@@ -46,3 +47,14 @@ OSM_HOLES = False
 KEEP_NEAR_HOLES = 60
 OUTLINE_BUFFER = 90
 # (no aerial fairway tracing: it found almost nothing along the guessed lines; briar_holes.py adds a mown corridor to each hole OSM has no fairway for)
+
+# cart paths: OSM draws two stretches as bridge=yes ways, which osm_cartpaths leaves out, so the network had two gaps. PATH_JOINS lay them back as plain path, the deck (CART_BRIDGES: e, n, bearing counter-clockwise from east, length m, hole) is the creek crossing.
+PATH_JOINS = [
+    [(-252.3, -25.8), (-249.0, -31.0)],                                              # a 6 m bridge way on the hole 9-10 path, no stream mapped under it
+    [(41.7, -63.8), (78.3, -103.5)],                                                 # the spur beside hole 9's green, joined to the end of the main path (a guess: no path shows between them)
+    [(291.4, 56.6), (299.5, 55.8), (318.1, 45.9), (325.3, 42.6)],                    # the path out to hole 10's tee, across the creek
+]
+CART_BRIDGES = [
+    (312.6, 48.8, -28.0, 10, 10),
+]
+ROUND_PATH_ENDS = True

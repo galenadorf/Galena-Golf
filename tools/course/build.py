@@ -825,6 +825,13 @@ def main():
         n0 = len(trees)
         trees = [t for t in trees if not keep.contains(Point(t['e'], t['n']))]
         print(n0 - len(trees), 'trees taken out of tee boxes and greens (course.TREES_OFF_TEES_GREENS)')
+    if getattr(course, 'TREES_OFF_TEE_FRONT', None):   # TREES_OFF_TEE_FRONT = (length m, half width m): no tree whose crown reaches the corridor straight out of each tee along its hole line (a tee that faces a tree wall; the guessed tees of Briar Leaf)
+        L, W = course.TREES_OFF_TEE_FRONT
+        cor = unary_union([LineString([(h['tee'][0] - (h['green'][0] - h['tee'][0]) / max(1, math.hypot(h['green'][0] - h['tee'][0], h['green'][1] - h['tee'][1])) * 3, h['tee'][1] - (h['green'][1] - h['tee'][1]) / max(1, math.hypot(h['green'][0] - h['tee'][0], h['green'][1] - h['tee'][1])) * 3),
+                                      (h['tee'][0] + (h['green'][0] - h['tee'][0]) / max(1, math.hypot(h['green'][0] - h['tee'][0], h['green'][1] - h['tee'][1])) * L, h['tee'][1] + (h['green'][1] - h['tee'][1]) / max(1, math.hypot(h['green'][0] - h['tee'][0], h['green'][1] - h['tee'][1])) * L)]).buffer(W) for h in holes])
+        n0 = len(trees)
+        trees = [t for t in trees if not cor.intersects(Point(t['e'], t['n']).buffer(t['d'] / 2))]
+        print(n0 - len(trees), 'trees taken out in front of the tees (course.TREES_OFF_TEE_FRONT)')
     xap = os.path.join(OUT, 'trees_x_added.json')   # trees added with coloured circles on the tree guide (trees_x.py read)
     if os.path.exists(xap):
         xa = json.load(open(xap))
