@@ -34,7 +34,7 @@ def load():
         t = w.get('tags', {})
         g = t.get('golf')
         if g == 'hole':
-            F['hole'].append(dict(line=LineString(coords(w)), ref=int(t['ref']), par=int(t['par']), hcp=int(t.get('handicap', 0)), tags=t))
+            F['hole'].append(dict(line=LineString(coords(w)), ref=int(t['ref']), par=int(t.get('par', 4)), hcp=int(t.get('handicap', 0)), tags=t, id=w['id']))
             continue
         if g in ('green', 'tee', 'bunker', 'driving_range', 'fairway', 'rough', 'cartpath', 'water_hazard', 'lateral_water_hazard'):
             p = area(w)
@@ -98,7 +98,7 @@ def load():
     if getattr(course, 'HOLE_BOX', None) is not None or getattr(course, 'EXTRA_FILE', None):
         from shapely.geometry import box
         hb = box(*course.HOLE_BOX) if getattr(course, 'HOLE_BOX', None) else None
-        F['hole'] = [h for h in F['hole'] if hb is not None and hb.contains(h['line'].interpolate(.5, normalized=True))] if getattr(course, 'OSM_HOLES', True) else []
+        F['hole'] = [h for h in F['hole'] if hb is not None and hb.contains(h['line'].interpolate(.5, normalized=True)) and (not getattr(course, 'HOLE_WAYS', None) or h.get('id') in course.HOLE_WAYS)] if getattr(course, 'OSM_HOLES', True) else []   # HOLE_WAYS: the OSM way ids of this course's holes, where the outline holds several courses (Lacoma, Pebble Brook)
         ex = getattr(course, 'EXTRA_FILE', None)
         X = {}
         if ex:

@@ -8,7 +8,7 @@ watching a full round.
 HOW THIS FILE IS ORGANISED
   GLOBAL        what every course has (objects, then sounds), after a table of which course has what.
   then one section per course, in the order of the course picker: Woodbine Bend, Eagle Ridge South, Eagle Ridge North, Eagle Ridge The General,
-  Fossil Trace, Stonehenge, Thunderhawk, Bear Slide, Galena Golf Club, Legends at Memphis National, Chestnut Mountain Disc Golf, Adler Park Disc Golf.
+  Fossil Trace, Stonehenge, Thunderhawk, Bear Slide, Galena Golf Club, Elbel Park, Pebble Brook North, Lacoma Blue, Legends at Memphis National, Chestnut Mountain Disc Golf, Adler Park Disc Golf.
   Each course section has OBJECTS (what only that course has, with how often and when) then SOUNDS (the same), then SCENERY AND DATA (trees,
   water, buildings, roads, paths). A line "also everything in GLOBAL" is always true; "NOT here" lists what a reader might expect and will not find.
   Wording used for frequency: "always" = every time; "per hole" = decided each time a hole loads; "per trip" = each time a vehicle sets off;
@@ -22,47 +22,47 @@ GLOBAL
 A. WHICH COURSE HAS WHAT
 ------------------------
   Y = yes, - = no. WB Woodbine Bend, ERS Eagle Ridge South, ERN Eagle Ridge North, LG Legends, ERG Eagle Ridge The General, FT Fossil Trace, SH Stonehenge, TH Thunderhawk,
-  BS Bear Slide, GA Galena GC (alpha: keeps no rounds), CM Chestnut Mountain (disc), AD Adler Park (disc). Details are in each course's section.
+  BS Bear Slide, GA Galena GC (alpha: keeps no rounds), EP Elbel Park (alpha), PB Pebble Brook North (alpha), LB Lacoma Blue (alpha), CM Chestnut Mountain (disc), AD Adler Park (disc). Details are in each course's section.
 
-  OBJECTS                                       WB   ERS  ERN  LG   ERG  FT   SH   TH   BS   GA   CM   AD
-  Weather, rainbow                              Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL)
-  Bird flocks                                   Y    Y    Y    Y    Y    -    Y    Y    Y    Y    Y    Y     (GLOBAL; off at Fossil Trace: `scene.flocks` false)
-  Hot air balloon                               Y    Y    Y    -    Y    -    Y    Y    Y    Y    Y    Y     (GLOBAL; off at Fossil Trace and Legends: `scene.balloon` false)
-  Wild turkeys                                  Y    Y    Y    -    Y    -    -    -    -    -    -    -
-  Gopher (groundhog)                            Y    Y    Y    -    Y    -    -    -    -    -    -    -
-  Banner plane                                  Y    Y    Y    -    Y    -    -    -    -    -    -    -
-  White-tailed deer                             -    -    Y    Y    -    -    Y    Y    Y    Y    -    -
-  Coyote (gray and white)                       -    Y    Y    -    Y    -    -    -    -    -    -    -
-  Elk herd (holes 5 and 12 only)                -    -    -    -    -    Y    -    -    -    -    -    -
-  Prairie dog colony (holes 8 and 16 only)      -    -    -    -    -    Y    -    -    -    -    -    -
-  Cows in the woods (hole 3 only)               -    Y    -    -    -    -    -    -    -    -    -    -
-  Squirrels (3 on every hole)                   -    -    -    Y    -    -    Y    Y    Y    Y    -    -
-  Highway with an 18-wheeler and 4 cars         Y    -    -    -    -    -    Y    -    -    Y    -    -
-  Cars (Subaru and Hyundai only) on side roads  -    Y    Y    Y*   Y    -    -    -    -    -    -    -     (* Legends: Frank Road only, steady)
-  Dancing hot dog (hole 10)                     Y    -    -    -    -    -    -    -    -    -    -    -
-  Fountain (hole 1)                             Y    -    -    -    -    -    -    -    -    -    -    -
-  Moving golf cart with two men (rare)          Y    -    -    -    -    -    -    -    -    -    -    -
-  Black bear crossing the fairway (rare)        -    -    -    -    -    Y    -    -    -    -    -    -
+  OBJECTS                                       WB   ERS  ERN  LG   ERG  FT   SH   TH   BS   GA   EP   PB   LB   CM   AD
+  Weather, rainbow                              Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL)
+  Bird flocks                                   Y    Y    Y    Y    Y    -    Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL; off at Fossil Trace: `scene.flocks` false)
+  Hot air balloon                               Y    Y    Y    -    Y    -    Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL; off at Fossil Trace and Legends: `scene.balloon` false)
+  Wild turkeys                                  Y    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -
+  Gopher (groundhog)                            Y    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -
+  Banner plane                                  Y    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -
+  White-tailed deer                             -    -    Y    Y    -    -    Y    Y    Y    Y    Y    Y    Y    -    -
+  Coyote (gray and white)                       -    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -
+  Elk herd (holes 5 and 12 only)                -    -    -    -    -    Y    -    -    -    -    -    -    -    -    -
+  Prairie dog colony (holes 8 and 16 only)      -    -    -    -    -    Y    -    -    -    -    -    -    -    -    -
+  Cows in the woods (hole 3 only)               -    Y    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Squirrels (3 on every hole)                   -    -    -    Y    -    -    Y    Y    Y    Y    Y    Y    Y    -    -
+  Highway with an 18-wheeler and 4 cars         Y    -    -    -    -    -    Y    -    -    Y    -    -    -    -    -
+  Cars (Subaru and Hyundai only) on side roads  -    Y    Y    Y*   Y    -    -    -    -    -    -    -    -    -    -     (* Legends: Frank Road only, steady)
+  Dancing hot dog (hole 10)                     Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Fountain (hole 1)                             Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Moving golf cart with two men (rare)          Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Black bear crossing the fairway (rare)        -    -    -    -    -    Y    -    -    -    -    -    -    -    -    -
   Parked golf carts, clubhouse model, washroom,
     porta-potties, parking lot, pump house,
-    entrance sign, hole 7 sign                  Y    -    -    -    -    -    -    -    -    -    -    -
-  Washroom, parking lot with cars (no other)    Y    -    -    Y    -    -    -    -    -    -    -    -
-  Cart paths                                    Y    Y    Y    Y    Y    Y    -    -    -    Y    -    -
-  Cart-path bridges                             -    10   6    4    -    -    -    -    -    3    -    -
-  Roads drawn (out of bounds, for looks)          2    all* all* all* all* 1    3    5+   all* all* 1    2     (* every OSM road near a hole)
-  Pool, water slide, playground                 -    -    -    -    -    -    -    -    -    -    -    Y
-  Disc, basket, tee pad (no ball, cup, tee peg) -    -    -    -    -    -    -    -    -    -    Y    Y
-  Long rough (dark green) instead of fescue     -    Y    Y    Y    Y    Y    Y    Y    Y    Y    -    -     (Woodbine: golden fescue)
+    entrance sign, hole 7 sign                  Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Washroom, parking lot with cars (no other)    Y    -    -    Y    -    -    -    -    -    -    -    -    -    -    -
+  Cart paths                                    Y    Y    Y    Y    Y    Y    -    -    -    Y    Y    Y    -    -    -
+  Cart-path bridges                             -    10   6    4    -    -    -    -    -    3    -    -    -    -    -
+  Roads drawn (out of bounds, for looks)        2    all* all* all* all* 1    3    5+   all* all* all* all* all* 1    2     (* every OSM road near a hole)
+  Pool, water slide, playground                 -    -    -    -    -    -    -    -    -    -    -    -    -    -    Y
+  Disc, basket, tee pad (no ball, cup, tee peg) -    -    -    -    -    -    -    -    -    -    -    -    -    Y    Y
+  Long rough (dark green) instead of fescue     -    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    -    -     (Woodbine: golden fescue)
 
-  SOUNDS                                        WB   ERS  ERN  LG   ERG  FT   SH   TH   BS   GA   CM   AD
+  SOUNDS                                        WB   ERS  ERN  LG   ERG  FT   SH   TH   BS   GA   EP   PB   LB   CM   AD
   Club strikes, landing, trees, water, cup,
     chimes, interface blips, birdsong, rainbow
-    jingle, the rare unseen sound               Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y*   Y*    (GLOBAL; * disc: release whoosh and chains instead of strikes and cup)
-  Banner plane engine drone                     Y    Y    Y    -    Y    -    -    -    -    -    -    -
+    jingle, the rare unseen sound               Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y*   Y*    (GLOBAL; * disc: release whoosh and chains instead of strikes and cup)
+  Banner plane engine drone                     Y    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -
   Truck air horn / engine rumble (`scene.truckHorn`)
-                                                Y    -    -    -    -    -    -    -    -    -    -    -
-  Hole 7 song                                   Y    -    -    -    -    -    -    -    -    -    -    -     (no birdsong on that hole)
-  Golf cart radio ("Around the World")          Y    -    -    -    -    -    -    -    -    -    -    -
+                                                Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Hole 7 song                                   Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -     (no birdsong on that hole)
+  Golf cart radio ("Around the World")          Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -
   Gobble / squeak / rustle / thunk when the
     ball hits an animal, plane or cart             per animal on that -    course (see its section)
 
@@ -520,6 +520,74 @@ SCENERY AND DATA
   - Fairways, greens, bunkers (41), tees: OSM. OSM maps no tee box for holes 3, 4 and 9: they are placed off the aerial (`EXTRA_TEES`). Hole 18 is a par 5 on the card (OSM tags it par 4).
   - Trees: about 5,300 from the 2019 Jo Daviess lidar, checked against the July 2023 aerial (crowns grown, canopy the lidar missed added).
   - Buildings: the OSM buildings on and beside the course (houses, the medical centre), plain.
+
+
+#####################################################################################################
+ELBEL PARK GOLF COURSE (elbel_park)  "Elbel Park (alpha)"
+#####################################################################################################
+Also everything in GLOBAL. Alpha: built from OpenStreetMap alone, keeps no rounds. Dark green long rough. Sand Hill tees 6,441 yd, par 72.
+
+OBJECTS
+-------
+White-tailed deer (`scene.deer` = .4) and squirrels (3 per hole): as at Stonehenge.
+Side roads (out of bounds, looks only, no traffic): every OSM road near a hole.
+NOT here: turkeys, gopher, banner plane, highway traffic, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+
+SOUNDS
+------
+  - Ball hits: rustle (deer), squeak (squirrel). NO plane drone, truck sounds, cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
+
+SCENERY AND DATA
+----------------
+  - Water: OSM ponds and lateral water hazards (Mud Lake: water in play on most holes).
+  - Fairways, greens, bunkers (6), tees, cart paths (8 pieces): OSM. One tee set (hole 3) is pinned to the box at the start of its hole line (`TEE_BOXES`).
+  - Trees: about 5,000 from the 2017 Indiana statewide lidar, checked against the 2023 aerial.
+  - Buildings: the 3 OSM buildings, plain.
+
+
+#####################################################################################################
+PEBBLE BROOK GOLF CLUB, NORTH COURSE (pebble_brook_north)  "Pebble Brook N (alpha)"
+#####################################################################################################
+Also everything in GLOBAL. Alpha: built from OpenStreetMap alone, keeps no rounds. Dark green long rough. White tees 5,975 yd, par 70 (the card's pars).
+
+OBJECTS
+-------
+White-tailed deer (`scene.deer` = .4) and squirrels (3 per hole): as at Stonehenge.
+Side roads (out of bounds, looks only, no traffic): every OSM road near a hole; houses line much of the property.
+NOT here: turkeys, gopher, banner plane, highway traffic, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+
+SOUNDS
+------
+  - Ball hits: rustle (deer), squeak (squirrel). NO plane drone, truck sounds, cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
+
+SCENERY AND DATA
+----------------
+  - The North course is OSM's holes 908562347-908562364 (the South course shares the land and is left out). Water: OSM ponds and streams.
+  - Greens, bunkers (38), tees and cart paths (24 pieces): OSM. OSM maps only 2 fairways, so the rest are traced off the aerial (`FAIRWAYS_FROM_AERIAL`).
+  - Trees: about 10,600 from the 2017 Hamilton County lidar, checked against the 2023 aerial.
+  - Buildings: OSM's (about 1,000 houses around the course), plain.
+
+
+#####################################################################################################
+LACOMA GOLF COURSE, BLUE (lacoma_blue)  "Lacoma Blue (alpha)"
+#####################################################################################################
+Also everything in GLOBAL. Alpha: built from OpenStreetMap alone, keeps no rounds. Dark green long rough. White tees 6,295 yd, par 71.
+
+OBJECTS
+-------
+White-tailed deer (`scene.deer` = .4) and squirrels (3 per hole): as at Stonehenge.
+Side roads (out of bounds, looks only, no traffic): every OSM road near a hole.
+NOT here: turkeys, gopher, banner plane, highway traffic, cart paths (OSM maps none), clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+
+SOUNDS
+------
+  - Ball hits: rustle (deer), squeak (squirrel). NO plane drone, truck sounds, cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
+
+SCENERY AND DATA
+----------------
+  - The Blue course is OSM's 18 holes with no course name (`HOLE_WAYS`); the club's Gold, Red and Par 3 nines share the land and are left out.
+  - Water: OSM ponds and streams. Fairways, greens, bunkers (30) and tees: OSM (some tees and greens of the neighbouring nines sit within 45 m of a Blue hole).
+  - Trees: about 8,900 from the 2019 Jo Daviess lidar, checked against the 2023 aerial. Buildings: the OSM buildings around the course, plain.
 
 
 #####################################################################################################

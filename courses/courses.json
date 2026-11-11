@@ -159,6 +159,44 @@
       "scene": { "deer": 0.4, "squirrels": 3 }
     },
     {
+      "key": "elbel_park",
+      "name": "Elbel Park Golf Course",
+      "short": "Elbel Park (alpha)", "alpha": true, "place": "South Bend, IN", "tee": "Sand Hill", "rating": 70.5, "slope": 121,
+      "pars": [4, 5, 4, 3, 4, 5, 4, 3, 4, 4, 5, 4, 3, 4, 5, 4, 3, 4],
+      "recFrom": "2026-11-10",
+      "about": "Elbel Park Golf Course (South Bend, Indiana) is played from the Sand Hill tees (6,441 yd); Cardinal, Heron and Egret are the markers. Alpha: built from OpenStreetMap alone. Hole lines, greens, tees, bunkers, fairways and water from © OpenStreetMap contributors (ODbL); trees from the 2017 Indiana statewide lidar (USGS), checked against the 2023 USDA NAIP aerial; the ground from the USGS 3DEP 1 m elevation model.",
+      "trip": {"n":1,"years":[2022],"win":[["Nick",[2022]]]},
+      "blurb": "Elbel Park, South Bend, Indiana: a city-run 1963 Toth & Toth design built around Mud Lake, with water in play on 13 holes and nearly 6,900 yards from the back. Our 2022 visit came with a garage hot tub, a bags tournament and a Friday-night head start, and Nick walked away with the Brown Jacket.",
+      "engine": { "alt": 235, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -950, "n0": -550, "res": 2, "W": 950, "H": 550 } },
+      "scene": { "deer": 0.4, "squirrels": 3 }
+    },
+    {
+      "key": "pebble_brook_north",
+      "name": "Pebble Brook Golf Club, North Course",
+      "card": "Pebble Brook Golf Club\nNorth Course",
+      "short": "Pebble Brook N (alpha)", "alpha": true, "place": "Noblesville, IN", "tee": "White", "rating": 69.7, "slope": 122,
+      "pars": [4, 3, 4, 4, 5, 3, 4, 5, 4, 3, 4, 4, 4, 3, 4, 3, 4, 5],
+      "recFrom": "2026-11-10",
+      "about": "The North course at Pebble Brook Golf Club (Noblesville, Indiana; par 70) is played from the white tees (5,975 yd); blue, gold and red are the markers. Alpha: built from OpenStreetMap alone. Hole lines, greens, tees, bunkers, fairways and water from © OpenStreetMap contributors (ODbL); trees from the 2017 Hamilton County lidar (USGS), checked against the 2023 USDA NAIP aerial; the ground from the USGS 3DEP 1 m elevation model.",
+      "trip": {"n":1,"years":[2024],"win":[["Joe",[2024]]]},
+      "blurb": "Pebble Brook's North Course, Noblesville: a Kern-family design (Ron and Gary Kern) with links-style touches, a par 70 of about 6,450 yards, and a recent bunker remodel to dodge. We squeezed it in on a Saturday in 2024 after a Friday pontoon-boat day off, and Joe took the jacket.",
+      "engine": { "alt": 257, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -900, "n0": -1150, "res": 2, "W": 900, "H": 1150 } },
+      "scene": { "deer": 0.4, "squirrels": 3 }
+    },
+    {
+      "key": "lacoma_blue",
+      "name": "Lacoma Golf Course (Blue)",
+      "card": "Lacoma Golf Club\nBlue Course",
+      "short": "Lacoma Blue (alpha)", "alpha": true, "place": "East Dubuque, IL", "tee": "White", "rating": 70.7, "slope": 120,
+      "pars": [5, 4, 4, 4, 4, 4, 3, 5, 3, 4, 4, 3, 4, 4, 5, 4, 3, 4],
+      "recFrom": "2026-11-10",
+      "about": "The Blue course at Lacoma Golf Club (East Dubuque, Illinois; par 71) is played from the white tees (6,295 yd); blue, gold and red are the markers. Alpha: built from OpenStreetMap alone. Hole lines, greens, tees, bunkers, fairways and water from © OpenStreetMap contributors (ODbL); trees from the 2019 Jo Daviess lidar (USGS), checked against the 2023 USDA NAIP aerial; the ground from the USGS 3DEP 1 m elevation model.",
+      "trip": {"n":2,"years":[2010,2021],"win":[["Nick",[2010]],["Craig",[2021]]]},
+      "blurb": "Lacoma's Blue Course, East Dubuque: Gordon Cunningham's rolling layout in the wooded hills of the Mississippi valley, the club's toughest of three regulation courses, with sand on nearly every hole. Two visits, 2010 (the Dwarf house) and 2021 (Pandemic Galena!!! part 2), and Nick and Craig each took the jacket.",
+      "engine": { "alt": 212, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -950, "n0": -900, "res": 2, "W": 950, "H": 900 } },
+      "scene": { "deer": 0.4, "squirrels": 3 }
+    },
+    {
       "key": "cmdg",
       "name": "Chestnut Mountain Disc Golf",
       "short": "CMDG (alpha)", "place": "Galena, IL",
