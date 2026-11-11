@@ -7,7 +7,7 @@
       "pars": [4, 3, 4, 5, 4, 4, 3, 4, 5, 4, 3, 4, 4, 4, 3, 5, 4, 5],
       "recFrom": "2026-10-27",
       "about": "Woodbine Bend Golf Course (Stockton, Illinois) is played from the gold tees. Hole lines, greens, tees, bunkers, ponds, buildings and the out-of-bounds line from © OpenStreetMap contributors (ODbL); fairways traced from USDA NAIP aerial imagery; trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
-      "blurb": "Bob Lohmann’s links-style layout (2002) rolls through driftless hills with mounds, tall native grass, a creek and ponds to keep us honest. Nineteen rounds in, Nick's nose becomes a faucet every year, Joe broke a club here, Craig always gets mad, and Andy aced #7 in 2026 and has told everyone. Our Galena!!! golfing home away from home.",
+      "blurb": "Bob Lohmann’s links-style layout (2002) rolls through driftless hills with mounds, tall native grass, a creek and ponds to keep us honest. Nineteen rounds in, Nick's nose becomes a faucet every year, Joe broke a club once, Kevin had diarrhea multiple times in the outhouse by #14, Craig always gets mad, and Andy aced #7 in 2026 and has told everyone. Our Galena!!! golfing home away from home.",
       "trip": {"n":19,"years":[2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2023,2025,2026],"win":[["Andy",[2009,2012,2014,2019]],["Kalle",[2008,2015,2017]],["Nick",[2010,2011,2026]],["Nate",[2016,2018,2020]],["Joe",[2013,2025]],["Kevin",[2023]]]},
       "engine": { "alt": 250, "fescue": true, "z0": 200, "gr": { "e0": -1000, "n0": -1000, "res": 2, "W": 1000, "H": 1000 } },
       "scene": {
