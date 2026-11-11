@@ -2,7 +2,7 @@
 #
 # HOW THE FILE WORKS
 #   - Each course starts with a line like  [woodbine] Woodbine Bend Golf Course
-#     Do not change the [key] part: the key picks the course. The name after it is only a label for you.
+Bob Lohmann’s links-style layout (2002) rolls through the driftless farmland outside Stockton: a par 72 of about 6,200 yards from the gold tees (70.3/121) with mounds, tall native fescue, 31 bunkers, a creek and two ponds to keep us honest. Nineteen rounds in, Nick's nose becomes a faucet every year, Joe broke a club once, Kevin had diarrhea multiple times in the outhouse by #14, Craig always gets mad, and Andy aced #7 in 2026 and has told everyone. Our Galena!!! golfing home away from home.
 #   - The description is the line(s) right under the [key] line, up to the next blank line. It can wrap over several lines; they are joined into one paragraph.
 #   - Lines starting with # are notes and are ignored. That includes the "shown under it" and "trip champs" notes below each description.
 #   - Straight quotes, curly quotes and apostrophes are all fine.
@@ -16,7 +16,7 @@
 # APPLYING YOUR EDITS
 #   - Push this file: the deploy copies it into the game automatically.
 #   - Or run   python3 tools/course_text.py   to update courses/courses.json yourself (add --check to see what would change without changing it).
-#   - The text must fit the screen without scrolling; the game shrinks it a little if needed, so keep each description to about 300 characters.
+#   - The text wraps and does not shrink, so keep each description to about 500 characters (a longer one scrolls on a small screen).
 #   - Do not run   python3 tools/course_text.py --export   unless you want to throw your edits away: it rewrites this file from courses.json.
 #
 
@@ -26,66 +26,66 @@ Bob Lohmann’s links-style layout (2002) rolls through driftless hills with mou
 # trip champs: Andy '09 '12 '14 '19 | Kalle '08 '15 '17 | Nick '10 '11 '26 | Nate '16 '18 '20 | Joe '13 '25 | Kevin '23
 
 [eagle_south] The South Course at Eagle Ridge
-Roger Packard’s 1984 design includes narrow fairways through dense woods in a dramatic and hidden valley, carding a slope 136 from our tees. This is where the trip began in 2007: four dudes, Kalle’s mom’s condo, and scores that peaked at 110.
+Roger Packard’s 1984 design at Eagle Ridge Resort plays through dense woods and a dramatic, hidden valley, with narrow fairways, big elevation changes and a par 72 of about 6,350 yards from the gold tees. Slope 136 and a 71.8 rating make it one of the hardest cards we play. This is where the trip began in 2007: four dudes, Kalle’s mom’s condo, and scores that peaked at 110.
 # shown under it: 5 rounds - 2007, 2008, 2014, 2018, 2023
 # trip champs: Brian '07 | Kalle '08 | Andy '14 | Nate '18 | Kevin '23
 
 [eagle_north] The North Course at Eagle Ridge
-Roger Packard’s 1977 woodland layout, big greens with sneaky breaks, and an 8th tee towering high above the green requiring a shot that clips the corner of Lake Galena. Three visits, three excuses: Brian’s 9:00 a.m. departure policy, Craig and Kevin flaming out early, and a skunk in a creepy house closet keeping everyone awake.
+Roger Packard’s 1977 woodland layout was the first course at Eagle Ridge Resort: a par 72 of about 6,400 yards from the gold tees (71.4/131) with big greens that break more than they look, and an 8th tee towering high above the green that needs a shot clipping the corner of Lake Galena. Three visits, three excuses: Brian’s 9:00 a.m. departure policy, Craig and Kevin flaming out early, and a skunk in a creepy house closet keeping everyone awake.
 # shown under it: 3 rounds - 2009, 2017, 2019
 # trip champs: Andy '09 '19 | Kalle '17
 
 [legends] Legends at Memphis National Golf Club
-An Arnold Palmer and Ed Seay design from 1971, about 12 miles east of Memphis. One of Kalle's southern home courses. The crew hasn’t played it yet. Barbecue, Palmer pedigree and 1971 charm we’re old enough to appreciate; somebody add it to the rotation?
+An Arnold Palmer and Ed Seay design from 1971 at Memphis National, about 12 miles east of Memphis: a par 72 of about 6,300 yards from the white tees (70.5/126) with a creek running through it and houses lining the edges. One of Kalle's southern home courses. The crew hasn’t played it yet. Barbecue, Palmer pedigree and 1971 charm we’re old enough to appreciate; somebody add it to the rotation?
 # shown under it: (nothing: the crew has not played it yet; "Trip champs: none yet" is shown)
 
 [eagle_general] The General at Eagle Ridge
-Roger Packard and Andy North’s 1997 layout, named for Galena’s Ulysses S. Grant and winding through old quarries and forest, slope 137 from the tips. We played it once, in 2011, on a huge discount after landslide inducing rains; the trip log reads “Hot tubbbbbbb" to commemorate the year. Priorities.
+Roger Packard and Andy North’s 1997 layout at Eagle Ridge, named for Galena’s Ulysses S. Grant, winds through old quarries and forest and is the toughest test on that property: slope 137 from the tips, and a par 72 of about 6,250 yards (70.6/132) from the 3-Star tees we play. We played it once, in 2011, on a huge discount after landslide inducing rains; the trip log reads “Hot tubbbbbbb" to commemorate the year. Priorities.
 # shown under it: 1 round - 2011
 # trip champs: Nick '11
 
 [fossil_trace] Fossil Trace Golf Club
-Jim Engh’s 2003 design on a former clay mine at the foot of the Rockies, with real dinosaur tracks in the sandstone on 12. Thin air adds about 8% to every carry in the game, our best shot at a long-drive trophy. Nate and Kalle played this with Andy while visiting him in Arvada, CO. It was glorious and followed up with various pickled things at local restaurants.
+Jim Engh’s 2003 design on a former clay mine at the foot of the Rockies, in Golden, with real dinosaur tracks in the sandstone on 12, big-contoured greens and a par 72 of about 6,250 yards from the blue tees (68.9/130). At nearly 5,800 feet, thin air adds about 8% to every carry in the game, our best shot at a long-drive trophy. Nate and Kalle played this with Andy while visiting him in Arvada, CO. It was glorious and followed up with various pickled things at local restaurants.
 # shown under it: (nothing: the crew has not played it yet; "Trip champs: none yet" is shown)
 
 [stonehenge] Stonehenge Golf Club
-A 1972 Charles Maddox design along IL 22, par 72 and nearly 6,800 yards from the tips. Close enough to Chicago for a Portillo’s or Lou Malnati’s Champions Dinner, which is honestly the whole pitch. This was Kalle's northern home course, and has been played by all the pals at various times. Nate got hit in the head by a shank on #2 once, sorry, Nate.
+A 1972 Charles Maddox design along IL 22 in Barrington, par 72 and nearly 6,850 yards from the tips (6,350 from the blue tees we play, 70.5/130). Close enough to Chicago for a Portillo’s or Lou Malnati’s Champions Dinner, which is honestly the whole pitch. This was Kalle's northern home course, and has been played by all the pals at various times. Nate got hit in the head by a shank on #2 once, sorry, Nate.
 # shown under it: (nothing: the crew has not played it yet; "Trip champs: none yet" is shown)
 
 [thunderhawk] Thunderhawk Golf Club
-A Robert Trent Jones Jr. design (1999), the Lake County Forest Preserves’ flagship on 243 acres of old farmland with oak and hickory groves, called “the benchmark” of Chicago public golf. Close to Wisconsin, so the cheese is always to blame. Andy, Kalle, Brian, Kevin, and Craig have all played it. Including one infamous round for Andy's birthday where it was 45 degrees and rainy with a strong wind.
+A Robert Trent Jones Jr. design (1999), the Lake County Forest Preserves’ flagship on 243 acres of old farmland with oak and hickory groves and more than 7,000 yards from the tips (about 6,350 from the bronze tees we play, slope 134). Called “the benchmark” of Chicago public golf. Close to Wisconsin, so the cheese is always to blame. Andy, Kalle, Brian, Kevin, and Craig have all played it. Including one infamous round for Andy's birthday where it was 45 degrees and rainy with a strong wind.
 # shown under it: (nothing: the crew has not played it yet; "Trip champs: none yet" is shown)
 
 [bearslide] Bear Slide Golf Club
-Dean Refram’s design with a Scottish links-style front nine, a traditional back nine and a creek wandering through it, ranked the 14th best course in America by Golf Advisor in 2018. We played it on our one trip to Indiana (2024), and experienced a house bathroom with a car stereo and a day off for our knees.
+Dean Refram’s design north of Indianapolis has a Scottish links-style front nine, a traditional back nine and a creek wandering through it, a par 71 of nearly 7,000 yards from the tips (about 5,950 from the white tees we play, 69.4/122), ranked the 14th best course in America by Golf Advisor in 2018. We played it on our one trip to Indiana (2024), and experienced a house bathroom with a car stereo and a day off for our knees.
 # shown under it: 1 round - 2024
 # trip champs: Joe '24
 
 [galena] Galena Golf Club
-Just off US 20, a hilly, tree-lined layout that began as nine holes long ago and got its second nine in 1994, with plenty of long par 4s and passing trucks for spectators. Five rounds have been played here. Those years included a wiffle ball in the road, a keg of Coors Light, and 2021, when Woodbine had a tournament and we landed here.
+Just off US 20 outside Galena, a hilly, tree-lined layout that began as nine holes long ago and got its second nine in 1994: a par 72 of about 6,400 yards from the white tees (71.4/122), with plenty of long par 4s and passing trucks for spectators. Five rounds have been played here. Those years included a wiffle ball in the road, a keg of Coors Light, and 2021, when Woodbine had a tournament and we landed here.
 # shown under it: 5 rounds - 2012, 2013, 2015, 2016, 2021
 # trip champs: Andy '12 | Joe '13 | Kalle '15 | Nate '16 | Craig '21
 
 [elbel_park] Elbel Park Golf Course
-Elbel Park, South Bend, Indiana: a city-run 1963 Toth & Toth design built around Mud Lake, with water in play on 13 holes and nearly 6,900 yards from the back. Our 2022 visit came with a garage hot tub, a bags tournament and a Friday-night head start, and Nick walked away with the Brown Jacket.
+A city-run 1963 Toth & Toth design built around Mud Lake in South Bend, with water in play on 13 holes and nearly 6,900 yards of par 72 from the back tees (about 6,450 from the Sand Hill tees we play, 70.5/121). Our 2022 visit came with a garage hot tub, a bags tournament and a Friday-night head start, and Nick walked away with the Brown Jacket.
 # shown under it: 1 round - 2022
 # trip champs: Nick '22
 
 [lacoma_blue] Lacoma Golf Course (Blue)
-Lacoma's Blue Course, East Dubuque: Gordon Cunningham's rolling layout in the wooded hills of the Mississippi valley, the club's toughest of three regulation courses, with sand on nearly every hole. Two visits, 2010 (the Dwarf house) and 2021 (Pandemic Galena!!! part 2), and Nick and Craig each took the jacket.
+Gordon Cunningham’s rolling layout in the wooded hills of the Mississippi valley above East Dubuque, the toughest of the club’s three regulation courses, with sand on nearly every hole and a par 71 of about 6,300 yards from the white tees (70.7/120). Two visits, 2010 (the Dwarf house) and 2021 (Pandemic Galena!!! part 2), and Nick and Craig each took the jacket.
 # shown under it: 2 rounds - 2010, 2021
 # trip champs: Nick '10 | Craig '21
 
 [pebble_brook_north] Pebble Brook Golf Club, North Course
-Pebble Brook's North Course, Noblesville: a Kern-family design (Ron and Gary Kern) with links-style touches, a par 70 of about 6,450 yards, and a recent bunker remodel to dodge. We squeezed it in on a Saturday in 2024 after a Friday pontoon-boat day off, and Joe took the jacket.
+A Kern-family design (Ron and Gary Kern) in Noblesville with links-style touches, a par 70 of about 6,450 yards from the tips (5,975 from the white tees we play, 69.7/122) and a recent bunker remodel to dodge. We squeezed it in on a Saturday in 2024 after a Friday pontoon-boat day off, and Joe took the jacket.
 # shown under it: 1 round - 2024
 # trip champs: Joe '24
 
 [briar_leaf] Briar Leaf Golf Club
-Briar Leaf, La Porte, Indiana: a 1973 layout with water on eight holes, an island green, rolling hills and plenty of sand. We played it in 2022 on the Buffalena!!! weekend, where the food was plentiful and Nick took the jacket. The course closed in 2026 for housing, so the game is now the way back.
+A 1973 layout in La Porte, Indiana, with water on eight holes, an island green, rolling hills, plenty of sand and a par 72 of about 6,600 yards from the tips (6,217 from the silver tees, 70.4/128). We played it in 2022 on the Buffalena!!! weekend, where the food was plentiful and Nick took the jacket. The course closed in 2026 for housing, so the game is now the way back.
 # shown under it: 1 round - 2022
 # trip champs: Nick '22
 # note: OpenStreetMap has no hole lines or tee boxes for this course, so its hole order and tees in the game are a best guess.
 
 [maxwelton] Maxwelton Braes Golf Resort
-Maxwelton Braes, Baileys Harbor, Wisconsin: Door County’s historic 1929 layout by Roseman and O’Neil, with Highway 57 cutting through the middle and dense woods on nearly every side. A par 72 of about 6,000 yards, and Andy’s home course, so he knows every bounce and isn’t telling.
+Door County’s historic 1929 layout by Roseman and O’Neil, tucked beside the Maxwelton Braes Lodge in Baileys Harbor, with Highway 57 cutting through the middle and dense woods on nearly every side. A par 72 of about 6,000 yards from the green tees (69.5/119), short enough to be friendly. It’s Andy’s home course, so he knows every bounce and isn’t telling.
