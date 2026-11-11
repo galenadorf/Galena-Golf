@@ -86,3 +86,6 @@ Briar Leaf, La Porte, Indiana: a 1973 layout with water on eight holes, an islan
 # shown under it: 1 round - 2022
 # trip champs: Nick '22
 # note: OpenStreetMap has no hole lines or tee boxes for this course, so its hole order and tees in the game are a best guess.
+
+[maxwelton] Maxwelton Braes Golf Resort
+Maxwelton Braes, Baileys Harbor, Wisconsin: Door County’s historic 1929 layout by Roseman and O’Neil, with Highway 57 cutting through the middle and dense woods on nearly every side. A par 72 of about 6,000 yards, and Andy’s home course, so he knows every bounce and isn’t telling.

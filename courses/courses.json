@@ -159,6 +159,19 @@
       "scene": { "deer": 0.4, "squirrels": 3 }
     },
     {
+      "key": "maxwelton",
+      "name": "Maxwelton Braes Golf Resort",
+      "card": "Maxwelton Braes\nGolf Resort",
+      "short": "Maxwelton Braes (beta)", "place": "Baileys Harbor, WI", "tee": "Green", "rating": 69.5, "slope": 119,
+      "pars": [4, 4, 5, 5, 3, 4, 4, 3, 4, 4, 5, 5, 4, 4, 3, 4, 3, 4],
+      "recFrom": "2026-11-11",
+      "about": "Maxwelton Braes Golf Resort (Baileys Harbor, Wisconsin; par 72, 1929) is played from the green tees (6,041 yd); gold, white, blue and orange are the markers. Beta: built from OpenStreetMap, the 2018 Wisconsin lidar and the 2022 NAIP aerial, with the scorecard from 18Birdies.",
+      "trip": {"n":0,"years":[],"win":[]},
+      "blurb": "Maxwelton Braes, Baileys Harbor, Wisconsin: Door County’s historic 1929 layout by Roseman and O’Neil, with Highway 57 cutting through the middle and dense woods on nearly every side. A par 72 of about 6,000 yards, and Andy’s home course, so he knows every bounce and isn’t telling.",
+      "engine": { "alt": 194, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -650, "n0": -600, "res": 2, "W": 650, "H": 600 } },
+      "scene": { "deer": 0.4, "squirrels": 3 }
+    },
+    {
       "key": "elbel_park",
       "name": "Elbel Park Golf Course",
       "short": "Elbel Park (alpha)", "alpha": true, "place": "South Bend, IN", "tee": "Sand Hill", "rating": 70.5, "slope": 121,
@@ -206,18 +219,6 @@
       "trip": {"n":1,"years":[2022],"win":[["Nick",[2022]]]},
       "blurb": "Briar Leaf, La Porte, Indiana: a 1973 layout with water on eight holes, an island green, rolling hills and plenty of sand. We played it in 2022 on the Buffalena!!! weekend, where the food was plentiful and Nick took the jacket. The course closed in 2026 for housing, so the game is now the way back.",
       "engine": { "alt": 258, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -750, "n0": -500, "res": 2, "W": 750, "H": 500 } },
-      "scene": { "deer": 0.4, "squirrels": 3 }
-    },
-    {
-      "key": "maxwelton",
-      "name": "Maxwelton Braes Golf Resort",
-      "card": "Maxwelton Braes\nGolf Resort",
-      "short": "Maxwelton Braes (alpha)", "alpha": true, "place": "Baileys Harbor, WI", "tee": "Green", "rating": 69.5, "slope": 119,
-      "pars": [4, 4, 5, 5, 3, 4, 4, 3, 4, 4, 5, 5, 4, 4, 3, 4, 3, 4],
-      "recFrom": "2026-11-11",
-      "about": "Maxwelton Braes Golf Resort (Baileys Harbor, Wisconsin; par 72, 1929) is played from the green tees (6,041 yd); gold, white, blue and orange are the markers. Alpha: built from OpenStreetMap, the 2018 Wisconsin lidar and the 2022 NAIP aerial, with the scorecard from 18Birdies.",
-      "trip": {"n":0,"years":[],"win":[]},
-      "engine": { "alt": 194, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -650, "n0": -600, "res": 2, "W": 650, "H": 600 } },
       "scene": { "deer": 0.4, "squirrels": 3 }
     },
     {
