@@ -197,6 +197,18 @@
       "scene": { "deer": 0.4, "squirrels": 3 }
     },
     {
+      "key": "briar_leaf",
+      "name": "Briar Leaf Golf Club",
+      "short": "Briar Leaf (alpha)", "alpha": true, "place": "La Porte, IN", "tee": "Silver", "rating": 70.4, "slope": 128,
+      "pars": [4, 4, 3, 5, 4, 5, 4, 3, 4, 4, 3, 4, 3, 5, 5, 4, 4, 4],
+      "recFrom": "2026-11-10",
+      "about": "Briar Leaf Golf Club (La Porte, Indiana; par 72, closed in 2026) is played from the silver tees (6,217 yd); black, gold and green are the markers. Alpha: built from OpenStreetMap alone, and OpenStreetMap has no hole lines or tee boxes there, so the order of the holes and the tee boxes are a best guess from the scorecard lengths. Greens, bunkers, some fairways, water and cart paths from © OpenStreetMap contributors (ODbL); trees from the 2017 Indiana statewide lidar (USGS), checked against the 2022 USDA NAIP aerial; the ground from the USGS 3DEP 1 m elevation model.",
+      "trip": {"n":1,"years":[2022],"win":[["Nick",[2022]]]},
+      "blurb": "Briar Leaf, La Porte, Indiana: a 1973 layout with water on eight holes, an island green, rolling hills and plenty of sand. We played it in 2022 on the Buffalena!!! weekend, where the food was plentiful and Nick took the jacket. The course closed in 2026 for housing, so the game is now the way back.",
+      "engine": { "alt": 258, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -750, "n0": -500, "res": 2, "W": 750, "H": 500 } },
+      "scene": { "deer": 0.4, "squirrels": 3 }
+    },
+    {
       "key": "cmdg",
       "name": "Chestnut Mountain Disc Golf",
       "short": "CMDG (alpha)", "place": "Galena, IL",

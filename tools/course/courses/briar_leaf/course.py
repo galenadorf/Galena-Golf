@@ -1,4 +1,4 @@
-"""UNFINISHED (not in courses.json): Briar Leaf Golf Club, 3233 E State Road 39, La Porte IN (LaPorte County): everything the pipeline needs to know about this one course (an alpha build from OpenStreetMap).
+"""Briar Leaf Golf Club (closed in 2026; its hole lines are a best guess, see the end of this file), 3233 E State Road 39, La Porte IN (LaPorte County): everything the pipeline needs to know about this one course (an alpha build from OpenStreetMap).
 
 Each course is a folder under courses/ holding this file, its git-ignored downloads (.cache/) and its generated files (out/).
 common.py loads the course picked by --course <key> (or GALENA_COURSE; woodbine when neither is given).
@@ -39,3 +39,10 @@ SMOOTH_MORE = True
 FINAL_ROUND = dict(fair=(3, 3), water=(2.5, 0), fescue=(3, 1.5), bound=(3, 3))
 SMOOTH_PAINTED = True
 MARKERS = {'w': ('silver', 0xeeeeee), 'y': ('black', 0x26282b), 'b': ('gold', 0xd9b23a), 'r': ('green', 0x2f8f4f)}
+
+# HOLE LINES ARE A BEST GUESS (OSM has none): briar_holes.py writes extra.json from order.json (see its docstring); osm.py takes the holes and tee boxes from it.
+EXTRA_FILE = 'extra.json'
+OSM_HOLES = False
+KEEP_NEAR_HOLES = 60
+OUTLINE_BUFFER = 90
+# (no aerial fairway tracing: it found almost nothing along the guessed lines; briar_holes.py adds a mown corridor to each hole OSM has no fairway for)
