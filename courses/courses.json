@@ -209,6 +209,18 @@
       "scene": { "deer": 0.4, "squirrels": 3 }
     },
     {
+      "key": "maxwelton",
+      "name": "Maxwelton Braes Golf Resort",
+      "card": "Maxwelton Braes\nGolf Resort",
+      "short": "Maxwelton Braes (alpha)", "alpha": true, "place": "Baileys Harbor, WI", "tee": "Green", "rating": 69.5, "slope": 119,
+      "pars": [4, 4, 5, 5, 3, 4, 4, 3, 4, 4, 5, 5, 4, 4, 3, 4, 3, 4],
+      "recFrom": "2026-11-11",
+      "about": "Maxwelton Braes Golf Resort (Baileys Harbor, Wisconsin; par 72, 1929) is played from the green tees (6,041 yd); gold, white, blue and orange are the markers. Alpha: built from OpenStreetMap, the 2018 Wisconsin lidar and the 2022 NAIP aerial, with the scorecard from 18Birdies.",
+      "trip": {"n":0,"years":[],"win":[]},
+      "engine": { "alt": 194, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -650, "n0": -600, "res": 2, "W": 650, "H": 600 } },
+      "scene": { "deer": 0.4, "squirrels": 3 }
+    },
+    {
       "key": "cmdg",
       "name": "Chestnut Mountain Disc Golf",
       "short": "CMDG (alpha)", "place": "Galena, IL",

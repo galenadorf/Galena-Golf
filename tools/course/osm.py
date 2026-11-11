@@ -88,6 +88,9 @@ def load():
         if t.get('leisure') == 'golf_course':   # a course mapped as a multipolygon relation (Fossil Trace): OSM_WAY is the relation's id
             F['course'].append(dict(poly=p, tags=t, id=r['id']))
             continue
+        if getattr(course, 'OSM_GOLF_RELATIONS', False) and t.get('golf') in ('fairway', 'rough', 'green', 'tee', 'bunker'):   # golf areas mapped as multipolygon relations (Maxwelton: most of its fairways); the inner rings are left whole
+            F[t['golf']].append(dict(poly=p, tags=t))
+            continue
         key = 'water' if (t.get('natural') == 'water' or t.get('water')) else 'wood' if (t.get('natural') == 'wood' or t.get('landuse') == 'forest') else None
         if key:
             F[key].append(dict(poly=p, tags=t))

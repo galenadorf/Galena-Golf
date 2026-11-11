@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 import laspy
 import numpy as np
 import rasterio
+import rasterio.enums
 import requests
 from pyproj import Transformer
 from rasterio.transform import from_origin
@@ -19,7 +20,7 @@ from scipy import ndimage as ndi
 
 from common import DETAIL, LOCAL, UA, bbox_lonlat, cache, course
 
-EPT = 'https://s3-us-west-2.amazonaws.com/usgs-lidar-public/' + course.LIDAR_EPT
+EPT = 'https://s3-us-west-2.amazonaws.com/usgs-lidar-public/' + str(course.LIDAR_EPT)
 os.makedirs(cache('ept'), exist_ok=True)
 
 
@@ -68,11 +69,36 @@ def fetch(key):
     return p
 
 
+def main_pc(out):
+    """Planetary Computer's height-above-ground rasters (3dep-lidar-hag, 2 m cells of the same lidar survey) resampled to the 1 m canopy model, for a course whose
+    USGS downloads are not used (CHM_SOURCE = 'pc'; see the TODO(usgs) in its course.py). Height above ground is the canopy height already, so no DEM is read."""
+    from fetch import pc_assets, warp
+    e0, n0, e1, n1 = DETAIL
+    W, H = int(e1 - e0), int(n1 - n0)
+    acc = np.full((H, W), np.nan, np.float32)
+    for i, url in enumerate(pc_assets('3dep-lidar-hag', DETAIL)):
+        p = cache(f'hag_{i}.tif')
+        warp(url, p, DETAIL, 1, resampling=rasterio.enums.Resampling.nearest, dtype='float32')
+        with rasterio.open(p) as s:
+            d = s.read(1).astype(np.float32)
+        d[d < -100] = np.nan
+        ok = np.isfinite(d) & np.isnan(acc)
+        acc[ok] = d[ok]
+        os.remove(p)
+    chm = np.clip(np.nan_to_num(acc, nan=0), 0, 45)
+    chm = np.maximum(chm, ndi.grey_closing(chm, size=3) * (ndi.maximum_filter(chm, 3) > 2))
+    with rasterio.open(out, 'w', driver='GTiff', width=W, height=H, count=1, dtype='float32', crs=LOCAL, transform=from_origin(e0, n1, 1, 1), compress='deflate') as d:
+        d.write(chm.astype(np.float32), 1)
+    print(f'chm.tif from the height-above-ground tiles: {np.isnan(acc).mean():.1%} missing, {np.mean(chm > 2):.1%} above 2 m')
+
+
 def main():
     out = cache('chm.tif')
     if os.path.exists(out):
         print('chm.tif exists')
         return
+    if getattr(course, 'CHM_SOURCE', None) == 'pc':
+        return main_pc(out)
     w, s, e, n = bbox_lonlat(DETAIL)
     t = Transformer.from_crs('EPSG:4326', 'EPSG:3857', always_xy=True)
     (x0, y0), (x1, y1) = t.transform(w, s), t.transform(e, n)

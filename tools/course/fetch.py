@@ -112,6 +112,50 @@ def dem_tiles():
     return sorted({i['downloadURL'] for i in items if proj in i['downloadURL']})
 
 
+def fill_holes(path):
+    """Fill the odd missing pixel of a mosaic with its nearest neighbour (a tile edge)."""
+    from scipy import ndimage as ndi
+    with rasterio.open(path) as s:
+        d, prof = s.read(1), s.profile
+    m = np.isnan(d)
+    if not m.any():
+        return
+    idx = ndi.distance_transform_edt(m, return_distances=False, return_indices=True)
+    d = d[tuple(idx)]
+    with rasterio.open(path, 'w', **prof) as dst:
+        dst.write(d, 1)
+    print('filled', int(m.sum()), 'missing pixels in', os.path.basename(path))
+
+
+def fill_wide(path):
+    """Where the 1 m DEM project does not reach across the horizon area (Maxwelton: Door County's tiles end about a kilometre out), fill the gaps from the seamless 10 m model."""
+    with rasterio.open(path) as s:
+        d, prof = s.read(1), s.profile
+    m = np.isnan(d)
+    if not m.any():
+        return
+    tmp = path + '.seamless.tif'
+    dem_mosaic(pc_assets('3dep-seamless', WIDE, gsd=10), tmp, WIDE, 10)
+    with rasterio.open(tmp) as s:
+        f = s.read(1)
+    os.remove(tmp)
+    ok = m & np.isfinite(f)
+    d[ok] = f[ok]
+    with rasterio.open(path, 'w', **prof) as dst:
+        dst.write(d, 1)
+    print('filled', int(ok.sum()), 'of', int(m.sum()), 'missing pixels of', os.path.basename(path), 'from the seamless 10 m model')
+
+
+def pc_assets(collection, area, key='data', gsd=None):
+    """Planetary Computer: the signed URLs of a STAC collection's tiles over the area (for a course whose USGS 3DEP downloads are not used: DEM_SOURCE = 'pc')."""
+    w, s, e, n = bbox_lonlat(area)
+    feats = requests.post('https://planetarycomputer.microsoft.com/api/stac/v1/search', headers=UA, timeout=60,
+                          json={'collections': [collection], 'bbox': [w, s, e, n], 'limit': 50}).json()['features']
+    feats = [f for f in feats if gsd is None or f['properties'].get('gsd') == gsd]
+    tok = requests.get('https://planetarycomputer.microsoft.com/api/sas/v1/token/' + collection, headers=UA, timeout=60).json()['token']
+    return sorted(f['assets'][key]['href'] + '?' + tok for f in feats)
+
+
 if __name__ == '__main__':
     what = sys.argv[1:] or ['osm', 'naip', 'dem']
     if 'osm' in what:
@@ -119,7 +163,16 @@ if __name__ == '__main__':
     if 'naip' in what:
         naip()
     if 'dem' in what:
-        tiles = dem_tiles()
-        print('DEM tiles:', [t.rsplit('/', 1)[1] for t in tiles])
-        dem_mosaic(tiles, cache('dem1m.tif'), DETAIL, 1)
-        dem_mosaic(tiles, cache('dem_wide.tif'), WIDE, 10)
+        if getattr(course, 'DEM_SOURCE', None) == 'pc':
+            # 2 m bare-earth tiles of the lidar survey (resampled to 1 m, bilinear) for the detail, the seamless 10 m model for the horizon
+            tiles = pc_assets('3dep-lidar-dtm', DETAIL)
+            print('DEM tiles (Planetary Computer):', [t.split('?')[0].rsplit('/', 1)[1] for t in tiles])
+            dem_mosaic(tiles, cache('dem1m.tif'), DETAIL, 1)
+            dem_mosaic(pc_assets('3dep-seamless', WIDE, gsd=10), cache('dem_wide.tif'), WIDE, 10)
+            fill_holes(cache('dem1m.tif'))
+        else:
+            tiles = dem_tiles()
+            print('DEM tiles:', [t.rsplit('/', 1)[1] for t in tiles])
+            dem_mosaic(tiles, cache('dem1m.tif'), DETAIL, 1)
+            dem_mosaic(tiles, cache('dem_wide.tif'), WIDE, 10)
+            fill_wide(cache('dem_wide.tif'))
