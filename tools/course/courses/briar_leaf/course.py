@@ -35,6 +35,7 @@ ALT = {}
 RELIEF_OFF_WATER = True
 PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 TREES_OFF_TEES_GREENS = True
+TREES_OFF_FAIRWAYS = True   # no tree trunk stands in a fairway (the lidar puts crowns on the mown corridors briar_holes.py guesses)
 TREES_OFF_TEE_FRONT = (45, 7)   # no tree in a 14 m wide, 45 m long corridor out of each (guessed) tee, along its hole line
 SMOOTH_MORE = True
 FINAL_ROUND = dict(fair=(3, 3), water=(2.5, 0), fescue=(3, 1.5), bound=(3, 3))
