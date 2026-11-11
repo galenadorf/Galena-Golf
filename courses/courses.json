@@ -7,6 +7,8 @@
       "pars": [4, 3, 4, 5, 4, 4, 3, 4, 5, 4, 3, 4, 4, 4, 3, 5, 4, 5],
       "recFrom": "2026-10-27",
       "about": "Woodbine Bend Golf Course (Stockton, Illinois) is played from the gold tees. Hole lines, greens, tees, bunkers, ponds, buildings and the out-of-bounds line from © OpenStreetMap contributors (ODbL); fairways traced from USDA NAIP aerial imagery; trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
+      "blurb": "Woodbine Bend, Stockton: Bob Lohmann’s links-style layout (2002), rolling through the Driftless hills with mounds, tall native grass, a creek and ponds to keep us honest. Nineteen rounds in, Joe broke a club here, Craig got mad here, and Andy aced #7 in 2026 and has told everyone.",
+      "trip": {"n":19,"years":[2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2023,2025,2026],"win":[["Andy",[2009,2012,2014,2019]],["Kalle",[2008,2015,2017]],["Nick",[2010,2011,2026]],["Nate",[2016,2018,2020]],["Joe",[2013,2025]],["Kevin",[2023]]]},
       "engine": { "alt": 250, "fescue": true, "z0": 200, "gr": { "e0": -1000, "n0": -1000, "res": 2, "W": 1000, "H": 1000 } },
       "scene": {
         "clubhouse": { "minArea": 800, "front": [100, -175], "sign": ["WOODBINE", "B E N D", "GOLF COURSE & RESTAURANT"] },
@@ -28,6 +30,8 @@
       "pars": [4, 5, 3, 4, 4, 5, 3, 4, 4, 4, 5, 4, 3, 4, 4, 5, 3, 4],
       "recFrom": "2026-10-30",
       "about": "The South Course at Eagle Ridge Resort & Spa (Galena, Illinois; Roger Packard, 1984) is played from the gold tees. Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
+      "blurb": "Eagle Ridge South, Galena: Roger Packard’s 1984 design, narrow fairways through dense woods in a Driftless valley, slope 136 from our tees. Where the trip began in 2007: four dudes, Kalle’s mom’s condo, and scores that peaked at 110.",
+      "trip": {"n":5,"years":[2007,2008,2014,2018,2023],"win":[["Brian",[2007]],["Kalle",[2008]],["Andy",[2014]],["Nate",[2018]],["Kevin",[2023]]]},
       "engine": { "alt": 260, "fescue": true, "longRough": true, "allRoads": true, "z0": 200, "gr": { "e0": -1000, "n0": -1000, "res": 2, "W": 1000, "H": 1000 } },
       "scene": {
         "turkeys": 0.4,
@@ -45,6 +49,8 @@
       "pars": [4, 5, 4, 3, 5, 4, 4, 3, 4, 4, 5, 4, 3, 4, 5, 3, 4, 4],
       "recFrom": "2026-10-30",
       "about": "The North Course at Eagle Ridge Resort & Spa (Galena, Illinois; Roger Packard, 1977) is played from the gold tees. Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
+      "blurb": "Eagle Ridge North, Galena: Roger Packard’s 1977 woodland layout, big greens with sneaky breaks, and an 8th tee shot that clips the corner of Lake Galena. Three visits, three excuses: Brian’s 9:00 a.m. departure policy, Craig and Kevin flaming out early, and a skunk.",
+      "trip": {"n":3,"years":[2009,2017,2019],"win":[["Andy",[2009,2019]],["Kalle",[2017]]]},
       "engine": { "alt": 255, "fescue": true, "longRough": true, "allRoads": true, "z0": 200, "gr": { "e0": -1150, "n0": -850, "res": 2, "W": 1150, "H": 850 } },
       "scene": {
         "turkeys": 0.4,
@@ -64,6 +70,7 @@
       "pars": [5, 4, 4, 4, 3, 4, 3, 5, 4, 4, 3, 5, 4, 4, 3, 5, 4, 4],
       "recFrom": "2026-11-09",
       "about": "The Legends Course at Memphis National Golf Club (Collierville, Tennessee; Ed Seay and Arnold Palmer, 1971; par 72) is played from the white tees (6,274 yd); black, gold and green are the markers. Hole lines, greens, tees, bunkers, ponds and cart paths from \u00a9 OpenStreetMap contributors (ODbL); fairways traced from the 2023 USDA NAIP aerial; trees from the 2012 Shelby County lidar (USGS), checked against the aerial; the ground from the USGS 3DEP 1 m elevation model.",
+      "blurb": "Legends at Memphis National, Collierville, Tennessee: an Arnold Palmer and Ed Seay design from 1971, about 12 miles east of Memphis. The crew hasn’t played it yet. Barbecue, Palmer pedigree and 1971 charm we’re old enough to appreciate; somebody add it to the rotation.",
       "engine": { "paintedDeep": true, "waterDrop": 1.83, "alt": 95, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -1050, "n0": -700, "res": 2, "W": 1000, "H": 1100 } },
       "scene": { "houses": { "keep": [[-365, -3], [-380, 33]] }, "balloon": false, "deer": 0.5, "squirrels": 3, "clubhouse": { "minArea": 1200, "front": [-406.5, -112.5], "style": "memphis", "depth": 27, "drive": { "c": [-406.5, -112.5], "island": 6.2 }, "sign": [] }, "parkedCarts": [[-391.7, -150.5, 44], [-393.4, -148.8, 44]] }
     },
@@ -74,6 +81,8 @@
       "pars": [4, 3, 5, 4, 4, 3, 4, 4, 5, 4, 5, 3, 4, 4, 5, 3, 4, 4],
       "recFrom": "2026-11-01",
       "about": "The General Course at Eagle Ridge Resort & Spa (Galena, Illinois; Andy North and Roger Packard, 1997) is played from the 3-Star tees (6,245 yards). Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
+      "blurb": "The General at Eagle Ridge: Roger Packard and Andy North’s 1997 layout, named for Galena’s Ulysses S. Grant and winding through old quarries and forest, slope 137 from the tips. We played it once, in 2011; the trip log reads “Hot tubbbbbbb.” Priorities.",
+      "trip": {"n":1,"years":[2011],"win":[["Nick",[2011]]]},
       "engine": { "alt": 300, "fescue": true, "longRough": true, "allRoads": true, "z0": 200, "gr": { "e0": -1150, "n0": -700, "res": 2, "W": 1150, "H": 700 } },
       "scene": {
         "turkeys": 0.4,
@@ -90,6 +99,7 @@
       "pars": [5, 4, 3, 4, 3, 4, 4, 4, 5, 4, 3, 5, 4, 3, 5, 3, 4, 5],
       "recFrom": "2026-11-01",
       "about": "Fossil Trace Golf Club (Golden, Colorado; Jim Engh, 2003) is played from the blue tees (6,241 yards). Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
+      "blurb": "Fossil Trace, Golden, Colorado: Jim Engh’s 2003 design on a former clay mine at the foot of the Rockies, with real dinosaur tracks in the sandstone on 12. Thin air adds about 8% to every carry in the game, our best shot at a long-drive trophy. Not played yet; somebody book the house.",
       "engine": { "alt": 1775, "fescue": true, "dry": true, "allRoads": true, "z0": 1990, "gr": { "e0": -1000, "n0": -750, "res": 2, "W": 1000, "H": 750 } },
       "scene": {
         "balloon": false,
@@ -106,6 +116,7 @@
       "pars": [4, 4, 4, 5, 3, 4, 4, 3, 5, 4, 4, 3, 5, 4, 4, 4, 3, 5],
       "recFrom": "2026-10-30",
       "about": "Stonehenge Golf Club (Barrington, Illinois) is played from the blue tees. Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from the 2007 Lake County lidar (USGS); the ground from the USGS 3DEP 1 m elevation model.",
+      "blurb": "Stonehenge, Barrington, Illinois: a 1972 Charles Maddox design along IL 22, par 72 and nearly 6,800 yards from the tips. Close enough to Chicago for a Portillo’s or Lou Malnati’s Champions Dinner, which is honestly the whole pitch. Not played yet.",
       "engine": { "alt": 235, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -700, "n0": -700, "res": 2, "W": 700, "H": 700 } },
       "scene": {
         "deer": 0.25,
@@ -119,6 +130,7 @@
       "pars": [4, 5, 3, 4, 4, 3, 5, 4, 4, 4, 5, 4, 3, 4, 3, 5, 3, 5],
       "recFrom": "2026-10-30",
       "about": "Thunderhawk Golf Club (Beach Park, Illinois; Robert Trent Jones Jr., 1999; Lake County Forest Preserves) is played from the bronze tees. Hole lines, greens, tees, bunkers, fairways, ponds and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from the 2007 Lake County lidar (USGS), checked against the 2023 USDA NAIP aerial; the ground from the USGS 3DEP 1 m elevation model.",
+      "blurb": "Thunderhawk, Beach Park, Illinois: a Robert Trent Jones Jr. design (1999), the Lake County Forest Preserves’ flagship on 243 acres of old farmland with oak and hickory groves, called “the benchmark” of Chicago public golf. Close to Wisconsin, so the cheese is always to blame. Not played yet.",
       "engine": { "alt": 220, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -1150, "n0": -650, "res": 2, "W": 1150, "H": 650 } },
       "scene": { "deer": 0.5, "squirrels": 3 }
     },
@@ -129,6 +141,8 @@
       "pars": [4, 4, 5, 3, 4, 3, 4, 5, 4, 4, 4, 5, 4, 3, 4, 3, 4, 4],
       "recFrom": "2026-10-31",
       "about": "Bear Slide Golf Club (Cicero, Indiana; Hamilton County) is played from the white tees (par 71, 5,966 yd); black, blue and red are the markers. Hole lines, greens, tees, bunkers, ponds and the out-of-bounds line from © OpenStreetMap contributors (ODbL); fairways traced from the 2022 USDA NAIP aerial where OpenStreetMap has none; trees from the 2017 Hamilton County lidar (USGS), checked against the aerial; the ground from the USGS 3DEP 1 m elevation model.",
+      "blurb": "Bear Slide, Cicero, Indiana: Dean Refram’s design with a Scottish links-style front nine, a traditional back nine and a creek wandering through it, ranked the 14th best course in America by Golf Advisor in 2018. Our one trip (2024) added a bathroom with a car stereo and a day off for our knees.",
+      "trip": {"n":1,"years":[2024],"win":[["Joe",[2024]]]},
       "engine": { "alt": 255, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -1250, "n0": -650, "res": 2, "W": 1250, "H": 650 } },
       "scene": { "deer": 0.5, "squirrels": 3 }
     },
@@ -139,6 +153,8 @@
       "pars": [4, 4, 3, 5, 4, 4, 4, 3, 4, 5, 3, 4, 4, 3, 5, 4, 4, 5],
       "recFrom": "2026-11-10",
       "about": "Galena Golf Club (Galena, Illinois; par 72) is played from the white tees (6,368 yd); blue, gold and red are the markers. Alpha: built from OpenStreetMap alone. Hole lines, greens, bunkers, fairways, the pond and streams from \u00a9 OpenStreetMap contributors (ODbL); three tee boxes OSM lacks placed off the aerial; trees from the 2019 Jo Daviess lidar (USGS), checked against the 2023 USDA NAIP aerial; the ground from the USGS 3DEP 1 m elevation model.",
+      "blurb": "Galena Golf Club, just off US 20: a hilly, tree-lined layout that began as nine holes long ago and got its second nine in 1994, with plenty of long par 4s and passing trucks for spectators. Five rounds: a wiffle ball in the road, a keg of Coors Light, and 2021, when Woodbine had a tournament and we landed here.",
+      "trip": {"n":5,"years":[2012,2013,2015,2016,2021],"win":[["Andy",[2012]],["Joe",[2013]],["Kalle",[2015]],["Nate",[2016]],["Craig",[2021]]]},
       "engine": { "alt": 252, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -900, "n0": -700, "res": 2, "W": 900, "H": 700 } },
       "scene": { "deer": 0.4, "squirrels": 3 }
     },
@@ -150,6 +166,8 @@
       "pars": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
       "recFrom": "2026-10-30",
       "about": "Disc golf (alpha) on the ski hill at Chestnut Mountain Resort (Galena, Illinois; 9 holes, 2010): the nine played twice, from the long tees and then the short ones. Throw with the tempo bar as for a golf swing; the strike dot sets the release angle (hyzer or anhyzer) and the nose. Rounds here are not posted to the world leaderboard. Hole lengths from UDisc; the ground from the USGS 3DEP 1 m elevation model, trees from USGS 3DEP lidar, buildings, ponds and roads from © OpenStreetMap contributors (ODbL).",
+      "blurb": "Chestnut Mountain’s disc course: nine baskets with two tees each, up and down a wooded bluff above the Mississippi, played twice to make eighteen. We tried it once in 2026 with mini golf for dessert. The scenery gets 4.8 stars; our form, fewer.",
+      "trip": {"n":1,"years":[2026],"win":[]},
       "engine": { "alt": 270, "disc": true, "z0": 200, "gr": { "e0": -600, "n0": -600, "res": 2, "W": 600, "H": 600 } },
       "scene": {}
     },
@@ -161,6 +179,7 @@
       "pars": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
       "recFrom": "2026-10-30",
       "about": "Disc golf (alpha) in Adler Memorial Park (Libertyville, Illinois; 9 holes, 1981): a town park course through wooded ravines and open lawns above the Des Plaines River, with one tee per hole, so the nine is played twice. Throw with the tempo bar as for a golf swing; the strike dot sets the release angle (hyzer or anhyzer) and the nose. Rounds here are not posted to the world leaderboard. Tees and baskets from the course sign's map, hole lengths from its card; the ground from the USGS 3DEP 1 m elevation model, trees from the 2007 Lake County lidar (USGS), buildings, the river and roads from © OpenStreetMap contributors (ODbL).",
+      "blurb": "Adler Park, Libertyville: nine baskets through hilly woods along the Des Plaines River, which only bites on 9 if you really overcook it. Free to play, about an hour a round, and we play it twice for eighteen. Not played yet, but we’re stretching.",
       "engine": { "alt": 205, "disc": true, "z0": 200, "gr": { "e0": -450, "n0": -450, "res": 2, "W": 450, "H": 450 } },
       "scene": {}
     }

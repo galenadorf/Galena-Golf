@@ -1,0 +1,75 @@
+# COURSE DESCRIPTIONS: the text shown on the play page, between the course tile and the course picker (one description per course).
+#
+# HOW THE FILE WORKS
+#   - Each course starts with a line like  [woodbine] Woodbine Bend Golf Course
+#     Do not change the [key] part: the key picks the course. The name after it is only a label for you.
+#   - The description is the line(s) right under the [key] line, up to the next blank line. It can wrap over several lines; they are joined into one paragraph.
+#   - Lines starting with # are notes and are ignored. That includes the "shown under it" and "trip champs" notes below each description.
+#   - Straight quotes, curly quotes and apostrophes are all fine.
+#   - An empty description hides the whole text block for that course.
+#
+# WHAT THE GAME ADDS UNDER EACH DESCRIPTION (not edited here)
+#   - The rounds, years and trip champions come from the trip spreadsheet (the "trip" data in courses/courses.json). The # notes below each description show what
+#     the game will print there, for reference only; editing those notes changes nothing.
+#   - A course the crew has not played shows only "Trip champs: none yet, the Brown Jacket awaits".
+#
+# APPLYING YOUR EDITS
+#   - Push this file: the deploy copies it into the game automatically.
+#   - Or run   python3 tools/course_text.py   to update courses/courses.json yourself (add --check to see what would change without changing it).
+#   - The text must fit the screen without scrolling; the game shrinks it a little if needed, so keep each description to about 300 characters.
+#   - Do not run   python3 tools/course_text.py --export   unless you want to throw your edits away: it rewrites this file from courses.json.
+#
+
+[woodbine] Woodbine Bend Golf Course
+Woodbine Bend, Stockton: Bob Lohmann’s links-style layout (2002), rolling through the Driftless hills with mounds, tall native grass, a creek and ponds to keep us honest. Nineteen rounds in, Joe broke a club here, Craig got mad here, and Andy aced #7 in 2026 and has told everyone.
+# shown under it: 19 rounds - 2008-2020, 2023, 2025, 2026
+# trip champs: Andy '09 '12 '14 '19 | Kalle '08 '15 '17 | Nick '10 '11 '26 | Nate '16 '18 '20 | Joe '13 '25 | Kevin '23
+
+[eagle_south] The South Course at Eagle Ridge
+Eagle Ridge South, Galena: Roger Packard’s 1984 design, narrow fairways through dense woods in a Driftless valley, slope 136 from our tees. Where the trip began in 2007: four dudes, Kalle’s mom’s condo, and scores that peaked at 110.
+# shown under it: 5 rounds - 2007, 2008, 2014, 2018, 2023
+# trip champs: Brian '07 | Kalle '08 | Andy '14 | Nate '18 | Kevin '23
+
+[eagle_north] The North Course at Eagle Ridge
+Eagle Ridge North, Galena: Roger Packard’s 1977 woodland layout, big greens with sneaky breaks, and an 8th tee shot that clips the corner of Lake Galena. Three visits, three excuses: Brian’s 9:00 a.m. departure policy, Craig and Kevin flaming out early, and a skunk.
+# shown under it: 3 rounds - 2009, 2017, 2019
+# trip champs: Andy '09 '19 | Kalle '17
+
+[legends] Legends at Memphis National Golf Club
+Legends at Memphis National, Collierville, Tennessee: an Arnold Palmer and Ed Seay design from 1971, about 12 miles east of Memphis. The crew hasn’t played it yet. Barbecue, Palmer pedigree and 1971 charm we’re old enough to appreciate; somebody add it to the rotation.
+# shown under it: (nothing: the crew has not played it yet; "Trip champs: none yet" is shown)
+
+[eagle_general] The General at Eagle Ridge
+The General at Eagle Ridge: Roger Packard and Andy North’s 1997 layout, named for Galena’s Ulysses S. Grant and winding through old quarries and forest, slope 137 from the tips. We played it once, in 2011; the trip log reads “Hot tubbbbbbb.” Priorities.
+# shown under it: 1 round - 2011
+# trip champs: Nick '11
+
+[fossil_trace] Fossil Trace Golf Club
+Fossil Trace, Golden, Colorado: Jim Engh’s 2003 design on a former clay mine at the foot of the Rockies, with real dinosaur tracks in the sandstone on 12. Thin air adds about 8% to every carry in the game, our best shot at a long-drive trophy. Not played yet; somebody book the house.
+# shown under it: (nothing: the crew has not played it yet; "Trip champs: none yet" is shown)
+
+[stonehenge] Stonehenge Golf Club
+Stonehenge, Barrington, Illinois: a 1972 Charles Maddox design along IL 22, par 72 and nearly 6,800 yards from the tips. Close enough to Chicago for a Portillo’s or Lou Malnati’s Champions Dinner, which is honestly the whole pitch. Not played yet.
+# shown under it: (nothing: the crew has not played it yet; "Trip champs: none yet" is shown)
+
+[thunderhawk] Thunderhawk Golf Club
+Thunderhawk, Beach Park, Illinois: a Robert Trent Jones Jr. design (1999), the Lake County Forest Preserves’ flagship on 243 acres of old farmland with oak and hickory groves, called “the benchmark” of Chicago public golf. Close to Wisconsin, so the cheese is always to blame. Not played yet.
+# shown under it: (nothing: the crew has not played it yet; "Trip champs: none yet" is shown)
+
+[bearslide] Bear Slide Golf Club
+Bear Slide, Cicero, Indiana: Dean Refram’s design with a Scottish links-style front nine, a traditional back nine and a creek wandering through it, ranked the 14th best course in America by Golf Advisor in 2018. Our one trip (2024) added a bathroom with a car stereo and a day off for our knees.
+# shown under it: 1 round - 2024
+# trip champs: Joe '24
+
+[galena] Galena Golf Club
+Galena Golf Club, just off US 20: a hilly, tree-lined layout that began as nine holes long ago and got its second nine in 1994, with plenty of long par 4s and passing trucks for spectators. Five rounds: a wiffle ball in the road, a keg of Coors Light, and 2021, when Woodbine had a tournament and we landed here.
+# shown under it: 5 rounds - 2012, 2013, 2015, 2016, 2021
+# trip champs: Andy '12 | Joe '13 | Kalle '15 | Nate '16 | Craig '21
+
+[cmdg] Chestnut Mountain Disc Golf
+Chestnut Mountain’s disc course: nine baskets with two tees each, up and down a wooded bluff above the Mississippi, played twice to make eighteen. We tried it once in 2026 with mini golf for dessert. The scenery gets 4.8 stars; our form, fewer.
+# shown under it: 1 round - 2026
+
+[adgc] Adler Park Disc Golf
+Adler Park, Libertyville: nine baskets through hilly woods along the Des Plaines River, which only bites on 9 if you really overcook it. Free to play, about an hour a round, and we play it twice for eighteen. Not played yet, but we’re stretching.
+# shown under it: (nothing: the crew has not played it yet; "Trip champs: none yet" is shown)

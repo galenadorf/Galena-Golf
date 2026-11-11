@@ -137,6 +137,15 @@ body.rev #strike{right:auto;left:calc(var(--sl) + 10px)}
 .logoCard .lt{min-width:0}
 .playHead{align-self:stretch;flex:none;display:flex;align-items:center;gap:12px;padding:14px 20px 14px 14px;border-radius:28px;text-align:left}
 .playHead .lt{min-width:0}
+.playLeft{flex:1 1 auto;min-height:0;min-width:0;align-self:stretch;display:flex;flex-direction:column;gap:6px}
+/* what the trip log says about this course: plain floating text over the course scene, no tile (--pbk shrinks it until it fits without scrolling: fitBlurb) */
+#playBlurb{flex:1 1 0;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:calc(7px*var(--pbk,1));padding:4px 6px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 12px rgba(0,0,0,.65),0 0 3px rgba(0,0,0,.6)}
+#playBlurb p{margin:0}
+#playBlurb .pbJoke{font:600 calc(15px*var(--pbk,1))/1.36 var(--body)}
+#playBlurb .pbStat{font:700 calc(12px*var(--pbk,1))/1.3 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:#ffe9a6}
+#playBlurb .pbWin{font:500 calc(12.5px*var(--pbk,1))/1.4 var(--body);color:#f4f1e4}
+#playBlurb .pbWin b{font-weight:700;color:#ffd84a;text-transform:uppercase;letter-spacing:.06em}
+#playBlurb:empty,#playBlurb .pbWin:empty,#playBlurb .pbStat:empty{display:none}
 .playHead h1{margin:0;font:700 38px/.95 var(--cond);text-transform:uppercase;letter-spacing:.01em}
 .playHead p{margin:7px 0 0;font:600 13px/1.45 var(--cond);text-transform:uppercase;letter-spacing:.14em;color:var(--w2);white-space:pre-line}
 .playBack{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.2);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}.playBack:active{background:rgba(255,255,255,.34)}
@@ -499,7 +508,8 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
   </div>
 </div>
 <div class="layer" id="play">
-  <div class="card playHead"><button class="playBack" id="btnPlayBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><p id="playCourse" class="pcName"></p><p id="playPlace"></p><p id="playPar"></p><div id="playTop"></div></div></div>
+  <div class="playLeft"><div class="card playHead"><button class="playBack" id="btnPlayBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><p id="playCourse" class="pcName"></p><p id="playPlace"></p><p id="playPar"></p><div id="playTop"></div></div></div>
+  <div id="playBlurb"><p class="pbJoke" id="pbJoke"></p><p class="pbStat" id="pbStat"></p><p class="pbWin" id="pbWin"></p></div></div>
   <div class="tb">
     <label class="card nameRow courseRow" hidden><span>Course</span><select class="courseSel" id="selCourse" aria-label="Course"></select></label>
     <div class="playRow"><button class="btn alt" id="btnResume" style="display:none">Continue round<small id="resumeInfo"></small></button><button class="btn" id="btnNew">New round</button></div>
@@ -3627,7 +3637,7 @@ let RDC = null, COURSE = null;
 function courseList(reg) {
   for (const c of reg.courses) {
     const k = c.key;
-    COURSES[k] = { key: k, name: c.name, card: c.card || '', short: c.short, place: c.place || '', tee: c.tee || '', rating: c.rating || 0, slope: c.slope || 0, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: !!c.music,
+    COURSES[k] = { key: k, name: c.name, card: c.card || '', short: c.short, place: c.place || '', tee: c.tee || '', rating: c.rating || 0, slope: c.slope || 0, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, blurb: c.blurb || '', trip: c.trip || null, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: !!c.music,
       defs: null, best: 'ssg-best-' + k, board: 'ssg-board-' + k, coll: 'rounds-' + k };
   }
 }
@@ -8215,8 +8225,27 @@ function readoutNote(text, cls) {
 }
 /* ---------- sheets ---------- */
 // the play screen's tile: the course's full name, its town, par and the tee's rating and slope, then the best three rounds on the world board
+// the trip log's line for this course (courses.json blurb + trip: rounds, years and the champion of each trip); the text shrinks until it fits the space with no scroll
+const tripYears = ys => { const o = []; for (let i = 0; i < ys.length; i++) { let j = i; while (j + 1 < ys.length && ys[j + 1] === ys[j] + 1) j++; o.push(j - i >= 2 ? ys[i] + '\u2013' + ys[j] : ys.slice(i, j + 1).join(', ')); i = j; } return o.join(', '); };
+function fitBlurb() {
+  const el = $('playBlurb'); if (!el || !el.clientHeight) return; let k = 1; el.style.setProperty('--pbk', 1);
+  while (el.scrollHeight > el.clientHeight + 1 && k > .6) { k -= .04; el.style.setProperty('--pbk', k.toFixed(2)); }
+}
+function playBlurbFill() {
+  const CO = COURSE, t = CO.trip; $('pbJoke').textContent = CO.blurb || '';
+  $('pbStat').textContent = !CO.blurb || !t ? '' : `${t.n} ${t.n === 1 ? 'round' : 'rounds'} \u00b7 ${tripYears(t.years)}`;   // (a course the crew has not played has no rounds line)
+  const w = $('pbWin'); w.textContent = '';
+  if (CO.blurb && (!t || t.win.length)) {
+    const b = document.createElement('b'); b.textContent = 'Trip champs '; w.appendChild(b);
+    w.append(t ? t.win.map(([n, y]) => n + ' ' + y.map(v => '\u2019' + String(v).slice(2)).join(' ')).join(' \u00b7 ') : 'none yet, the Brown Jacket awaits');
+  }
+  fitBlurb(); requestAnimationFrame(() => { fitBlurb(); requestAnimationFrame(fitBlurb); });
+}
+try { new ResizeObserver(() => fitBlurb()).observe($('playBlurb')); } catch (e) { }   // (the box changes size when the leaders rows load or the phone turns; its content never changes its size, so this cannot loop)
+window.addEventListener('resize', () => { try { fitBlurb(); } catch (e) { } }); window.addEventListener('orientationchange', () => [150, 600].forEach(ms => setTimeout(() => { try { fitBlurb(); } catch (e) { } }, ms)));
 function playFill() {
   // the course's name on this card: courses.json `card` when it has one (\n for a new line), else the name split before 'at Eagle Ridge' / 'Golf Course'
+  playBlurbFill();
   const CO = COURSE; $('playCourse').textContent = CO.card || CO.name.replace(' at Eagle Ridge', '\nat Eagle Ridge').replace(' Golf Course', '\nGolf Course'); $('playPlace').textContent = CO.place;
   $('playPar').textContent = ['Par ' + PAR_TOTAL, CO.slope ? 'Slope ' + CO.slope : '', CO.rating ? 'Rating ' + CO.rating : '', ''].filter(Boolean).join(' · ');
   const box = $('playTop'); box.textContent = ''; if (CO.alpha) return;
