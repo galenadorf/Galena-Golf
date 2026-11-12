@@ -222,7 +222,7 @@
       "scene": { "deer": 0.4, "squirrels": 3 }
     },
     {
-      "key": "cmdg",
+      "key": "cmdg", "hidden": true,
       "name": "Chestnut Mountain Disc Golf",
       "short": "CMDG (alpha)", "place": "Galena, IL",
       "alpha": true,
@@ -235,7 +235,7 @@
       "scene": {}
     },
     {
-      "key": "adgc",
+      "key": "adgc", "hidden": true,
       "name": "Adler Park Disc Golf",
       "short": "ADGC (Alpha)", "place": "Libertyville, IL",
       "alpha": true,

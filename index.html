@@ -3653,6 +3653,7 @@ const RDS = {}, COURSES = {}, COURSE_LOADING = {};
 let RDC = null, COURSE = null;
 function courseList(reg) {
   for (const c of reg.courses) {
+    if (c.hidden) continue;   // switched off in courses.json (the disc golf courses): not listed, not loaded, not cached; their files stay
     const k = c.key;
     COURSES[k] = { key: k, name: c.name, card: c.card || '', short: c.short, place: c.place || '', tee: c.tee || '', rating: c.rating || 0, slope: c.slope || 0, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, blurb: c.blurb || '', trip: c.trip || null, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: !!c.music,
       defs: null, best: 'ssg-best-' + k, board: 'ssg-board-' + k, coll: 'rounds-' + k };

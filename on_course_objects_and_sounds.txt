@@ -637,6 +637,7 @@ SCENERY AND DATA
 
 #####################################################################################################
 CHESTNUT MOUNTAIN DISC GOLF (cmdg)  "CMDG (alpha)"
+(SWITCHED OFF since 2026-11-11 (courses.json `hidden`): not in the picker, so none of this can be seen or heard until it is turned back on. Same for Adler Park.)
 #####################################################################################################
 Also everything in GLOBAL, but a disc golf course (engine `disc`) and in alpha: no round is posted to the world leaderboard and there are no record cards. 9 holes on the ski hill at Chestnut Mountain Resort, all par 3, played twice (1-9 long tees, 2,972 ft; 10-18 short).
 

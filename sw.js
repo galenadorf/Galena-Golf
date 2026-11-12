@@ -10,7 +10,7 @@ const CORE = ['./', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-51
   'sounds/driver.mp3', 'sounds/wood.mp3', 'sounds/iron.mp3', 'sounds/wedge.mp3', 'sounds/putter.mp3', 'sounds/cup.mp3', 'sounds/truckhorn.mp3', 'sounds/truckrumble.mp3', 'sounds/cartmusic.mp3', 'sounds/plane.mp3', 'sounds/eagle.mp3', 'img/eagle.webp', 'img/albatross.webp', 'sounds/cow1.mp3', 'sounds/cow2.mp3', 'sounds/cow3.mp3', ...[1, 2, 3, 4, 5].map(i => `sounds/bird${i}.mp3`), ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map(i => `sounds/fart${i}.mp3`), 'vendor/three.r128.min.js', 'vendor/mqtt.5.10.1.min.js', 'fonts/fonts.css', ...FONTS];
 
 // every course in courses/courses.json is kept too (courses/<key>.js), so any course plays offline, not only the ones opened so far
-const COURSE_FILES = () => fetch(new Request('courses/courses.json', { cache: 'reload' })).then(r => r.json()).then(j => j.courses.map(c => `courses/${c.key}.js`));
+const COURSE_FILES = () => fetch(new Request('courses/courses.json', { cache: 'reload' })).then(r => r.json()).then(j => j.courses.filter(c => !c.hidden).map(c => `courses/${c.key}.js`));
 // A deploy changes little, so a new build does not download everything again. tools/pages_hashes.py stamps HASHES (path -> hash of every file of this deploy; a local
 // copy has none and fetches all); each cache keeps its build's list under HASH_KEY, and a file whose hash has not changed is copied over from the older cache, the song
 // a player has already heard with it. An install that fails part way leaves the old worker running and keeps what it got, so the next try fetches only the rest.
