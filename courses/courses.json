@@ -75,6 +75,19 @@
       "scene": { "houses": { "keep": [[-365, -3], [-380, 33]] }, "balloon": false, "deer": 0.5, "squirrels": 3, "clubhouse": { "minArea": 1200, "front": [-406.5, -112.5], "style": "memphis", "depth": 27, "drive": { "c": [-406.5, -112.5], "island": 6.2 }, "sign": [] }, "parkedCarts": [[-391.7, -150.5, 44], [-393.4, -148.8, 44]] }
     },
     {
+      "key": "maxwelton",
+      "name": "Maxwelton Braes Golf Resort",
+      "card": "Maxwelton Braes\nGolf Resort",
+      "short": "Maxwelton Braes", "place": "Baileys Harbor, WI", "tee": "Green", "rating": 69.5, "slope": 119,
+      "pars": [4, 4, 5, 5, 3, 4, 4, 3, 4, 4, 5, 5, 4, 4, 3, 4, 3, 4],
+      "recFrom": "2026-11-11",
+      "about": "Maxwelton Braes Golf Resort (Baileys Harbor, Wisconsin; par 72, 1929) is played from the green tees (6,041 yd); gold, white, blue and orange are the markers. Beta: built from OpenStreetMap, the 2018 Wisconsin lidar and the 2022 NAIP aerial, with the scorecard from 18Birdies.",
+      "trip": {"n":0,"years":[],"win":[]},
+      "blurb": "Door County’s historic 1929 layout by Roseman and O’Neil, tucked beside the Maxwelton Braes Lodge in Baileys Harbor, with Highway 57 cutting through the middle and dense woods on nearly every side. A par 72 of about 6,000 yards from the green tees (69.5/119), short enough to be friendly. It’s Andy’s home course, so he knows every bounce and isn’t telling.",
+      "engine": { "alt": 194, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -650, "n0": -600, "res": 2, "W": 650, "H": 600 } },
+      "scene": { "deer": 0.4, "squirrels": 3 }
+    },
+    {
       "key": "eagle_general",
       "name": "The General at Eagle Ridge",
       "short": "ER The General (beta)", "place": "Galena, IL", "tee": "3-Star", "rating": 70.6, "slope": 132,
@@ -156,19 +169,6 @@
       "blurb": "Just off US 20 outside Galena, a hilly, tree-lined layout that began as nine holes long ago and got its second nine in 1994: a par 72 of about 6,400 yards from the white tees (71.4/122), with plenty of long par 4s and passing trucks for spectators. Five rounds have been played here. Those years included a wiffle ball in the road, a keg of Coors Light, and 2021, when Woodbine had a tournament and we landed here.",
       "trip": {"n":5,"years":[2012,2013,2015,2016,2021],"win":[["Andy",[2012]],["Joe",[2013]],["Kalle",[2015]],["Nate",[2016]],["Craig",[2021]]]},
       "engine": { "alt": 252, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -900, "n0": -700, "res": 2, "W": 900, "H": 700 } },
-      "scene": { "deer": 0.4, "squirrels": 3 }
-    },
-    {
-      "key": "maxwelton",
-      "name": "Maxwelton Braes Golf Resort",
-      "card": "Maxwelton Braes\nGolf Resort",
-      "short": "Maxwelton Braes (beta)", "place": "Baileys Harbor, WI", "tee": "Green", "rating": 69.5, "slope": 119,
-      "pars": [4, 4, 5, 5, 3, 4, 4, 3, 4, 4, 5, 5, 4, 4, 3, 4, 3, 4],
-      "recFrom": "2026-11-11",
-      "about": "Maxwelton Braes Golf Resort (Baileys Harbor, Wisconsin; par 72, 1929) is played from the green tees (6,041 yd); gold, white, blue and orange are the markers. Beta: built from OpenStreetMap, the 2018 Wisconsin lidar and the 2022 NAIP aerial, with the scorecard from 18Birdies.",
-      "trip": {"n":0,"years":[],"win":[]},
-      "blurb": "Door County’s historic 1929 layout by Roseman and O’Neil, tucked beside the Maxwelton Braes Lodge in Baileys Harbor, with Highway 57 cutting through the middle and dense woods on nearly every side. A par 72 of about 6,000 yards from the green tees (69.5/119), short enough to be friendly. It’s Andy’s home course, so he knows every bounce and isn’t telling.",
-      "engine": { "alt": 194, "fescue": true, "longRough": true, "z0": 200, "gr": { "e0": -650, "n0": -600, "res": 2, "W": 650, "H": 600 } },
       "scene": { "deer": 0.4, "squirrels": 3 }
     },
     {

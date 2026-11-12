@@ -7,8 +7,8 @@ watching a full round.
 
 HOW THIS FILE IS ORGANISED
   GLOBAL        what every course has (objects, then sounds), after a table of which course has what.
-  then one section per course, in the order of the course picker: Woodbine Bend, Eagle Ridge South, Eagle Ridge North, Eagle Ridge The General,
-  Fossil Trace, Stonehenge, Thunderhawk, Bear Slide, Galena Golf Club, Maxwelton Braes, Elbel Park, Pebble Brook North, Lacoma Blue, Briar Leaf, Legends at Memphis National, Chestnut Mountain Disc Golf, Adler Park Disc Golf.
+  then one section per course, in the order of the course picker: Woodbine Bend, Eagle Ridge South, Eagle Ridge North, Legends at Memphis National, Maxwelton Braes,
+  Eagle Ridge The General, Fossil Trace, Stonehenge, Thunderhawk, Bear Slide, Galena Golf Club, Elbel Park, Pebble Brook North, Lacoma Blue, Briar Leaf, Chestnut Mountain Disc Golf, Adler Park Disc Golf.
   Each course section has OBJECTS (what only that course has, with how often and when) then SOUNDS (the same), then SCENERY AND DATA (trees,
   water, buildings, roads, paths). A line "also everything in GLOBAL" is always true; "NOT here" lists what a reader might expect and will not find.
   Wording used for frequency: "always" = every time; "per hole" = decided each time a hole loads; "per trip" = each time a vehicle sets off;
@@ -22,7 +22,7 @@ GLOBAL
 A. WHICH COURSE HAS WHAT
 ------------------------
   Y = yes, - = no. WB Woodbine Bend, ERS Eagle Ridge South, ERN Eagle Ridge North, LG Legends, ERG Eagle Ridge The General, FT Fossil Trace, SH Stonehenge, TH Thunderhawk,
-  BS Bear Slide, GA Galena GC (beta), MX Maxwelton Braes (beta), EP Elbel Park (alpha: keeps no rounds), PB Pebble Brook North (alpha), LB Lacoma Blue (alpha), BL Briar Leaf (alpha), CM Chestnut Mountain (disc), AD Adler Park (disc). Details are in each course's section.
+  BS Bear Slide, GA Galena GC (beta), MX Maxwelton Braes, EP Elbel Park (alpha: keeps no rounds), PB Pebble Brook North (alpha), LB Lacoma Blue (alpha), BL Briar Leaf (alpha), CM Chestnut Mountain (disc), AD Adler Park (disc). Details are in each course's section.
 
   OBJECTS                                       WB   ERS  ERN  LG   ERG  FT   SH   TH   BS   GA   MX   EP   PB   LB   BL   CM   AD
   Weather, rainbow                              Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL)
@@ -356,6 +356,29 @@ SCENERY AND DATA
 
 
 #####################################################################################################
+MAXWELTON BRAES GOLF RESORT (maxwelton)  "Maxwelton Braes"
+#####################################################################################################
+Also everything in GLOBAL. A full course since 2026-11-11 (beta before): built from OpenStreetMap, the 2018 Wisconsin lidar and the 2022 aerial. Dark green long rough. Green tees 6,041 yd, par 72 (OSM tags holes 4 and 12 as par 4; the scorecard has par 5s).
+
+OBJECTS
+-------
+White-tailed deer (`scene.deer` = .4) and squirrels (3 per hole): as at Stonehenge.
+Highway with an 18-wheeler and 4 cars: WI 57, which runs diagonally through the middle of the course.
+Side roads (out of bounds, looks only, no traffic): every OSM road near a hole (County Trunk E along the north edge).
+NOT here: turkeys, gopher, banner plane, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+
+SOUNDS
+------
+  - Ball hits: rustle (deer), squeak (squirrel). Truck sounds from the WI 57 traffic. NO plane drone, cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
+
+SCENERY AND DATA
+----------------
+  - Fairways: 7 OSM ways and 12 multipolygon relations (`OSM_GOLF_RELATIONS`). Greens, tees (24), bunkers (57) and cart paths: OSM. No water mapped on the course (Lake Michigan's OSM polygon is left out: it is miles away).
+  - Trees: about 8,700: the 2018 Wisconsin lidar (1 m canopy model) checked against the 2022 aerial, which adds the dense woods along the west and east edges.
+  - Terrain: the USGS 1 m DEM of the same survey (the horizon beyond its tiles is the 10 m seamless model).
+
+
+#####################################################################################################
 EAGLE RIDGE THE GENERAL (eagle_general)
 #####################################################################################################
 Also everything in GLOBAL. Dark green long rough. OSM and lidar data only. 3-Star tees 6,245 yd, par 72 (Andy North and Roger Packard, 1997). The card names its tees 4-Star (6,649), 3-Star (6,245), 2-Star (5,846) and 1-Star (5,150); markers shown black, gold, white and green from the back.
@@ -520,29 +543,6 @@ SCENERY AND DATA
   - Fairways, greens, bunkers (41), tees: OSM. OSM maps no tee box for holes 3, 4 and 9: they are placed off the aerial (`EXTRA_TEES`). Hole 18 is a par 5 on the card (OSM tags it par 4).
   - Trees: about 5,300 from the 2019 Jo Daviess lidar, checked against the July 2023 aerial (crowns grown, canopy the lidar missed added).
   - Buildings: the OSM buildings on and beside the course (houses, the medical centre), plain.
-
-
-#####################################################################################################
-MAXWELTON BRAES GOLF RESORT (maxwelton)  "Maxwelton Braes (beta)"
-#####################################################################################################
-Also everything in GLOBAL. Beta: built from OpenStreetMap, the 2018 Wisconsin lidar and the 2022 aerial. Dark green long rough. Green tees 6,041 yd, par 72 (OSM tags holes 4 and 12 as par 4; the scorecard has par 5s).
-
-OBJECTS
--------
-White-tailed deer (`scene.deer` = .4) and squirrels (3 per hole): as at Stonehenge.
-Highway with an 18-wheeler and 4 cars: WI 57, which runs diagonally through the middle of the course.
-Side roads (out of bounds, looks only, no traffic): every OSM road near a hole (County Trunk E along the north edge).
-NOT here: turkeys, gopher, banner plane, clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
-
-SOUNDS
-------
-  - Ball hits: rustle (deer), squeak (squirrel). Truck sounds from the WI 57 traffic. NO plane drone, cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
-
-SCENERY AND DATA
-----------------
-  - Fairways: 7 OSM ways and 12 multipolygon relations (`OSM_GOLF_RELATIONS`). Greens, tees (24), bunkers (57) and cart paths: OSM. No water mapped on the course (Lake Michigan's OSM polygon is left out: it is miles away).
-  - Trees: about 8,700: the 2018 Wisconsin lidar (1 m canopy model) checked against the 2022 aerial, which adds the dense woods along the west and east edges.
-  - Terrain: the USGS 1 m DEM of the same survey (the horizon beyond its tiles is the 10 m seamless model).
 
 
 #####################################################################################################
