@@ -213,7 +213,7 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
 .btn.subBtn.light{background:rgba(255,255,255,.9);color:#2f6b35;text-shadow:none;box-shadow:0 6px 16px rgba(20,70,30,.25),inset 0 1px 0 rgba(255,255,255,.6)}
 .btn.subBtn:disabled{opacity:.45;filter:grayscale(1);box-shadow:none;pointer-events:none}
 .btn.danger{display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#d9604f,#a8362a);box-shadow:0 8px 20px rgba(120,30,20,.35),inset 0 1px 0 rgba(255,255,255,.35)}
-#quitAsk,#restartAsk{z-index:12;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(10,30,18,.5)}
+#quitAsk,#restartAsk,#newAsk{z-index:12;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(10,30,18,.5)}
 .qcard{width:100%;max-width:340px;padding:22px 18px 18px;text-align:center;border-radius:28px}
 .qt{font:700 32px/1 var(--cond);text-transform:uppercase}
 .qcard p{margin:8px 0 18px;font:500 15px/1.35 var(--body);color:var(--w2)}
@@ -535,7 +535,8 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 </div>
 <div class="layer" id="intro"><div class="card icard"><canvas id="introMap" width="172" height="288"></canvas><div class="ic-b"><div><div class="ic-k" id="icK">Hole 1 of 3</div><div class="ic-n" id="icN">Headland</div><div class="ic-i" id="icI"></div><div class="ic-f"><div>Par<b id="icPar">4</b></div><div>Length<b id="icLen">390 yd</b></div><div>Wind<b id="icWind">5 mph</b></div><div>Ground<b id="icWx">Fine</b></div></div></div><button class="btn ic-go" id="icGo">Play hole</button></div></div></div>
 <div class="layer" id="done"><div class="card dcard"><div class="d1" id="d1">Birdie</div><div class="d2" id="d2">Hole 1 · 3 strokes · Par 4</div><div class="dstats" id="dstats"></div><button class="btn" id="dNext" style="width:100%">Next hole</button><button class="mbtn dark" id="dReplay" style="width:100%;margin-top:8px">▶ Replay last shot</button><button class="mbtn dark" id="dChange" style="width:100%;margin-top:8px;display:none">⛳ Change practice</button></div></div>
-<div class="layer" id="quitAsk"><div class="card qcard" role="alertdialog" aria-labelledby="qT"><div class="qt" id="qT">Are you sure?</div><p>Any progress will be lost.</p><div class="qb"><button class="btn danger" id="qYes">Yes I'm sure</button><button class="btn subBtn light" id="qNo">No</button></div></div></div>
+<div class="layer" id="quitAsk"><div class="card qcard" role="alertdialog" aria-labelledby="qT"><div class="qt" id="qT">Abandon this round?</div><p>Your scores so far will be deleted. Holes you've finished stay in your stats. (To come back to it later, use Save and quit.)</p><div class="qb"><button class="btn danger" id="qYes">Abandon round</button><button class="btn subBtn light" id="qNo">Keep playing</button></div></div></div>
+<div class="layer" id="newAsk"><div class="card qcard" role="alertdialog" aria-labelledby="nT"><div class="qt" id="nT">Round in progress</div><p id="nInfo"></p><div class="qb"><button class="btn" id="nContinue">Continue round</button><button class="btn danger" id="nNew">Start a new round</button><button class="btn subBtn light" id="nNo">Cancel</button></div></div></div>
 <div class="layer" id="restartAsk"><div class="card qcard" role="alertdialog" aria-labelledby="rT"><div class="qt" id="rT">Restart this round?</div><p>Your scores so far will be lost and you start again at hole 1.</p><div class="qb"><button class="btn danger" id="rYes">Yes I'm sure</button><button class="btn subBtn light" id="rNo">No</button></div></div></div>
 <div id="scrim"></div>
 <div class="sheet" id="bagSheet"><div class="grab"></div><div class="sht">Your bag <small id="bagLie">From the tee</small></div><div class="bag" id="bag"></div></div>
@@ -543,7 +544,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
   <div class="mlist">
     <div class="sub"><span>Players online</span></div><div class="mpList" id="mpList"></div>
   </div>
-  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mRestart">↺ Restart round</button><button class="mbtn dark wide" id="mChange">⛳ Change practice</button><button class="mbtn dark wide" id="mQuit">Quit to Main Screen</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
+  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mRestart">↺ Restart round</button><button class="mbtn dark wide" id="mChange">⛳ Change practice</button><button class="mbtn dark wide" id="mQuit">Save and quit</button><button class="mbtn dark wide" id="mAbandon">✕ Abandon round</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
   <div class="mlist setBlock">
     <div class="mrow">Name<input id="mName" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="done"></div>
     <div class="mrow">Player ID<span id="pidState" style="opacity:.8">Guest</span></div>
@@ -7511,6 +7512,7 @@ function saveRound() {
     wx: G.weather ? { id: G.weather.id, v: G.wxV, pass: !!G.wxPass, lead: !!G.wxLead } : null,
     shot: flying ? { L: sh.L, x: G.prev.x, z: G.prev.z, teed: !!G.prev.teed, playT: Math.max(0, G.playT), summary: sh.summary } : null
   } : null;
+  if (!mid && G.scores.every(v => v == null)) return;   // nothing played yet: there is nothing to save, and an empty record must never replace a round that is saved
   const r = { v: 1, course: COURSE.key, hole: h, scores: G.scores, putts: G.putts, fir: G.fir, gir: G.gir, pens: G.pens, pins: G.pins, planes: G.planes, fh: G.fartHole, fd: !!G.fartDone, xr: G.xr, ml: G.mull, at: Date.now(), mid };
   try { localStorage.setItem(saveKey(COURSE.key), JSON.stringify(r)); } catch (e) { }
   refreshResume();
@@ -7605,6 +7607,14 @@ function pinSheet(now) {
   });
 }
 // a new round first asks the server for the latest build: when there is a newer one the page reloads into it (the round starts on the next tap), otherwise, offline or slow, the round starts at once
+// "New round" with a round already saved on this course would delete it: ask first (the round saved, Continue round, or a new one)
+function newRoundAsk() {
+  const r = loadRound(COURSE.key);
+  if (!r) { titleOff(); startRound(); return; }
+  const pars = COURSES[r.course].pars; let sc = 0, pr = 0, n = 0; r.scores.forEach((v, i) => { if (v != null) { sc += v; pr += pars[i]; n++; } });
+  $('nInfo').textContent = `${COURSES[r.course].short} · hole ${resumeHole(r) + 1} · ${n ? fmtToPar(sc - pr) : 'E'}. Starting a new round deletes it.`;
+  $('newAsk').classList.add('on');
+}
 function startRound() { newBuild(1500).then(reloading => { if (!reloading) beginRound(); }); }
 function beginRound() {
   if (!courseOpen(COURSE.key)) { courseLockedNote(); $('play').classList.add('on'); return; }   // (every way into a round: the New round button, a reload mid-start)
@@ -8204,8 +8214,9 @@ function pgStartSpot() { const C = G.C, c = C.cups[1] || C.cup, a = Math.atan2(C
 function startPuttingGreen(range) {
   leaveShot();
   const inRound = !G.practice && (G.scores.some(v => v != null) || G.strokes > 0) && G.state !== 'title';
-  if (inRound && !confirm(`End the current round and practise on the ${range ? 'driving range' : 'putting green'}?`)) return;
-  G.practice = true; G.submitted = true; clearRound(); G.pg = { shots: 0, makes: 0, cup: 0, from: null, range: !!range, spot: 0 };
+  if (inRound && !confirm(`Save the current round and practise on the ${range ? 'driving range' : 'putting green'}? (Continue round brings it back.)`)) return;
+  if (inRound) saveRound();
+  G.practice = true; G.submitted = true; G.pg = { shots: 0, makes: 0, cup: 0, from: null, range: !!range, spot: 0 };
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   if (!G.pins) G.pins = HOLE_DEFS.map(() => Math.floor(Math.random() * 4));
   document.body.classList.add('pg'); document.body.classList.toggle('rg', !!range); titleOff(); closeSheets(); startHole(0);
@@ -9055,6 +9066,8 @@ function syncMenu() {
   document.querySelectorAll('#segCrowd button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.crowd !== false ? 1 : 0)));
   mpSync();
   $('mQuit').style.display = G.state === 'title' ? 'none' : ''; // nothing to quit from the start screen
+  $('mQuit').textContent = G.practice || G.pg ? 'Quit to Main Screen' : 'Save and quit';   // (a round is kept, to Continue; practice keeps nothing)
+  $('mAbandon').style.display = !G.practice && !G.pg && G.state !== 'title' && G.scores ? '' : 'none';   // only during a round
   $('mRestart').style.display = !G.practice && !G.pg && G.state !== 'title' && G.scores ? '' : 'none';   // only during a round
   $('mChange').style.display = G.practice && G.state !== 'title' ? '' : 'none';   // only while practising
 }
@@ -9084,26 +9097,32 @@ function pracHole(i) {
   if (pracKey === COURSE.key) { startPractice(i); return; }
   const k = pracKey; leaveShot(); if (MP.spec) mpResume(true);
   if (!G.practice && G.state !== 'title') saveRound();
-  setCourse(k); startPractice(i);
+  setCourse(k); startPractice(i, true);
 }
-function startPractice(i) {
+function startPractice(i, saved) {   // saved: pracHole has already saved the round (it saves before it changes course: saving here would file the old course's scores under the new one)
   if (!courseOpen(COURSE.key)) { courseLockedNote(); return; }
   leaveShot();
   const inRound = !G.practice && (G.scores.some(v => v != null) || G.strokes > 0) && G.state !== 'title';
-  if (inRound && !confirm('End the current round and practice hole ' + (i + 1) + '?')) return;
-  G.practice = true; G.pg = null; document.body.classList.remove('pg'); G.submitted = true; clearRound();
+  if (inRound && !confirm('Save the current round and practice hole ' + (i + 1) + '? (Continue round brings it back.)')) return;
+  if (inRound && !saved) saveRound();
+  G.practice = true; G.pg = null; document.body.classList.remove('pg'); G.submitted = true;
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   if (!G.pins) G.pins = HOLE_DEFS.map(() => Math.floor(Math.random() * 4));
   titleOff(); closeSheets(); startHole(i);
 }
 // quit to the start screen: the round (or practice hole) in progress is abandoned entirely, nothing is scored or saved
-function quitToMain() {
+// Leaving a round for the main screen. save (Settings > Save and quit): the round is kept, as it is when the app is closed (saveRound runs after every shot), and the play
+// screen's Continue round brings it back. Without save (Abandon round, or the finished round's scorecard) it is deleted. Practice, the practice green and the driving range
+// have no round of their own: leaving them touches whatever round is saved.
+function quitToMain(save) {
+  const prac = G.practice || !!G.pg;
+  if (save === true && !prac) { try { saveRound(); } catch (e) { } }
   $('quitAsk').classList.remove('on'); $('restartAsk').classList.remove('on'); closeSheets(); slopeShow(false);
   const sp = MP.spec; MP.follow = null; if (sp) { MP.spec = null; mpWorld(sp.course); } // (following someone: back on my own course)
   G.rep = null; G.shot = null; G.practice = false; G.pg = null; G.submitted = true; G.strokes = 0; SW.phase = 'idle';
   document.body.classList.remove('flight', 'swing', 'replay', 'spec', 'pg');
   ['done', 'intro', 'readout', 'skipBtn'].forEach(id => $(id).classList.remove('on')); UI.readT = 0;
-  clearRound();
+  if (save !== true && !prac) clearRound();
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
   showTitleHole(); $('title').classList.add('on'); showBest(); refreshResume(); MP.panelT = 0; SFX.blip();
 }
@@ -10263,7 +10282,10 @@ function initInput() {
     if (!cleanName(settings.name)) { nr.classList.remove('need'); void nr.offsetWidth; nr.classList.add('need'); ni.focus(); return; }
     audio(); SFX.blip(); refreshResume(); $('title').classList.remove('on'); $('play').classList.add('on');
   };
-  $('btnNew').onclick = () => { audio(); SFX.blip(); if (!courseOpen(COURSE.key)) { courseLockedNote(); return; } titleOff(); startRound(); };
+  $('btnNew').onclick = () => { audio(); SFX.blip(); if (!courseOpen(COURSE.key)) { courseLockedNote(); return; } newRoundAsk(); };
+  $('nNo').onclick = () => { SFX.blip(); $('newAsk').classList.remove('on'); };
+  $('nContinue').onclick = () => { $('newAsk').classList.remove('on'); $('btnResume').onclick(); };
+  $('nNew').onclick = () => { $('newAsk').classList.remove('on'); audio(); SFX.blip(); titleOff(); startRound(); };
   $('btnGlobal').onclick = () => { SFX.blip(); glbOpen(); };
   $('btnGlbBack').onclick = () => { SFX.blip(); $('glb').classList.remove('on'); $('title').classList.add('on'); };
   $('btnPlayBack').onclick = () => { SFX.blip(); $('play').classList.remove('on'); $('title').classList.add('on'); };
@@ -10302,13 +10324,14 @@ function initInput() {
   $('mRestart').onclick = () => { SFX.blip(); closeSheets(); $('restartAsk').classList.add('on'); };
   $('rNo').onclick = () => { SFX.blip(); $('restartAsk').classList.remove('on'); };
   $('rYes').onclick = () => { $('restartAsk').classList.remove('on'); audio(); SFX.blip(); startRound(); };
-  $('mRound').onclick = () => { audio(); titleOff(); closeSheets(); startRound(); }; // (from the title screen's Settings too: the title must go, as with Tee off, or the round starts behind it)
-  $('mQuit').onclick = () => { SFX.blip(); $('quitAsk').classList.add('on'); };
+  $('mRound').onclick = () => { audio(); closeSheets(); if (G.state === 'title' && loadRound(COURSE.key)) { newRoundAsk(); return; } titleOff(); startRound(); }; // (from the title screen's Settings too: the title must go, as with Tee off, or the round starts behind it)
+  $('mQuit').onclick = () => { SFX.blip(); quitToMain(true); };
+  $('mAbandon').onclick = () => { SFX.blip(); $('quitAsk').classList.add('on'); };
   $('mChange').onclick = () => { openPractice(); };
   $('dChange').onclick = () => { openPractice(); };
   $('pgChange').onclick = () => { openPractice(); };
   $('qNo').onclick = () => { SFX.blip(); $('quitAsk').classList.remove('on'); };
-  $('qYes').onclick = quitToMain;
+  $('qYes').onclick = () => quitToMain(false);
   $('btnPractice').onclick = () => { audio(); SFX.blip(); openPractice(); };
   $('btnSettings').onclick = () => { audio(); SFX.blip(); syncMenu(); openSheet('menuSheet'); };
   // course: on the play screen it just switches the course shown
