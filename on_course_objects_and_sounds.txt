@@ -8,7 +8,7 @@ watching a full round.
 HOW THIS FILE IS ORGANISED
   GLOBAL        what every course has (objects, then sounds), after a table of which course has what.
   then one section per course, in the order of the course picker: Woodbine Bend, Eagle Ridge South, Eagle Ridge North, Legends at Memphis National, Maxwelton Braes,
-  Eagle Ridge The General, Fossil Trace, Stonehenge, Thunderhawk, Bear Slide, Galena Golf Club, Elbel Park, Pebble Brook North, Lacoma Blue, Briar Leaf, Chestnut Mountain Disc Golf, Adler Park Disc Golf.
+  Eagle Ridge The General, Fossil Trace, Stonehenge, Thunderhawk, Bear Slide, Galena Golf Club, Elbel Park, Pebble Brook North, Lacoma Blue, Briar Leaf, Augusta National, Chestnut Mountain Disc Golf, Adler Park Disc Golf.
   Each course section has OBJECTS (what only that course has, with how often and when) then SOUNDS (the same), then SCENERY AND DATA (trees,
   water, buildings, roads, paths). A line "also everything in GLOBAL" is always true; "NOT here" lists what a reader might expect and will not find.
   Wording used for frequency: "always" = every time; "per hole" = decided each time a hole loads; "per trip" = each time a vehicle sets off;
@@ -22,47 +22,50 @@ GLOBAL
 A. WHICH COURSE HAS WHAT
 ------------------------
   Y = yes, - = no. WB Woodbine Bend, ERS Eagle Ridge South, ERN Eagle Ridge North, LG Legends, ERG Eagle Ridge The General, FT Fossil Trace, SH Stonehenge, TH Thunderhawk,
-  BS Bear Slide, GA Galena GC (beta), MX Maxwelton Braes, EP Elbel Park (alpha: keeps no rounds), PB Pebble Brook North (alpha), LB Lacoma Blue (alpha), BL Briar Leaf (alpha), CM Chestnut Mountain (disc), AD Adler Park (disc). Details are in each course's section.
+  BS Bear Slide, GA Galena GC (beta), MX Maxwelton Braes, EP Elbel Park (alpha: keeps no rounds), PB Pebble Brook North (alpha), LB Lacoma Blue (alpha), BL Briar Leaf (alpha), AU Augusta National (alpha), CM Chestnut Mountain (disc), AD Adler Park (disc). Details are in each course's section.
 
-  OBJECTS                                       WB   ERS  ERN  LG   ERG  FT   SH   TH   BS   GA   MX   EP   PB   LB   BL   CM   AD
-  Weather, rainbow                              Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL)
-  Bird flocks                                   Y    Y    Y    Y    Y    -    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL; off at Fossil Trace: `scene.flocks` false)
-  Hot air balloon                               Y    Y    Y    -    Y    -    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL; off at Fossil Trace and Legends: `scene.balloon` false)
-  Wild turkeys                                  Y    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -    -    -
-  Gopher (groundhog)                            Y    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -    -    -
-  Banner plane                                  Y    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -    -    -
-  White-tailed deer                             -    -    Y    Y    -    -    Y    Y    Y    Y    Y    Y    Y    Y    Y    -    -
-  Coyote (gray and white)                       -    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -    -    -
-  Elk herd (holes 5 and 12 only)                -    -    -    -    -    Y    -    -    -    -    -    -    -    -    -    -    -
-  Prairie dog colony (holes 8 and 16 only)      -    -    -    -    -    Y    -    -    -    -    -    -    -    -    -    -    -
-  Cows in the woods (hole 3 only)               -    Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
-  Squirrels (3 on every hole)                   -    -    -    Y    -    -    Y    Y    Y    Y    Y    Y    Y    Y    Y    -    -
-  Highway with an 18-wheeler and 4 cars         Y    -    -    -    -    -    Y    -    -    Y    Y    -    -    -    -    -    -
-  Cars (Subaru and Hyundai only) on side roads  -    Y    Y    Y*   Y    -    -    -    -    -    -    -    -    -    -    -    -     (* Legends: Frank Road only, steady)
-  Dancing hot dog (hole 10)                     Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
-  Fountain (hole 1)                             Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
-  Moving golf cart with two men (rare)          Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
-  Black bear crossing the fairway (rare)        -    -    -    -    -    Y    -    -    -    -    -    -    -    -    -    -    -
+  OBJECTS                                       WB   ERS  ERN  LG   ERG  FT   SH   TH   BS   GA   MX   EP   PB   LB   BL   AU   CM   AD
+  Weather, rainbow                              Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL)
+  Bird flocks                                   Y    Y    Y    Y    Y    -    Y    Y    Y    Y    Y    Y    Y    Y    Y    -    Y    Y     (GLOBAL; off at Fossil Trace: `scene.flocks` false)
+  Hot air balloon                               Y    Y    Y    -    Y    -    Y    Y    Y    Y    Y    Y    Y    Y    Y    -    Y    Y     (GLOBAL; off at Fossil Trace and Legends: `scene.balloon` false)
+  Wild turkeys                                  Y    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Gopher (groundhog)                            Y    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Banner plane                                  Y    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -    -    -    -
+  White-tailed deer                             -    -    Y    Y    -    -    Y    Y    Y    Y    Y    Y    Y    Y    Y    -    -    -
+  Coyote (gray and white)                       -    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Elk herd (holes 5 and 12 only)                -    -    -    -    -    Y    -    -    -    -    -    -    -    -    -    -    -    -
+  Prairie dog colony (holes 8 and 16 only)      -    -    -    -    -    Y    -    -    -    -    -    -    -    -    -    -    -    -
+  Cows in the woods (hole 3 only)               -    Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Squirrels (3 on every hole)                   -    -    -    Y    -    -    Y    Y    Y    Y    Y    Y    Y    Y    Y    -    -    -
+  Highway with an 18-wheeler and 4 cars         Y    -    -    -    -    -    Y    -    -    Y    Y    -    -    -    -    -    -    -
+  Cars (Subaru and Hyundai only) on side roads  -    Y    Y    Y*   Y    -    -    -    -    -    -    -    -    -    -    -    -    -     (* Legends: Frank Road only, steady)
+  Dancing hot dog (hole 10)                     Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Fountain (hole 1)                             Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Moving golf cart with two men (rare)          Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Black bear crossing the fairway (rare)        -    -    -    -    -    Y    -    -    -    -    -    -    -    -    -    -    -    -
   Parked golf carts, clubhouse model, washroom,
     porta-potties, parking lot, pump house,
-    entrance sign, hole 7 sign                  Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
-  Washroom, parking lot with cars (no other)    Y    -    -    Y    -    -    -    -    -    -    -    -    -    -    -    -    -
-  Cart paths                                    Y    Y    Y    Y    Y    Y    -    -    -    Y    Y    Y    Y    -    Y    -    -
-  Cart-path bridges                             -    10   6    4    -    -    -    -    -    3    -    -    -    -    -    -    -
-  Roads drawn (out of bounds, for looks)        2    all* all* all* all* 1    3    5+   all* all* all* all* all* all* all* 1    2     (* every OSM road near a hole)
-  Pool, water slide, playground                 -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    Y
-  Disc, basket, tee pad (no ball, cup, tee peg) -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    Y    Y
-  Long rough (dark green) instead of fescue     -    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    -    -     (Woodbine: golden fescue)
+    entrance sign, hole 7 sign                  Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Washroom, parking lot with cars (no other)    Y    -    -    Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Cart paths                                    Y    Y    Y    Y    Y    Y    -    -    -    Y    Y    Y    Y    -    Y    Y    -    -
+  Cart-path bridges                             -    10   6    4    -    -    -    -    -    3    -    -    -    -    -    -    -    -
+  Roads drawn (out of bounds, for looks)        2    all* all* all* all* 1    3    5+   all* all* all* all* all* all* all* all* 1    2     (* every OSM road near a hole)
+  Pool, water slide, playground                 -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    Y
+  Disc, basket, tee pad (no ball, cup, tee peg) -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    Y    Y
+  Long rough (dark green) instead of fescue     -    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    -    -    -     (Woodbine: golden fescue)
+  Pine straw, azaleas, stone bridges            -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    Y    -    -
+  Swirling wind (holes 11-13)                   -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    Y    -    -
+  Masters dressing, patrons                  -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    Y    -    -
 
-  SOUNDS                                        WB   ERS  ERN  LG   ERG  FT   SH   TH   BS   GA   MX   EP   PB   LB   BL   CM   AD
+  SOUNDS                                        WB   ERS  ERN  LG   ERG  FT   SH   TH   BS   GA   MX   EP   PB   LB   BL   AU   CM   AD
   Club strikes, landing, trees, water, cup,
     chimes, interface blips, birdsong, rainbow
-    jingle, the rare unseen sound               Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y*   Y*    (GLOBAL; * disc: release whoosh and chains instead of strikes and cup)
-  Banner plane engine drone                     Y    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -    -    -
+    jingle, the rare unseen sound               Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y*   Y*   Y*    (GLOBAL; * AU: its own synthesised bird chorus and no rare unseen sound; * disc: release whoosh and chains instead of strikes and cup)
+  Banner plane engine drone                     Y    Y    Y    -    Y    -    -    -    -    -    -    -    -    -    -    -    -    -
   Truck air horn / engine rumble (`scene.truckHorn`)
-                                                Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
-  Hole 7 song                                   Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -     (no birdsong on that hole)
-  Golf cart radio ("Around the World")          Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
+                                                Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
+  Hole 7 song                                   Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -     (no birdsong on that hole)
+  Golf cart radio ("Around the World")          Y    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -
   Gobble / squeak / rustle / thunk when the
     ball hits an animal, plane or cart             per animal on that -    course (see its section)
 
@@ -633,6 +636,94 @@ SCENERY AND DATA
   - THE HOLES ARE A BEST GUESS: OSM maps no hole lines or tee boxes here. The order of the 18 greens was found by a search that matches the scorecard's hole lengths to the gaps between greens
     (`tools/course/briar_holes.py`, `courses/briar_leaf/order.json`); each tee box is put back from its green toward the previous one. Holes with no OSM fairway get a plain mown corridor.
   - Water: OSM ponds and stream. Greens (the 19th is the practice green), bunkers (26) and cart paths (43 pieces): OSM. Trees: about 4,300 from the 2017 Indiana lidar, checked against the 2022 aerial.
+
+
+#####################################################################################################
+AUGUSTA NATIONAL GOLF CLUB (augusta)  "Augusta (alpha)"
+#####################################################################################################
+Also everything in GLOBAL. Alpha: built from OpenStreetMap and the lidar, keeps no rounds. Masters week: Masters tees 7,555 yd, par 72; the member, forward and
+short markers are estimates. Each hole's card shows its name (Tea Olive, Pink Dogwood, ... Holly). No deep rough (`engine.paintedDeep`, nothing painted).
+
+OBJECTS
+-------
+None of the shared course life or furniture (`scene.plain`, `flocks` and `balloon` false, no squirrels): no bird flocks, hot air balloon, animals, white
+  boundary stakes, red pond stakes or 200/150/100 distance posts. The eagle and albatross fly-overs, weather and the rainbow are as everywhere.
+Pine straw: rust-brown straw on the floor under every stand of trees (`straw` in the data, `pines.py`); never on anything mown. It is a lie of its own,
+  "Pine straw" (`S.STRAW`): a dead landing (the ball stops within a couple of yards) and a loose lie (about 90 % of the carry, little spin, a wider spread).
+Azaleas in bloom (mounded clumps in the four Southern Indica cultivars reported as the club's common ones: 'Formosa' magenta-violet, two in five;
+  'Judge Solomon' rose-salmon pink, 'George L. Tabor' pale orchid pink, 'Mrs. G. G. Gerbing' white) along the edge of the straw, always: most on 13 (down the left along the creek and round the
+  green, about 610 clumps), then 10 (left of the green), 12 (the hill behind the green), 2, 11, 16, 9 and 15 (`course.PLANTINGS`, `buildAzaleas`). None on 18 yet.
+Stone bridges (arched ashlar spans with parapets; a bronze plaque on the named ones), always, where OSM maps them: the Ben Hogan Bridge (12), the Byron Nelson Bridge
+  (13 tee), the Gene Sarazen Bridge (15) and four unnamed spans (`bridges`, `buildStoneBridges`).
+Namesake and landmark plants, always, hand-placed (`course.SPECIMENS`, `pines.specimens`, tree kinds 5 and 9-15 in `buildRealTrees`):
+  - Magnolia Lane: 60 Southern magnolias (61 planted in the late 1850s, one lost to Hurricane Helene in 2024) in two rows along the drive from Washington Road
+    to Founders Circle; dark glossy evergreen domes, leaf only (they flower in May and June).
+  - The Big Oak behind the clubhouse, by the 1st tee: a short massive trunk and a low crown spreading about 30 m.
+  - Hole by hole, as each stands in Masters week (placed from the published plant guides; see course.py): 1 tea olives right of the fairway and behind the
+    green (in leaf); 2 pink dogwoods both sides (in bloom); 3 flowering peach right (the last of its bloom); 4 crab apples approaching the green (pink and
+    white, in bloom) and the palm; 5 magnolias along the fairway and round the green (in leaf); 6 junipers (red cedars) round the tee and right of the green;
+    7 pampas left (green clumps, a few faded plumes); 8 yellow jasmine (ESTIMATE: by the green, a little yellow left); 9 Carolina cherry right (creamy-white
+    flowers); 10 camellias left and behind the green (in leaf, their bloom is over); 11 white dogwoods framing the hole (in bloom); 12 golden bell behind
+    the green (half yellow, the end of its bloom); 14 Chinese firs left (with brown old foliage); 15 firethorn (ESTIMATE: by the green, creamy-white
+    flowers); 16 redbuds (ESTIMATE: on the tree line nearest the green, orchid pink); 17 nandina left (bronze-red new growth); 18 hollies both sides of
+    the tee and along the fairway (a few red berries).
+  - Every conifer is a loblolly pine (`engine.conifer`); no blue spruces. No long grass or wild daisies anywhere but the deep rough (none here): the second
+    cut is short turf and the floor under the pines is straw.
+Landmarks, always (scene keys in courses.json; `buildClubhouseANGC`, `buildCabinANGC`, `buildGroundsANGC`):
+  - The clubhouse (`scene.clubhouse.style` 'augusta', after a photograph from Founders Circle): the white 1854 house with two-storey verandas all round, square
+    white posts five bays across, a white balustrade on the upper floor, tall windows with black shutters, French doors above the front door, a green-and-white
+    striped awning over it, hanging baskets of red flowers, a broad hipped roof of warm grey shingles, two white chimneys with dark caps, the Crow's Nest
+    cupola (white, two small windows a face between black shutters, a finial), and clipped boxwood domes along the front; behind it the later wings, raised
+    white from the real OSM outline under a flat grey roof. The ball can hit it ("Off the clubhouse!").
+  - Founders Circle (`scene.founders`): the roundabout at the end of Magnolia Lane, the main flagpole flying the US flag (OSM), two bronze plaques on concrete
+    slabs at its foot (Jones, Roberts), and the two bright yellow pansy beds in the shape of the Masters logo (their OSM outlines).
+  - Eisenhower Cabin (`scene.cabins` 'ike', `buildIkeCabin`, after a photograph): a white painted-brick Cape Cod under a steep near-black roof, two white
+    dormers and a front gable, shuttered twelve-pane windows, and a portico of four white columns under a pediment with the gold presidential seal, with
+    steps, white rocking chairs and red hanging baskets; a clipped hedge and round topiaries. It faces the 10th tee (which way it really faces is a guess).
+  - Butler Cabin (`scene.cabins` 'butler', `buildButlerCabin`, after a photograph): white painted brick under a side-gabled slate roof, one dormer, a wide white
+    chimney, a door with side lights under a flat cornice between black lanterns, a shuttered window and a white bay window, lower wings at both ends, hedges
+    and azaleas. It faces the clubhouse (which way it really faces is a guess).
+  - The main leader board (`scene.leaderboard`, OSM node, facing south-east left of the 1st fairway; after a photograph): a wide dark-green beam on one thick
+    round green post; on it the white main board with LEADERS on a raised cap, a grey-blue grid with the HOLE and PAR rows and ten player rows, and two
+    lower side panels, THRU at the left and a blank one at the right. It shows the player's round so far, over and under par through each hole (red under,
+    green level, black over), as it stood when the hole loaded.
+  - Every other building on the property: white walls and the same slate grey roof as the rest (`scene.bldColors`); the smaller ones (the members' cabins, the
+    shops: under 900 m2 of footprint, `cottage`) as white cottages with black shutters, a gabled roof and a white chimney. Every roof on the property, the
+    clubhouse's and the cabins' too, is the one slate grey. The 12 TV towers OSM maps as buildings are left out until the Masters dressing (`BUILDINGS_SKIP`).
+Swirling wind on 11, 12 and 13 (Amen Corner, `engine.swirl`): the wind keeps shifting until the swing starts and blows from another direction above the pines;
+  pine needles and azalea petals whirl round the player there.
+Side roads (out of bounds, looks only, no traffic): every OSM road near a hole, Magnolia Lane and Washington Road among them.
+The Masters dressing, always (`scene.dressing`, `buildDressingANGC`; only round the hole in play; nothing moves). The ball bounces off the patrons
+  ("Off a patron!") and the grandstands ("Off the grandstand!"), and passes through the ropes, stakes, towers and boards:
+  - TV camera towers, OSM's 12: dark-green scaffolding 9-12 m tall (four legs, cross braces), a railed platform under a canopy, a camera on it. Green, as
+    "the scoreboards and the camera towers" are at the Masters (GOLF.com).
+  - The 8 on-course leader boards OSM maps (with the way each faces; one is back to back): the main board's design at 0.62 scale.
+  - Grandstands (fan guides): behind the 7th green, behind the 12th tee (seen from 11 and 13 too), both sides of the 15th green (seen from 16): green steel
+    tiers, 8 rows, full of seated patrons.
+  - Gallery ropes along both sides of every hole, about 5 m outside the fairway from 40 m off the tee, and round the back of the green: green stakes every
+    4 m and a white rope (the rope colour is a guess; no source found).
+  - Patrons behind the ropes: sparse down the fairway, thicker by the tee, packed round the green, many in caps; at the green some seated in the green
+    folding chairs. Up to 2,600 a hole, in instanced parts.
+  - Two green trash cans beside each tee.
+NOT here yet: concession stands and restroom buildings of their own (the OSM buildings stand in for them), patrons walking, crowd sounds (roars, applause). Also NOT here: turkeys, gopher, banner plane, deer, highway traffic, parked carts, moving cart, hot dog, fountain, signs, songs.
+
+SOUNDS
+------
+  - The background music (courses.json `music`): an original, calm fingerpicked guitar and piano piece in D, in the spirit of a spring afternoon in Georgia
+    (not the Masters theme, which is copyrighted), synthesised live, quietly (Settings > Music).
+  - Augusta's own spring chorus in place of the recorded birdsong (`scene.chorus`, `chorusTick`, synthesised, no recordings): each hole draws its cast from
+    northern cardinal (always; "cheer-cheer-cheer" or "birdy-birdy"), Carolina wren (90 %; "teakettle"), pine warbler (85 %; a one-pitch trill), tufted
+    titmouse (80 %; "peter-peter"), northern mockingbird (55 %; borrowed phrases, each three or four times), Carolina chickadee (50 %; "fee-bee fee-bay"),
+    mourning dove (50 %; "coo-OO-oo-oo-oo"), brown thrasher (40 %; Georgia's state bird, each phrase twice) and eastern bluebird (40 %; a soft warble). Each
+    bird sings bouts of songs a few seconds apart, then rests half a minute to two minutes; soft, panned, quieter and rarer in the rain.
+  - NO rare unseen sound (the fart), plane drone, truck sounds, cart radio or hole song. The strikes, landing, trees, water, cup, chimes and interface are as
+    on every course; the ball off a patron or a grandstand gives the thud the clubhouse walls give.
+
+SCENERY AND DATA
+----------------
+  - Holes, names, greens, tees, bunkers, ponds, Rae's Creek, bridges, cart paths and buildings: OSM (the Par 3 course's holes and the practice grounds' replica
+    greens are left out). Trees: about 10,200 from the 2018 Georgia lidar, checked against the September 2025 aerial (1,305 felled since, most by Hurricane
+    Helene in 2024, are gone). Loblolly pines, oaks and magnolias in the deep southern palette (`engine.lush`).
 
 
 #####################################################################################################

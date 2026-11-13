@@ -335,6 +335,8 @@ def build_holes(F, demZ1):
         if fn:
             h['mkd'] = [round(fn[0], 4), round(fn[1], 4)]   # the markers' line, a unit (east, north): the game stands each pair along it
         h['desc'] = describe(dict(tee=tee, green=(gc.x, gc.y), L=LineString(line), par=h['par']), demZ1, None, F, None)
+        if getattr(card, 'NAMES', None):
+            h['nm'] = card.NAMES[i]   # the hole's name (Augusta: Tea Olive, Pink Dogwood, ...): the game shows it on the hole card
         h['_green_poly'] = g
         out.append(h)
     return out
@@ -1016,6 +1018,33 @@ def main():
         elif key == 'fescue': fescue = [g for q in fescue for g in fin(q)]
         elif key == 'bound': bound = max(fin(bound), key=lambda g: g.area)
         print(f'FINAL_ROUND {key}: closed {rc} m, opened {ro} m')
+    straw, flowers, sbridges = '', '', []
+    if getattr(course, 'STRAW', False) or getattr(course, 'STONE_BRIDGES', False):   # a southern parkland course (Augusta): pine straw, azaleas, stone bridges (pines.py)
+        import pines
+        if getattr(course, 'STONE_BRIDGES', False):
+            sbridges = pines.stone_bridges(water + list(creek), box(*DETAIL))
+        if getattr(course, 'STRAW', False):
+            mown = list(fair) + [f['poly'] for f in F['tee'] + F['green'] + F['bunker'] + F['rough']]
+            sa = pines.straw_area(trees, mown, list(water) + list(creek) + list(paths), bound)
+            straw = b64i16(pines.straw_rle(sa))
+            fl = pines.flowers(sa, holes, [f['poly'] for f in F['green']])
+            flowers = b64i16([int(round(v * 10)) if k < 3 else int(v) for c in fl for k, v in enumerate(c)]) if fl else ''
+            json.dump([mapping(g) for g in getattr(sa, 'geoms', [sa])], open(os.path.join(OUT, 'straw.json'), 'w'))
+            json.dump(fl, open(os.path.join(OUT, 'flowers.json'), 'w'))
+            if getattr(course, 'SPECIMENS', None):   # hand-placed plants of their own kinds (Magnolia Lane, the Big Oak, dogwoods, redbuds, hollies): they replace the lidar trees where they stand
+                course._WET = list(water) + list(creek)   # (pines.specimens keeps plants out of the water)
+                for z in course.SPECIMENS:
+                    z['_greens'] = [f['poly'] for f in F['green']]
+                sp, clr = pines.specimens(holes, sa, mown)
+                from scipy.spatial import cKDTree
+                kd = cKDTree([(e, n) for e, n, _ in clr])
+                gone = {i for i, t in enumerate(trees) if any(r >= math.hypot(t['e'] - clr[j][0], t['n'] - clr[j][1]) for j in kd.query_ball_point((t['e'], t['n']), 20) for r in [clr[j][2]])}
+                trees = [t for i, t in enumerate(trees) if i not in gone] + sp
+                tq = []
+                for t in trees:
+                    tq += [int(round(t['e'] * 10)), int(round(t['n'] * 10)), int(round(t['d'] * 10)), t['kind'] * 1000 + min(999, int(round(t['h'] * 10)))]
+                json.dump(sp, open(os.path.join(OUT, 'specimens.json'), 'w'))
+                print(f'specimens: {len(sp)} placed, {len(gone)} lidar trees under them taken out')
     rd = dict(
         name=NAME, origin=list(ORIGIN), dem=dem, holes=holes,
         feat=dict(fair=enc_polys(fair), green=enc_polys([f['poly'] for f in F['green']]), tee=enc_polys([f['poly'] for f in F['tee']]),
@@ -1027,7 +1056,7 @@ def main():
         boundary=enc_polys([bound]),
         clumps=b64i16([int(round(v * 10)) for c in clumps for v in c]) if clumps else '', drains=enc_polys(drains) if drains else '',   # grass clumps [e, n, scale] in decimetres / tenths, drainage hazards
         fence=[enc_lines([g]) for g in fence],   # split-rail fence along the lots (course.HOUSE_LOTS), one encoded line each
-        buildings=enc_polys(clip([f['poly'] for f in F['building']])),
+        buildings=enc_polys(clip([f['poly'] for f in F['building'] if not any(f['tags'].get(k) == v for k, v in getattr(course, 'BUILDINGS_SKIP', {}).items())])),   # course.BUILDINGS_SKIP: tags of buildings left out (Augusta: the tournament's TV towers, man_made=tower)
         # the lidar trees cover the whole detail area: OSM woods only count beyond it
         cover=enc_polys([area] if trees else []),
         streams=enc_lines(clip_lines([f['line'] for f in F['stream']], box(*DETAIL))),   # clipped: a stream may run on for km (Stonehenge's Flint Creek)
@@ -1038,6 +1067,9 @@ def main():
         # tee marker colours: w is the tee played, y/b/r the other sets (course.MARKERS)
         mkc={m: c for m, (_, c) in card.MARKERS.items()},
     )
+    for k, v in (('straw', straw), ('flowers', flowers), ('bridges', sbridges)):   # only on a course that has them (pines.py)
+        if v:
+            rd[k] = v
     js = f'const {RD_VAR} = ' + json.dumps(rd, separators=(',', ':')) + ';\n'
     js += f'const {ALTI_VAR} = {{' + ','.join(f'{i}:' + json.dumps(a, separators=(',', ':')).replace('"', '') for i, a in alti.items()) + '};\n'
     open(RD_JS, 'w').write(js)

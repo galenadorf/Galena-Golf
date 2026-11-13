@@ -74,7 +74,7 @@ input{-webkit-user-select:text;user-select:text;touch-action:manipulation}
 .pb-n{font:600 9.5px/1.1 var(--cond);letter-spacing:.11em;text-transform:uppercase;color:var(--w2);max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pb-s{font:700 18px/1.05 var(--cond);font-variant-numeric:tabular-nums;white-space:nowrap}
 .hl2 .lie{font:600 9px var(--cond);letter-spacing:.12em;padding:2px 6px;border-radius:999px;background:rgba(40,110,48,.5);border:1px solid rgba(255,255,255,.28);color:#fff;text-shadow:none}
-.hl2 .lie[data-s="7"]{background:rgba(196,160,90,.62)}.hl2 .lie[data-s="6"],.hl2 .lie[data-s="5"]{background:rgba(96,186,90,.55)}.hl2 .lie[data-s="1"],.hl2 .lie[data-s="2"]{background:rgba(70,150,64,.55)}
+.hl2 .lie[data-s="7"]{background:rgba(196,160,90,.62)}.hl2 .lie[data-s="10"]{background:rgba(150,92,52,.66)}.hl2 .lie[data-s="6"],.hl2 .lie[data-s="5"]{background:rgba(96,186,90,.55)}.hl2 .lie[data-s="1"],.hl2 .lie[data-s="2"]{background:rgba(70,150,64,.55)}
 /* player button: name + running total, opens the menu */
 #readout{position:absolute;left:50%;top:calc(var(--st) + 76px);transform:translate(-50%,-8px) scale(.97);opacity:0;transition:opacity .2s,transform .35s var(--spring);width:max-content;max-width:calc(100% - 24px);padding:7px 15px 8px;text-align:center}
 #readout.on{opacity:1;transform:translate(-50%,0) scale(1)}
@@ -655,7 +655,7 @@ const CUP_RIM = CUP_VIS_R,
   PIN_HIT = .0175 + VIS_R * .95; // stick radius (PIN_R) + ball radius
 const PIN_H = 2.3;
 
-const S = { TEE: 0, FAIR: 1, FIRST: 2, ROUGH: 3, DEEP: 4, FRINGE: 5, GREEN: 6, SAND: 7, WATER: 8, PATH: 9 };
+const S = { TEE: 0, FAIR: 1, FIRST: 2, ROUGH: 3, DEEP: 4, FRINGE: 5, GREEN: 6, SAND: 7, WATER: 8, PATH: 9, STRAW: 10 };
 const SURF = [];
 SURF[S.TEE] = { name: 'Tee', k: .012, e: .34, keep: .74, spinStop: 13000, mu: .12, lie: { speed: 1, spin: 1, launch: 0, wig: 1 } };
 SURF[S.FAIR] = { name: 'Fairway', k: .012, e: .34, keep: .74, spinStop: 13000, mu: .12, lie: { speed: 1, spin: 1, launch: 0, wig: 1 } };
@@ -668,6 +668,10 @@ SURF[S.FRINGE] = { name: 'Fringe', k: .006, e: .30, keep: .62, spinStop: 11500, 
 SURF[S.GREEN] = { name: 'Green', k: 0, e: .30, keep: .62, spinStop: 10500, mu: .056, lie: { speed: 1, spin: 1, launch: 0, wig: 1 } };
 SURF[S.SAND] = { name: 'Bunker', k: .12, e: .04, keep: .12, spinStop: 30000, mu: 1.4, lie: { speed: .64, spin: .7, launch: 2, wig: 1.25 } };
 SURF[S.WATER] = { name: 'Water', k: 0, e: 0, keep: 0, spinStop: 1, mu: 9, lie: { speed: .5, spin: .5, launch: 0, wig: 1.5 } };
+// pine straw (Augusta: the floor under the pines, course data `straw`): a dead landing and a short roll (the needles soak up the ball's pace, between rough and
+// deep rough), and from it a ball that sits up on loose needles: little spin (needles between the face and the ball), a less steady stance (more wobble) and a
+// less sure strike, so the distance varies more than from rough, but no grass grabs the club, so it does not come up short the way deep rough does
+SURF[S.STRAW] = { name: 'Pine straw', k: .06, e: .15, keep: .36, spinStop: 34000, mu: .48, lie: { speed: .95, spin: .55, launch: 1.2, wig: 1.3, dist: [.74, 1.04] } };
 SURF[S.PATH] = { name: 'Cart path', hard: true, k: .004, e: .8, keep: .86, spinStop: 30000, mu: .05, lie: { speed: .95, spin: .9, launch: 0, wig: 1.1 } };
 
 /* ---------- weather ---------- */
@@ -680,7 +684,7 @@ const WEATHERS = [
   { id: 'damp', name: 'Damp', note: 'Soft ground, slower greens', mu: 1.4, k: 1.2, keep: .84, e: .86 },
   { id: 'rain', name: 'Rain', note: 'Wet ground, slow greens, ball plugs', mu: 1.9, k: 1.4, keep: .68, e: .68 }
 ];
-const WX_GROUND = [S.TEE, S.FAIR, S.FIRST, S.ROUGH, S.DEEP, S.FRINGE, S.GREEN, S.SAND];
+const WX_GROUND = [S.TEE, S.FAIR, S.FIRST, S.ROUGH, S.DEEP, S.FRINGE, S.GREEN, S.SAND, S.STRAW];
 let WX = WEATHERS[1], SURF_WX = SURF;   // SURF_WX: the surfaces as the weather in play leaves them (simulateShot reads these)
 function setWeather(w) {
   WX = w;
@@ -1175,7 +1179,7 @@ function clubTables() {
     // rough lies: carry with the lie's launch and spin at full and 80 % ball speed, against the fairway carry, for
     // swings of a quarter, half, three quarters and full length
     c.lieCal = {};
-    for (const sf of [S.ROUGH, S.DEEP]) {
+    for (const sf of [S.ROUGH, S.DEEP, S.STRAW]) {
       const lie = SURF[sf].lie; c.lieCal[sf] = [];
       for (const pp of [.25, .5, .75, 1]) {
         const v0 = c.ballSpeed * Math.pow(pp, POW_EXP), w0 = c.spin * spinFrac(pp), cf = flatCarry(v0, clubLaunch(c, pp), w0);
@@ -1241,7 +1245,7 @@ const DISC_LAUNCH = 12, DISC_NOSE = 6, DISC_PUTT_LAUNCH = 5, DISC_PUTT_NOSE = 4,
 const BASKET_K = 1.3, BASKET_R = .3 * BASKET_K, BASKET_LO = .58 * BASKET_K, BASKET_HI = 1.36 * BASKET_K, BASKET_CAGE = BASKET_R + .1, DISC_CATCH_V = 16;
 const DISC_DROP = 1;   // PALS Rules on a disc course: a disc at rest within 1 m (3 ft) of the basket is a drop-in (one more throw, in)
 // how a disc meets the ground: the share of its speed it skips on with, and how hard it then slides to a stop (m/s^2)
-const DISC_GROUND = { [S.TEE]: [.45, 5], [S.FAIR]: [.45, 5], [S.FIRST]: [.35, 6.5], [S.ROUGH]: [.25, 8], [S.DEEP]: [.1, 14], [S.FRINGE]: [.45, 5], [S.GREEN]: [.45, 5], [S.SAND]: [0, 30], [S.PATH]: [.6, 3.5] };
+const DISC_GROUND = { [S.TEE]: [.45, 5], [S.FAIR]: [.45, 5], [S.FIRST]: [.35, 6.5], [S.ROUGH]: [.25, 8], [S.DEEP]: [.1, 14], [S.STRAW]: [.15, 11], [S.FRINGE]: [.45, 5], [S.GREEN]: [.45, 5], [S.SAND]: [0, 30], [S.PATH]: [.6, 3.5] };
 // a soft throw (a putt, an approach) is released flatter than a drive, so it comes in at basket height instead of sailing over it
 function discRelease(p) { const u = smooth(.2, .75, p); return { launch: lerp(DISC_PUTT_LAUNCH, DISC_LAUNCH, u), nose: lerp(DISC_PUTT_NOSE, DISC_NOSE, u) }; }
 let BAG_DISC = false, BALL_LIFT = VIS_R;   // BALL_LIFT: how far the drawn ball's (or disc's) centre sits above the ground, per unit of its drawn scale
@@ -1656,6 +1660,7 @@ function realPrep() {
   for (const [kd, big, small] of [[0, 'oak', 'maple'], [2, 'pine', 'spruce']]) {
     const L = GC.trees.concat(GC.fill).filter(t => t.kind === kd), ds = L.map(t => t.d).sort((a, b) => a - b), md = ds[ds.length >> 1];
     let nb = 0; for (const t of L) { t.sp = t.d > md ? big : t.d < md ? small : (nb++ & 1 ? big : small); }
+    if (kd === 2 && RDC.conifer) for (const t of L) t.sp = RDC.conifer;   // engine.conifer: every conifer one species (Augusta: 'pine', the loblollies; no blue spruces)
   }
   GC.ready = true; return GC;
 }
@@ -2004,6 +2009,8 @@ function makeRealCourse(idx, pin) {
   const FR_W = fringeW(), [FC_F, FC_T, FC_G, FC_X] = firstCutW(FR_W);   // first cut beside a fairway / a tee box / a green (firstCutW); the fringe round a green (fringeW)
   const fF = F.fair, fG = F.green, fT = F.tee, fS = F.sand, fP = F.path, fW = F.water, fR = F.range;
   const fCk = F.creek; // creeks (Augusta's Rae's Creek, Woodbine's creek) are penalty areas like the ponds
+  const SM = GC.straw; // pine straw (course data `straw`, the 2 m class grid): it takes the place of rough and deep rough where it lies
+  const onStraw = (X, Z) => { const i = Math.floor((enuE(X, Z) - GR.e0) / GR.res), j = Math.floor((enuN(X, Z) - GR.n0) / GR.res); return i >= 0 && j >= 0 && i < GR.W && j < GR.H && SM[j * GR.W + i] === 1; };
   function surfInfo(X, Z, hh) {
     info.stripe = 0; info.water = -1; info.waste = false;
     const u = (X - x0) / res, v = (Z - z0) / res;
@@ -2029,6 +2036,7 @@ function makeRealCourse(idx, pin) {
     const df = at(fF);
     if (df < 0) { info.surf = S.FAIR; info.stripe = Math.sin(Math.PI * -Z / 12) > 0 ? 1 : 0; info.fwAlong = -Z; return info; }
     if ((df < FC_F && dg >= FC_X) || dg < FC_G || dt < FC_T || at(fR) < 0) { info.surf = S.FIRST; return info; }
+    if (SM && onStraw(X, Z)) { info.surf = S.STRAW; return info; }
     if (at(deepF) > 0) { info.surf = S.DEEP; return info; }
     info.surf = S.ROUGH; return info;
   }
@@ -2375,6 +2383,27 @@ function farKeep(d) {
   const F = FAR_THIN;
   return d <= F.from ? 1 : d <= F.at ? lerp(1, F.mid, (d - F.from) / (F.at - F.from)) : lerp(F.mid, F.min, clamp((d - F.at) / (F.to - F.at), 0, 1));
 }
+// trees in flower for Masters week (Augusta's hand-placed plants): 5 white dogwood (creamy white bracts), 9 pink dogwood (pink bracts), 10 eastern redbud
+// (reddish pink), 11 flowering crab apple (pink and white)
+const BLOOM_COLS = { 5: [0xfbfaf6, 0xf6f5f0, 0xfdfdfb], 9: [0xee94c6, 0xe582ba, 0xf4acd4], 10: [0xc4529a, 0xcf62a6, 0xb8468e], 11: [0xf4b6cf, 0xfbeef3, 0xeb9cbd] }, _bloomC = new THREE.Color();
+// Augusta's namesake plants as they stand in Masters week (kinds 16-26, hand-placed: pines.SPECIMENS). shape, leaf colours, bloom colours and the share of
+// lobes in bloom, crown radius range (m), default height (m), trunk share of the height. What is in flower follows the published bloom times
+// (outdoordreamsva.com, harborclub.com, GOLF.com, NBC): the Carolina cherry and the firethorn in flower; the golden bell and the flowering peach at the end of
+// theirs; the tea olive, the camellias (they bloom well before the Masters), the nandina (it flowers in May) and the evergreens in leaf; the Chinese fir with
+// the dry dead foliage it keeps for years; the pampas green with a few of last year's faded plumes (its plumes come in August and last into spring)
+const NAMESAKE_LOOK = {
+  16: { shape: 'dome', leaf: [0x3f5a32, 0x46613a, 0x3a5530], bloom: null, share: 0, r: [1.2, 3], h: 5, trunk: .2 },                                // tea olive (1)
+  17: { shape: 'dome', leaf: [0x7aa35a, 0x86ad62, 0x6f9952], bloom: [0xf2a8c0, 0xf6bccd], share: .25, r: [1.4, 3.2], h: 5, trunk: .3 },             // flowering peach (3)
+  18: { shape: 'cone', leaf: [0x34503a, 0x3b5840, 0x2f4a35], bloom: null, share: 0, r: [1, 2.6], h: 10, trunk: .05 },                             // juniper, eastern red cedar (6)
+  19: { shape: 'fountain', leaf: [0x8a9c5a, 0x7d904f, 0x95a565], bloom: [0xd9cfae, 0xcfc4a0], share: 1, r: [.9, 1.8], h: 2.2, trunk: 0 },        // pampas grass (7)
+  20: { shape: 'mound', leaf: [0x4d6b34, 0x56743b], bloom: [0xf2d23a, 0xf5dc55], share: .35, r: [1, 2.2], h: 1.6, trunk: 0 },                    // Carolina yellow jasmine (8)
+  21: { shape: 'dome', leaf: [0x2f4d2a, 0x36552f], bloom: [0xf3efd9, 0xf7f3e3], share: .5, r: [1.4, 3.2], h: 7, trunk: .3 },                      // Carolina cherry laurel (9)
+  22: { shape: 'dome', leaf: [0x2a4526, 0x2f4b2a, 0x284224], bloom: null, share: 0, r: [1, 2.4], h: 4, trunk: .08 },                              // camellia (10)
+  23: { shape: 'mound', leaf: [0x78a04a, 0x82a852], bloom: [0xf0cf2e, 0xf5d84a], share: .5, r: [1, 2], h: 2, trunk: 0 },                          // golden bell, weeping forsythia (12)
+  24: { shape: 'cone', leaf: [0x4f7a3a, 0x56813f], bloom: [0x8a6a3e, 0x7d5f37], share: .3, r: [1.6, 3.4], h: 14, trunk: .12 },                   // Chinese fir (14), the brown is old foliage
+  25: { shape: 'mound', leaf: [0x3d5a30, 0x44613a], bloom: [0xf4efdc, 0xf8f4e6], share: .6, r: [1, 2], h: 2.4, trunk: 0 },                        // firethorn (15)
+  26: { shape: 'mound', leaf: [0x5b6e34, 0x6e5a30, 0x64663a], bloom: null, share: 0, r: [.6, 1.2], h: 1.8, trunk: 0 },                           // nandina, heavenly bamboo (17), bronze-red new growth
+};
 function buildRealTrees(C, grp) {
   const I = C.inner, all = [];
   const dOut = (X, Z) => Math.hypot(Math.max(I.minX - X, 0, X - I.maxX), Math.max(I.minZ - Z, 0, Z - I.maxZ));
@@ -2461,9 +2490,83 @@ function buildRealTrees(C, grp) {
       if (refs) occ.push({ x: t.X, z: t.Z, y0: y, y1: y + Ht, r: Rh * 1.05, refs, hid: false });
       return;
     }
+    if (t.kind === 12 || t.kind === 13) {
+      // hand-placed evergreens (pines.SPECIMENS): 12 a Southern magnolia (Magnolia Lane: dense, dark glossy leaves, branched almost to the ground, a broad
+      // pointed dome); 13 an American holly (a narrow dark cone, a few red berries still on it in April)
+      const mag = t.kind === 12, Ht = clamp(t.H > 0 ? t.H : mag ? 16 : 9, 4, 26), R = clamp(t.d / 2, 1.4, mag ? 8 : 3.5), th = mag ? 1.2 : .6;
+      col.setHex(mag ? [0x2c4a2a, 0x30502d, 0x284526][(hv * 3) | 0] : [0x2f4a2c, 0x34502f, 0x2b4529][(hv * 3) | 0]);
+      put(tr, t.X, y - .2, t.Z, mag ? .5 : .3, th + 1, mag ? .5 : .3, tcol, ry);
+      if (mag) {
+        put(bl, t.X, y + th + .38 * (Ht - th), t.Z, R, .42 * (Ht - th), R, col, ry);
+        put(co, t.X, y + th + .3 * (Ht - th), t.Z, .82 * R, .72 * (Ht - th), .82 * R, col.clone().offsetHSL(0, .02, .03), ry + .4);
+      } else put(co, t.X, y + th, t.Z, R, Ht - th, R, col, ry);
+      if (!mag && t.near) for (let k = 0; k < 7; k++) { const a = ry + k * 2.4, u = .25 + .55 * hash2(i, k, 3), rr = R * (1 - u) * 1.02; put(bl, t.X + Math.cos(a) * rr, y + th + u * (Ht - th), t.Z + Math.sin(a) * rr, .11, .11, .11, col.clone().setHex(0xb3201f), 0); }
+      can(t.X, y + th + .4 * (Ht - th), t.Z, .95 * R, ((.95 * R) / (.5 * (Ht - th))) ** 2, i); trunk(t.X, t.Z, y + th + 1, i, .08);
+      plan.push({ x: t.X, z: t.Z, r: R, col: col.getHex(), far: !t.near });
+      if (refs) occ.push({ x: t.X, z: t.Z, y0: y, y1: y + Ht, r: R * 1.05, refs, hid: false });
+      return;
+    }
+    if (t.kind >= 16 && t.kind <= 26) {
+      // Augusta's namesake plants (pines.SPECIMENS, as they stand in Masters week; NAMESAKE_LOOK): a dome, cone, low mound or fountain of blades, leaf
+      // coloured, with lobes of bloom (or, on the Chinese fir, the old dead foliage it keeps) on a share of them
+      const L = NAMESAKE_LOOK[t.kind], R = clamp(t.d / 2, L.r[0], L.r[1]), Ht = clamp(t.H > 0 ? t.H : L.h, 1, 20), pick = (A, k) => A[(hash2(i, k, 31) * A.length) | 0];
+      col.setHex(pick(L.leaf, 0));
+      const lobe = (x, y2, z, sx, sy, k) => put(bl, x, y2, z, sx, sy, sx, _bloomC.setHex(L.bloom && hash2(i, k, 37) < L.share ? pick(L.bloom, k + 1) : pick(L.leaf, k + 2)), ry + k);
+      let top = y + Ht, cyy = y + Ht / 2;
+      if (L.shape === 'dome') {
+        const th = L.trunk * Ht, cy = y + th + .5 * (Ht - th);
+        put(tr, t.X, y - .2, t.Z, .25 + .03 * R, th + .4, .25 + .03 * R, tcol, ry);
+        put(bl, t.X, cy, t.Z, R, .5 * (Ht - th), R, col, ry);
+        for (let k = 0; k < (t.near ? 5 : 2); k++) { const a = ry + k * 1.26, o = .5 * R; lobe(t.X + Math.cos(a) * o, cy + (k % 2 ? .22 : -.05) * (Ht - th), t.Z + Math.sin(a) * o, .52 * R, .3 * (Ht - th), k); }
+        cyy = cy; can(t.X, cy, t.Z, .95 * R, ((.95 * R) / (.5 * (Ht - th))) ** 2, i); trunk(t.X, t.Z, cy, i, (.12 + .02 * R) ** 2);
+      } else if (L.shape === 'cone') {
+        const th = L.trunk * Ht;
+        put(tr, t.X, y - .2, t.Z, .3, th + 1, .3, tcol, ry);
+        put(co, t.X, y + th, t.Z, R, Ht - th, R, col, ry);
+        if (t.near && L.bloom) for (let k = 0; k < 6; k++) { const u = .15 + .6 * hash2(i, k, 41), a = ry + k * 2.2, rr = R * (1 - u) * .95; lobe(t.X + Math.cos(a) * rr, y + th + u * (Ht - th), t.Z + Math.sin(a) * rr, .3 * R * (1 - u) + .3, .18 * (Ht - th), k); }
+        cyy = y + th + .35 * (Ht - th); can(t.X, cyy, t.Z, .9 * R, ((.9 * R) / (.45 * (Ht - th))) ** 2, i); trunk(t.X, t.Z, y + th + 1, i, .05);
+      } else if (L.shape === 'mound') {
+        put(bl, t.X, y + .3 * Ht, t.Z, R, .7 * Ht, R, col, ry);
+        for (let k = 0; k < (t.near ? 5 : 2); k++) { const a = ry + k * 1.26, o = .45 * R; lobe(t.X + Math.cos(a) * o, y + (.35 + .2 * (k % 2)) * Ht, t.Z + Math.sin(a) * o, .55 * R, .45 * Ht, k); }
+        cyy = y + .4 * Ht; can(t.X, cyy, t.Z, .95 * R, ((.95 * R) / (.6 * Ht)) ** 2, i);
+      } else {   // fountain: pampas grass, a clump of upright blade cones, splayed by standing them in a ring, and a few faded plumes
+        put(co, t.X, y - .1, t.Z, .7 * R, Ht, .7 * R, col, ry);
+        for (let k = 0; k < (t.near ? 6 : 3); k++) { const a = ry + k * TAU / 6, o = .45 * R; put(co, t.X + Math.cos(a) * o, y - .1, t.Z + Math.sin(a) * o, .38 * R, .8 * Ht, .38 * R, _bloomC.setHex(pick(L.leaf, k + 2)), a); }
+        if (t.near && L.bloom) for (let k = 0; k < 3; k++) { const a = ry + k * 2.1, o = .25 * R; put(bl, t.X + Math.cos(a) * o, y + 1.05 * Ht, t.Z + Math.sin(a) * o, .12 * R, .22 * Ht, .12 * R, _bloomC.setHex(pick(L.bloom, k)), a); }
+        top = y + 1.25 * Ht; cyy = y + .5 * Ht; can(t.X, cyy, t.Z, .8 * R, ((.8 * R) / (.6 * Ht)) ** 2, i);
+      }
+      plan.push({ x: t.X, z: t.Z, r: R, col: col.getHex(), far: !t.near });
+      if (refs) occ.push({ x: t.X, z: t.Z, y0: y, y1: top, r: R * 1.05, refs, hid: false });
+      return;
+    }
+    if (t.kind === 15) {
+      // the club's one palm, right of the 4th green: a cabbage palmetto, a slim straight grey trunk and a round head of drooping fan fronds
+      const Ht = clamp(t.H > 0 ? t.H : 9, 5, 15), R = clamp(t.d / 2, 1.5, 3), top = y + Ht - .6;
+      col.setHex(0x52703a);
+      put(tr, t.X, y - .2, t.Z, .32, Ht - .3, .32, col.clone().setHex(0x8a8172), ry);
+      put(bl, t.X, top + .2, t.Z, .7, .55, .7, col, ry);
+      for (let k = 0; k < 8; k++) { const a = ry + k * TAU / 8, o = .62 * R; put(bl, t.X + Math.cos(a) * o, top - .25 * (k % 2 ? .8 : .4), t.Z + Math.sin(a) * o, .55 * R, .16 * R, .3 * R, col.clone().offsetHSL(0, 0, (k % 3 - 1) * .03), -a); }
+      can(t.X, top, t.Z, R, 2.5, i); trunk(t.X, t.Z, top, i, .04);
+      plan.push({ x: t.X, z: t.Z, r: R, col: col.getHex(), far: !t.near });
+      if (refs) occ.push({ x: t.X, z: t.Z, y0: y, y1: top + 1, r: R, refs, hid: false });
+      return;
+    }
+    if (t.kind === 14) {
+      // the Big Oak behind the clubhouse (planted in the late 1850s): a short massive trunk and a low crown spreading far wider than it is tall
+      const R = clamp(t.d / 2, 8, 20), Ht = clamp(t.H > 0 ? t.H : 20, 12, 28), th = .3 * Ht, cy = y + th + .3 * (Ht - th);
+      col.setHex(0x3a5a30);
+      put(tr, t.X, y - .2, t.Z, 2.4, th + 3, 2.4, tcol, ry);
+      for (let k = 0; k < 4; k++) { const a = ry + k * TAU / 4; put(tr, t.X + Math.cos(a) * .25 * R, y + th - 1, t.Z + Math.sin(a) * .25 * R, 1.1, .5 * R, 1.1, tcol, a); }   // the great limbs
+      put(bl, t.X, cy + .1 * Ht, t.Z, .62 * R, .32 * (Ht - th), .62 * R, col.clone().offsetHSL(0, 0, .03), ry);
+      for (let k = 0; k < 6; k++) { const a = ry + k * TAU / 6 + .3 * hash2(i, k, 5), o = (.5 + .12 * hash2(i, k, 8)) * R; put(bl, t.X + Math.cos(a) * o, cy - .05 * Ht * hash2(i, k, 2), t.Z + Math.sin(a) * o, .48 * R, .26 * (Ht - th), .48 * R, col.clone().offsetHSL(0, 0, (hash2(i, k, 4) - .5) * .05), a); }
+      can(t.X, cy, t.Z, .98 * R, ((.98 * R) / (.4 * (Ht - th))) ** 2, i); trunk(t.X, t.Z, cy, i, 1.2 * 1.2);
+      plan.push({ x: t.X, z: t.Z, r: R, col: col.getHex(), far: !t.near });
+      if (refs) occ.push({ x: t.X, z: t.Z, y0: y, y1: y + Ht, r: R, refs, hid: false });
+      return;
+    }
     let R, Ht, th;
     if (t.kind === 1) { R = clamp(t.d / 2, .9, 2.3); Ht = 2.2 * R + 1.2; th = .7; }
-    else if (t.kind === 3 || t.kind === 5) { R = clamp(t.d / 2, 1.8, 2.8); Ht = 2.1 * R + 1.6; th = 1.5; }
+    else if (t.kind === 3 || t.kind === 5 || t.kind === 9 || t.kind === 10 || t.kind === 11) { R = clamp(t.d / 2, 1.8, 2.8); Ht = 2.1 * R + 1.6; th = 1.5; }
     else { R = clamp(t.d / 2, 1.6, 10.5); Ht = clamp(t.own && t.H > 0 ? t.H : t.d * 1.05 + 3.2, 6, 30); th = Math.max(1.8, Ht - 1.8 * R); }   // (t.own: a hand-sized tree keeps its height)
     if (!t.fill) {
       // the club keeps its trees pruned back from tees and greens: crowns overhang a tee by a metre at most, a green by two
@@ -2474,10 +2577,12 @@ function buildRealTrees(C, grp) {
     }
     let Rh = R * ((TREE_TWEAK[t.id] || {}).slim || 1);
     if (t.sp === 'oak') Rh *= 1.1; else if (t.sp === 'maple') Rh *= .94; // oaks broad and heavy, maples compact and rounded
-    col.setHex(t.kind === 5 ? [0x55813f, 0x4d7a3c, 0x5e8a46][(hv * 3) | 0] : t.kind === 3 ? [0x7fb35e, 0x88bb62, 0x76aa58][(hv * 3) | 0] : hv < .78 ? REAL_TREE_COLS[(hv / .78 * REAL_TREE_COLS.length) | 0] : LEAF_COLS[((hv - .78) / .22 * LEAF_COLS.length) | 0]);
+    col.setHex(t.kind === 5 || t.kind === 9 || t.kind === 10 || t.kind === 11 ? [0x55813f, 0x4d7a3c, 0x5e8a46][(hv * 3) | 0] : t.kind === 3 ? [0x7fb35e, 0x88bb62, 0x76aa58][(hv * 3) | 0] : hv < .78 ? REAL_TREE_COLS[(hv / .78 * REAL_TREE_COLS.length) | 0] : LEAF_COLS[((hv - .78) / .22 * LEAF_COLS.length) | 0]);
     if (t.sp === 'oak') col.offsetHSL(-.01, -.03, -.05); else if (t.sp === 'maple') col.offsetHSL(.012, .06, .04); // oak: deeper green; maple: livelier, a touch yellower
     if (RDC.dry) col.offsetHSL(-.032, -.07, .03); // links: duller, slightly yellower foliage
-    else if (RDC.lush && t.kind !== 5) col.offsetHSL(.012, -.02, -.07); // Augusta: deep southern greens (oaks, magnolias)
+    else if (RDC.lush && t.kind !== 5 && t.kind !== 9 && t.kind !== 10 && t.kind !== 11) col.offsetHSL(.012, -.02, -.07); // Augusta: deep southern greens (oaks, magnolias)
+    const BL = BLOOM_COLS[t.kind], lf = BL ? col.clone() : null;   // a tree in flower: the whole crown takes the bloom's colour, the new leaves showing through
+    if (BL) col.setHex(BL[(hv * 3) | 0]);
     const ts = t.kind ? .55 : .75 + R * .09, cy = y + th + .9 * R;
     put(tr, t.X, y - .2, t.Z, ts, th + .5 + .4 * R, ts, tcol, ry);
     put(bl, t.X, cy, t.Z, Rh, .9 * R, Rh, col, ry);
@@ -2487,9 +2592,14 @@ function buildRealTrees(C, grp) {
       put(bl, t.X + Math.cos(a) * o, cy + .28 * R, t.Z + Math.sin(a) * o, .62 * Rh, .55 * R, .62 * Rh, col.clone().offsetHSL(0, 0, .04), ry + .7);
       put(bl, t.X - Math.cos(a + .6) * o, cy + .12 * R, t.Z - Math.sin(a + .6) * o, .58 * Rh, .52 * R, .58 * Rh, col.clone().offsetHSL(.01, 0, -.02), ry + 1.5);
     }
-    if (t.kind === 5) {
-      // dogwood in flower: creamy white bracts over the leaves
-      for (let k = 0; k < 3; k++) { const a = ry + k * 2.1, o = .42 * Rh; put(bl, t.X + Math.cos(a) * o, cy + (.15 + .12 * k) * R, t.Z + Math.sin(a) * o, .58 * Rh, .4 * R, .58 * Rh, col.clone().setHex([0xf4efe4, 0xf1e3e6, 0xf7f2ea][k]), ry + k); }
+    if (t.kind === 5 || t.kind === 9 || t.kind === 10 || t.kind === 11) {
+      // in flower for Masters week, the bloom over most of the crown with the new leaves showing through: 5 white dogwood (creamy white bracts),
+      // 9 pink dogwood (pink bracts), 10 eastern redbud (reddish pink, all bloom: its leaves come after), 11 flowering crab apple (pink and white clusters)
+      for (let k = 0; k < (t.near ? 6 : 3); k++) {   // lobes of bloom; on the dogwoods and the crab apple one in three is a tuft of new leaves showing through
+        const a = ry + k * 1.13, up = (k % 3) / 3, leafy = t.kind !== 10 && k % 3 === 2, o = (leafy ? .45 : .52 + .14 * (k & 1)) * Rh, sc = leafy ? .38 : .5;
+        put(bl, t.X + Math.cos(a) * o, cy + (-.05 + .35 * up) * R, t.Z + Math.sin(a) * o, sc * Rh, sc * .7 * R, sc * Rh, leafy ? lf : _bloomC.setHex(BL[k % 3]), ry + k);
+      }
+      put(bl, t.X, cy + .32 * R, t.Z, .64 * Rh, .4 * R, .64 * Rh, _bloomC.setHex(BL[1]), ry);   // the top of the crown
     }
     can(t.X, cy, t.Z, .98 * Rh, 1.2, i); trunk(t.X, t.Z, cy - .4 * R, i, (.22 + .04 * R) ** 2);
     plan.push({ x: t.X, z: t.Z, r: Rh, col: col.getHex(), far: !t.near });
@@ -2589,7 +2699,7 @@ function realBuildings(C) {
     if (wu < 2 || dv < 2) return;
     let lo = 1e9, hi = -1e9; for (const q of pts) { const y = C.h(q[0], q[1]); lo = Math.min(lo, y); hi = Math.max(hi, y); }
     const big = best.area > 300, hgt = big ? 6.5 : best.area > 90 ? 4.6 : 3;
-    const o = { x: bx, z: bz, w: wu, d: dv, rot: best.a, lo, hi, h: hgt, big, i: bi, area: best.area };
+    const o = { x: bx, z: bz, w: wu, d: dv, rot: best.a, lo, hi, h: hgt, big, i: bi, area: best.area, pts, cx, cz };
     const HS = RDC.scene.houses, ch = RDC.scene.clubhouse;
     if (HS && best.area >= (HS.minArea || 100) && !(ch && best.area > ch.minArea)) {   // scene.houses: every building but the clubhouse, the ones listed in `keep` (cart barns) and the small ones (restrooms, pump houses, sheds: under minArea m2) is a house
       let ce = 0, cn = 0; for (let i = 0; i < r.length; i += 2) { ce += r[i]; cn += r[i + 1]; } ce /= r.length / 2; cn /= r.length / 2;
@@ -2686,14 +2796,14 @@ function buildRealDecor(C, grp) {
   const stake = (x, z, c) => { const mt = lambert(c), wh = c === 0xffffff; if (wh) mt.emissive.setHex(0xffffff); /* out-of-bounds posts: pure white even in the low golden light */ const m = new THREE.Mesh(new THREE.BoxGeometry(wh ? .13 : .1, wh ? 1.15 : 1, wh ? .13 : .1), mt); m.position.set(x, C.h(x, z) + (wh ? .575 : .5), z); m.castShadow = !wh; grp.add(m); };
   buildFence(C, grp);
   const nearFence = (x, z) => { const s = C._fence || []; for (let i = 0; i < s.length; i += 4) { const ax = s[i], az = s[i + 1], bx = s[i + 2] - ax, bz = s[i + 3] - az, t = clamp(((x - ax) * bx + (z - az) * bz) / (bx * bx + bz * bz || 1), 0, 1); if (Math.hypot(x - ax - bx * t, z - az - bz * t) < 3) return true; } return false; };   // (a stake is not set in the fence)
-  // white stakes along the course boundary (out of bounds)
-  const I = C.inner, bnd = C.bnd || GC.boundary, nb = bnd.length >> 1;
+  // white stakes along the course boundary (out of bounds); none on a course with scene.plain (Augusta: no stakes, posts or markers of the usual kind)
+  const I = C.inner, bnd = C.bnd || GC.boundary, nb = RDC.scene.plain ? 0 : bnd.length >> 1;
   for (let i = 0; i < nb; i++) {
     const a = C.loc(bnd[2 * i], bnd[2 * i + 1]), b = C.loc(bnd[2 * ((i + 1) % nb)], bnd[2 * ((i + 1) % nb) + 1]), L = Math.hypot(b[0] - a[0], b[1] - a[1]);
     for (let s = 0; s < L; s += 12) { const u = s / L, x = a[0] + (b[0] - a[0]) * u, z = -(a[1] + (b[1] - a[1]) * u); if (x > I.minX - 20 && x < I.maxX + 20 && z > I.minZ - 20 && z < I.maxZ + 20 && !nearFence(x, z)) stake(x, z, 0xffffff); }
   }
   // white stakes along the midline where the neighbouring hole's side is out of bounds
-  if (C.midOB) for (let s = 12; s < C.center.L; s += 12) {
+  if (C.midOB && !RDC.scene.plain) for (let s = 12; s < C.center.L; s += 12) {
     const f = fairHalfWidth2(C, s);
     for (const sg of [-1, 1]) for (let t = 6; t < 70; t += 1.5) {
       const x = f.p[0] + f.nx * t * sg, z = f.p[1] + f.nz * t * sg, en = C.enu(x, z);
@@ -2702,7 +2812,7 @@ function buildRealDecor(C, grp) {
   }
   // red stakes round the ponds (penalty areas)
   for (const p of C.ponds) {
-    if (p.creek) continue;
+    if (p.creek || RDC.scene.plain) continue;
     const ring = p.q.enu[0], n = ring.length >> 1; let cx = 0, cz = 0;
     const L = []; for (let i = 0; i < n; i++) { const q = C.loc(ring[2 * i], ring[2 * i + 1]); L.push([q[0], -q[1]]); cx += q[0]; cz -= q[1]; } cx /= n; cz /= n;
     let acc = 0;
@@ -2715,7 +2825,7 @@ function buildRealDecor(C, grp) {
   }
   // distance posts 200 / 150 / 100 m to the middle of the green, at the right edge of the fairway
   const gc = C.greenCenter, cols = { 200: 0x8fb8f0, 150: 0xffe08a, 100: 0xff9aa2 }; C.posts = [];
-  for (const D of [200, 150, 100]) {
+  for (const D of RDC.scene.plain ? [] : [200, 150, 100]) {
     for (let s = C.center.L; s >= 0; s -= 1) {
       const p = polyAt(C.center, s); if (Math.hypot(p[0] - gc.x, p[1] - gc.z) < D) continue;
       if (s < 20 || C.fieldAt(C.F.fair, p[0], p[1]) > 0) break;
@@ -2729,6 +2839,8 @@ function buildRealDecor(C, grp) {
   const props = [];
   def.props = props; buildProps(C, grp);
   realBuildingMeshes(C, grp);
+  if (RDC.scene.founders || RDC.scene.leaderboard) buildGroundsANGC(C, grp);
+  if (RDC.scene.dressing) buildDressingANGC(C, grp);
   realSiteMeshes(C, grp);
   realRanges(C, grp);
   // grass tufts in the deep rough
@@ -2772,7 +2884,7 @@ function buildRealDecor(C, grp) {
       for (let j = 0; j < hh && reeds.count < NR; j++) for (let i = 0; i < ww && reeds.count < NR; i++) {
         const v = sd[j * ww + i]; if (v < .5 || v > (p.creek ? 2.6 : 4.2) || r() > pr) continue;
         const x = FGr.x0 + (i + i0) * FGr.res + (r() - .5) * FGr.res, z = FGr.z0 + (j + j0) * FGr.res + (r() - .5) * FGr.res, su = C.surf(x, z);
-        if (su !== S.DEEP && su !== S.ROUGH && su !== S.FIRST) continue;
+        if (su !== S.DEEP && su !== S.ROUGH && su !== S.FIRST && su !== S.STRAW) continue;
         const hs = 1.5 + r() * 1.3, ws = 1.2 + r() * .9; Mr.makeRotationY(r() * TAU); Mr.scale(Sr.set(ws, hs, ws)); Mr.setPosition(x, Math.max(C.h(x, z), p.lv) - .05, z);
         reeds.setMatrixAt(reeds.count, Mr); cr.setHex(RC[(r() * RC.length) | 0]); reeds.setColorAt(reeds.count, cr); reeds.count++;
       }
@@ -2795,8 +2907,9 @@ function strawAt(C, X, Z) {
   const iu = u | 0, iv = v | 0, fu = u - iu, fv = v - iv, k = iv * GR.W + iu;
   return (SM[k] * (1 - fu) + SM[k + 1] * fu) * (1 - fv) + (SM[k + GR.W] * (1 - fu) + SM[k + GR.W + 1] * fu) * fv;
 }
-// azaleas in bloom along the edges of the pines: mounded clumps of pink, magenta, coral, white and pale pink, a little leaf showing through
-const AZALEA_COLS = [[0xe8679f, 0xf07aad, 0xdc5791], [0xc8287a, 0xb81f6c, 0xd13a86], [0xeb5560, 0xf06a63, 0xe0474f], [0xf8f2f4, 0xf1eaee, 0xfcf8f8], [0xf6b3cd, 0xf9c2d6, 0xf2a6c3]];
+// azaleas in bloom along the edges of the pines: mounded clumps, a little leaf showing through. The colours are the Southern Indica cultivars reported as
+// Augusta's common ones: 0 'Judge Solomon' (rose-salmon pink), 1 'Formosa' (magenta-violet), 2 'George L. Tabor' (pale orchid pink), 3 'Mrs. G. G. Gerbing' (white)
+const AZALEA_COLS = [[0xec7393, 0xf284a0, 0xe26586], [0xbf3a93, 0xae2f85, 0xcb4b9f], [0xf2c0db, 0xf7cfe4, 0xe9afce], [0xf8f2f4, 0xf1eaee, 0xfcf8f8]];
 // a large sawgrass / switchgrass clump (painted `clump` dots; course data `clumps`): 5 ft tall and 5 ft across at the top, blades fountaining from a tight base in straw and olive.
 // Scenery (the ball passes through); the ground under it is painted deep rough. One shared geometry, instanced, swaying a little in the wind.
 let CLUMP_GEO = null;
@@ -2976,7 +3089,7 @@ function spotBeside(C, x, z, side, back) {
   const dx = C.green.cx - x, dz = C.green.cz - z, dl = Math.hypot(dx, dz) || 1, fx = dx / dl, fz = dz / dl, px = -fz, pz = fx;
   for (const sg of [-1, 1]) for (const k of [1, 1.4, 1.8, .7]) {
     const X = x + px * side * sg * k - fx * back, Z = z + pz * side * sg * k - fz * back, s = C.surf(X, Z);
-    if ((s === S.ROUGH || s === S.FIRST || s === S.DEEP) && C.wl(X, Z) < C.h(X, Z) && !C.isOB(X, Z)) return [X, Z];
+    if ((s === S.ROUGH || s === S.FIRST || s === S.DEEP || s === S.STRAW) && C.wl(X, Z) < C.h(X, Z) && !C.isOB(X, Z)) return [X, Z];
   }
   return null;
 }
@@ -3449,6 +3562,384 @@ function buildClubhouseMN(C, grp, b, ch) {
     fl.position.set(cx, groundY(cx, cz) + 10.2, cz); fl.rotation.y = -1.2; fl.castShadow = false; grp.add(fl);
   }
 }
+/* --- Augusta National (scene.clubhouse.style 'augusta'). The clubhouse: the 1854 house built for Dennis Redmond and later the Berckmans' home, "one of the first
+   cement houses in the South", "pristinely white", with broad two-storey verandas all the way round both floors under a hipped roof, and on top the cupola
+   about 11 ft (3.4 m) square, the Crow's Nest (National Park Service; Golf Monthly; augusta.com). The front after a photograph of it from Founders Circle: a broad
+   hipped roof of warm grey shingles, two white chimneys with dark caps, the white cupola with two small windows a face between black shutters and a finial; tall
+   windows with black shutters on both floors, square white posts five bays across, a white balustrade along the upper veranda, French doors above the front door,
+   a green-and-white striped awning over it, hanging baskets of red flowers, and clipped boxwood domes along the front. It faces Founders Circle
+   (scene.clubhouse.front). The OSM outline holds the whole clubhouse with the wings added behind it since 1938: those are raised from the real footprint as
+   white two-storey blocks under a flat grey roof, and the house stands at the front of them. --- */
+function hipPart(parts, cx, cz, w, d, ey0, rise, col) {
+  const rl = Math.max(0, (w - d) / 2), V = [[cx - w / 2, ey0, cz - d / 2], [cx + w / 2, ey0, cz - d / 2], [cx + w / 2, ey0, cz + d / 2], [cx - w / 2, ey0, cz + d / 2], [cx - rl, ey0 + rise, cz], [cx + rl, ey0 + rise, cz]], pos = [];
+  for (const v of V) pos.push(v[0], v[1], v[2]);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex([3, 2, 5, 3, 5, 4, 1, 0, 4, 1, 4, 5, 0, 3, 4, 2, 1, 5]); parts.push({ g, c: col });
+}
+const ANGC_WHITE = 0xf5f3ee, ANGC_TRIM = 0xffffff, ANGC_ROOF = 0x55595e, ANGC_SHINGLE = ANGC_ROOF, ANGC_GLASS = 0x2e3a40, ANGC_SHUTTER = 0x1c1e1d;
+function buildClubhouseANGC(C, grp, b, ch) {
+  const parts = [], bx = (w, h, d, x, y, z, c, rx, ry, rz) => parts.push(lbx(w, h, d, x, y, z, c, rx, ry, rz));
+  // the wings: the real outline, extruded (world frame)
+  const P = b.pts, yb = b.lo - .8, Hw = 8.4, ytop = b.lo + Hw;
+  { const sh = new THREE.Shape(P.map(q => new THREE.Vector2(q[0], -q[1]))), eg = new THREE.ExtrudeGeometry(sh, { depth: ytop - yb, bevelEnabled: false }); eg.rotateX(-Math.PI / 2); eg.translate(0, yb, 0); parts.push({ g: eg, c: ANGC_WHITE });
+    const rg = new THREE.ShapeGeometry(sh); rg.rotateX(-Math.PI / 2); rg.translate(0, ytop + .02, 0); parts.push({ g: rg, c: ANGC_ROOF }); }
+  // the house: at the outline's edge nearest Founders Circle, facing it
+  const q = C.loc(ch.front[0], ch.front[1]), fx = q[0], fz = -q[1];
+  let e = P[0], dm = 1e9; for (let k = 0; k < P.length; k++) { const p0 = P[k], p1 = P[(k + 1) % P.length], ex = p1[0] - p0[0], ez = p1[1] - p0[1], L2 = ex * ex + ez * ez || 1, t = clamp(((fx - p0[0]) * ex + (fz - p0[1]) * ez) / L2, 0, 1), px = p0[0] + ex * t, pz = p0[1] + ez * t, d2 = (px - fx) ** 2 + (pz - fz) ** 2; if (d2 < dm) { dm = d2; e = [px, pz]; } }
+  const ux = fx - e[0], uz = fz - e[1], ul = Math.hypot(ux, uz) || 1, a = Math.atan2(ux / ul, uz / ul);   // the house's front (+z) looks toward the circle
+  const HW = 25, HD = 16, VR = 3.4, Fl = 4.3, Hh = 8.4, y0 = C.h(e[0] + ux / ul * 4, e[1] + uz / ul * 4) + .3, hp = [], hb = (w, h, d, x, y, z, c) => hp.push(lbx(w, h, d, x, y, z, c));
+  const zc = -HD / 2 + 2, zf = zc + HD / 2;   // (the house's back runs 6 m into the wings; zf: its front wall)
+  hb(HW, Hh + (y0 - yb), HD, 0, (yb + y0 + Hh) / 2, zc, ANGC_WHITE);
+  // windows: tall, six over six, dark glass in white frames with black louvred shutters either side, two floors, on the front and the sides
+  const winF = (x, fy, z) => { hb(1.5, 2.6, .1, x, y0 + fy + 1.65, z + .05, ANGC_TRIM); hb(1.25, 2.35, .12, x, y0 + fy + 1.65, z + .07, ANGC_GLASS); hb(.06, 2.35, .14, x, y0 + fy + 1.65, z + .08, ANGC_TRIM); for (const k of [-1, 0, 1]) hb(1.25, .05, .14, x, y0 + fy + 1.65 + k * .75, z + .08, ANGC_TRIM); for (const sx of [-1, 1]) hb(.62, 2.6, .08, x + sx * 1.1, y0 + fy + 1.65, z + .09, ANGC_SHUTTER); };
+  const winS = (sx, fy, z) => { hb(.1, 2.35, 1.25, sx * (HW / 2 + .05), y0 + fy + 1.65, z, ANGC_GLASS); for (const sz of [-1, 1]) hb(.08, 2.6, .62, sx * (HW / 2 + .09), y0 + fy + 1.65, z + sz * 1.1, ANGC_SHUTTER); };
+  for (const fy of [0, Fl]) {
+    for (const x of [-9.6, -5.2, 5.2, 9.6]) winF(x, fy, zf);
+    for (const sx of [-1, 1]) for (let z = zc - HD / 2 + 3; z <= zf - 2.5; z += 4.2) winS(sx, fy, z);
+  }
+  // the doors: the front door under the awning; above it the French doors onto the upper veranda, with a transom
+  hb(2.4, 2.9, .12, 0, y0 + 1.45, zf + .06, ANGC_TRIM); hb(2.0, 2.7, .14, 0, y0 + 1.4, zf + .08, 0x2a2a26);
+  hb(2.4, 3.2, .12, 0, y0 + Fl + 1.6, zf + .06, ANGC_TRIM); hb(2.0, 2.4, .14, 0, y0 + Fl + 1.35, zf + .08, ANGC_GLASS); hb(2.0, .45, .14, 0, y0 + Fl + 2.85, zf + .08, ANGC_GLASS); hb(.08, 2.4, .16, 0, y0 + Fl + 1.35, zf + .09, ANGC_TRIM);
+  // the verandas: two floors round the front and both sides, the floors and the white band between them; square white posts, five bays across the front
+  const OW = HW + 2 * VR, OZ0 = zc - HD / 2 + 1, OZ1 = zf + VR;
+  hb(OW, .2, VR, 0, y0 + .1, zf + VR / 2, 0xe9e6de);
+  for (const sx of [-1, 1]) hb(VR, .2, OZ1 - OZ0 - VR, sx * (HW / 2 + VR / 2), y0 + .1, (OZ0 + OZ1 - VR) / 2, 0xe9e6de);
+  hb(OW, .55, VR + .1, 0, y0 + Fl - .05, zf + VR / 2, ANGC_WHITE);   // the upper floor and the band under it
+  for (const sx of [-1, 1]) hb(VR + .1, .55, OZ1 - OZ0 - VR, sx * (HW / 2 + VR / 2), y0 + Fl - .05, (OZ0 + OZ1 - VR) / 2, ANGC_WHITE);
+  const post = (x, z) => hb(.5, Hh, .5, x, y0 + Hh / 2, z, ANGC_TRIM);
+  for (let k = 0; k <= 5; k++) post(-OW / 2 + .3 + k * (OW - .6) / 5, OZ1 - .3);
+  for (const sx of [-1, 1]) for (let z = OZ0 + .3; z < OZ1 - 1; z += (OZ1 - OZ0 - .6) / 3) post(sx * (OW / 2 - .3), z);
+  // the upper railing: a top rail, a bottom rail and close white balusters, front and sides
+  const rail = Fl + 1.0;
+  hb(OW, .12, .14, 0, y0 + rail, OZ1 - .3, ANGC_TRIM); hb(OW, .1, .1, 0, y0 + Fl + .3, OZ1 - .3, ANGC_TRIM);
+  for (const sx of [-1, 1]) { hb(.14, .12, OZ1 - OZ0, sx * (OW / 2 - .3), y0 + rail, (OZ0 + OZ1) / 2, ANGC_TRIM); hb(.1, .1, OZ1 - OZ0, sx * (OW / 2 - .3), y0 + Fl + .3, (OZ0 + OZ1) / 2, ANGC_TRIM); }
+  for (let x = -OW / 2 + .5; x < OW / 2 - .3; x += .22) if (Math.abs(x) > .2) hb(.045, .66, .045, x, y0 + Fl + .64, OZ1 - .3, ANGC_TRIM);
+  for (const sx of [-1, 1]) for (let z = OZ0 + .5; z < OZ1 - .4; z += .22) hb(.045, .66, .045, sx * (OW / 2 - .3), y0 + Fl + .64, z, ANGC_TRIM);
+  hb(OW + .6, .4, .4, 0, y0 + Hh - .15, OZ1 - .3, ANGC_TRIM);   // the eave beam
+  // hanging baskets of flowers from the upper veranda's ceiling, one in each window bay
+  for (const x of [-9.6, -5.2, 5.2, 9.6]) { hb(.04, .5, .04, x, y0 + Hh - .55, zf + 1.2, 0x2a2a26); hp.push({ g: new THREE.SphereGeometry(.42, 7, 5), c: 0x3f6f34, m: new THREE.Matrix4().makeTranslation(x, y0 + Hh - 1.05, zf + 1.2) }); for (const k of [0, 1, 2]) hp.push({ g: new THREE.SphereGeometry(.16, 5, 4), c: 0xc8283a, m: new THREE.Matrix4().makeTranslation(x + (k - 1) * .28, y0 + Hh - .8, zf + 1.2 + (k === 1 ? .3 : .1)) }); }
+  // the striped green-and-white awning over the front door
+  for (let k = 0; k < 13; k++) { const x = -3.6 + k * .6, m = new THREE.Matrix4().makeRotationX(.42); m.setPosition(x, y0 + 3.15, zf + .95); hp.push({ g: new THREE.BoxGeometry(.6, .05, 1.9), c: k % 2 ? 0xf4f4f0 : 0x1f6a3e, m }); hb(.6, .32, .05, x, y0 + 2.65, zf + 1.82, k % 2 ? 0xf4f4f0 : 0x1f6a3e); }
+  // the broad hipped roof of grey shingles over house and verandas, two white chimneys with dark caps, and the cupola: white, two small windows a face between
+  // black shutters, a grey hipped roof and a finial
+  const rz = (OZ0 + OZ1) / 2, RISE = 4.6;
+  hipPart(hp, 0, rz, OW + 1.4, OZ1 - OZ0 + 1.4, y0 + Hh, RISE, ANGC_SHINGLE);
+  for (const sx of [-1, 1]) { hb(1.6, 6.8, 1.6, sx * HW * .3, y0 + Hh + 3.4, rz - 1.5, ANGC_WHITE); hb(1.8, .3, 1.8, sx * HW * .3, y0 + Hh + 6.9, rz - 1.5, 0x2a2a28); }
+  const cy = y0 + Hh + RISE - .6, cs = 3.4;
+  hb(cs, 2.6, cs, 0, cy + 1.3, rz, ANGC_WHITE);
+  for (const k of [0, 1, 2, 3]) {
+    const sx = [0, 1, 0, -1][k], sz = [1, 0, -1, 0][k];
+    for (const o of [-.48, .48]) { const wx = sz ? o : sx * (cs / 2 + .04), wz = rz + (sx ? o : sz * (cs / 2 + .04)); hb(sz ? .72 : .08, .9, sx ? .72 : .08, wx, cy + 1.45, wz, ANGC_GLASS); }
+    for (const o of [-1.25, 1.25]) { const wx = sz ? o : sx * (cs / 2 + .06), wz = rz + (sx ? o : sz * (cs / 2 + .06)); hb(sz ? .4 : .06, 1.05, sx ? .4 : .06, wx, cy + 1.45, wz, ANGC_SHUTTER); }
+  }
+  hipPart(hp, 0, rz, cs + .8, cs + .8, cy + 2.6, 1.5, ANGC_SHINGLE);
+  hb(.12, 1.6, .12, 0, cy + 4.3, rz, ANGC_TRIM); hp.push({ g: new THREE.SphereGeometry(.14, 6, 5), c: ANGC_TRIM, m: new THREE.Matrix4().makeTranslation(0, cy + 5.1, rz) });
+  // clipped boxwood domes in a row along the front, and two big clipped domes either side of the entrance
+  for (let x = -OW / 2 + 1; x <= OW / 2 - 1; x += 1.25) { if (Math.abs(x) < 4.2) continue; const r = .7; hp.push({ g: new THREE.SphereGeometry(r, 8, 6), c: [0x5d8a3a, 0x648f3e, 0x57843a][Math.abs(Math.round(x * 4)) % 3], m: new THREE.Matrix4().makeScale(1, .95, 1).setPosition(x, y0 + .55, OZ1 + 1.1) }); }
+  for (const sx of [-1, 1]) hp.push({ g: new THREE.SphereGeometry(1.5, 9, 7), c: 0x2f5530, m: new THREE.Matrix4().makeScale(1, 1.35, 1).setPosition(sx * 5.2, y0 + 1.9, OZ1 + 1.3) });
+  const hg = new THREE.Group(); hg.add(new THREE.Mesh(mergeParts(hp), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true })));
+  hg.position.set(e[0] - ux / ul * 2, 0, e[1] - uz / ul * 2); hg.rotation.y = a; grp.add(hg);   // (the house's front wall, local z = 2, stands on the outline's edge; the verandas stand out in front of it)
+  const m = new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true }));
+  grp.add(m);
+  for (const o of [m, hg]) o.traverse(x => { if (x.isMesh) { x.castShadow = true; x.receiveShadow = true; } });
+  C._clubFront = [fx, fz];
+}
+// Butler Cabin and Eisenhower Cabin (scene.cabins): white, dark shutters, a gabled roof and a white chimney (golfcompendium.com: "white with dark shutters and a
+// gabled roof"; "painted white with a chimney"). Butler Cabin is one storey and a half; Eisenhower Cabin is drawn the same (no source describes it further).
+function buildCabinANGC(C, grp, b) {
+  const parts = [], bx = (w, h, d, x, y, z, c) => parts.push(lbx(w, h, d, x, y, z, c)), long = b.w >= b.d, W = long ? b.w : b.d, D = long ? b.d : b.w, a = -b.rot * DEG - (long ? 0 : Math.PI / 2);
+  const yb = b.lo - .6, y0 = b.hi + .3, He = 4.2, rise = Math.min(4.5, D * .32);
+  bx(W, y0 + He - yb, D, 0, (yb + y0 + He) / 2, 0, ANGC_WHITE);
+  for (const sz of [1, -1]) for (let x = -W / 2 + 2; x <= W / 2 - 2; x += 3.2) { bx(1.1, 1.6, .1, x, y0 + 1.9, sz * (D / 2 + .04), ANGC_GLASS); for (const sx of [-1, 1]) bx(.5, 1.7, .08, x + sx * .85, y0 + 1.9, sz * (D / 2 + .07), ANGC_SHUTTER); }
+  const rf = new THREE.Mesh(gableRoof(W, D, rise, .5), new THREE.MeshLambertMaterial({ color: ANGC_ROOF, side: THREE.DoubleSide })); rf.position.y = y0 + He;
+  bx(1.3, rise + 2.2, 1.3, W / 2 - 2.2, y0 + He + (rise + 2.2) / 2 - .6, -D * .15, ANGC_WHITE);   // the chimney
+  const g = new THREE.Group(); g.add(new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, flatShading: true }))); g.add(rf);
+  g.position.set(b.x, 0, b.z); g.rotation.y = a; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
+}
+// Eisenhower Cabin (scene.cabins entry [e, n, 'ike', front e, front n]), after a photograph of its front: a white painted-brick Cape Cod of one and a half storeys under
+// a steep side-gabled roof of near-black shingles with a dark chimney on the ridge, two white gabled dormers and a larger front-facing gable at one end, twelve-pane
+// windows in white frames with black shutters, and a portico of four white columns under a pediment bearing the gold presidential seal ("the iconic white cabin with a
+// gold presidential seal above the front porch", Stars and Stripes), with steps, white rocking chairs and red hanging baskets; a clipped hedge and round topiaries in
+// front. Which way it faces is not known from any source: toward the 10th tee, its neighbour (the front point in scene.cabins).
+function buildIkeCabin(C, grp, b, cb) {
+  const parts = [], bx = (w, h, d, x, y, z, c, rx, ry, rz) => parts.push(lbx(w, h, d, x, y, z, c, rx, ry, rz)), long = b.w >= b.d, W = long ? b.w : b.d, D = Math.min(long ? b.d : b.w, 11);
+  let a = -b.rot * DEG - (long ? 0 : Math.PI / 2);
+  const q = C.loc(cb[3], cb[4]), fx = q[0] - b.x, fz = -q[1] - b.z; if (fx * Math.sin(a) + fz * Math.cos(a) < 0) a += Math.PI;   // the front (+z) toward the given point
+  const ROOFK = ANGC_ROOF, BRICK = 0xf3f2ee, yb = b.lo - .6, y0 = b.hi + .45, He = 3.4, zf = D / 2, rise = D * .46;
+  bx(W, y0 + He - yb, D, 0, (yb + y0 + He) / 2, 0, BRICK);
+  // the steep side-gabled roof (ridge along the length), its two gable ends white
+  const rp = [], ri = [], ex = W / 2 + .35, ez = D / 2 + .55, ey = y0 + He;
+  rp.push(-ex, ey, ez, ex, ey, ez, ex, ey + rise, 0, -ex, ey + rise, 0, -ex, ey, -ez, ex, ey, -ez); ri.push(0, 1, 2, 0, 2, 3, 5, 4, 3, 5, 3, 2);
+  const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); rg.setIndex(ri); parts.push({ g: rg, c: ROOFK });
+  for (const sx of [-1, 1]) { const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute([sx * W / 2, ey, D / 2, sx * W / 2, ey, -D / 2, sx * W / 2, ey + rise * (D / 2) / ez, 0], 3)); gg.setIndex([0, 1, 2]); parts.push({ g: gg, c: BRICK }); }
+  bx(1.1, 2.2, 1.1, W * .12, ey + rise - .4, -.6, 0x3a3532);   // the chimney
+  const slope = Math.atan2(rise, ez), zAt = h => ez - h / rise * ez;   // a point on the front roof slope at height h above the eaves
+  // the front-facing gable at the left end, and the two dormers
+  const gable = (cx, gw, gh, depth) => {
+    const z1 = zf + .1, z0 = z1 - depth, pts = [-gw / 2, 0, z1, gw / 2, 0, z1, 0, gh, z1, -gw / 2, 0, z0, gw / 2, 0, z0, 0, gh, z0], g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pts.map((v, k) => k % 3 === 0 ? v + cx : k % 3 === 1 ? v + ey : v), 3)); g.setIndex([0, 1, 2]); parts.push({ g, c: BRICK });
+    for (const sx of [-1, 1]) { const L = Math.hypot(gw / 2, gh); bx(L + .4, .14, depth, cx + sx * gw / 4, ey + gh / 2 + .05, z1 - depth / 2, ROOFK, 0, 0, -sx * Math.atan2(gh, gw / 2)); }
+  };
+  gable(-W / 2 + 3.2, 5.6, 3.6, ez + .2);
+  for (const dx of [-.5, 2.6]) {
+    const dw = 1.9, dh = 2.0, cx = dx, h0 = rise * .25, zd = zAt(h0) + .1;
+    bx(dw, dh, 1.6, cx, ey + h0 + dh / 2 - .2, zd - .8, BRICK); bx(.9, 1.25, .08, cx, ey + h0 + .75, zd + .02, ANGC_GLASS); bx(1.05, 1.4, .05, cx, ey + h0 + .75, zd, ANGC_TRIM);
+    for (const sx of [-1, 1]) bx(Math.hypot(dw / 2 + .2, .9) + .1, .1, 1.9, cx + sx * (dw / 4 + .05), ey + h0 + dh - .2 + .45, zd - .85, ROOFK, 0, 0, -sx * Math.atan2(.9, dw / 2 + .2));
+  }
+  // windows: twelve panes, white frames, black shutters
+  const win = (x) => { bx(1.25, 1.75, .1, x, y0 + 1.55, zf + .04, ANGC_TRIM); bx(1.05, 1.55, .12, x, y0 + 1.55, zf + .06, ANGC_GLASS); bx(.05, 1.55, .14, x, y0 + 1.55, zf + .07, ANGC_TRIM); bx(1.05, .05, .14, x, y0 + 1.55, zf + .07, ANGC_TRIM); for (const sx of [-1, 1]) bx(.5, 1.75, .08, x + sx * .9, y0 + 1.55, zf + .09, ANGC_SHUTTER); };
+  for (const x of [-W / 2 + 1.9, -W / 2 + 4.6, -.3, W / 2 - 1.6]) win(x);
+  // the portico: four columns, a pediment with the gold seal, steps, two rocking chairs, hanging baskets
+  const px = W / 2 - 5.6, pw = 5.4, pd = 2.6, pz = zf + pd / 2;
+  bx(pw + .4, .3, pd + .3, px, y0 - .05, pz, 0xe8e5de); for (let k = 0; k < 3; k++) bx(1.6, .18, .4, px + 1.2, y0 - .25 - k * .18, zf + pd + .25 + k * .4, 0xe0ddd6);
+  for (const k of [0, 1, 2, 3]) parts.push({ g: new THREE.CylinderGeometry(.16, .19, He, 10), c: ANGC_TRIM, m: new THREE.Matrix4().makeTranslation(px - pw / 2 + .3 + k * (pw - .6) / 3, y0 + He / 2, zf + pd - .2) });
+  bx(pw + .5, .35, pd + .3, px, ey - .1, pz, ANGC_TRIM);
+  { const g = new THREE.BufferGeometry(), hw = pw / 2 + .35, ph = 1.5, z1 = zf + pd + .15; g.setAttribute('position', new THREE.Float32BufferAttribute([px - hw, ey + .05, z1, px + hw, ey + .05, z1, px, ey + .05 + ph, z1, px - hw, ey + .05, zf, px + hw, ey + .05, zf, px, ey + .05 + ph, zf], 3)); g.setIndex([0, 1, 2, 3, 5, 4]); parts.push({ g, c: ANGC_TRIM });
+    for (const sx of [-1, 1]) bx(Math.hypot(hw, ph) + .25, .14, pd + .45, px + sx * hw / 2, ey + .05 + ph / 2 + .07, pz, ROOFK, 0, 0, -sx * Math.atan2(ph, hw));
+    bx(.75, .4, .06, px, ey + .55, z1 + .03, 0xc9a23a); bx(.3, .3, .07, px, ey + .6, z1 + .04, 0xe0bd55); }   // the gold seal
+  bx(1.1, 2.2, .1, px + .6, y0 + 1.1, zf + .05, 0xe9e6e0);   // the front door
+  for (const sx of [-1, 1]) { bx(.55, .9, .55, px + sx * 1.3, y0 + .45, zf + 1.1, ANGC_TRIM); bx(.55, .7, .08, px + sx * 1.3, y0 + .95, zf + .85, ANGC_TRIM); }   // white rocking chairs
+  for (const sx of [-1, 1]) { parts.push({ g: new THREE.SphereGeometry(.35, 7, 5), c: 0x3f6f34, m: new THREE.Matrix4().makeTranslation(px + sx * (pw / 2 - 1), ey - .9, zf + pd - .5) }); for (const k of [0, 1, 2]) parts.push({ g: new THREE.SphereGeometry(.14, 5, 4), c: 0xc8283a, m: new THREE.Matrix4().makeTranslation(px + sx * (pw / 2 - 1) + (k - 1) * .22, ey - .7, zf + pd - .3) }); }
+  // the clipped hedge along the front and the round topiaries
+  bx(W * .45, 1.0, 1.1, -W * .05, y0 + .1, zf + 1.6, 0x2c4a2a); bx(W * .22, .9, 1.0, W / 2 - 1.2, y0 + .05, zf + 1.8, 0x2c4a2a);
+  for (const tx of [-W / 2 + 6.4, W / 2 + .8]) { bx(.25, 1.4, .25, tx, y0 + .7, zf + 2.2, 0x5a4330); parts.push({ g: new THREE.SphereGeometry(1.8, 9, 7), c: 0x2f5530, m: new THREE.Matrix4().makeTranslation(tx, y0 + 2.8, zf + 2.2) }); }
+  const g = new THREE.Group(); g.add(new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true })));
+  g.position.set(b.x, 0, b.z); g.rotation.y = a; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
+}
+// Butler Cabin (scene.cabins entry [e, n, 'butler', front e, front n]), after a photograph of its front: white painted brick, one and a half storeys under a
+// side-gabled slate roof, one gabled dormer at the left and a wide white chimney with a dark cap rising from the front slope; a white door with glass panes and side
+// lights under a flat cornice, a black lantern either side, short steps with a white rail; a shuttered twelve-pane window at the left of the door and a white bay
+// window at its right, more shuttered windows beyond; lower wings at both ends; clipped hedges along the front and azaleas at the corner. Which way it faces is not
+// known from any source: toward the clubhouse.
+function buildButlerCabin(C, grp, b, cb) {
+  const parts = [], bx = (w, h, d, x, y, z, c, rx, ry, rz) => parts.push(lbx(w, h, d, x, y, z, c, rx, ry, rz)), long = b.w >= b.d, Wt = long ? b.w : b.d, D = Math.min(long ? b.d : b.w, 10);
+  let a = -b.rot * DEG - (long ? 0 : Math.PI / 2);
+  const q = C.loc(cb[3], cb[4]), fx = q[0] - b.x, fz = -q[1] - b.z; if (fx * Math.sin(a) + fz * Math.cos(a) < 0) a += Math.PI;
+  const yb = b.lo - .6, y0 = b.hi + .45, He = 3.3, zf = D / 2, W = Wt * .64, wing = (Wt - W) / 2, rise = D * .44;
+  // the main block and its side-gabled roof
+  bx(W, y0 + He - yb, D, 0, (yb + y0 + He) / 2, 0, ANGC_WHITE);
+  const roof = (cx, w, d, ey, rs) => { const ex = w / 2 + .3, ez = d / 2 + .5, rp = [cx - ex, ey, ez, cx + ex, ey, ez, cx + ex, ey + rs, 0, cx - ex, ey + rs, 0, cx - ex, ey, -ez, cx + ex, ey, -ez], g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); g.setIndex([0, 1, 2, 0, 2, 3, 5, 4, 3, 5, 3, 2]); parts.push({ g, c: ANGC_ROOF });
+    for (const sx of [-1, 1]) { const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute([cx + sx * w / 2, ey, d / 2, cx + sx * w / 2, ey, -d / 2, cx + sx * w / 2, ey + rs * (d / 2) / ez, 0], 3)); gg.setIndex([0, 1, 2]); parts.push({ g: gg, c: ANGC_WHITE }); } };
+  const ey = y0 + He; roof(0, W, D, ey, rise);
+  // the lower wings at both ends, a little set back
+  for (const sx of [-1, 1]) { const cx = sx * (W / 2 + wing / 2), dw = D * .82, hw = He - .5; bx(wing, y0 + hw - yb, dw, cx, (yb + y0 + hw) / 2, -D * .05, ANGC_WHITE); roof(cx, wing, dw, y0 + hw, dw * .34); }
+  // the dormer at the left and the wide white chimney on the front slope
+  { const cx = -W * .22, h0 = rise * .3, zd = (D / 2 + .5) * (1 - h0 / rise) + .1, dw = 1.9, dh = 1.9;
+    bx(dw, dh, 1.6, cx, ey + h0 + dh / 2 - .2, zd - .8, ANGC_WHITE); bx(.95, 1.1, .08, cx, ey + h0 + .7, zd + .02, ANGC_GLASS); bx(1.1, 1.25, .05, cx, ey + h0 + .7, zd, ANGC_TRIM);
+    for (const sx of [-1, 1]) bx(Math.hypot(dw / 2 + .2, .9) + .1, .1, 1.9, cx + sx * (dw / 4 + .05), ey + h0 + dh - .2 + .45, zd - .85, ANGC_ROOF, 0, 0, -sx * Math.atan2(.9, dw / 2 + .2)); }
+  bx(2.0, rise + 3.2, 1.5, W * .12, ey + (rise + 3.2) / 2 - .3, D * .12, ANGC_WHITE); bx(2.2, .25, 1.7, W * .12, ey + rise + 2.95, D * .12, 0x2a2a28);
+  // the entrance: door with glass panes and side lights under a flat cornice, lanterns, steps with a white rail
+  const dx0 = -.3;
+  bx(2.6, 2.9, .1, dx0, y0 + 1.45, zf + .04, ANGC_TRIM); bx(1.0, 2.3, .12, dx0, y0 + 1.25, zf + .06, ANGC_WHITE); for (const sx of [-1, 1]) bx(.38, 2.1, .12, dx0 + sx * .78, y0 + 1.2, zf + .06, ANGC_GLASS);
+  bx(3.0, .3, .35, dx0, y0 + 3.0, zf + .15, ANGC_TRIM); for (const sx of [-1, 1]) { bx(.22, .38, .22, dx0 + sx * 1.9, y0 + 2.1, zf + .15, 0x1c1e1d); bx(.25, 2.8, .2, dx0 + sx * 1.35, y0 + 1.45, zf + .1, ANGC_TRIM); }
+  for (let k = 0; k < 3; k++) bx(2.0, .18, .38, dx0, y0 - .1 - k * .18, zf + .2 + k * .38, 0xd8d4cc);
+  for (const sx of [-1, 1]) bx(.06, .9, 1.2, dx0 + sx * 1.05, y0 + .25, zf + .7, ANGC_TRIM);
+  // windows: shuttered twelve-pane at the left, the white bay window at the right, shuttered ones on the wings' fronts
+  const win = (x, z) => { bx(1.25, 1.75, .1, x, y0 + 1.55, z + .04, ANGC_TRIM); bx(1.05, 1.55, .12, x, y0 + 1.55, z + .06, ANGC_GLASS); bx(.05, 1.55, .14, x, y0 + 1.55, z + .07, ANGC_TRIM); for (const k of [-1, 1]) bx(1.05, .05, .14, x, y0 + 1.55 + k * .5, z + .07, ANGC_TRIM); for (const sx of [-1, 1]) bx(.5, 1.75, .08, x + sx * .9, y0 + 1.55, z + .09, ANGC_SHUTTER); };
+  win(-W * .3, zf);
+  bx(2.6, 2.1, .7, W * .25, y0 + 1.5, zf + .35, ANGC_TRIM); bx(2.3, 1.75, .74, W * .25, y0 + 1.5, zf + .36, ANGC_GLASS); for (const k of [-.75, 0, .75]) bx(.07, 1.75, .78, W * .25 + k, y0 + 1.5, zf + .37, ANGC_TRIM); bx(2.9, .25, .9, W * .25, y0 + 2.65, zf + .35, ANGC_ROOF);
+  for (const sx of [-1, 1]) win(sx * (W / 2 + wing / 2), D * .82 / 2 - D * .05);
+  // clipped hedges along the front, azaleas in bloom at the left corner
+  bx(W * .38, 1.0, 1.1, -W * .27, y0 - .05, zf + 1.6, 0x2c4a2a); bx(W * .4 + wing, 1.2, 1.3, W * .3 + wing * .3, y0 + .05, zf + 1.8, 0x2c4a2a);
+  for (let k = 0; k < 6; k++) parts.push({ g: new THREE.SphereGeometry(.6, 7, 5), c: [0xbf3a93, 0xec7393, 0xf2c0db][k % 3], m: new THREE.Matrix4().makeScale(1.2, .7, 1.2).setPosition(-Wt / 2 - .5 + (k % 3) * 1.1, y0 - .1, zf + 1.4 + (k > 2 ? 1 : 0)) });
+  const g = new THREE.Group(); g.add(new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true })));
+  g.position.set(b.x, 0, b.z); g.rotation.y = a; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
+}
+// Founders Circle (scene.founders: the lawn inside the roundabout at the end of Magnolia Lane; golfcompendium.com, augusta.com): the club's main flagpole flying
+// the US flag (OSM node 9657142859), the two bronze plaques to Bobby Jones (dedicated 1978) and Clifford Roberts (1977) on concrete slabs in the grass at its base,
+// and the two bright yellow flower beds in the shape of the Masters logo (pansies, November to April), their outlines from OSM. And the main leader board
+// (scene.leaderboard: OSM node 13578459351, facing `face` degrees from north), after a photograph of it.
+function buildGroundsANGC(C, grp) {
+  const sc = RDC.scene, I = C.inner, at = en => { const q = C.loc(en[0], en[1]); return [q[0], -q[1]]; }, inView = p => p[0] > I.minX - 260 && p[0] < I.maxX + 260 && p[1] > I.minZ - 260 && p[1] < I.maxZ + 260;
+  const F = sc.founders;
+  if (F && inView(at(F.flag))) {
+    const [px, pz] = at(F.flag), py = groundY(px, pz);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(.06, .11, 18, 8), lambert(0xf2f2f2)); pole.position.set(px, py + 9, pz); pole.castShadow = true; grp.add(pole);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(.16, 8, 6), lambert(0xc9a94a)); ball.position.set(px, py + 18.1, pz); grp.add(ball);
+    const fl = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.7, 6, 1), new THREE.MeshLambertMaterial({ map: flagTexture(), side: THREE.DoubleSide })); fl.geometry.translate(1.6, 0, 0);
+    fl.position.set(px, py + 17, pz); grp.add(fl);
+    for (const sx of [-1, 1]) {   // the two plaques, a few feet apart at the foot of the pole
+      const x = px + sx * 1.4, z = pz + 1.2, y = groundY(x, z);
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(1.1, .12, .8), lambert(0xc9c5bb)); slab.position.set(x, y + .04, z); grp.add(slab);
+      const pl = new THREE.Mesh(new THREE.BoxGeometry(.7, .05, .5), lambert(0x7a5a2e)); pl.position.set(x, y + .12, z); pl.rotation.x = -.25; grp.add(pl);
+    }
+    for (const ring of F.beds || []) {   // the beds: pansies, bright yellow, over dark soil
+      const pts = []; for (let i = 0; i < ring.length; i += 2) pts.push(at([ring[i], ring[i + 1]]));
+      const tri = THREE.ShapeUtils.triangulateShape(pts.map(p => new THREE.Vector2(p[0], p[1])), []), v = []; for (const p of pts) v.push(p[0], groundY(p[0], p[1]) + LOT_LIFT + .06, p[1]);
+      const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); gg.setIndex(tri.flat()); gg.computeVertexNormals();
+      const m = new THREE.Mesh(gg, new THREE.MeshLambertMaterial({ color: 0xe8c41c, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 })); m.receiveShadow = true; grp.add(m);
+      const r = mulberry32(ring.length * 31), n = 70, im = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.09, 0), lambert(0xffffff), n), M = new THREE.Matrix4(), cc = new THREE.Color();
+      let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (const p of pts) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); }
+      im.count = 0;
+      for (let k = 0; k < 900 && im.count < n; k++) { const x = lerp(x0, x1, r()), z = lerp(z0, z1, r()); let ins = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) if ((pts[i][1] > z) !== (pts[j][1] > z) && x < (pts[j][0] - pts[i][0]) * (z - pts[i][1]) / (pts[j][1] - pts[i][1]) + pts[i][0]) ins = !ins; if (!ins) continue;
+        M.makeScale(1, .45, 1); M.setPosition(x, groundY(x, z) + .14, z); im.setMatrixAt(im.count, M); im.setColorAt(im.count, cc.setHex([0xf6d21e, 0xf2c40f, 0xfadf45][k % 3])); im.count++; }
+      im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; grp.add(im);
+    }
+  }
+  const LB = sc.leaderboard;
+  if (LB && inView(at(LB.at))) buildLeaderBoard(C, grp, LB.at, LB.face, 1);
+}
+// a leader board (the main one, scale 1, and the smaller ones round the course): after a photograph of one, a wide dark-green base beam on one thick round green
+// post; on it the main board (white, LEADERS on a raised cap) and two lower side panels, THRU at the left and a blank one at the right
+function buildLeaderBoard(C, grp, en, face, k) {
+  const at = p => { const q = C.loc(p[0], p[1]); return [q[0], -q[1]]; };
+  {
+    const [x, z] = at(en), y = groundY(x, z), f2 = at([en[0] + Math.sin(face * DEG), en[1] + Math.cos(face * DEG)]), a = Math.atan2(f2[0] - x, f2[1] - z);   // the face looks along the compass bearing `face`
+    const g = new THREE.Group(), green = lambert(0x24573a), white = lambert(0xf4f4f0), Wm = 10.4, Hm = 6.2, Wb = 17.6, hb = 1.1, post = 3.2, ws = 3.4, hs = 2.6;
+    const pm = new THREE.Mesh(new THREE.CylinderGeometry(.55, .55, post, 16), green); pm.position.set(0, post / 2, -.2); g.add(pm);
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(Wb, hb, .8), green); beam.position.set(0, post + hb / 2, -.2); g.add(beam);
+    const by = post + hb, panel = (w, h, cx, cy, tex) => { const fr = new THREE.Mesh(new THREE.BoxGeometry(w + .3, h + .3, .35), white); fr.position.set(cx, cy, -.15); g.add(fr); const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex })); m.position.set(cx, cy, .04); g.add(m); };
+    const T = leaderTexture();
+    panel(Wm, Hm, 0, by + Hm / 2, T.main);
+    panel(ws, hs, -Wm / 2 - ws / 2 - .25, by + hs / 2, T.left); panel(ws, hs, Wm / 2 + ws / 2 + .25, by + hs / 2, T.right);
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(Wm * .55, .9, .35), white); cap.position.set(0, by + Hm + .45, -.15); g.add(cap);
+    const capT = new THREE.Mesh(new THREE.PlaneGeometry(Wm * .55, .9), new THREE.MeshLambertMaterial({ map: T.cap })); capT.position.set(0, by + Hm + .45, .04); g.add(capT);
+    for (const sx of [-1, 1]) { const sh = new THREE.Mesh(new THREE.BoxGeometry(Wm * .23, .25, .35), white); sh.position.set(sx * Wm * .36, by + Hm + .1, -.15); sh.rotation.z = sx * -.1; g.add(sh); }   // the cap's shoulders
+    g.scale.setScalar(k); g.position.set(x, y, z); g.rotation.y = a; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
+  }
+}
+/* --- the Masters dressing (scene.dressing, Augusta): what stands on the course in tournament week. Green, to blend with the woods, is the rule there: "the
+   scoreboards and the camera towers", the trash cans and the patrons' folding chairs are all green (GOLF.com). Only the hole in play and its surroundings get it,
+   in a handful of merged or instanced meshes, and none of it moves.
+     towers   the TV camera towers, OSM's 12 (man_made=tower): dark-green scaffolding, four legs with cross braces, a railed platform under a canopy and a camera
+     boards   the on-course leader boards, OSM's (tourism=information with a direction): the main board's design at 0.62 scale, back to back where OSM gives two
+     stands   grandstands (fan guides: behind the 7th green, behind the 12th tee, both sides of the 15th green): green steel tiers full of seated patrons
+     ropes    gallery ropes on both sides of the hole, a few metres outside the fairway, and round the back of the green and the tee: green stakes every 4 m and a
+              white rope (the colour of the ropes is not in any source found)
+     patrons  standing behind the ropes, thickest round the green and the tee; at the green a row of them seated in green folding chairs
+     cans     green trash cans by the tee --- */
+const PATRON_SHIRT = [0xf2f2ee, 0x2f5d8a, 0x1f6a3e, 0xd9cfae, 0xe8a3b8, 0x9cc3e6, 0x3c3c40, 0xc94f45, 0xf2e2a0, 0x7aa36a, 0xffffff, 0x4b6fa8], PATRON_LEGS = [0xc8b78e, 0x2c3440, 0xd9d2c0, 0x6b7a8c, 0x2f2f33], PATRON_SKIN = [0xf1c9a5, 0xd9a77e, 0xb07a52, 0x7d5236, 0xf4d6bd];
+function buildDressingANGC(C, grp) {
+  const D = RDC.scene.dressing, I = C.inner, r = mulberry32(C.def.seed + 4040), at = p => { const q = C.loc(p[0], p[1]); return [q[0], -q[1]]; };
+  const inView = (p, m) => p[0] > I.minX - m && p[0] < I.maxX + m && p[1] > I.minZ - m && p[1] < I.maxZ + m;
+  const GRN = 0x23432c, parts = [], bx = (w, h, d, x, y, z, c, ry) => parts.push(lbx(w, h, d, x, y, z, c, 0, ry || 0, 0));
+  // the towers
+  for (const t of D.towers || []) {
+    const [x, z] = at(t); if (!inView([x, z], 220)) continue;
+    const y = groundY(x, z), H = 9 + 3 * hash2(Math.round(t[0]), Math.round(t[1]), 3), s = 1.6, ry = hash2(Math.round(t[0]), 1, 7) * TAU, c = Math.cos(ry), sn = Math.sin(ry), P = (u, v) => [x + u * c - v * sn, z + u * sn + v * c];
+    for (const [u, v] of [[-s, -s], [s, -s], [s, s], [-s, s]]) { const [px, pz] = P(u, v); bx(.14, H, .14, px, y + H / 2, pz, GRN, ry); }
+    for (let h = 1.5; h < H - .5; h += 2.2) for (const [u, v, w, rr] of [[0, -s, 2 * s, 0], [0, s, 2 * s, 0], [-s, 0, 2 * s, Math.PI / 2], [s, 0, 2 * s, Math.PI / 2]]) { const [px, pz] = P(u, v); bx(w, .1, .1, px, y + h, pz, GRN, ry + rr); }
+    for (const [u, v, rr] of [[0, -s, 0], [0, s, 0], [-s, 0, Math.PI / 2], [s, 0, Math.PI / 2]]) for (let h = 1.5; h < H - 2.5; h += 2.2) { const [px, pz] = P(u, v); parts.push({ g: new THREE.BoxGeometry(Math.hypot(2 * s, 2.2), .08, .08), c: GRN, m: new THREE.Matrix4().makeRotationFromEuler(_le.set(0, ry + rr, Math.atan2(2.2, 2 * s))).setPosition(px, y + h + 1.1, pz) }); }
+    bx(2 * s + .8, .2, 2 * s + .8, x, y + H, z, GRN, ry);                                                           // the platform
+    for (const [u, v, w, rr] of [[0, -s - .4, 2 * s + .8, 0], [0, s + .4, 2 * s + .8, 0], [-s - .4, 0, 2 * s + .8, Math.PI / 2], [s + .4, 0, 2 * s + .8, Math.PI / 2]]) { const [px, pz] = P(u, v); bx(w, .08, .08, px, y + H + 1.0, pz, GRN, ry + rr); }
+    for (const [u, v] of [[-s - .4, -s - .4], [s + .4, -s - .4], [s + .4, s + .4], [-s - .4, s + .4]]) { const [px, pz] = P(u, v); bx(.08, 2.4, .08, px, y + H + 1.2, pz, GRN, ry); }
+    bx(2 * s + 1.4, .14, 2 * s + 1.4, x, y + H + 2.45, z, 0x1d3a26, ry);                                                // the canopy
+    const [cx, cz] = P(.4, 0); bx(.7, .45, .4, cx, y + H + .85, cz, 0x2a2c2e, ry); bx(.35, .9, .35, cx, y + H + .3, cz, 0x2a2c2e, ry);   // the camera on its tripod head
+  }
+  // the grandstands: green tiers, the front row low, rising away from the play
+  const hole = C.def.rh, seated = [], solid = [];   // (behind a green is past it along the line of play; behind a tee, back from it); solid: what the ball bounces off
+  for (const st of D.stands || []) {
+    if (st.hole - 1 !== G.hole && !(st.also || []).includes(G.hole + 1)) continue;
+    const h = RDS[COURSE.key].data.holes[st.hole - 1], L = h.line, end = st.at === 'tee' ? L[0] : L[L.length - 1], prev = st.at === 'tee' ? L[1] : L[L.length - 2];
+    const [ex, ez] = at(end), [px, pz] = at(prev); let ux = ex - px, uz = ez - pz; const ul = Math.hypot(ux, uz) || 1; ux /= ul; uz /= ul;
+    let dx = ux, dz = uz; if (st.side === 'left') { dx = -uz; dz = ux; } else if (st.side === 'right') { dx = uz; dz = -ux; }
+    if (st.at === 'tee' && st.side !== 'behind') { dx = -dx; dz = -dz; }
+    const cx = ex + dx * st.off, cz = ez + dz * st.off, ry = Math.atan2(-dx, -dz), rows = st.rows || 8, W = st.w || 28, y0 = groundY(cx, cz);   // the stand faces back toward the play (-d)
+    for (let k = 0; k < rows; k++) {
+      const rz = k * .85, ty = .35 + k * .45, ox = cx + dx * rz, oz = cz + dz * rz;
+      bx(W, .1, .85, ox, y0 + ty, oz, 0x2c5a3a, ry); bx(W, .1, .35, ox - dx * .1, y0 + ty + .42, oz - dz * .1, 0x2f6a40, ry);   // the tread and the seat plank
+      bx(W, .45, .06, ox - dx * .42, y0 + ty - .2, oz - dz * .42, 0x1f3f2a, ry);
+      for (let n = 0; n < W / .62; n++) if (r() < .82) { const u = -W / 2 + .3 + n * .62; seated.push([ox + Math.cos(ry) * u - dx * .05, y0 + ty + .47, oz - Math.sin(ry) * u - dz * .05, ry]); }
+    }
+    for (const sgn of [-1, 1]) for (let k = 0; k <= rows; k += 2) { const ox = cx + dx * k * .85 + Math.cos(ry) * sgn * W / 2, oz = cz + dz * k * .85 - Math.sin(ry) * sgn * W / 2, hh = .35 + k * .45 + 1; bx(.16, hh, .16, ox, y0 + hh / 2, oz, GRN, ry); }
+    const bk = rows * .85; bx(W, 1.2, .08, cx + dx * bk, y0 + .35 + rows * .45 + .6, cz + dz * bk, 0x1f3f2a, ry);   // the back rail
+    solid.push({ x: cx + dx * bk / 2, z: cz + dz * bk / 2, c: Math.cos(ry), s: Math.sin(ry), hw: W / 2 + .2, hd: bk / 2 + .4, y1: y0 + .35 + rows * .45 + 1.4, t: 400002 });
+  }
+  // the ropes and the patrons along them: both sides of the hole line, the first spot past the fairway's edge (+5 m), from 40 m out to the green
+  const ln = hole.line.map(p => at(p)), stakes = [], stand = [], chairs = [];
+  const clearAt = (x, z) => !C.isOB(x, z) && C.wl(x, z) < C.h(x, z) - .05 && C.fieldAt(C.F.green, x, z) > 4 && C.fieldAt(C.F.tee, x, z) > 2 && C.fieldAt(C.F.sand, x, z) > 1 && C.fieldAt(C.F.fair, x, z) > 2 && !(C.treeHit && C.treeHit(x, groundY(x, z) + 1, z, false) >= 0);
+  let total = 0; const segs = []; for (let i = 1; i < ln.length; i++) { const l = Math.hypot(ln[i][0] - ln[i - 1][0], ln[i][1] - ln[i - 1][1]); segs.push([ln[i - 1], ln[i], l, total]); total += l; }
+  const along = d => { for (const [a, b, l, t0] of segs) if (d <= t0 + l) { const f = (d - t0) / l; return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, (b[0] - a[0]) / l, (b[1] - a[1]) / l]; } const [a, b, l] = segs[segs.length - 1]; return [b[0], b[1], (b[0] - a[0]) / l, (b[1] - a[1]) / l]; };
+  for (const sd of [-1, 1]) {
+    let prev = null;
+    for (let d = 40; d < total - 6; d += 4) {
+      const [x0, z0, ux, uz] = along(d), nx = -uz * sd, nz = ux * sd; let got = null;
+      for (let o = 8; o < 60; o += 1.5) { const x = x0 + nx * o, z = z0 + nz * o; if (C.fieldAt(C.F.fair, x, z) > 5 && C.fieldAt(C.F.green, x, z) > 6) { got = [x, z]; break; } }
+      if (!got || !clearAt(got[0], got[1])) { prev = null; continue; }
+      const sx = got[0], sz = got[1], y = groundY(sx, sz); stakes.push([sx, y, sz]);
+      if (prev && Math.hypot(sx - prev[0], sz - prev[2]) < 7) stakes.push(['rope', prev, [sx, y, sz]]);
+      prev = [sx, y, sz];
+      const nearG = total - d < 70, nearT = d < 90, dens = nearG ? 2.2 : nearT ? 1.4 : .55;
+      for (let k = 0; k < dens * 2 + r(); k++) { const o2 = 1.3 + r() * (nearG ? 5 : 3.2), q = (r() - .5) * 3.6, x = sx + nx * o2 + ux * q, z = sz + nz * o2 + uz * q; if (clearAt(x, z)) stand.push([x, groundY(x, z), z, Math.atan2(-nx, -nz) + (r() - .5) * .9]); }
+      if (nearG && r() < .55) { const o2 = .8, q = (r() - .5) * 3, x = sx + nx * o2 + ux * q, z = sz + nz * o2 + uz * q; if (clearAt(x, z)) chairs.push([x, groundY(x, z), z, Math.atan2(-nx, -nz)]); }
+    }
+  }
+  // round the back of the green: an arc of rope 14 m past its edge, patrons packed behind it
+  { const [gx, gz] = ln[ln.length - 1], [qx, qz] = ln[ln.length - 2], a0 = Math.atan2(gx - qx, gz - qz); let prev = null;
+    for (let t = -1.9; t <= 1.9; t += .07) { const a = a0 + t; let got = null; for (let o = 10; o < 60; o += 1) { const x = gx + Math.sin(a) * o, z = gz + Math.cos(a) * o; if (C.fieldAt(C.F.green, x, z) > 10 && C.fieldAt(C.F.sand, x, z) > 2) { got = [x, z]; break; } }
+      if (!got || !clearAt(got[0], got[1])) { prev = null; continue; } const y = groundY(got[0], got[1]); stakes.push([got[0], y, got[1]]); if (prev && Math.hypot(got[0] - prev[0], got[1] - prev[2]) < 7) stakes.push(['rope', prev, [got[0], y, got[1]]]); prev = [got[0], y, got[1]];
+      for (let k = 0; k < 4; k++) { const o2 = 1.2 + r() * 6, x = got[0] + Math.sin(a) * o2 + (r() - .5) * 2, z = got[1] + Math.cos(a) * o2 + (r() - .5) * 2; if (clearAt(x, z)) stand.push([x, groundY(x, z), z, a + Math.PI + (r() - .5) * .6]); }
+      if (r() < .5) { const x = got[0] + Math.sin(a) * .9, z = got[1] + Math.cos(a) * .9; if (clearAt(x, z)) chairs.push([x, groundY(x, z), z, a + Math.PI]); } } }
+  // the stakes and ropes, merged; green trash cans by the tee
+  for (const s0 of stakes) {
+    if (s0[0] === 'rope') { const [a, b] = [s0[1], s0[2]], l = Math.hypot(b[0] - a[0], b[2] - a[2]); parts.push({ g: new THREE.BoxGeometry(l, .035, .035), c: 0xf4f4f0, m: new THREE.Matrix4().makeRotationFromEuler(_le.set(0, -Math.atan2(b[2] - a[2], b[0] - a[0]), Math.atan2(b[1] - a[1], l))).setPosition((a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + .85, (a[2] + b[2]) / 2) }); }
+    else bx(.06, .95, .06, s0[0], s0[1] + .45, s0[2], GRN);
+  }
+  { const [tx, tz] = ln[0], [nx2, nz2] = ln[1], ul2 = Math.hypot(nx2 - tx, nz2 - tz) || 1, px2 = -(nz2 - tz) / ul2, pz2 = (nx2 - tx) / ul2;
+    for (const sd of [-1, 1]) { const x = tx + px2 * sd * 12, z = tz + pz2 * sd * 12; if (clearAt(x, z)) { const y = groundY(x, z); parts.push({ g: new THREE.CylinderGeometry(.32, .3, .9, 10), c: 0x1f5a35, m: new THREE.Matrix4().makeTranslation(x, y + .45, z) }); } } }
+  if (parts.length) { const m = new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, flatShading: true })); m.castShadow = true; m.receiveShadow = true; grp.add(m); }
+  // the on-course leader boards
+  for (const bd of D.boards || []) { const [x, z] = at(bd.at); if (!inView([x, z], 200)) continue; for (const f of bd.face) buildLeaderBoard(C, grp, bd.at, f, .62); }
+  // the patrons: standing (legs, shirt, head, and a cap or a hat on some), seated (in stands and in the green folding chairs), as instanced parts
+  const all = stand.map(p => [p, 0]).concat(chairs.map(p => [p, 1]), seated.map(p => [[p[0], p[1], p[2], p[3]], 2]));
+  if (!all.length) return;
+  const N = Math.min(all.length, 2600), mk = (geo) => { const m = new THREE.InstancedMesh(geo, lambert(0xffffff), N); m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(N * 3), 3); m.count = 0; m.castShadow = true; grp.add(m); return m; };
+  const legs = mk(new THREE.BoxGeometry(.34, .82, .22).translate(0, .41, 0)), body = mk(new THREE.BoxGeometry(.44, .62, .26).translate(0, 1.13, 0)), head = mk(new THREE.SphereGeometry(.12, 7, 5).translate(0, 1.58, 0)), cap = mk(new THREE.CylinderGeometry(.13, .13, .08, 8).translate(0, 1.7, .02));
+  const chairM = mk(new THREE.BoxGeometry(.5, .45, .48).translate(0, .22, 0)), M = new THREE.Matrix4(), Q = new THREE.Quaternion(), V = new THREE.Vector3(), Sc = new THREE.Vector3(1, 1, 1), cc = new THREE.Color(), Y = new THREE.Vector3(0, 1, 0);
+  const put = (im, x, y, z, ry, col, sy) => { if (im.count >= N) return; Q.setFromAxisAngle(Y, ry); M.compose(V.set(x, y, z), Q, Sc.set(1, sy || 1, 1)); im.setMatrixAt(im.count, M); im.setColorAt(im.count, cc.setHex(col)); im.count++; };
+  for (let i = 0; i < N; i++) {
+    const [[x, y, z, ry], kind] = all[i], hs = .92 + r() * .14, sit = kind > 0, sh = PATRON_SHIRT[(r() * PATRON_SHIRT.length) | 0];
+    if (kind === 1) put(chairM, x, y, z, ry, 0x1f5a35);   // the Masters' own green folding chair
+    const dy = sit ? -.4 : 0;
+    put(legs, x, y + (sit ? .02 : 0), z, ry, PATRON_LEGS[(r() * PATRON_LEGS.length) | 0], sit ? .5 : hs);
+    put(body, x, y + dy * hs + (hs - 1) * 1.1, z, ry, sh, 1);
+    put(head, x, y + dy * hs + (hs - 1) * 1.5, z, ry, PATRON_SKIN[(r() * PATRON_SKIN.length) | 0], 1);
+    if (r() < .55) put(cap, x, y + dy * hs + (hs - 1) * 1.5, z, ry, [0xf2f2ee, 0x1f5a35, 0x2f4f7a, 0xd9cfae][(r() * 4) | 0], 1);
+  }
+  for (const m of [legs, body, head, cap, chairM]) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; if (!m.count) m.visible = false; }
+  // the ball bounces off the patrons and the grandstands (the ropes it passes through): a body-sized box for each patron drawn, standing or seated
+  for (let i = 0; i < N; i++) { const [[x, y, z, ry], kind] = all[i]; if (kind === 2) continue; solid.push({ x, z, c: Math.cos(ry), s: Math.sin(ry), hw: .27, hd: .2, y1: y + (kind ? 1.3 : 1.75), t: 400001 }); }
+  dressingColliders(C, solid);
+}
+function dressingColliders(C, solid) {
+  if (!solid.length) return;
+  C.colNames[400001] = 'Off a patron!'; C.colNames[400002] = 'Off the grandstand!';
+  const cell = 8, hash = new Map();
+  solid.forEach((c, i) => { const r = Math.hypot(c.hw, c.hd) + .5; for (let gx = Math.floor((c.x - r) / cell); gx <= Math.floor((c.x + r) / cell); gx++) for (let gz = Math.floor((c.z - r) / cell); gz <= Math.floor((c.z + r) / cell); gz++) { const k = gx * 73856 + gz; if (!hash.has(k)) hash.set(k, []); hash.get(k).push(i); } });
+  const base = C.treeHit;
+  C.treeHit = (x, y, z, noTrunk) => {
+    const a = hash.get(Math.floor(x / cell) * 73856 + Math.floor(z / cell));
+    if (a) for (const i of a) { const c = solid[i], dx = x - c.x, dz = z - c.z; if (y < c.y1 && Math.abs(dx * c.c - dz * c.s) < c.hw && Math.abs(dx * c.s + dz * c.c) < c.hd) { HIT.kind = 'box'; return c.t; } }
+    return base ? base(x, y, z, noTrunk) : -1;
+  };
+}
+// the leader board's faces (canvas textures): the main board's HOLE and PAR rows and ten player rows, the scores the Masters way, over and under par through each
+// hole (red under par, green level, black over; the photograph shows the same), names in dark capitals; the THRU panel; a blank panel; the LEADERS cap
+function leaderTexture() {
+  const pars = COURSE.pars, n = pars.length, mk = (w, h) => { const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const x = cv.getContext('2d'); x.fillStyle = '#fbfbf8'; x.fillRect(0, 0, w, h); return [cv, x]; };
+  const tex = cv => { const t = new THREE.CanvasTexture(cv); t.anisotropy = 4; return t; }, col = tp => tp < 0 ? '#c3202a' : tp === 0 ? '#1f7a3a' : '#1b1b1b';
+  const rows = [{ nm: playerName(), sc: (G.scores || []).slice() }];
+  const CW = 1536, CH = 916, [cv, x] = mk(CW, CH), c0 = 380, cw = (CW - c0 - 14) / n, rh = CH / 12;
+  x.strokeStyle = '#a9b7c4'; x.lineWidth = 2;
+  x.lineWidth = 3; for (let r = 0; r <= 12; r++) { x.beginPath(); x.moveTo(10, r * rh + 1); x.lineTo(CW - 10, r * rh + 1); x.stroke(); }
+  for (let h = 0; h <= n; h++) { x.beginPath(); x.moveTo(c0 + h * cw, 0); x.lineTo(c0 + h * cw, CH); x.stroke(); }
+  x.beginPath(); x.moveTo(10, 0); x.lineTo(10, CH); x.stroke();
+  x.textBaseline = 'middle'; x.textAlign = 'center'; x.fillStyle = '#1b1b1b'; x.font = '700 50px Arial, sans-serif';
+  x.fillText('HOLE', (10 + c0) / 2, rh / 2); x.fillText('PAR', (10 + c0) / 2, rh * 1.5);
+  for (let h = 0; h < n; h++) { x.fillText(String(h + 1), c0 + (h + .5) * cw, rh / 2, cw * .9); x.fillText(String(pars[h]), c0 + (h + .5) * cw, rh * 1.5); }   // (a two-digit hole number squeezed to its cell)
+  let lastTp = null, thru = 0;
+  rows.forEach((rw, k) => {
+    const yy = rh * (2.5 + k); let tp = 0;
+    x.fillStyle = '#1b1b1b'; x.font = '700 46px Arial, sans-serif'; x.fillText(rw.nm.toUpperCase().slice(0, 11), (10 + c0) / 2, yy); x.font = '700 54px Arial, sans-serif';
+    for (let h = 0; h < n; h++) { const st = rw.sc[h]; if (st == null) continue; tp += st - pars[h]; thru = h + 1; x.fillStyle = col(tp); x.fillText(String(Math.abs(tp)), c0 + (h + .5) * cw, yy); }
+    if (!k) lastTp = thru ? tp : null;
+  });
+  const [lc, lx] = mk(256, 196); lx.strokeStyle = '#a9b7c4'; lx.lineWidth = 2; for (let r = 1; r < 5; r++) { lx.beginPath(); lx.moveTo(6, r * 39 + 1); lx.lineTo(250, r * 39 + 1); lx.stroke(); }
+  lx.fillStyle = '#1b1b1b'; lx.textBaseline = 'middle'; lx.textAlign = 'center'; lx.font = '700 28px Arial, sans-serif'; lx.fillText('THRU ' + thru, 128, 20);
+  if (lastTp != null) { lx.textAlign = 'left'; lx.font = '700 22px Arial, sans-serif'; lx.fillText(playerName().toUpperCase().slice(0, 12), 12, 59); lx.textAlign = 'center'; lx.fillStyle = col(lastTp); lx.fillText(String(Math.abs(lastTp)), 228, 59); }
+  const [rc] = mk(256, 196);
+  const [cc, cx2] = mk(512, 84); cx2.fillStyle = '#1b1b1b'; cx2.textAlign = 'center'; cx2.textBaseline = 'middle'; cx2.font = '700 52px Georgia, serif'; cx2.fillText('LEADERS', 256, 46);
+  return { main: tex(cv), left: tex(lc), right: tex(rc), cap: tex(cc) };
+}
 /* --- the clubhouse (scene.clubhouse: the one OSM building over minArea m2; front: ENU, the parking lot, which the front looks onto; sign: the
    three lines on its round sign). Woodbine Bend's, after the photos of its front: a long low building clad in rust-brown vertical board, green-framed windows, a grey-green
    shingle roof, and a gabled entrance with two limestone columns, a round "Woodbine Bend" sign in the gable and a brick-paver porch. The front faces the parking lot. --- */
@@ -3463,6 +3954,7 @@ function clubSignTexture(lines) {
 }
 function buildClubhouse(C, grp, b, ch) {
   if (ch.style === 'memphis') return buildClubhouseMN(C, grp, b, ch);
+  if (ch.style === 'augusta') return buildClubhouseANGC(C, grp, b, ch);
   // (the fitted rectangle may come out either way round in this hole's frame: the long side is always the model's x)
   const long = b.w >= b.d, W = long ? b.w : b.d, D = long ? b.d : b.w, yb = b.lo - .8, Hw = 4.3, over = .6, parts = [];
   const q = C.loc(ch.front[0], ch.front[1]), dx = q[0] - b.x, dz = -q[1] - b.z, a = -b.rot * DEG - (long ? 0 : Math.PI / 2);   // which long side the parking lot is on, in the building's own frame (the group is turned by a about y)
@@ -3516,9 +4008,13 @@ function buildClubhouse(C, grp, b, ch) {
 }
 function realBuildingMeshes(C, grp) {
   const wallA = lambert(0xf1e9d8), wallB = lambert(0xe7dcc6), roofM = new THREE.MeshLambertMaterial({ color: 0xa8553f, side: THREE.DoubleSide }), roofB = new THREE.MeshLambertMaterial({ color: 0x8f4a3a, side: THREE.DoubleSide });
-  const ch = RDC.scene.clubhouse, hp = [];
+  const ch = RDC.scene.clubhouse, hp = [], cab = RDC.scene.cabins || [], bc = RDC.scene.bldColors;
+  const near = (b, en, r) => { const q = C.loc(en[0], en[1]); return Math.hypot(q[0] - b.cx, -q[1] - b.cz) < r; };
+  if (bc) { wallA.color.setHex(bc.wall); wallB.color.setHex(bc.wall); roofM.color.setHex(bc.roof); roofB.color.setHex(bc.roof); }   // scene.bldColors (Augusta: white walls, slate roofs)
   for (const b of realBuildings(C)) {
-    if (ch && b.area > ch.minArea) { buildClubhouse(C, grp, b, ch); continue; }
+    if (ch && (ch.at ? near(b, ch.at, 15) : b.area > ch.minArea)) { buildClubhouse(C, grp, b, ch); continue; }
+    const cb = cab.find(k => near(b, k, 8)); if (cb) { if (cb[2] === 'ike') buildIkeCabin(C, grp, b, cb); else if (cb[2] === 'butler') buildButlerCabin(C, grp, b, cb); else buildCabinANGC(C, grp, b); continue; }
+    if (bc && bc.cottage && b.area < bc.cottage) { buildCabinANGC(C, grp, b); continue; }   // scene.bldColors.cottage: every smaller building (the members' cabins, the shops) a white cottage
     if (b.house) { houseParts(C, b, hp); continue; }
     const g = new THREE.Group(), base = b.lo - .8, top = b.hi + b.h, wall = b.big ? wallA : wallB;
     const body = new THREE.Mesh(unitBox, wall); body.scale.set(b.w, top - base, b.d); body.position.y = (top + base) / 2; g.add(body);
@@ -3655,7 +4151,7 @@ function courseList(reg) {
   for (const c of reg.courses) {
     if (c.hidden) continue;   // switched off in courses.json (the disc golf courses): not listed, not loaded, not cached; their files stay
     const k = c.key;
-    COURSES[k] = { key: k, name: c.name, card: c.card || '', short: c.short, place: c.place || '', tee: c.tee || '', rating: c.rating || 0, slope: c.slope || 0, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, blurb: c.blurb || '', trip: c.trip || null, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: !!c.music,
+    COURSES[k] = { key: k, name: c.name, card: c.card || '', short: c.short, place: c.place || '', tee: c.tee || '', rating: c.rating || 0, slope: c.slope || 0, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, blurb: c.blurb || '', trip: c.trip || null, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: !!c.music, only: Array.isArray(c.only) ? c.only.map(String) : null,
       defs: null, best: 'ssg-best-' + k, board: 'ssg-board-' + k, coll: 'rounds-' + k };
   }
 }
@@ -3675,7 +4171,8 @@ function courseReady(c, D) {
   if (!D || !D.rd || !D.alti) throw new Error('courses/' + c.key + '.js has no data');
   const rd = D.rd;
   RDS[c.key] = Object.assign({ z0: 200, gr: { e0: -1000, n0: -1000, res: 2, W: 1000, H: 1000 }, tweak: {}, tiers: [], tierCut: {} }, c.engine, { data: rd, alti: D.alti, scene: c.scene });
-  c.defs = rd.holes.map((h, i) => ({ disc: !!(c.engine && c.engine.disc), par: h.par, hcp: h.hcp, name: 'Hole ' + (i + 1), inspo: h.desc, seed: 9001 + i * 37, windMax: 5.5, rh: h, len: h.len, real: true, teeCam: null }));
+  const swl = (c.engine && c.engine.swirl) || []; // holes (from 1) whose wind swirls (Augusta's Amen Corner, 11-13): see swirlWind
+  c.defs = rd.holes.map((h, i) => ({ disc: !!(c.engine && c.engine.disc), par: h.par, hcp: h.hcp, name: h.nm || 'Hole ' + (i + 1), inspo: h.desc, seed: 9001 + i * 37, windMax: swl.includes(i + 1) ? 6.5 : 5.5, swirl: swl.includes(i + 1), rh: h, len: h.len, real: true, teeCam: null }));
   if (c.pars.length !== c.defs.length || c.defs.some((d, i) => d.par !== c.pars[i])) console.warn(c.key + ': the pars in courses.json differ from the course data');
   const off = ['greenK', 'tiers', 'tierCut'].filter(k => c.engine && c.engine[k] != null); // Woodbine Bend sets none of these: it is the standard every course's greens are held to
   if (off.length) console.warn(c.key + ': courses.json engine sets ' + off.join(', ') + ', so its greens differ from the Woodbine standard');
@@ -3733,7 +4230,7 @@ function setCourse(key) {
 /* ================= WORLD (three.js) ================= */
 const PAL = {
   [S.TEE]: 0x9cd97a, [S.FAIR]: 0x90d26b, [S.FIRST]: 0x77be59, [S.ROUGH]: 0x5ea84c, [S.DEEP]: 0x4f9544,
-  [S.FRINGE]: 0x94d571, [S.GREEN]: 0xb0e78b, [S.SAND]: 0xf2e3bf, [S.WATER]: 0x8fcbd8, [S.PATH]: 0x66686d
+  [S.FRINGE]: 0x94d571, [S.GREEN]: 0xb0e78b, [S.SAND]: 0xf2e3bf, [S.WATER]: 0x8fcbd8, [S.PATH]: 0x66686d, [S.STRAW]: 0x9c6239
 };
 const BEACH = rgbToHsl(...hexToRgb(0xecdcb4));
 const PAL_HSL = {}; for (const k in PAL) { const c = hexToRgb(PAL[k]); PAL_HSL[k] = rgbToHsl(c[0], c[1], c[2]); }
@@ -4415,7 +4912,7 @@ function renderPlan(C) {
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
     const x = x0 + (i + .5) * mpp, z = z0 + (j + .5) * mpp, hk = Hs[j * w + i], inf = C.surfInfo(x, z, hk);
     let c = colOf[inf.surf], k = (j * w + i) * 4;
-    if (GC.straw && (inf.surf === S.ROUGH || inf.surf === S.DEEP) && strawAt(C, x, z) > .5) c = PLAN_STRAW;
+    if (inf.surf === S.STRAW) c = PLAN_STRAW;
     const gx = (Hs[j * w + Math.min(w - 1, i + 1)] - Hs[j * w + Math.max(0, i - 1)]) / (2 * mpp), gz = (Hs[Math.min(h - 1, j + 1) * w + i] - Hs[Math.max(0, j - 1) * w + i]) / (2 * mpp);
     let l = inf.surf === S.WATER ? 0 : clamp((-gx * .55 - gz * .75) * .55, -.12, .12);
     if (inf.surf === S.FAIR) l += inf.stripe ? .03 : -.01;
@@ -4636,6 +5133,7 @@ function* groundJob(L, fx, fz) {
       if (d2 > R1 * R1 || d2 < ring.r0 * ring.r0) continue;
       const h1 = hash2(gi, gj, 47 + ring.tag); if (h1 > .93) continue;
       const sf = C.surf(x, z), deep = sf === S.DEEP; if (!deep && (sf !== S.ROUGH || RDC.fescue)) continue; // (fescue courses: tall grass only in the fescue)
+      if (!deep && GC.straw) continue; // (a pine-straw course, Augusta: the second cut is short turf and the floor under the pines is straw, no long grass or wild daisies)
       if (onPad(C, x, z)) continue;
       if (!C.inBounds(x, z)) continue;
       const bd = Math.hypot(x - bx0, z - bz0); if (bd < .8 && !flying) continue; // keep the ball in the clear
@@ -5002,7 +5500,7 @@ function pdColony(L, n) {   // burrow mounds in the rough beside the fairway, 25
   for (let k = 0; k < 40; k++) {
     const s = C.center.L * (.25 + R() * .45), f = fairHalfWidth(C, s), side = R() < .5 ? -1 : 1, off = f.hw + 3 + R() * 9, ex = (R() - .5) * 12;
     const cx = f.p[0] + f.nx * off * side + f.tx * ex, cz = f.p[1] + f.nz * off * side + f.tz * ex, sf = C.surf(cx, cz);
-    if (!(sf === S.ROUGH || sf === S.FIRST || sf === S.DEEP) || !lifeWalkable(L, cx, cz)) continue;
+    if (!(sf === S.ROUGH || sf === S.FIRST || sf === S.DEEP || sf === S.STRAW) || !lifeWalkable(L, cx, cz)) continue;
     const m = [];
     for (let j = 0; j < n + 2 && m.length < n + 1; j++) { const a = R() * TAU, d = 1.2 + R() * 4.2, x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d; if (lifeWalkable(L, x, z) && m.every(q => Math.hypot(q[0] - x, q[1] - z) > 1.4)) m.push([x, z]); }
     if (m.length >= Math.min(n, 4)) return m;
@@ -6212,6 +6710,7 @@ function cartMusicTick() {
 // running yet, it stays due for the next swing. Practice has no dealt hole: each hole there just has the 1 in 18 chance.
 const FART = { hole: -1, n: 0, at: 0 };
 function fartSwing() {
+  if (RDC.scene && RDC.scene.plain) return;   // (not at Augusta)
   if (G.hole !== FART.hole) { FART.hole = G.hole; FART.n = 0; FART.at = ((G.fartHole === G.hole && !G.fartDone) || Math.random() < 1 / HOLE_DEFS.length) ? 1 + Math.floor(Math.random() * 3) : 0; }
   FART.n++;
   if (!FART.at || FART.n < FART.at || !settings.sound || document.hidden) return;
@@ -6227,6 +6726,7 @@ function birdTick(now) {
   if (G.hole !== BIRD.hole) { BIRD.hole = G.hole; BIRD.next = now + 1500 + Math.random() * 2500; }
   if (now < BIRD.next) return;
   if (!settings.sound || document.hidden || G.state === 'title' || holeSong(G.hole) || !AC || AC.state !== 'running') { BIRD.next = now + 1000; return; }
+  if (RDC.scene && RDC.scene.chorus) { BIRD.next = now + chorusTick(now); return; }   // Augusta: its own spring chorus, synthesised (below)
   const bk = poolReady(BIRD_POOL);
   if (!bk) { BIRD.next = now + 3000; return; }   // (still loading, or offline without them cached)
   const a = AC, buf = SND[bk], rain = G.weather && G.weather.id === 'rain';
@@ -6234,6 +6734,57 @@ function birdTick(now) {
   s.connect(g); if (a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = Math.random() * 1.2 - .6; g.connect(p); n = p; }
   n.connect(a.destination); s.start(a.currentTime + .05); poolUsed(BIRD_POOL);
   BIRD.next = now + buf.duration * 1000 + (rain ? 12000 + Math.random() * 14000 : 4000 + Math.random() * 12000);
+}
+// ---- Augusta's spring chorus (scene.chorus): the birds of the Georgia piedmont in April, synthesised (no recordings), each from its own unseen spot.
+// Northern cardinal (loud clear down-slurred whistles, "cheer-cheer-cheer", or rising "birdy-birdy"), Carolina wren ("teakettle-teakettle", rolling and loud),
+// tufted titmouse ("peter-peter-peter"), Carolina chickadee ("fee-bee fee-bay"), pine warbler (a musical one-pitch trill from the pines), brown thrasher (Georgia's
+// state bird: varied phrases, each said twice), northern mockingbird (phrases borrowed from the others, each said three or four times), eastern bluebird (a soft
+// warble) and mourning dove (a low hollow "coo-OO-oo-oo-oo"). Each hole draws its own cast; each bird sings bouts with its species' gaps, softly, panned and set back
+// by distance; fewer and quieter in the rain.
+const CHORUS = { hole: -1, birds: [], out: null, ac: null };
+function chWhistle(a, out, t, f0, f1, d, v, curve) {
+  const o = a.createOscillator(), g = a.createGain(); o.type = 'sine';
+  if (curve) { const n = 12, c = new Float32Array(n); for (let i = 0; i < n; i++) { const u = i / (n - 1); c[i] = f0 + (f1 - f0) * (curve === 'arc' ? Math.sin(u * Math.PI) : curve === 'late' ? u * u : Math.sqrt(u)); } o.frequency.setValueCurveAtTime(c, t, d); }
+  else { o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(40, f1), t + d); }
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + Math.min(.015, d * .2)); g.gain.setValueAtTime(v, t + d * .7); g.gain.linearRampToValueAtTime(0, t + d);
+  o.connect(g).connect(out); o.start(t); o.stop(t + d + .02);
+}
+const CH_SONG = {
+  cardinal(a, o, t, v) { const k = Math.random(); if (k < .55) { const n = 5 + (Math.random() * 4 | 0); for (let i = 0; i < n; i++) chWhistle(a, o, t + i * .3, 3900, 1900, .24, v); return n * .3; }
+    if (k < .85) { const n = 8 + (Math.random() * 4 | 0); for (let i = 0; i < n; i++) chWhistle(a, o, t + i * .15, 1900, 3500, .11, v * .9); return n * .15; }
+    chWhistle(a, o, t, 4200, 1800, .55, v); for (let i = 0; i < 7; i++) chWhistle(a, o, t + .65 + i * .1, 2600, 2300, .06, v * .8); return 1.4; },
+  wren(a, o, t, v) { const n = 3 + (Math.random() * 3 | 0), f = .9 + Math.random() * .2; for (let i = 0; i < n; i++) { const u = t + i * .34; chWhistle(a, o, u, 3100 * f, 4700 * f, .08, v); chWhistle(a, o, u + .1, 4900 * f, 2600 * f, .07, v); chWhistle(a, o, u + .2, 3000 * f, 3300 * f, .07, v * .85); } return n * .34; },
+  titmouse(a, o, t, v) { const n = 3 + (Math.random() * 3 | 0); for (let i = 0; i < n; i++) { chWhistle(a, o, t + i * .4, 3500, 3000, .14, v); chWhistle(a, o, t + i * .4 + .17, 2400, 2300, .13, v * .9); } return n * .4; },
+  chickadee(a, o, t, v) { const f = [4000, 3100, 3800, 2900]; f.forEach((x, i) => chWhistle(a, o, t + i * .34, x, x * .97, .26, v * (i % 2 ? .8 : 1))); return 1.4; },
+  pinewarbler(a, o, t, v) { const n = 14 + (Math.random() * 8 | 0), f = 3700 + Math.random() * 600; for (let i = 0; i < n; i++) chWhistle(a, o, t + i * .07, f * .92, f * 1.06, .05, v * (.7 + .3 * Math.sin(i / n * Math.PI))); return n * .07; },
+  thrasher(a, o, t, v) { let u = t; const P = 4 + (Math.random() * 3 | 0); for (let p = 0; p < P; p++) { const ph = []; for (let k = 0; k < 3 + (Math.random() * 3 | 0); k++) ph.push([1800 + Math.random() * 3200, 1800 + Math.random() * 3200, .05 + Math.random() * .07]); for (let rep = 0; rep < 2; rep++) { for (const [f0, f1, d] of ph) { chWhistle(a, o, u, f0, f1, d, v); u += d + .02; } u += .12; } u += .25; } return u - t; },
+  mockingbird(a, o, t, v) { let u = t; const P = 4 + (Math.random() * 4 | 0); for (let p = 0; p < P; p++) { const kind = Math.random(); const reps = 3 + (Math.random() * 2 | 0);
+      for (let r = 0; r < reps; r++) { if (kind < .25) { chWhistle(a, o, u, 3900, 1900, .2, v); u += .26; } else if (kind < .5) { chWhistle(a, o, u, 3100, 4700, .08, v); chWhistle(a, o, u + .1, 4800, 2600, .07, v); u += .24; } else { const f0 = 1800 + Math.random() * 3800, f1 = 1800 + Math.random() * 3800; chWhistle(a, o, u, f0, f1, .09, v); chWhistle(a, o, u + .11, f1, f0, .07, v * .8); u += .22; } }
+      u += .2; } return u - t; },
+  bluebird(a, o, t, v) { let u = t; for (let k = 0; k < 3 + (Math.random() * 3 | 0); k++) { const f = 1600 + Math.random() * 1300; chWhistle(a, o, u, f, f * (1.1 + Math.random() * .3), .16, v * .7, 'arc'); u += .21; } return u - t; },
+  dove(a, o, t, v) { const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.connect(o); chWhistle(a, lp, t, 480, 640, .5, v * 1.4, 'arc'); chWhistle(a, lp, t + .6, 560, 520, .55, v * 1.6); chWhistle(a, lp, t + 1.3, 510, 470, .5, v * 1.3); chWhistle(a, lp, t + 1.95, 500, 460, .5, v * 1.1); return 2.5; },
+};
+// species: [chance a hole has one, gap between songs in a bout (s), songs in a bout, pause between bouts (s), level]
+const CH_CAST = { cardinal: [1, [5, 10], [3, 7], [25, 60], .05], wren: [.9, [6, 12], [2, 5], [30, 70], .05], titmouse: [.8, [5, 9], [2, 5], [30, 80], .04], chickadee: [.5, [8, 14], [1, 3], [40, 90], .035],
+  pinewarbler: [.85, [7, 14], [3, 6], [30, 70], .03], thrasher: [.4, [3, 6], [1, 2], [50, 120], .04], mockingbird: [.55, [3, 6], [1, 3], [40, 100], .045], bluebird: [.4, [8, 14], [2, 4], [40, 90], .03], dove: [.5, [12, 20], [2, 4], [50, 110], .035] };
+function chorusTick(now) {
+  const a = AC;
+  if (CHORUS.ac !== a) { CHORUS.ac = a; CHORUS.out = a.createGain(); CHORUS.out.gain.value = 1; CHORUS.out.connect(a.destination); CHORUS.hole = -1; }
+  if (CHORUS.hole !== G.hole) {   // a new cast for the hole
+    CHORUS.hole = G.hole; CHORUS.birds = [];
+    for (const sp in CH_CAST) { const c = CH_CAST[sp]; if (Math.random() >= c[0]) continue; const n = sp === 'cardinal' || sp === 'wren' ? 1 + (Math.random() < .5) : 1;
+      for (let k = 0; k < n; k++) CHORUS.birds.push({ sp, pan: Math.random() * 1.6 - .8, far: .45 + Math.random() * .55, next: now + 800 + Math.random() * 14000, left: 0 }); }
+  }
+  const rain = G.weather && G.weather.id === 'rain';
+  for (const b of CHORUS.birds) {
+    if (now < b.next) continue;
+    const c = CH_CAST[b.sp]; if (b.left <= 0) b.left = c[2][0] + Math.floor(Math.random() * (c[2][1] - c[2][0] + 1));
+    if (rain && Math.random() < .6) { b.next = now + 8000; continue; }
+    let o = CHORUS.out; if (a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = b.pan; p.connect(CHORUS.out); o = p; }
+    const v = c[4] * b.far * (rain ? .6 : 1) * (.85 + Math.random() * .3), d = CH_SONG[b.sp](a, o, a.currentTime + .05, v);
+    b.left--; b.next = now + d * 1000 + 1000 * (b.left > 0 ? c[1][0] + Math.random() * (c[1][1] - c[1][0]) : c[3][0] + Math.random() * (c[3][1] - c[3][0]));
+  }
+  return 250;
 }
 /* ---------- live multiplayer: rooms ---------- */
 // Players in the same room (a short code; a link with ?room=CODE joins it) share, through a public MQTT broker over secure websockets:
@@ -6827,6 +7378,7 @@ function refreshResume() {
   b.style.display = '';
 }
 function resumeRound(course) {
+  if (!courseOpen(course || (savedRound() || {}).course || COURSE.key)) return false;   // (a course open only to some players: see courseOpen)
   const r = savedRound(course); if (!r) return false;
   setCourse(r.course);
   const n = HOLE_DEFS.length, arr = (a, d) => Array.isArray(a) && a.length === n ? a : HOLE_DEFS.map(() => d);
@@ -6883,6 +7435,7 @@ function pinSheet(now) {
 // a new round first asks the server for the latest build: when there is a newer one the page reloads into it (the round starts on the next tap), otherwise, offline or slow, the round starts at once
 function startRound() { newBuild(1500).then(reloading => { if (!reloading) beginRound(); }); }
 function beginRound() {
+  if (!courseOpen(COURSE.key)) { courseLockedNote(); $('play').classList.add('on'); return; }   // (every way into a round: the New round button, a reload mid-start)
   UI.finalCard = false; clearRound();
   G.practice = false; G.pg = null; document.body.classList.remove('pg'); G.submitted = false; G.planes = [0, 0, 1, 1, 1, 2, 2][(Math.random() * 7) | 0]; G.rl = {}; if (isReg()) { pidRounds().catch(() => { }); loadRecords(COURSE.key).catch(() => { }); }
   G.scores = HOLE_DEFS.map(() => null); G.putts = HOLE_DEFS.map(() => 0); G.fir = HOLE_DEFS.map(() => null); G.gir = HOLE_DEFS.map(() => null); G.pens = HOLE_DEFS.map(() => 0);
@@ -8354,12 +8907,14 @@ function pracFill() {
 }
 // a hole tapped on the Practice sheet: on another course, a round in progress here is kept for when you come back (as the menu's course picker does)
 function pracHole(i) {
+  if (!courseOpen(pracKey)) { courseLockedNote(); return; }
   if (pracKey === COURSE.key) { startPractice(i); return; }
   const k = pracKey; leaveShot(); if (MP.spec) mpResume(true);
   if (!G.practice && G.state !== 'title') saveRound();
   setCourse(k); startPractice(i);
 }
 function startPractice(i) {
+  if (!courseOpen(COURSE.key)) { courseLockedNote(); return; }
   leaveShot();
   const inRound = !G.practice && (G.scores.some(v => v != null) || G.strokes > 0) && G.state !== 'title';
   if (inRound && !confirm('End the current round and practice hole ' + (i + 1) + '?')) return;
@@ -8507,7 +9062,7 @@ function mapLabels() {
   if (mapRead) { $('mapTitle').textContent = 'Reading the green'; $('mapInfo').textContent = 'Your putt runs up the screen'; $('mapHint').textContent = 'Marks point downhill'; return; }
   if (G.pg && !G.pg.range) { $('mapTitle').textContent = 'Practice green'; $('mapInfo').textContent = 'Tap or drag to place your ball'; $('mapHint').textContent = 'Tap or drag to place your ball'; }
   else if (G.pg) { $('mapHint').textContent = 'Tap or drag to place your target'; $('mapTitle').textContent = 'Driving range'; $('mapInfo').textContent = `Flag ${G.pg.cup + 1} · ${toYd(distToPin())} yd`; }
-  else { $('mapHint').textContent = 'Tap or drag to place your target'; $('mapTitle').textContent = `Hole ${G.hole + 1} · ${G.C.def.name}`; $('mapInfo').textContent = `Par ${G.C.def.par} · ${Math.round(Math.hypot(G.C.cup.x - W.ball.position.x, G.C.cup.z - W.ball.position.z))} m to pin`; }
+  else { $('mapHint').textContent = 'Tap or drag to place your target'; $('mapTitle').textContent = G.C.def.rh && G.C.def.rh.nm ? `Hole ${G.hole + 1} · ${G.C.def.rh.nm}` : `Hole ${G.hole + 1}`; $('mapInfo').textContent = `Par ${G.C.def.par} · ${Math.round(Math.hypot(G.C.cup.x - W.ball.position.x, G.C.cup.z - W.ball.position.z))} m to pin`; }
 }
 function mapDraw() {
   if (mapRead) { drawGreenRead($('mapCv')); return; }
@@ -8917,6 +9472,10 @@ const ghKey = () => { try { return GH_POST_KEY.length ? atob(GH_POST_KEY.slice()
 const PID = { key: null, pub: '', fp: '', label: '', reg: null, ready: null, at: 0, stats: null, roundsAt: 0 };
 const b64 = u8 => { let s = ''; u8.forEach(c => s += String.fromCharCode(c)); return btoa(s); };
 const isReg = () => !!(PID.reg && PID.key);
+// a course listed with `only` in courses.json (Augusta: ["P001"]) can be played (a round or practice) only by those registered players; everyone else sees it
+// in the picker and gets a note. A client-side gate: the course's data is public in the repo either way.
+function courseOpen(key) { const c = COURSES[key], o = c && c.only; return !o || (isReg() && o.includes(PID.reg.pid)); }
+function courseLockedNote() { readout('<div class="r1">Not open yet</div><div class="r2">This course is still being built</div>', 2.6); }
 function pidDeviceLabel() { const u = navigator.userAgent; return /iPad/.test(u) ? 'iPad' : /iPhone/.test(u) ? 'iPhone' : /Android/.test(u) ? (/Mobile/.test(u) ? 'Android phone' : 'Android tablet') : /Windows/.test(u) ? 'Windows' : /Mac/.test(u) ? 'Mac' : /Linux/.test(u) ? 'Linux' : 'Device'; }
 function pidInit() {
   return PID.ready || (PID.ready = (async () => {
@@ -9524,13 +10083,14 @@ function initInput() {
   // Tee off opens the play screen (course, continue round, new round; leagues and tournaments will join them there); the name is asked for before it
   $('btnResume').onclick = () => {
     audio(); SFX.blip(); const r = savedRound();
+    if (!courseOpen(r ? r.course : COURSE.key)) { courseLockedNote(); return; }
     withCourse(r ? r.course : COURSE.key, () => { titleOff(); if (!resumeRound()) { $('play').classList.add('on'); refreshResume(); } });
   };
   $('btnPlay').onclick = () => {
     if (!cleanName(settings.name)) { nr.classList.remove('need'); void nr.offsetWidth; nr.classList.add('need'); ni.focus(); return; }
     audio(); SFX.blip(); refreshResume(); $('title').classList.remove('on'); $('play').classList.add('on');
   };
-  $('btnNew').onclick = () => { audio(); SFX.blip(); titleOff(); startRound(); };
+  $('btnNew').onclick = () => { audio(); SFX.blip(); if (!courseOpen(COURSE.key)) { courseLockedNote(); return; } titleOff(); startRound(); };
   $('btnGlobal').onclick = () => { SFX.blip(); glbOpen(); };
   $('btnGlbBack').onclick = () => { SFX.blip(); $('glb').classList.remove('on'); $('title').classList.add('on'); };
   $('btnPlayBack').onclick = () => { SFX.blip(); $('play').classList.remove('on'); $('title').classList.add('on'); };

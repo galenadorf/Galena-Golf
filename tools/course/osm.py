@@ -129,7 +129,7 @@ def load():
         F['course'] = [c for c in F['course'] if c['id'] == course.OSM_WAY]
         assert len(F['course']) == 1, f'OSM way {course.OSM_WAY} (course.OSM_WAY) is not a leisure=golf_course in osm.json'
         cp = F['course'][0]['poly'].buffer(30)
-        F['hole'] = [h for h in F['hole'] if cp.contains(h['line'].interpolate(.5, normalized=True))]
+        F['hole'] = [h for h in F['hole'] if cp.contains(h['line'].interpolate(.5, normalized=True)) and (not getattr(course, 'HOLE_WAYS', None) or h.get('id') in course.HOLE_WAYS)]   # HOLE_WAYS: only those holes (Augusta: its outline also holds the Par 3 course)
         for k in ('green', 'tee', 'bunker', 'fairway', 'rough', 'water_hazard', 'lateral_water_hazard', 'pin', 'cartpath', 'cartpath_line'):   # and only its own golf features
             F[k] = [f for f in F[k] if cp.intersects(f.get('poly', f.get('pt', f.get('line'))))]
     # greens OSM has in the wrong place (course.GREEN_FIX: hole -> outline in local metres, traced off the aerial): the nearest green is replaced
@@ -153,6 +153,12 @@ def load():
         L = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** .5; ux, uy = (x1 - x0) / L, (y1 - y0) / L
         pts = [(te + ux * a - uy * b, tn + uy * a + ux * b) for a, b in ((-4, -6), (4, -6), (4, 6), (-4, 6))]
         F['tee'].append(dict(poly=Polygon(pts), tags={'extra': 'yes'}))
+    # golf features left out by name (course.OSM_SKIP_NAMES; Augusta: the patrons' Gallery Fairway Area and the practice grounds' replica greens are not part of the 18)
+    skip = set(getattr(course, 'OSM_SKIP_NAMES', ()))
+    if skip:
+        for k in list(F):
+            if k != 'hole':
+                F[k] = [f for f in F[k] if not isinstance(f, dict) or f.get('tags', {}).get('name') not in skip]
     F['hole'].sort(key=lambda h: h['ref'])
     return F
 
