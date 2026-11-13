@@ -709,13 +709,14 @@ NOT here yet: concession stands and restroom buildings of their own (the OSM bui
 
 SOUNDS
 ------
-  - The background music (courses.json `music`): an original, calm fingerpicked guitar and piano piece in D, in the spirit of a spring afternoon in Georgia
-    (not the Masters theme, which is copyrighted), synthesised live, quietly (Settings > Music).
-  - Augusta's own spring chorus in place of the recorded birdsong (`scene.chorus`, `chorusTick`, synthesised, no recordings): each hole draws its cast from
-    northern cardinal (always; "cheer-cheer-cheer" or "birdy-birdy"), Carolina wren (90 %; "teakettle"), pine warbler (85 %; a one-pitch trill), tufted
-    titmouse (80 %; "peter-peter"), northern mockingbird (55 %; borrowed phrases, each three or four times), Carolina chickadee (50 %; "fee-bee fee-bay"),
-    mourning dove (50 %; "coo-OO-oo-oo-oo"), brown thrasher (40 %; Georgia's state bird, each phrase twice) and eastern bluebird (40 %; a soft warble). Each
-    bird sings bouts of songs a few seconds apart, then rests half a minute to two minutes; soft, panned, quieter and rarer in the rain.
+  - The background music, on the 1st hole only (courses.json `music`: [1]; it fades out on the way to the 2nd): an original, calm fingerpicked guitar and piano piece in D, in the spirit of a spring afternoon in Georgia
+    (not the Masters theme, which is copyrighted), synthesised live, quietly (half the level it had at first; Settings > Music).
+  - Augusta's own spring chorus in place of the recorded birdsong (`scene.chorus`, `chorusTick`, synthesised, no recordings): each hole draws its cast, one
+    of each, from northern cardinal (90 %; "cheer-cheer-cheer" or "birdy-birdy"), Carolina wren (60 %; "teakettle"), pine warbler (55 %; a one-pitch trill),
+    tufted titmouse (45 %; "peter-peter"), northern mockingbird (35 %; borrowed phrases, each two or three times), Carolina chickadee (30 %; "fee-bee
+    fee-bay"), mourning dove (30 %; "coo-OO-oo-oo-oo"), brown thrasher (25 %; Georgia's state bird, each phrase twice) and eastern bluebird (25 %; a soft
+    warble): about 4 birds a hole. Each sings short bouts 10-40 s apart, then rests one to four minutes, and only one sings at a time: about one song every
+    17 s on average. Soft, panned, quieter and rarer in the rain.
   - NO rare unseen sound (the fart), plane drone, truck sounds, cart radio or hole song. The strikes, landing, trees, water, cup, chimes and interface are as
     on every course; the ball off a patron or a grandstand gives the thud the clubhouse walls give.
 

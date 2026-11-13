@@ -4151,7 +4151,8 @@ function courseList(reg) {
   for (const c of reg.courses) {
     if (c.hidden) continue;   // switched off in courses.json (the disc golf courses): not listed, not loaded, not cached; their files stay
     const k = c.key;
-    COURSES[k] = { key: k, name: c.name, card: c.card || '', short: c.short, place: c.place || '', tee: c.tee || '', rating: c.rating || 0, slope: c.slope || 0, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, blurb: c.blurb || '', trip: c.trip || null, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: !!c.music, only: Array.isArray(c.only) ? c.only.map(String) : null,
+    COURSES[k] = { key: k, name: c.name, card: c.card || '', short: c.short, place: c.place || '', tee: c.tee || '', rating: c.rating || 0, slope: c.slope || 0, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, blurb: c.blurb || '', trip: c.trip || null, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: Array.isArray(c.music) ? c.music.slice() : !!c.music,   // (true: everywhere on the course; a list: only on those holes, from 1)
+      only: Array.isArray(c.only) ? c.only.map(String) : null,
       defs: null, best: 'ssg-best-' + k, board: 'ssg-board-' + k, coll: 'rounds-' + k };
   }
 }
@@ -6741,7 +6742,7 @@ function birdTick(now) {
 // state bird: varied phrases, each said twice), northern mockingbird (phrases borrowed from the others, each said three or four times), eastern bluebird (a soft
 // warble) and mourning dove (a low hollow "coo-OO-oo-oo-oo"). Each hole draws its own cast; each bird sings bouts with its species' gaps, softly, panned and set back
 // by distance; fewer and quieter in the rain.
-const CHORUS = { hole: -1, birds: [], out: null, ac: null };
+const CHORUS = { hole: -1, birds: [], out: null, ac: null, quiet: 0 };
 function chWhistle(a, out, t, f0, f1, d, v, curve) {
   const o = a.createOscillator(), g = a.createGain(); o.type = 'sine';
   if (curve) { const n = 12, c = new Float32Array(n); for (let i = 0; i < n; i++) { const u = i / (n - 1); c[i] = f0 + (f1 - f0) * (curve === 'arc' ? Math.sin(u * Math.PI) : curve === 'late' ? u * u : Math.sqrt(u)); } o.frequency.setValueCurveAtTime(c, t, d); }
@@ -6765,23 +6766,26 @@ const CH_SONG = {
   dove(a, o, t, v) { const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.connect(o); chWhistle(a, lp, t, 480, 640, .5, v * 1.4, 'arc'); chWhistle(a, lp, t + .6, 560, 520, .55, v * 1.6); chWhistle(a, lp, t + 1.3, 510, 470, .5, v * 1.3); chWhistle(a, lp, t + 1.95, 500, 460, .5, v * 1.1); return 2.5; },
 };
 // species: [chance a hole has one, gap between songs in a bout (s), songs in a bout, pause between bouts (s), level]
-const CH_CAST = { cardinal: [1, [5, 10], [3, 7], [25, 60], .05], wren: [.9, [6, 12], [2, 5], [30, 70], .05], titmouse: [.8, [5, 9], [2, 5], [30, 80], .04], chickadee: [.5, [8, 14], [1, 3], [40, 90], .035],
-  pinewarbler: [.85, [7, 14], [3, 6], [30, 70], .03], thrasher: [.4, [3, 6], [1, 2], [50, 120], .04], mockingbird: [.55, [3, 6], [1, 3], [40, 100], .045], bluebird: [.4, [8, 14], [2, 4], [40, 90], .03], dove: [.5, [12, 20], [2, 4], [50, 110], .035] };
+// (thinned out at the user's request: fewer birds a hole, longer gaps and rests, shorter bouts, and only one bird singing at a time: CHORUS.quiet)
+const CH_CAST = { cardinal: [.9, [10, 20], [2, 4], [60, 150], .05], wren: [.6, [12, 24], [1, 3], [75, 170], .05], titmouse: [.45, [10, 18], [1, 3], [75, 190], .04], chickadee: [.3, [16, 28], [1, 2], [100, 220], .035],
+  pinewarbler: [.55, [14, 28], [1, 3], [75, 170], .03], thrasher: [.25, [6, 12], [1, 2], [120, 280], .04], mockingbird: [.35, [6, 12], [1, 2], [100, 240], .045], bluebird: [.25, [16, 28], [1, 2], [100, 220], .03], dove: [.3, [24, 40], [1, 3], [120, 260], .035] };
 function chorusTick(now) {
   const a = AC;
   if (CHORUS.ac !== a) { CHORUS.ac = a; CHORUS.out = a.createGain(); CHORUS.out.gain.value = 1; CHORUS.out.connect(a.destination); CHORUS.hole = -1; }
   if (CHORUS.hole !== G.hole) {   // a new cast for the hole
     CHORUS.hole = G.hole; CHORUS.birds = [];
-    for (const sp in CH_CAST) { const c = CH_CAST[sp]; if (Math.random() >= c[0]) continue; const n = sp === 'cardinal' || sp === 'wren' ? 1 + (Math.random() < .5) : 1;
-      for (let k = 0; k < n; k++) CHORUS.birds.push({ sp, pan: Math.random() * 1.6 - .8, far: .45 + Math.random() * .55, next: now + 800 + Math.random() * 14000, left: 0 }); }
+    for (const sp in CH_CAST) { const c = CH_CAST[sp]; if (Math.random() >= c[0]) continue;
+      CHORUS.birds.push({ sp, pan: Math.random() * 1.6 - .8, far: .45 + Math.random() * .55, next: now + 3000 + Math.random() * 30000, left: 0 }); }
   }
   const rain = G.weather && G.weather.id === 'rain';
   for (const b of CHORUS.birds) {
     if (now < b.next) continue;
+    if (now < CHORUS.quiet) { b.next = CHORUS.quiet + 1500 + Math.random() * 5000; continue; }   // another bird is singing: wait for it to finish
     const c = CH_CAST[b.sp]; if (b.left <= 0) b.left = c[2][0] + Math.floor(Math.random() * (c[2][1] - c[2][0] + 1));
     if (rain && Math.random() < .6) { b.next = now + 8000; continue; }
     let o = CHORUS.out; if (a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = b.pan; p.connect(CHORUS.out); o = p; }
     const v = c[4] * b.far * (rain ? .6 : 1) * (.85 + Math.random() * .3), d = CH_SONG[b.sp](a, o, a.currentTime + .05, v);
+    CHORUS.quiet = now + d * 1000 + 1200;
     b.left--; b.next = now + d * 1000 + 1000 * (b.left > 0 ? c[1][0] + Math.random() * (c[1][1] - c[1][0]) : c[3][0] + Math.random() * (c[3][1] - c[3][0]));
   }
   return 250;
@@ -7168,7 +7172,7 @@ const MUS_SONG = (() => {
   return out;
 })();
 const mHz = m => 440 * Math.pow(2, (m - 69) / 12);
-function musicWanted() { return settings.sound && settings.music !== false && COURSE && COURSE.music && !document.hidden; }
+function musicWanted() { const m = COURSE && COURSE.music; return settings.sound && settings.music !== false && !!m && !document.hidden && (!Array.isArray(m) || (G.state !== 'title' && !G.pg && m.includes(G.hole + 1))); }   // (a list: only while playing those holes; Augusta: the 1st)
 // a plucked steel string: Karplus-Strong, a soft pick (low-passed noise burst), 3 s
 function musKS(a, m) {
   const k = m; if (MUS.ks[k]) return MUS.ks[k];
@@ -7192,7 +7196,7 @@ function musSetup(a) {
   const bus = a.createGain(), out = a.createGain(), rv = a.createConvolver(), wet = a.createGain(), sr = a.sampleRate, L = Math.floor(sr * 2.4), ir = a.createBuffer(2, L, sr);
   for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < L; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / L, 3.2); }
   rv.buffer = ir; wet.gain.value = .28; bus.gain.value = 1;
-  out.gain.setValueAtTime(0, a.currentTime); out.gain.linearRampToValueAtTime(.2, a.currentTime + 3);
+  out.gain.setValueAtTime(0, a.currentTime); out.gain.linearRampToValueAtTime(.1, a.currentTime + 3);   // (.1: halved, the user found .2 too loud)
   bus.connect(out); bus.connect(rv).connect(wet).connect(out); out.connect(a.destination);
   const gtr = a.createBiquadFilter(); gtr.type = 'lowpass'; gtr.frequency.value = 2300; gtr.Q.value = .5; const gg = a.createGain(); gg.gain.value = 1.6; gtr.connect(gg).connect(bus); MUS.gtr = gtr; // a warmer, rounder string
   MUS.ac = a; MUS.bus = bus; MUS.out = out; MUS.ks = {}; MUS.step = 0; MUS.next = a.currentTime + .4;
