@@ -7365,7 +7365,7 @@ function musSetup(a) {
   const bus = a.createGain(), out = a.createGain(), rv = a.createConvolver(), wet = a.createGain(), sr = a.sampleRate, L = Math.floor(sr * 2.4), ir = a.createBuffer(2, L, sr);
   for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < L; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / L, 3.2); }
   rv.buffer = ir; wet.gain.value = .28; bus.gain.value = 1;
-  out.gain.setValueAtTime(0, a.currentTime); out.gain.linearRampToValueAtTime(.075, a.currentTime + 3);   // (.075: first .2, halved, then a quarter off again at the user's request)
+  out.gain.setValueAtTime(0, a.currentTime); out.gain.linearRampToValueAtTime(.0375, a.currentTime + 3);   // (.0375: first .2, halved, a quarter off, then halved again at the user's request)
   bus.connect(out); bus.connect(rv).connect(wet).connect(out); out.connect(a.destination);
   const gtr = a.createBiquadFilter(); gtr.type = 'lowpass'; gtr.frequency.value = 2300; gtr.Q.value = .5; const gg = a.createGain(); gg.gain.value = 1.6; gtr.connect(gg).connect(bus); MUS.gtr = gtr; // a warmer, rounder string
   MUS.ac = a; MUS.bus = bus; MUS.out = out; MUS.ks = {}; MUS.step = 0; MUS.next = a.currentTime + .4;

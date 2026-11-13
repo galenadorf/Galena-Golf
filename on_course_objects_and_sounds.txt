@@ -713,7 +713,7 @@ NOT here yet: concession stands and restroom buildings of their own (the OSM bui
 SOUNDS
 ------
   - The background music, on the 1st hole only (courses.json `music`: [1]; it fades out on the way to the 2nd): an original, calm fingerpicked guitar and piano piece in D, in the spirit of a spring afternoon in Georgia
-    (not the Masters theme, which is copyrighted), synthesised live, quietly (about 40 % of the level it had at first; Settings > Music).
+    (not the Masters theme, which is copyrighted), synthesised live, quietly (about a fifth of the level it had at first; Settings > Music).
   - Augusta's own spring chorus in place of the recorded birdsong (`scene.chorus`, `chorusTick`, synthesised, no recordings): each hole draws its cast, one
     of each, from northern cardinal (90 %; "cheer-cheer-cheer" or "birdy-birdy"), Carolina wren (60 %; "teakettle"), pine warbler (55 %; a one-pitch trill),
     tufted titmouse (45 %; "peter-peter"), northern mockingbird (35 %; borrowed phrases, each two or three times), Carolina chickadee (30 %; "fee-bee
