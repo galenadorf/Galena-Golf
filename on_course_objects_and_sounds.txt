@@ -683,7 +683,7 @@ Landmarks, always (scene keys in courses.json; `buildClubhouseANGC`, `buildCabin
   - Butler Cabin (`scene.cabins` 'butler', `buildButlerCabin`, after a photograph): white painted brick under a side-gabled slate roof, one dormer, a wide white
     chimney, a door with side lights under a flat cornice between black lanterns, a shuttered window and a white bay window, lower wings at both ends, hedges
     and azaleas. It faces the clubhouse (which way it really faces is a guess).
-  - The main leader board (`scene.leaderboard`, OSM node, facing south-east left of the 1st fairway; after a photograph): a wide dark-green beam on one thick
+  - The main leader board (`scene.leaderboard`, OSM node, facing south-east, 40 m right of the 1st fairway about two-fifths of the way to the green; after a photograph): a wide dark-green beam on one thick
     round green post; on it the white main board with LEADERS on a raised cap, a grey-blue grid with the HOLE and PAR rows and ten player rows, and two
     lower side panels, THRU at the left and a blank one at the right. It shows the player's round so far, over and under par through each hole (red under,
     green level, black over), as it stood when the hole loaded.
@@ -697,7 +697,10 @@ The Masters dressing, always (`scene.dressing`, `buildDressingANGC`; only round 
   ("You killed a guy!") and the grandstands ("Off the grandstand!"), and passes through the ropes, stakes, towers and boards:
   - TV camera towers, OSM's 12: dark-green scaffolding 9-12 m tall (four legs, cross braces), a railed platform under a canopy, a camera on it. Green, as
     "the scoreboards and the camera towers" are at the Masters (GOLF.com).
-  - The 8 on-course leader boards OSM maps (with the way each faces; one is back to back): the main board's design at 0.62 scale.
+  - The on-course leader boards, 12 in all (the club has about 11 "white iron" boards at the hubs where patrons walk: 5/6, 9/10, 12, 16, 17/18 and near the
+    3rd, 7th, 13th and 15th/16th): the 8 OSM maps (one is back to back) at the 2nd, 3rd, 6th, 8th, 10th and 11th greens and tees, the 15th/17th and the 18th, and 4 ESTIMATED
+    ones where OSM has none (`est` in courses.json: by the 9th green / 10th tee, the 13th, the 16th and the 17th green: a clear spot of rough, straw or first
+    cut about 30 m from the line of play, facing it). The main board's design at 0.62 scale.
   - Grandstands (fan guides): behind the 7th green, behind the 12th tee (seen from 11 and 13 too), both sides of the 15th green (seen from 16): green steel
     tiers, 8 rows, full of seated patrons.
   - Gallery ropes along both sides of every hole, about 5 m outside the fairway from 40 m off the tee, and round the back of the green: green stakes every
