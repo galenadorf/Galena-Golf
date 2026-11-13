@@ -705,7 +705,7 @@ The Masters dressing, always (`scene.dressing`, `buildDressingANGC`; only round 
   - Patrons behind the ropes: sparse down the fairway, thicker by the tee, packed round the green, many in caps; at the green some seated in the green
     folding chairs. Up to 2,600 a hole, in instanced parts.
   - Two green trash cans beside each tee.
-NOT here yet: concession stands and restroom buildings of their own (the OSM buildings stand in for them), patrons walking, crowd sounds (roars, applause). Also NOT here: turkeys, gopher, banner plane, deer, highway traffic, parked carts, moving cart, hot dog, fountain, signs, songs.
+NOT here yet: concession stands and restroom buildings of their own (the OSM buildings stand in for them), patrons walking. Also NOT here: turkeys, gopher, banner plane, deer, highway traffic, parked carts, moving cart, hot dog, fountain, signs, songs.
 
 SOUNDS
 ------
@@ -716,7 +716,16 @@ SOUNDS
     tufted titmouse (45 %; "peter-peter"), northern mockingbird (35 %; borrowed phrases, each two or three times), Carolina chickadee (30 %; "fee-bee
     fee-bay"), mourning dove (30 %; "coo-OO-oo-oo-oo"), brown thrasher (25 %; Georgia's state bird, each phrase twice) and eastern bluebird (25 %; a soft
     warble): about 4 birds a hole. Each sings short bouts 10-40 s apart, then rests one to four minutes, and only one sings at a time: about one song every
-    17 s on average. Soft, panned, quieter and rarer in the rain.
+    17 s on average. Soft (30 % quieter than at first, `CHORUS.vol`), panned, quieter and rarer in the rain.
+  - The crowd (`scene.crowd`, Settings > Crowd; synthesised, `crowdAfterShot`, `crowdTick`; the birds hold their song while it is loud):
+      murmur       a low bed of voices that swells near the green, the tee and the grandstands and fades to nothing down the fairway (about 75 m round a green).
+      applause or roar, the dice rolled each time (50/50): a hole-out from off the green, a birdie or better, a putt of 20 ft or more, or an approach that
+                   finishes inside 8 ft: either the Masters' polite applause (claps ramping up and away, a soft "ahh") or a roar (a swell of voices, dense
+                   clapping, a few whoops). Never within 2.5 s of another reaction.
+      gasp         the ball hits a patron ("You killed a guy!"), or a putt from inside 6 ft is missed: a sharp intake of breath and a few "oh!"s.
+      groan        a sympathetic "ohhh": the ball goes in the water by the crowd, or a makeable putt (under 26 ft) lips out or stops within a foot of the hole.
+      far roars    a muffled roar from another hole, now and then: every 70-160 s on holes 11-16 (Augusta's roars carry round Amen Corner), every 3-7 minutes
+                   elsewhere; never during a swing or flight. Invented flavour: nobody is playing those holes.
   - NO rare unseen sound (the fart), plane drone, truck sounds, cart radio or hole song. The strikes, landing, trees, water, cup, chimes and interface are as
     on every course; the ball off a patron or a grandstand gives the thud the clubhouse walls give.
 

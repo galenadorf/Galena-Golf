@@ -557,6 +557,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
     <div class="mrow">Dramatic bounce<div class="seg" id="segDrama"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
     <div class="mrow">PALS Rules<div class="seg" id="segPals"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
     <div class="mrow" id="musRow" hidden>Music<div class="seg" id="segMus"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
+    <div class="mrow" id="crowdRow" hidden>Crowd<div class="seg" id="segCrowd"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
     <div class="mrow mpRow">Live room<div class="mpRoom"><input id="mpCode" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Code" enterkeyhint="go"><button class="mpb" id="mpJoin">Join</button></div></div>
     <div class="mpInfo" id="mpInfo">Play live with friends: everyone in the same room sees the others' balls fly on the same hole, and the scores.<div class="mpBtns"><button class="mpb" id="mpNew">New room</button><button class="mpb" id="mpShare">Share link</button></div></div>
     <div id="buildNo" style="font:500 13px var(--sans,system-ui);color:#b4b4b4;padding:6px 4px 2px;text-align:center;font-variant-numeric:tabular-nums">Build …</div>
@@ -1093,10 +1094,10 @@ function computeLaunch(ci, sw, st, surf, yaw, hand, teed, lieRoll) {
     sm = Math.max(sm, .3);
     const tempoMult = .85 + .15 * q;
     let lieSpeed = lie.speed;
-    if (surf === S.SAND && c.type === 'wedge') lieSpeed = .88;
-    if (lie.dist) {
+    const dist = surf === S.SAND ? sandDist(c) : lie.dist;   // sand: a share of the fairway carry that falls with the club's loft (sandF)
+    if (dist) {
       // the ball speed that makes this lie carry f times the fairway shot (calibrated per club: carry ~ speed^k)
-      const f = lerp(lie.dist[0], lie.dist[1], lieRoll == null ? .5 : clamp(lieRoll, 0, 1)), T = c.lieCal && c.lieCal[surf];
+      const f = lerp(dist[0], dist[1], lieRoll == null ? .5 : clamp(lieRoll, 0, 1)), T = c.lieCal && c.lieCal[surf];
       if (T) {
         let i = 0; while (i < T.length - 2 && p > T[i + 1].p) i++;
         const u = clamp((p - T[i].p) / (T[i + 1].p - T[i].p), 0, 1), k = lerp(T[i].k, T[i + 1].k, u), r = lerp(T[i].r, T[i + 1].r, u);
@@ -1180,11 +1181,11 @@ function clubTables() {
     // rough lies: carry with the lie's launch and spin at full and 80 % ball speed, against the fairway carry, for
     // swings of a quarter, half, three quarters and full length
     c.lieCal = {};
-    for (const sf of [S.ROUGH, S.DEEP, S.STRAW]) {
+    for (const sf of [S.ROUGH, S.DEEP, S.STRAW, S.SAND]) {
       const lie = SURF[sf].lie; c.lieCal[sf] = [];
       for (const pp of [.25, .5, .75, 1]) {
-        const v0 = c.ballSpeed * Math.pow(pp, POW_EXP), w0 = c.spin * spinFrac(pp), cf = flatCarry(v0, clubLaunch(c, pp), w0);
-        const c1 = flatCarry(v0, clubLaunch(c, pp) + lie.launch, w0 * lie.spin), c2 = flatCarry(v0 * .8, clubLaunch(c, pp) + lie.launch, w0 * lie.spin);
+        const v0 = c.ballSpeed * Math.pow(pp, POW_EXP), w0 = c.spin * spinFrac(pp), cf = flatCarry(v0, clubLaunch(c, pp), w0), xl = sf === S.SAND && c.type === 'wedge' ? SAND_WEDGE_LOFT * (.5 + .5 * (1 - pp)) : 0;   // (xl: the steeper blow a wedge makes out of sand, as in computeLaunch)
+        const c1 = flatCarry(v0, clubLaunch(c, pp) + lie.launch + xl, w0 * lie.spin), c2 = flatCarry(v0 * .8, clubLaunch(c, pp) + lie.launch + xl, w0 * lie.spin);
         c.lieCal[sf].push({ p: pp, k: Math.log(c1 / c2) / Math.log(1.25), r: cf / c1 });
       }
     }
@@ -1212,6 +1213,12 @@ function flatCarry(speed, launch, rpm) {
 // a wedge swung short launches higher, as a real golfer's does (more loft at impact, an open face, a steeper blow): the lob wedge goes from 33.5 deg at full power to about 41 at half and 46 at a quarter,
 // so a 25 yard lob carries 9 m high instead of 5; the other wedges and the short irons less, in proportion to their loft; woods and hybrids keep their launch. The carry tables use it too, so the aim ring still shows the true carry
 const PARTIAL_LOFT = 17, SAND_WEDGE_LOFT = 4;
+// Out of a bunker a swing carries a share of what the same swing carries off the fairway, and the share falls gradually with loft: the more loft, the more the club
+// goes under the ball and the cleaner the contact, so a sand or lob wedge loses about 10 %, a pitching wedge about 17 %, a 7 iron about 28 %, a hybrid about 35 % and
+// the woods (and the driver, which loses a tenth more off the grass) about 38 %. SAND_F: the share at the two ends, SAND_LOFT: the lofts they belong to (the woods' and the sand wedge's).
+const SAND_F = [.62, .90], SAND_LOFT = [18, 56];
+const sandF = c => lerp(SAND_F[0], SAND_F[1], clamp((c.loft - SAND_LOFT[0]) / (SAND_LOFT[1] - SAND_LOFT[0]), 0, 1));
+const sandDist = c => { const f = sandF(c); return [f, f]; };
 function clubLaunch(c, p) {
   return c.launch + clamp((c.loft - 22) / 38, 0, 1) * PARTIAL_LOFT * Math.pow(1 - clamp(p, 0, 1), 1.2);   // (the extra grows with the club's loft: none for woods and hybrids, a little for mid irons, most for the lob wedge)
 }
@@ -3854,6 +3861,7 @@ function buildDressingANGC(C, grp) {
     const [cx, cz] = P(.4, 0); bx(.7, .45, .4, cx, y + H + .85, cz, 0x2a2c2e, ry); bx(.35, .9, .35, cx, y + H + .3, cz, 0x2a2c2e, ry);   // the camera on its tripod head
   }
   // the grandstands: green tiers, the front row low, rising away from the play
+  C.crowdAt = [];   // where the crowd is, for crowdLevel: [x, z, radius, weight] for the green, the tee and each stand
   const hole = C.def.rh, seated = [], solid = [];   // (behind a green is past it along the line of play; behind a tee, back from it); solid: what the ball bounces off
   for (const st of D.stands || []) {
     if (st.hole - 1 !== G.hole && !(st.also || []).includes(G.hole + 1)) continue;
@@ -3870,8 +3878,10 @@ function buildDressingANGC(C, grp) {
     }
     for (const sgn of [-1, 1]) for (let k = 0; k <= rows; k += 2) { const ox = cx + dx * k * .85 + Math.cos(ry) * sgn * W / 2, oz = cz + dz * k * .85 - Math.sin(ry) * sgn * W / 2, hh = .35 + k * .45 + 1; bx(.16, hh, .16, ox, y0 + hh / 2, oz, GRN, ry); }
     const bk = rows * .85; bx(W, 1.2, .08, cx + dx * bk, y0 + .35 + rows * .45 + .6, cz + dz * bk, 0x1f3f2a, ry);   // the back rail
+    C.crowdAt.push([cx + dx * bk / 2, cz + dz * bk / 2, 60, 1.1]);
     solid.push({ x: cx + dx * bk / 2, z: cz + dz * bk / 2, c: Math.cos(ry), s: Math.sin(ry), hw: W / 2 + .2, hd: bk / 2 + .4, y1: y0 + .35 + rows * .45 + 1.4, t: 400002 });
   }
+  { const ln0 = hole.line.map(p => at(p)); C.crowdAt.push([ln0[ln0.length - 1][0], ln0[ln0.length - 1][1], 75, 1], [ln0[0][0], ln0[0][1], 45, .6]); }   // the crowd round the green and the tee (crowdLevel); the stands add theirs below
   // the ropes and the patrons along them: both sides of the hole line, the first spot past the fairway's edge (+5 m), from 40 m out to the green
   const ln = hole.line.map(p => at(p)), stakes = [], stand = [], chairs = [];
   const clearAt = (x, z) => !C.isOB(x, z) && C.wl(x, z) < C.h(x, z) - .05 && C.fieldAt(C.F.green, x, z) > 4 && C.fieldAt(C.F.tee, x, z) > 2 && C.fieldAt(C.F.sand, x, z) > 1 && C.fieldAt(C.F.fair, x, z) > 2 && !(C.treeHit && C.treeHit(x, groundY(x, z) + 1, z, false) >= 0);
@@ -4250,7 +4260,7 @@ function setCourse(key) {
   G.hole = 0; G.submitted = false; G.practice = false; G.pg = null; document.body.classList.remove('pg');
   if (settings.course !== COURSE.key) { settings.course = COURSE.key; saveSettings(); }
   playFill();
-  $('boardName').textContent = COURSE.name; $('aboutCourse').textContent = COURSE.about; $('musRow').hidden = !COURSE.music;
+  $('boardName').textContent = COURSE.name; $('aboutCourse').textContent = COURSE.about; $('musRow').hidden = !COURSE.music; $('crowdRow').hidden = !(COURSE.scene && COURSE.scene.crowd);
   document.querySelectorAll('.courseSel').forEach(el => { el.value = COURSE.key; });
   showBest(); refreshBoards(); try { loadWorld(); } catch (e) { } refreshResume();
   if (MP.inited && mpIsLobby(MP.room) && MP.room !== mpLobby()) { if (MP.spec) mpResume(true); mpJoin(mpLobby()); } // each course has its own lobby
@@ -6770,7 +6780,7 @@ function birdTick(now) {
 // state bird: varied phrases, each said twice), northern mockingbird (phrases borrowed from the others, each said three or four times), eastern bluebird (a soft
 // warble) and mourning dove (a low hollow "coo-OO-oo-oo-oo"). Each hole draws its own cast; each bird sings bouts with its species' gaps, softly, panned and set back
 // by distance; fewer and quieter in the rain.
-const CHORUS = { hole: -1, birds: [], out: null, ac: null, quiet: 0 };
+const CHORUS = { hole: -1, birds: [], out: null, ac: null, quiet: 0, vol: .7 };   // vol: all the birds' level, 30 % down at the user's request
 function chWhistle(a, out, t, f0, f1, d, v, curve) {
   const o = a.createOscillator(), g = a.createGain(); o.type = 'sine';
   if (curve) { const n = 12, c = new Float32Array(n); for (let i = 0; i < n; i++) { const u = i / (n - 1); c[i] = f0 + (f1 - f0) * (curve === 'arc' ? Math.sin(u * Math.PI) : curve === 'late' ? u * u : Math.sqrt(u)); } o.frequency.setValueCurveAtTime(c, t, d); }
@@ -6812,7 +6822,7 @@ function chorusTick(now) {
     const c = CH_CAST[b.sp]; if (b.left <= 0) b.left = c[2][0] + Math.floor(Math.random() * (c[2][1] - c[2][0] + 1));
     if (rain && Math.random() < .6) { b.next = now + 8000; continue; }
     let o = CHORUS.out; if (a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = b.pan; p.connect(CHORUS.out); o = p; }
-    const v = c[4] * b.far * (rain ? .6 : 1) * (.85 + Math.random() * .3), d = CH_SONG[b.sp](a, o, a.currentTime + .05, v);
+    const v = CHORUS.vol * c[4] * b.far * (rain ? .6 : 1) * (.85 + Math.random() * .3), d = CH_SONG[b.sp](a, o, a.currentTime + .05, v);
     CHORUS.quiet = now + d * 1000 + 1200;
     b.left--; b.next = now + d * 1000 + 1000 * (b.left > 0 ? c[1][0] + Math.random() * (c[1][1] - c[1][0]) : c[3][0] + Math.random() * (c[3][1] - c[3][0]));
   }
@@ -7146,6 +7156,122 @@ function mpInit() {
   mpSync();
 }
 
+/* ---------- the crowd (courses with scene.crowd: Augusta) ----------
+   Synthesised, no recordings (the bird chorus and the music are made the same way); every sound is built by a function that takes the audio context, an output node
+   and a start time, so the same code renders into an OfflineAudioContext to be checked or listened to. What a hole's crowd is, and where it stands, comes from the dressing
+   (C.crowdAt: the green, the tee, the grandstands, each with a radius).
+     murmur   a low bed of voices that swells near the green, the tee and the stands and fades down the fairway
+     polite   the Masters' own applause: claps ramping up and away, a soft "ooh" under them
+     roar     a swell of voices with dense clapping and a few whoops
+     gasp     the sharp intake of breath and a few "oh!"s: the ball hits a patron, or a putt under 6 ft is missed
+     groan    a sympathetic "ohhh": the ball goes in the water by the crowd, or a makeable putt (under 26 ft) lips out or stops within a foot of the hole
+     far      a muffled roar from another hole (the back nine mostly: Augusta's roars carry), now and then
+   A great moment (a hole-out from off the green, a birdie or better, a putt of 20 ft or more, an approach inside 8 ft) is cheered with polite applause or a roar, the dice
+   rolled each time (CROWD.roarP). Nothing is stored or sent. */
+const CROWD = { roarP: .5, vol: 2.5, murmurVol: .009, last: 0, farAt: 0, farHole: -1, ac: null, out: null, mur: null, noise: null };
+const crowdOn = () => !!(settings.sound && settings.crowd !== false && RDC && RDC.scene && RDC.scene.crowd && !document.hidden && AC && AC.state === 'running');   // (RDC: none yet before a course is chosen, and crowdTick runs from page load)
+function crowdNoise(a) { if (a._crNoise) return a._crNoise; const n = Math.floor(a.sampleRate * 3), b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return a._crNoise = b; }
+// a stretch of filtered noise, shaped by an envelope [[time s, gain], ...] (linear between the points), panned
+function crNoise(a, out, t, dur, type, f, q, env, pan) {
+  const s = a.createBufferSource(); s.buffer = crowdNoise(a); s.loop = true; const fl = a.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+  const g = a.createGain(); g.gain.setValueAtTime(0, t); for (const [u, v] of env) g.gain.linearRampToValueAtTime(v, t + u); g.gain.linearRampToValueAtTime(0, t + dur);
+  let n = g; s.connect(fl).connect(g); if (pan && a.createStereoPanner) { const pn = a.createStereoPanner(); pn.pan.value = pan; g.connect(pn); n = pn; } n.connect(out);
+  s.start(t, Math.random() * 2); s.stop(t + dur + .05);
+}
+// one clap: a few ms of noise, band-passed
+function crClap(a, out, t, v, pan) { crNoise(a, out, t, .012 + Math.random() * .02, 'bandpass', 1400 + Math.random() * 2400, 1.1, [[.002, v]], pan); }
+// a voice: a sawtooth with a little vibrato through formant filters ([[Hz, Q, gain], ...]), gliding f0 -> f1
+function crVoice(a, out, t, f0, f1, dur, v, fm, att) {
+  const o = a.createOscillator(), vb = a.createOscillator(), vg = a.createGain(), g = a.createGain(), mix = a.createGain(); o.type = 'sawtooth';
+  o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(40, f1), t + dur); vb.frequency.value = 4.8 + Math.random() * 1.6; vg.gain.value = f0 * .016; vb.connect(vg).connect(o.frequency);
+  for (const [f, q, gn] of fm) { const b = a.createBiquadFilter(); b.type = 'bandpass'; b.frequency.value = f; b.Q.value = q; const bg = a.createGain(); bg.gain.value = gn; o.connect(b).connect(bg).connect(mix); }
+  const A = att == null ? dur * .25 : att; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + A); g.gain.setValueAtTime(v, t + Math.max(A, dur * .6)); g.gain.linearRampToValueAtTime(0, t + dur);
+  let n = g; mix.connect(g); if (a.createStereoPanner) { const pn = a.createStereoPanner(); pn.pan.value = Math.random() * 1.4 - .7; g.connect(pn); n = pn; } n.connect(out);
+  o.start(t); vb.start(t); o.stop(t + dur + .05); vb.stop(t + dur + .05);
+}
+const CR_OH = [[520, 5, 1], [930, 6, .7], [2400, 5, .15]], CR_AH = [[780, 5, 1], [1200, 6, .6], [2600, 5, .15]], CR_OO = [[330, 6, 1], [800, 6, .45]];
+const crSpread = () => Math.random() * 1.6 - .8;
+function crowdPolite(a, out, t) {
+  const D = 3.8; crNoise(a, out, t, D, 'bandpass', 2300, .7, [[.8, .012], [1.6, .03], [2.6, .02]], 0); crNoise(a, out, t, D, 'bandpass', 700, .6, [[.5, .01], [1.4, .016]], 0);
+  for (let i = 0; i < 4; i++) crVoice(a, out, t + Math.random() * .25, 200 + Math.random() * 120, 190 + Math.random() * 100, .7 + Math.random() * .5, .012, CR_AH, .18);   // the soft "ahh" of a crowd that likes what it saw
+  const n = 95; for (let i = 0; i < n; i++) { const u = Math.random(), k = .2 + 3.2 * u, env = Math.sin(Math.PI * Math.pow(u, .75)); if (Math.random() < .18 + .8 * env) crClap(a, out, t + k, .02 + .05 * Math.random() * (.4 + env), crSpread()); }
+  return D;
+}
+function crowdRoar(a, out, t, far) {
+  const D = far ? 6.2 : 5.6, at = far ? 1.4 : .45;
+  const body = a.createGain(); body.gain.value = 1; let dst = out;
+  if (far) { const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 600; lp.Q.value = .4; const fg = a.createGain(); fg.gain.value = .32; body.connect(lp).connect(fg).connect(out); dst = body; } else body.connect(out);
+  const wob = () => Math.random() * .25 - .12;
+  crNoise(a, dst, t, D, 'bandpass', 640, .55, [[at, .09], [at + .9, .105 + wob() * .1], [at + 2.0, .095], [D * .72, .06]], -.3);
+  crNoise(a, dst, t, D, 'bandpass', 1500, .6, [[at, .07], [at + 1.1, .08], [at + 2.2, .06], [D * .72, .035]], .3);
+  crNoise(a, dst, t, D, 'highpass', 3200, .5, [[at + .3, .012], [at + 1.4, .02], [D * .7, .006]], 0);
+  if (!far) {
+    for (let i = 0; i < 7; i++) crVoice(a, dst, t + .12 + Math.random() * 1.1, 260 + Math.random() * 280, (260 + Math.random() * 280) * (1.05 + Math.random() * .25), .35 + Math.random() * .45, .024, Math.random() < .5 ? CR_OH : CR_AH, .1);   // the whoops
+    for (let i = 0; i < 130; i++) { const u = Math.random(), k = .25 + 4.2 * u, env = u < .5 ? .6 + u : 1.3 - u; crClap(a, dst, t + k, (.02 + .05 * Math.random()) * env, crSpread()); }
+  }
+  return D;
+}
+function crowdGaspSnd(a, out, t) {
+  crNoise(a, out, t, .55, 'bandpass', 2800, 1.3, [[.09, .05], [.2, .035]], crSpread() * .5);   // the intake of breath
+  for (let i = 0; i < 4; i++) crVoice(a, out, t + .04 + i * .035 + Math.random() * .05, 230 + Math.random() * 170, (230 + Math.random() * 170) * .86, .32 + Math.random() * .2, .03, CR_OH, .05);   // "oh!"
+  return .9;
+}
+function crowdGroanSnd(a, out, t) {
+  crNoise(a, out, t, 1.8, 'bandpass', 800, .8, [[.3, .012], [1.0, .016]], 0);
+  for (let i = 0; i < 6; i++) { const f = 150 + Math.random() * 130; crVoice(a, out, t + Math.random() * .2, f * 1.05, f * .82, 1.2 + Math.random() * .5, .03, CR_OO, .3); }   // "ohhhh", sinking
+  return 1.9;
+}
+function crowdBus(a) {
+  if (CROWD.ac !== a || !CROWD.out) { CROWD.ac = a; const c = a.createDynamicsCompressor(); c.threshold.value = -20; c.knee.value = 18; c.ratio.value = 4; c.attack.value = .01; c.release.value = .25; const g = a.createGain(); g.gain.value = CROWD.vol; g.connect(c).connect(a.destination); CROWD.out = g; CROWD.mur = null; }
+  return CROWD.out;
+}
+function crowdPlay(fn, ...args) {
+  const a = AC; if (!a) return 0; const out = crowdBus(a), d = fn(a, out, a.currentTime + .05, ...args);
+  if (typeof CHORUS !== 'undefined') CHORUS.quiet = Math.max(CHORUS.quiet || 0, performance.now() + d * 1000 + 600);   // the birds wait for it
+  return d;
+}
+// the crowd round a point: 1 at the middle of the green, the tee or a stand, 0 outside its radius (C.crowdAt: [x, z, radius, weight])
+function crowdLevel(x, z) {
+  const C = G.C; if (!C || !C.crowdAt) return 0; let m = 0;
+  for (const [cx, cz, r, w] of C.crowdAt) { const d = Math.hypot(x - cx, z - cz); if (d < r) { const u = 1 - d / r; m = Math.max(m, w * u * (2 - u)); } }
+  return m;
+}
+function crowdAfterShot(sh, r) {
+  if (!crowdOn() || G.pg) return;
+  const C = G.C, par = C.def.par, put = sh.L.putt, now = performance.now(), pd = Math.hypot(C.cup.x - G.prev.x, C.cup.z - G.prev.z);   // pd: how far from the hole the stroke was played
+  if (now - CROWD.last < 2500) return;
+  const cheer = () => { CROWD.last = now; const roar = Math.random() < CROWD.roarP; setTimeout(() => { if (crowdOn()) crowdPlay(roar ? crowdRoar : crowdPolite, false); }, 250); };
+  if (r.holed) {
+    const sc = G.strokes - par;
+    if ((!put && pd > 6) || sc <= -1 || (put && pd >= 6.1)) cheer();   // a hole-out from off the green, a birdie or better, a putt of 20 ft or more
+  } else if (put) {
+    const fd = Math.hypot(r.final.x - C.cup.x, r.final.z - C.cup.z), lip = (r.events || []).some(e => e.type === 'lip');
+    if (pd < 1.8288 && !r.water && !r.ob) { CROWD.last = now; setTimeout(() => { if (crowdOn()) crowdPlay(crowdGaspSnd); }, 150); }   // a miss from inside 6 ft: the gasp
+    else if (!r.water && !r.ob && pd < 8 && (lip || fd < .3)) { CROWD.last = now; setTimeout(() => { if (crowdOn()) crowdPlay(crowdGroanSnd); }, 250); }   // a makeable putt that lips out or dies within a foot of the hole: the groan
+  } else if (!r.water && !r.ob && r.final && C.surf(r.final.x, r.final.z) === S.GREEN && Math.hypot(r.final.x - C.cup.x, r.final.z - C.cup.z) < 2.44 && Math.hypot(r.final.x - G.prev.x, r.final.z - G.prev.z) > 35) cheer();   // an approach that finishes inside 8 ft
+}
+function crowdGasp() { if (!crowdOn()) return; const now = performance.now(); if (now - CROWD.last < 1500) return; CROWD.last = now; crowdPlay(crowdGaspSnd); }
+function crowdGroan(x, z) { if (!crowdOn() || crowdLevel(x, z) < .12) return; const now = performance.now(); if (now - CROWD.last < 2500) return; CROWD.last = now; setTimeout(() => { if (crowdOn()) crowdPlay(crowdGroanSnd); }, 450); }
+// the murmur and the far roars, checked a few times a second
+function crowdTick() {
+  const a = AC, on = crowdOn() && G.state !== 'title' && G.C;
+  if (!on) { if (CROWD.mur) { try { const m = CROWD.mur; m.g.gain.setTargetAtTime(0, a.currentTime, .3); setTimeout(() => { try { m.src.forEach(x => x.stop()); } catch (e) { } }, 1500); } catch (e) { } CROWD.mur = null; } return; }
+  const out = crowdBus(a);
+  if (!CROWD.mur) {   // two layers of looped noise, each breathing slowly: a low hum of voices and a brighter chatter
+    const g = a.createGain(); g.gain.value = 0; g.connect(out); const src = [];
+    for (const [f, q, v, rate] of [[420, .7, 1, .17], [1100, .8, .55, .29]]) { const s = a.createBufferSource(); s.buffer = crowdNoise(a); s.loop = true; const fl = a.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = f; fl.Q.value = q; const lg = a.createGain(); lg.gain.value = v; const lf = a.createOscillator(), lfg = a.createGain(); lf.frequency.value = rate; lfg.gain.value = v * .3; lf.connect(lfg).connect(lg.gain); s.connect(fl).connect(lg).connect(g); s.start(0, Math.random() * 2); lf.start(); src.push(s, lf); }
+    CROWD.mur = { g, src };
+  }
+  const lv = crowdLevel(G.ball.x, G.ball.z); CROWD.mur.g.gain.setTargetAtTime(CROWD.murmurVol * Math.pow(lv, 1.3), a.currentTime, 1.2);
+  // a roar from another hole: back nine mostly (11-16 every minute or two), now and then elsewhere
+  const now = performance.now(), hole = G.hole + 1;
+  if (CROWD.farHole !== G.hole) { CROWD.farHole = G.hole; const hot = hole >= 11 && hole <= 16; CROWD.farAt = now + (hot ? 25000 + Math.random() * 60000 : 90000 + Math.random() * 150000); }
+  if (now >= CROWD.farAt) {
+    if (G.state === 'flight' || SW.phase === 'back' || SW.phase === 'down' || now - CROWD.last < 5000) CROWD.farAt = now + 4000;
+    else { crowdPlay(crowdRoar, true); const hot = hole >= 11 && hole <= 16; CROWD.farAt = now + (hot ? 70000 + Math.random() * 90000 : 180000 + Math.random() * 240000); }
+  }
+}
+setInterval(crowdTick, 300);
 /* ---------- background music (courses with music: true in COURSES) ---------- */
 // An original, calm piece in the spirit of a spring afternoon in Georgia (not the Masters theme, which is copyrighted): fingerpicked
 // guitar (Karplus-Strong strings) under a soft piano in D major, 66 bpm. About ten minutes before it comes round again: the tune, two
@@ -7929,9 +8055,9 @@ function updateFlight(dt) {
       const wall = e.id >= 100000;
       if (e.trunk) { SFX.trunk(); readoutNote('Off the trunk!', 'bad'); burst(e.x, e.y, e.z, 0, 0, [0x7d604a, 0x9a7b5f, 0x5e4636], 8, 1.6, 1); }
       else if (e.pass) { SFX.leaves(); readoutNote('Through the branches', 'ok'); burst(e.x, e.y, e.z, 0, 0, [0x3a7d43, 0x4c8a4a, 0x7dbb5e], 10, 1.4, .6); }
-      else { SFX.tree(); readoutNote(wall ? ((G.C.colNames && G.C.colNames[e.id]) || 'Off the clubhouse wall!') : 'Timber! Clipped the trees', 'bad'); burst(e.x, e.y, e.z, 0, 0, wall ? [0xf4ecd9, 0xcfc5b4, 0xb9574a] : [0x3a7d43, 0x4c8a4a, 0x7dbb5e], 16, 2, 1); }
+      else { SFX.tree(); if (e.id === 400001) crowdGasp(); readoutNote(wall ? ((G.C.colNames && G.C.colNames[e.id]) || 'Off the clubhouse wall!') : 'Timber! Clipped the trees', 'bad'); burst(e.x, e.y, e.z, 0, 0, wall ? [0xf4ecd9, 0xcfc5b4, 0xb9574a] : [0x3a7d43, 0x4c8a4a, 0x7dbb5e], 16, 2, 1); }
     }
-    else if (e.type === 'splash') { SFX.splash(); readoutNote(SPLASH_NOTES[(Math.random() * SPLASH_NOTES.length) | 0], 'bad'); burst(e.x, e.y + .05, e.z, 0, 0, [0xffffff, 0xcfeef5, 0x9fd6e2], 30, 2.6, 4.5); }
+    else if (e.type === 'splash') { SFX.splash(); crowdGroan(e.x, e.z); readoutNote(SPLASH_NOTES[(Math.random() * SPLASH_NOTES.length) | 0], 'bad'); burst(e.x, e.y + .05, e.z, 0, 0, [0xffffff, 0xcfeef5, 0x9fd6e2], 30, 2.6, 4.5); }
     else if (e.type === 'pin') { SFX.pin(); readoutNote(e.drop ? 'Off the flagstick and in!' : 'Off the flagstick!', e.drop ? 'good' : ''); }
     else if (e.type === 'lip') { readoutNote('Lip out · too firm', 'ok'); }
     else if (e.type === 'lipin') { readoutNote('Lipped in!', 'good'); }
@@ -8084,7 +8210,7 @@ function finishShot() {
   document.body.classList.remove('flight'); if (r.cup) C.cup = r.cup;
   if (sh.L.putt) puttLineShow(r);
   if (G.pg) { pgFinish(r); return; }   // the practice green keeps no stats, records or awards
-  statsShot(sh, r);
+  statsShot(sh, r); crowdAfterShot(sh, r);
   if (r.holed) {
     G.state = 'holed'; G.holedT = 0; G.scores[h] = G.strokes;
     if (G.gir[h] == null) G.gir[h] = G.strokes - 1 <= par - 2;
@@ -8912,6 +9038,7 @@ function syncMenu() {
   document.querySelectorAll('#segPals button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (pals() ? 1 : 0)));
   document.querySelectorAll('#segZoom button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.zoom !== false ? 1 : 0)));
   document.querySelectorAll('#segMus button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.music !== false ? 1 : 0)));
+  document.querySelectorAll('#segCrowd button').forEach(b => b.classList.toggle('sel', +b.dataset.v === (settings.crowd !== false ? 1 : 0)));
   mpSync();
   $('mQuit').style.display = G.state === 'title' ? 'none' : ''; // nothing to quit from the start screen
   $('mRestart').style.display = !G.practice && !G.pg && G.state !== 'title' && G.scores ? '' : 'none';   // only during a round
@@ -10138,6 +10265,7 @@ function initInput() {
   $('compSave').onclick = () => compSend('save', COMP.d); $('compDel').onclick = () => { if (confirm('Delete "' + COMP.d.name + '"?')) compSend('delete', COMP.d); };
   document.querySelectorAll('#segDrama button').forEach(b => b.onclick = () => { settings.drama = b.dataset.v === '1'; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segMus button').forEach(b => b.onclick = () => { settings.music = b.dataset.v === '1'; saveSettings(); syncMenu(); musicTick(); });
+  document.querySelectorAll('#segCrowd button').forEach(b => b.onclick = () => { settings.crowd = b.dataset.v === '1'; saveSettings(); syncMenu(); crowdTick(); });
   $('skipBtn').onclick = e => { e.stopPropagation(); skipShot(); };
   $('mullBtn').onclick = e => { e.stopPropagation(); mulliganTap(); };
   $('specResume').onclick = e => { e.stopPropagation(); mpResume(); };
