@@ -1160,6 +1160,7 @@ function calibrateClubs() {
 // what each club does in the air of the course in play (AIR_K): the carry table for the tempo pad, the total, the chip share, the rough-lie factors, and
 // CLUBS[].carry itself (a full swing's flat carry here: the caddie, the club label and the aim ring all use it)
 function clubTables() {
+  for (const k in LIE_TAB) delete LIE_TAB[k];   // (the lie tables follow the clubs: redone on a new altitude)
   const wx = WX, fw = SURF_WX; WX = WEATHERS[1]; SURF_WX = SURF;   // (always measured in the same dry, calm conditions as at start-up, whatever the weather in play)
   for (const c of GOLF_BAG) {
     if (c.type === 'putter') continue;
@@ -1218,6 +1219,33 @@ function carryForPower(c, p) {
   if (!c.table) return 0;
   const f = clamp(p, 0, 1) * 20, i = Math.floor(f), u = f - i;
   return i >= 20 ? c.table[20] : c.table[i] * (1 - u) + c.table[i + 1] * u;
+}
+// What the screen shows for a club is what a pure swing really carries from the lie the ball is in (a bunker, the rough, pine straw, a driver off the grass), on flat ground:
+// carryForPower and c.carry are the fairway's (a tee shot's), which is what the aim line's own estimate (G.carry, run on the real ground and lie) is not. lieTable works out
+// the 21-point table for one club, lie and tee state once (the same computeLaunch the swing uses, its carry by flatCarry) and keeps it until clubTables redoes the clubs.
+const LIE_TAB = {};
+function lieTable(c, surf, teed) {
+  if (!c.table || c.type === 'putter' || c.type === 'disc') return c.table || null;
+  const k = c.id + ':' + surf + ':' + (teed ? 1 : 0); if (LIE_TAB[k]) return LIE_TAB[k];
+  const ci = CLUBS.indexOf(c), t = [0];
+  for (let j = 1; j <= 20; j++) { const L = computeLaunch(ci, { p: j / 20, Tb: .45, Td: .15 }, { h: 0, v: 0, loose: false }, surf, 0, 1, !!teed, .5); t.push(flatCarry(L.ballSpeed, L.launch, L.spin)); }
+  if (Math.abs(t[20] / c.table[20] - 1) < .004) return LIE_TAB[k] = c.table;   // (a lie that does not change the swing, a tee shot or a fairway iron: the table as it always was)
+  return LIE_TAB[k] = t;
+}
+function shownTable(c) { return G.C && G.ball ? lieTable(c, G.surf, G.teed) : c.table; }
+function shownCarry(c, p) {
+  const t = shownTable(c); if (!t) return 0;
+  const f = clamp(p, 0, 1) * 20, i = Math.floor(f), u = f - i, v = i >= 20 ? t[20] : t[i] * (1 - u) + t[i + 1] * u;
+  // the club in hand: scaled so its full swing reads what the aim line says (G.carry, worked out on the real ground, a bunker's face included)
+  return v * (t !== c.table && c === CLUBS[G.club] && G.carry > 1 && t[20] > 1 ? G.carry / t[20] : 1);
+}
+// what a pure full swing with club ci carries from where the ball lies, on the real ground (the number the club shows when it is the one in hand)
+function lieCarryOf(ci) {
+  const c = CLUBS[ci]; if (c.type === 'putter') return 0;
+  if (ci === G.club && G.carry > 1) return G.carry;
+  const L = computeLaunch(ci, { p: 1, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, G.yaw, settings.hand, G.teed);
+  const r = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, disc: L.disc, maxT: 12, noTrees: true });
+  return r.land ? r.land.carry : r.total;
 }
 function powerForCarry(c, d) {
   if (!c.table) return 1;
@@ -3902,7 +3930,7 @@ function buildDressingANGC(C, grp) {
 }
 function dressingColliders(C, solid) {
   if (!solid.length) return;
-  C.colNames[400001] = 'Off a patron!'; C.colNames[400002] = 'Off the grandstand!';
+  C.colNames[400001] = 'You killed a guy!'; C.colNames[400002] = 'Off the grandstand!';
   const cell = 8, hash = new Map();
   solid.forEach((c, i) => { const r = Math.hypot(c.hw, c.hd) + .5; for (let gx = Math.floor((c.x - r) / cell); gx <= Math.floor((c.x + r) / cell); gx++) for (let gz = Math.floor((c.z - r) / cell); gz <= Math.floor((c.z + r) / cell); gz++) { const k = gx * 73856 + gz; if (!hash.has(k)) hash.set(k, []); hash.get(k).push(i); } });
   const base = C.treeHit;
@@ -7196,7 +7224,7 @@ function musSetup(a) {
   const bus = a.createGain(), out = a.createGain(), rv = a.createConvolver(), wet = a.createGain(), sr = a.sampleRate, L = Math.floor(sr * 2.4), ir = a.createBuffer(2, L, sr);
   for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < L; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / L, 3.2); }
   rv.buffer = ir; wet.gain.value = .28; bus.gain.value = 1;
-  out.gain.setValueAtTime(0, a.currentTime); out.gain.linearRampToValueAtTime(.1, a.currentTime + 3);   // (.1: halved, the user found .2 too loud)
+  out.gain.setValueAtTime(0, a.currentTime); out.gain.linearRampToValueAtTime(.075, a.currentTime + 3);   // (.075: first .2, halved, then a quarter off again at the user's request)
   bus.connect(out); bus.connect(rv).connect(wet).connect(out); out.connect(a.destination);
   const gtr = a.createBiquadFilter(); gtr.type = 'lowpass'; gtr.frequency.value = 2300; gtr.Q.value = .5; const gg = a.createGain(); gg.gain.value = 1.6; gtr.connect(gg).connect(bus); MUS.gtr = gtr; // a warmer, rounder string
   MUS.ac = a; MUS.bus = bus; MUS.out = out; MUS.ks = {}; MUS.step = 0; MUS.next = a.currentTime + .4;
@@ -8361,7 +8389,7 @@ function drawTempo(now) {
   const M = (SW.phase === 'back' || SW.phase === 'down' || SW.phase === 'ready') && SW.map ? SW.map : curMap(), zoomed = !putt && M.pz > 0;
   for (const p of [.25, .5, .75, 1]) {
     const y = top + H * p;
-    const lab = putt ? toFt(G.puttRange * p) + ' FT' : toLen(carryForPower(c, trackToPower(p, M))) + ' ' + lenU().toUpperCase();
+    const lab = putt ? toFt(G.puttRange * p) + ' FT' : toLen(shownCarry(c, trackToPower(p, M))) + ' ' + lenU().toUpperCase();
     x.save(); x.shadowColor = 'rgba(0,30,12,.45)'; x.shadowBlur = 2; x.shadowOffsetY = 1;
     x.fillStyle = '#fff'; x.font = FONT(600, 13); x.textAlign = 'right'; x.fillText(lab, tx - 21, y); x.restore();
     x.fillStyle = 'rgba(255,255,255,.6)'; x.fillRect(tx - 18, y - 1, 4, 2);
@@ -8411,8 +8439,8 @@ function drawTempo(now) {
     const s = SW.phase === 'back' ? SW.p : SW.pMax, pw = trackToPower(s, M), ch = G.chip;
     let rt;
     if (putt) rt = toFt(G.puttRange * s) + ' FT';
-    else if (ch) rt = fmtDistShort(ch.d * carryForPower(c, pw) / Math.max(.1, carryForPower(c, ch.p))).replace(' ', '').toUpperCase();
-    else rt = toLen(carryForPower(c, pw)) + ' ' + lenU().toUpperCase();
+    else if (ch) rt = fmtDistShort(ch.d * shownCarry(c, pw) / Math.max(.1, shownCarry(c, ch.p))).replace(' ', '').toUpperCase();
+    else rt = toLen(shownCarry(c, pw)) + ' ' + lenU().toUpperCase();
     const y = top + H * clamp(s, 0, 1.04);
     x.font = FONT(700, 12); x.textAlign = 'right'; x.textBaseline = 'middle';
     const tw2 = x.measureText(rt).width + 10, ry = clamp(y, top + 9, bot - 9);
@@ -8851,7 +8879,7 @@ function openBag() {
   $('bagLie').textContent = 'From the ' + (G.teed ? 'tee' : SURF[G.surf].name.toLowerCase()) + ' · ' + fmtDistShort(distToPin()) + ' to pin';
   CLUBS.forEach((c, i) => {
     const bt = document.createElement('button'); if (i === G.club) bt.className = 'sel';
-    bt.innerHTML = `<div class="bi">${({ Dr: 'DR', Pt: 'PUTT' })[c.id] || c.id}</div><div class="bn">${c.name}</div><div class="bd">${c.type === 'putter' ? 'On the green' : toLen(c.carry) + ' ' + lenU()}</div>${i === G.suggested ? '<span class="tip">TIP</span>' : ''}`;
+    bt.innerHTML = `<div class="bi">${({ Dr: 'DR', Pt: 'PUTT' })[c.id] || c.id}</div><div class="bn">${c.name}</div><div class="bd">${c.type === 'putter' ? 'On the green' : toLen(lieCarryOf(i)) + ' ' + lenU()}</div>${i === G.suggested ? '<span class="tip">TIP</span>' : ''}`;
     bt.onclick = () => { G.club = i; if (c.type === 'putter') pickPuttRange(); G.carryKey = ''; updateAim(true); closeSheets(); SFX.blip(); slopeShow(c.type === 'putter' && (G.surf === S.GREEN || G.surf === S.FRINGE)); setFlags(c.type !== 'putter'); };
     b.appendChild(bt);
   });

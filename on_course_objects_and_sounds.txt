@@ -694,7 +694,7 @@ Swirling wind on 11, 12 and 13 (Amen Corner, `engine.swirl`): the wind keeps shi
   pine needles and azalea petals whirl round the player there.
 Side roads (out of bounds, looks only, no traffic): every OSM road near a hole, Magnolia Lane and Washington Road among them.
 The Masters dressing, always (`scene.dressing`, `buildDressingANGC`; only round the hole in play; nothing moves). The ball bounces off the patrons
-  ("Off a patron!") and the grandstands ("Off the grandstand!"), and passes through the ropes, stakes, towers and boards:
+  ("You killed a guy!") and the grandstands ("Off the grandstand!"), and passes through the ropes, stakes, towers and boards:
   - TV camera towers, OSM's 12: dark-green scaffolding 9-12 m tall (four legs, cross braces), a railed platform under a canopy, a camera on it. Green, as
     "the scoreboards and the camera towers" are at the Masters (GOLF.com).
   - The 8 on-course leader boards OSM maps (with the way each faces; one is back to back): the main board's design at 0.62 scale.
@@ -710,7 +710,7 @@ NOT here yet: concession stands and restroom buildings of their own (the OSM bui
 SOUNDS
 ------
   - The background music, on the 1st hole only (courses.json `music`: [1]; it fades out on the way to the 2nd): an original, calm fingerpicked guitar and piano piece in D, in the spirit of a spring afternoon in Georgia
-    (not the Masters theme, which is copyrighted), synthesised live, quietly (half the level it had at first; Settings > Music).
+    (not the Masters theme, which is copyrighted), synthesised live, quietly (about 40 % of the level it had at first; Settings > Music).
   - Augusta's own spring chorus in place of the recorded birdsong (`scene.chorus`, `chorusTick`, synthesised, no recordings): each hole draws its cast, one
     of each, from northern cardinal (90 %; "cheer-cheer-cheer" or "birdy-birdy"), Carolina wren (60 %; "teakettle"), pine warbler (55 %; a one-pitch trill),
     tufted titmouse (45 %; "peter-peter"), northern mockingbird (35 %; borrowed phrases, each two or three times), Carolina chickadee (30 %; "fee-bee
