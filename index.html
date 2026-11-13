@@ -6596,7 +6596,7 @@ function sndFetch(a, k, fail) {
   try { fetch('sounds/' + k + '.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(buf => { if (buf) a.decodeAudioData(buf, b => { SND['s_' + k] = b; }, no); else no(); }).catch(no); } catch (e) { no(); }
 }
 // The rare and the long recordings are not all held decoded (about 15 MB between them): each pool keeps one ready, picked at random; once it has played the next is loaded.
-const FART_POOL = { n: Array.from({ length: 19 }, (_, i) => 'fart' + (i + 1)) }, BIRD_POOL = { n: [1, 2, 3, 4, 5].map(i => 'bird' + i), noRepeat: true }, TRUCK_POOL = { n: ['truckhorn', 'truckrumble'] };
+const FART_POOL = { n: Array.from({ length: 19 }, (_, i) => 'fart' + (i + 1)) }, BIRD_POOL = { n: [1, 2, 3, 4, 5].map(i => 'bird' + i), noRepeat: true }, AUG_BIRD_POOL = { n: [1, 2, 3, 4].map(i => 'augbird' + i), noRepeat: true }, TRUCK_POOL = { n: ['truckhorn', 'truckrumble'] };
 function poolNext(P, now) {
   if (P.k || !AC || now < (P.retry || 0)) return;
   let k; do k = P.n[Math.random() * P.n.length | 0]; while (P.noRepeat && k === P.last);
@@ -6773,75 +6773,25 @@ function fartSwing() {
 }
 // ---- soft birdsong: on every hole without a song, a recording of unseen birds plays now and then (sounds/bird1-5.mp3, picked at random) ----
 // Each clip is a 7-11 s bed of birds with its level baked in (quiet), panned to its own side; the next one comes after it ends plus a pause, never the same twice running.
-const BIRD = { next: 0, hole: -1, chk: 0 };
+// A course with scene.birds (Augusta) has its own four clips instead (sounds/augbird1-4.mp3, AUG_BIRD_POOL, 3-8 s each), played at scene.birds.gain of that level with its own
+// pause between clips (scene.birds.pause, seconds: min, max; the birds' only other rule is that they wait while the crowd is loud, BIRD.hold, set by crowdPlay).
+const BIRD = { next: 0, hole: -1, chk: 0, hold: 0 };
 function birdTick(now) {
   if (now - BIRD.chk < 300) return; BIRD.chk = now;
-  if (settings.sound && !document.hidden) { poolNext(FART_POOL, now); poolNext(BIRD_POOL, now); if (GC.hw) poolNext(TRUCK_POOL, now); }   // one of each kind ready (the truck only on a course with a road)
+  const BS = RDC && RDC.scene && RDC.scene.birds, BP = BS ? AUG_BIRD_POOL : BIRD_POOL;
+  if (settings.sound && !document.hidden) { poolNext(FART_POOL, now); poolNext(BP, now); if (GC.hw) poolNext(TRUCK_POOL, now); }   // one of each kind ready (the truck only on a course with a road)
   if (G.hole !== BIRD.hole) { BIRD.hole = G.hole; BIRD.next = now + 1500 + Math.random() * 2500; }
   if (now < BIRD.next) return;
   if (!settings.sound || document.hidden || G.state === 'title' || holeSong(G.hole) || !AC || AC.state !== 'running') { BIRD.next = now + 1000; return; }
-  if (RDC.scene && RDC.scene.chorus) { BIRD.next = now + chorusTick(now); return; }   // Augusta: its own spring chorus, synthesised (below)
-  const bk = poolReady(BIRD_POOL);
+  if (now < BIRD.hold) { BIRD.next = BIRD.hold + 1500 + Math.random() * 4000; return; }   // the crowd is making a noise: the birds wait for it
+  const bk = poolReady(BP);
   if (!bk) { BIRD.next = now + 3000; return; }   // (still loading, or offline without them cached)
   const a = AC, buf = SND[bk], rain = G.weather && G.weather.id === 'rain';
-  const s = a.createBufferSource(); s.buffer = buf; const g = a.createGain(); g.gain.value = (rain ? .6 : 1) * (.75 + Math.random() * .25); let n = g;
+  const s = a.createBufferSource(); s.buffer = buf; const g = a.createGain(); g.gain.value = (rain ? .6 : 1) * (.75 + Math.random() * .25) * (BS && BS.gain != null ? BS.gain : 1); let n = g;
   s.connect(g); if (a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = Math.random() * 1.2 - .6; g.connect(p); n = p; }
-  n.connect(a.destination); s.start(a.currentTime + .05); poolUsed(BIRD_POOL);
-  BIRD.next = now + buf.duration * 1000 + (rain ? 12000 + Math.random() * 14000 : 4000 + Math.random() * 12000);
-}
-// ---- Augusta's spring chorus (scene.chorus): the birds of the Georgia piedmont in April, synthesised (no recordings), each from its own unseen spot.
-// Northern cardinal (loud clear down-slurred whistles, "cheer-cheer-cheer", or rising "birdy-birdy"), Carolina wren ("teakettle-teakettle", rolling and loud),
-// tufted titmouse ("peter-peter-peter"), Carolina chickadee ("fee-bee fee-bay"), pine warbler (a musical one-pitch trill from the pines), brown thrasher (Georgia's
-// state bird: varied phrases, each said twice), northern mockingbird (phrases borrowed from the others, each said three or four times), eastern bluebird (a soft
-// warble) and mourning dove (a low hollow "coo-OO-oo-oo-oo"). Each hole draws its own cast; each bird sings bouts with its species' gaps, softly, panned and set back
-// by distance; fewer and quieter in the rain.
-const CHORUS = { hole: -1, birds: [], out: null, ac: null, quiet: 0, vol: .7 };   // vol: all the birds' level, 30 % down at the user's request
-function chWhistle(a, out, t, f0, f1, d, v, curve) {
-  const o = a.createOscillator(), g = a.createGain(); o.type = 'sine';
-  if (curve) { const n = 12, c = new Float32Array(n); for (let i = 0; i < n; i++) { const u = i / (n - 1); c[i] = f0 + (f1 - f0) * (curve === 'arc' ? Math.sin(u * Math.PI) : curve === 'late' ? u * u : Math.sqrt(u)); } o.frequency.setValueCurveAtTime(c, t, d); }
-  else { o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(40, f1), t + d); }
-  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + Math.min(.015, d * .2)); g.gain.setValueAtTime(v, t + d * .7); g.gain.linearRampToValueAtTime(0, t + d);
-  o.connect(g).connect(out); o.start(t); o.stop(t + d + .02);
-}
-const CH_SONG = {
-  cardinal(a, o, t, v) { const k = Math.random(); if (k < .55) { const n = 5 + (Math.random() * 4 | 0); for (let i = 0; i < n; i++) chWhistle(a, o, t + i * .3, 3900, 1900, .24, v); return n * .3; }
-    if (k < .85) { const n = 8 + (Math.random() * 4 | 0); for (let i = 0; i < n; i++) chWhistle(a, o, t + i * .15, 1900, 3500, .11, v * .9); return n * .15; }
-    chWhistle(a, o, t, 4200, 1800, .55, v); for (let i = 0; i < 7; i++) chWhistle(a, o, t + .65 + i * .1, 2600, 2300, .06, v * .8); return 1.4; },
-  wren(a, o, t, v) { const n = 3 + (Math.random() * 3 | 0), f = .9 + Math.random() * .2; for (let i = 0; i < n; i++) { const u = t + i * .34; chWhistle(a, o, u, 3100 * f, 4700 * f, .08, v); chWhistle(a, o, u + .1, 4900 * f, 2600 * f, .07, v); chWhistle(a, o, u + .2, 3000 * f, 3300 * f, .07, v * .85); } return n * .34; },
-  titmouse(a, o, t, v) { const n = 3 + (Math.random() * 3 | 0); for (let i = 0; i < n; i++) { chWhistle(a, o, t + i * .4, 3500, 3000, .14, v); chWhistle(a, o, t + i * .4 + .17, 2400, 2300, .13, v * .9); } return n * .4; },
-  chickadee(a, o, t, v) { const f = [4000, 3100, 3800, 2900]; f.forEach((x, i) => chWhistle(a, o, t + i * .34, x, x * .97, .26, v * (i % 2 ? .8 : 1))); return 1.4; },
-  pinewarbler(a, o, t, v) { const n = 14 + (Math.random() * 8 | 0), f = 3700 + Math.random() * 600; for (let i = 0; i < n; i++) chWhistle(a, o, t + i * .07, f * .92, f * 1.06, .05, v * (.7 + .3 * Math.sin(i / n * Math.PI))); return n * .07; },
-  thrasher(a, o, t, v) { let u = t; const P = 4 + (Math.random() * 3 | 0); for (let p = 0; p < P; p++) { const ph = []; for (let k = 0; k < 3 + (Math.random() * 3 | 0); k++) ph.push([1800 + Math.random() * 3200, 1800 + Math.random() * 3200, .05 + Math.random() * .07]); for (let rep = 0; rep < 2; rep++) { for (const [f0, f1, d] of ph) { chWhistle(a, o, u, f0, f1, d, v); u += d + .02; } u += .12; } u += .25; } return u - t; },
-  mockingbird(a, o, t, v) { let u = t; const P = 4 + (Math.random() * 4 | 0); for (let p = 0; p < P; p++) { const kind = Math.random(); const reps = 3 + (Math.random() * 2 | 0);
-      for (let r = 0; r < reps; r++) { if (kind < .25) { chWhistle(a, o, u, 3900, 1900, .2, v); u += .26; } else if (kind < .5) { chWhistle(a, o, u, 3100, 4700, .08, v); chWhistle(a, o, u + .1, 4800, 2600, .07, v); u += .24; } else { const f0 = 1800 + Math.random() * 3800, f1 = 1800 + Math.random() * 3800; chWhistle(a, o, u, f0, f1, .09, v); chWhistle(a, o, u + .11, f1, f0, .07, v * .8); u += .22; } }
-      u += .2; } return u - t; },
-  bluebird(a, o, t, v) { let u = t; for (let k = 0; k < 3 + (Math.random() * 3 | 0); k++) { const f = 1600 + Math.random() * 1300; chWhistle(a, o, u, f, f * (1.1 + Math.random() * .3), .16, v * .7, 'arc'); u += .21; } return u - t; },
-  dove(a, o, t, v) { const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.connect(o); chWhistle(a, lp, t, 480, 640, .5, v * 1.4, 'arc'); chWhistle(a, lp, t + .6, 560, 520, .55, v * 1.6); chWhistle(a, lp, t + 1.3, 510, 470, .5, v * 1.3); chWhistle(a, lp, t + 1.95, 500, 460, .5, v * 1.1); return 2.5; },
-};
-// species: [chance a hole has one, gap between songs in a bout (s), songs in a bout, pause between bouts (s), level]
-// (thinned out at the user's request: fewer birds a hole, longer gaps and rests, shorter bouts, and only one bird singing at a time: CHORUS.quiet)
-const CH_CAST = { cardinal: [.9, [10, 20], [2, 4], [60, 150], .05], wren: [.6, [12, 24], [1, 3], [75, 170], .05], titmouse: [.45, [10, 18], [1, 3], [75, 190], .04], chickadee: [.3, [16, 28], [1, 2], [100, 220], .035],
-  pinewarbler: [.55, [14, 28], [1, 3], [75, 170], .03], thrasher: [.25, [6, 12], [1, 2], [120, 280], .04], mockingbird: [.35, [6, 12], [1, 2], [100, 240], .045], bluebird: [.25, [16, 28], [1, 2], [100, 220], .03], dove: [.3, [24, 40], [1, 3], [120, 260], .035] };
-function chorusTick(now) {
-  const a = AC;
-  if (CHORUS.ac !== a) { CHORUS.ac = a; CHORUS.out = a.createGain(); CHORUS.out.gain.value = 1; CHORUS.out.connect(a.destination); CHORUS.hole = -1; }
-  if (CHORUS.hole !== G.hole) {   // a new cast for the hole
-    CHORUS.hole = G.hole; CHORUS.birds = [];
-    for (const sp in CH_CAST) { const c = CH_CAST[sp]; if (Math.random() >= c[0]) continue;
-      CHORUS.birds.push({ sp, pan: Math.random() * 1.6 - .8, far: .45 + Math.random() * .55, next: now + 3000 + Math.random() * 30000, left: 0 }); }
-  }
-  const rain = G.weather && G.weather.id === 'rain';
-  for (const b of CHORUS.birds) {
-    if (now < b.next) continue;
-    if (now < CHORUS.quiet) { b.next = CHORUS.quiet + 1500 + Math.random() * 5000; continue; }   // another bird is singing: wait for it to finish
-    const c = CH_CAST[b.sp]; if (b.left <= 0) b.left = c[2][0] + Math.floor(Math.random() * (c[2][1] - c[2][0] + 1));
-    if (rain && Math.random() < .6) { b.next = now + 8000; continue; }
-    let o = CHORUS.out; if (a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = b.pan; p.connect(CHORUS.out); o = p; }
-    const v = CHORUS.vol * c[4] * b.far * (rain ? .6 : 1) * (.85 + Math.random() * .3), d = CH_SONG[b.sp](a, o, a.currentTime + .05, v);
-    CHORUS.quiet = now + d * 1000 + 1200;
-    b.left--; b.next = now + d * 1000 + 1000 * (b.left > 0 ? c[1][0] + Math.random() * (c[1][1] - c[1][0]) : c[3][0] + Math.random() * (c[3][1] - c[3][0]));
-  }
-  return 250;
+  n.connect(a.destination); s.start(a.currentTime + .05); poolUsed(BP);
+  const gap = BS && BS.pause ? BS.pause : [4, 16];
+  BIRD.next = now + buf.duration * 1000 + (rain ? 12000 + Math.random() * 14000 : (gap[0] + Math.random() * (gap[1] - gap[0])) * 1000);
 }
 /* ---------- live multiplayer: rooms ---------- */
 // Players in the same room (a short code; a link with ?room=CODE joins it) share, through a public MQTT broker over secure websockets:
@@ -7172,7 +7122,7 @@ function mpInit() {
 }
 
 /* ---------- the crowd (courses with scene.crowd: Augusta) ----------
-   Synthesised, no recordings (the bird chorus and the music are made the same way); every sound is built by a function that takes the audio context, an output node
+   Synthesised, no recordings (the music is made the same way); every sound is built by a function that takes the audio context, an output node
    and a start time, so the same code renders into an OfflineAudioContext to be checked or listened to. What a hole's crowd is, and where it stands, comes from the dressing
    (C.crowdAt: the green, the tee, the grandstands, each with a radius).
      murmur   a low bed of voices that swells near the green, the tee and the stands and fades down the fairway
@@ -7242,7 +7192,7 @@ function crowdBus(a) {
 }
 function crowdPlay(fn, ...args) {
   const a = AC; if (!a) return 0; const out = crowdBus(a), d = fn(a, out, a.currentTime + .05, ...args);
-  if (typeof CHORUS !== 'undefined') CHORUS.quiet = Math.max(CHORUS.quiet || 0, performance.now() + d * 1000 + 600);   // the birds wait for it
+  BIRD.hold = Math.max(BIRD.hold, performance.now() + d * 1000 + 600);   // the birds wait for it
   return d;
 }
 // the crowd round a point: 1 at the middle of the green, the tee or a stand, 0 outside its radius (C.crowdAt: [x, z, radius, weight])

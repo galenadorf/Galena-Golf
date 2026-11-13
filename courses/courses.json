@@ -256,7 +256,7 @@
       "about": "Augusta National Golf Club (Augusta, Georgia; Alister MacKenzie and Bobby Jones, 1933; par 72) in Masters week, played from the Masters tees (7,555 yd, the 2025 card); the member, forward and short markers are estimates. Alpha: hole lines and names, greens, tees, bunkers, ponds, bridges and buildings from \u00a9 OpenStreetMap contributors (ODbL); the ground from the USGS 3DEP 1 m elevation model; the trees from the 2018 Georgia lidar (USGS), checked against the September 2025 USDA NAIP aerial, after Hurricane Helene.",
       "engine": { "lush": true, "conifer": "pine", "paintedDeep": true, "swirl": [11, 12, 13], "alt": 76, "z0": 200, "gr": { "e0": -850, "n0": -900, "res": 2, "W": 900, "H": 1000 } },
       "scene": {
-        "plain": true, "flocks": false, "balloon": false, "chorus": true, "crowd": true,
+        "plain": true, "flocks": false, "balloon": false, "birds": { "gain": 0.7, "pause": [12, 30] }, "crowd": true,
         "clubhouse": { "style": "augusta", "at": [423.2, 377.9], "front": [422, 418], "minArea": 1e9 },
         "cabins": [[498.0, 342.0, "butler", 423, 378], [464.1, 290.2, "ike", 398, 274]],
         "bldColors": { "wall": 16118766, "roof": 5593438, "cottage": 900 },

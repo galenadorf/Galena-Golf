@@ -11,6 +11,9 @@ Fart_01..07.m4a, Penis.m4a, then Fart_08..18.m4a -> sounds/fart1..19.mp3: trimme
 hole-7 song at its Med setting, measured as RMS over the trimmed clip), so the game plays them at gain 1 (a pool, one picked at random: `fartTick`).
 Bird_sounds_01..05.m4a -> sounds/bird1..5.mp3: the ambient birdsong pool (`birdTick`). Each is a 7-11 s bed of birds, kept whole (the ends have no silence to cut),
 with a 0.3 s fade at each end, downsampled to 32 kHz, mono at 64 kbps, the playing level baked in (BIRD_RMS_DB), so the game plays them at gain ~1.
+Augusta_birds_01..04.m4a -> sounds/augbird1..4.mp3: Augusta's own birdsong pool (`AUG_BIRD_POOL`, played by `birdTick` in place of the generic birds; stereo recordings mixed down to
+mono), each trimmed of its leading and trailing silence (clip 1 starts with a second of it), a 0.3 s fade at each end, 32 kHz mono at 64 kbps, level baked in (AUG_BIRD_RMS_DB,
+the same as the other birds; the game plays them at 0.7 of that, `scene.birds.gain` in courses.json).
 Plane.m4a -> sounds/plane.mp3: the banner plane's flyby (`SFX.plane`), trimmed to the sound (-45 dB), 0.4 s fades, 32 kHz mono at 64 kbps, level baked in (PLANE_RMS_DB, about what the old
 synthesised drone was), played at gain 1.
 Truck_horn.m4a -> sounds/truckhorn.mp3, Truck_rumble.m4a -> sounds/truckrumble.mp3: trimmed like the strikes, mono at 96 kbps (the rumble at 64), peak -3 dBFS;
@@ -29,6 +32,7 @@ SR = 48000
 MUSIC_PEAK_DB = -15.5   # the song's loudest peak: -1.5 dBFS at full scale, 14 dB (a factor of .2) down
 FART_RMS_DB = -44.8     # the song's RMS over the whole file is -35.7 dB; Med is x.35 (-9.1 dB)
 BIRD_RMS_DB = -42.9     # a soft background: the raw beds sit near -35 dB RMS (was -42.0; 10 % quieter = -0.9 dB)
+AUG_BIRD_RMS_DB = BIRD_RMS_DB   # Augusta's four clips: the same soft background as the other courses' birds
 PLANE_RMS_DB = -36.0    # the raw recording is -24 dB RMS; the old synthesised drone was about -35
 BIRDS = [f'Bird_sounds_{i:02d}' for i in range(1, 6)]   # bird1.mp3 ... in this order
 FARTS = ['Fart_01', 'Fart_02', 'Fart_03', 'Fart_04', 'Fart_05', 'Fart_06', 'Fart_07', 'Penis'] + [f'Fart_{i:02d}' for i in range(8, 19)]   # fart1.mp3 ... in this order (fart9-19 are Fart_08-18)
@@ -55,9 +59,9 @@ def trim(x):
     return y / np.abs(y).max() * 10 ** (-3 / 20), a / SR, b / SR
 
 
-def trim_music(x, lead=.05, tail=.4):
+def trim_music(x, lead=.05, tail=.4, db=-45):
     env = np.sqrt(np.convolve(x ** 2, np.ones(2205) / 2205, 'same'))   # 46 ms rms
-    on = np.nonzero(env > env.max() * 10 ** (-45 / 20))[0]
+    on = np.nonzero(env > env.max() * 10 ** (db / 20))[0]
     a = max(0, int(on[0]) - int(lead * SR)); b = min(len(x), int(on[-1]) + int(tail * SR))
     y = x[a:b].copy(); f = int(.3 * SR); y[-f:] *= np.linspace(1, 0, f) ** 2
     return y / np.abs(y).max() * 10 ** (MUSIC_PEAK_DB / 20), a / SR, b / SR
@@ -125,6 +129,21 @@ def birds():
         print(f'{nm} -> sounds/bird{i}.mp3  {len(y) / sr:.1f} s  (peak {20 * np.log10(np.abs(y).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
 
 
+def augusta_birds():
+    from scipy.signal import resample_poly
+    for i in range(1, 5):
+        nm = f'Augusta_birds_{i:02d}'; p = os.path.join(SOUNDS_RAW, nm + '.m4a')
+        if not os.path.exists(p):
+            print('missing', p); continue
+        y, a, b = trim_music(load(p), .02, .1, -40)   # (load mixes the stereo down to mono; -40 dB: clip 1 opens with 1.4 s of faint hiss that -45 dB keeps)
+        y = resample_poly(y, 2, 3).astype(np.float32); sr = 32000
+        f = int(.3 * sr); y[:f] *= np.linspace(0, 1, f); y[-f:] *= np.linspace(1, 0, f)
+        y = y / np.sqrt((y ** 2).mean()) * 10 ** (AUG_BIRD_RMS_DB / 20)
+        assert np.abs(y).max() < 10 ** (-6 / 20), p
+        d = os.path.join(DEST, f'augbird{i}.mp3'); write(y, d, 64, sr)
+        print(f'{nm} -> sounds/augbird{i}.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / sr:.1f} s, peak {20 * np.log10(np.abs(y).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
+
+
 def plane():
     from scipy.signal import resample_poly
     p = os.path.join(SOUNDS_RAW, 'Plane.m4a')
@@ -162,6 +181,7 @@ def main():
     cartmusic()
     farts()
     birds()
+    augusta_birds()
     plane()
     trucks()
     cows()
