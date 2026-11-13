@@ -715,7 +715,8 @@ SOUNDS
   - The background music, on the 1st hole only (courses.json `music`: [1]; it fades out on the way to the 2nd): an original, calm fingerpicked guitar and piano piece in D, in the spirit of a spring afternoon in Georgia
     (not the Masters theme, which is copyrighted), synthesised live, quietly (about a fifth of the level it had at first; Settings > Music).
   - Augusta's own birdsong in place of the generic birds (`scene.birds`, `AUG_BIRD_POOL`, sounds/augbird1-4.mp3): four recordings of Augusta's birds, 3-8 s each (6.8, 4.0,
-    7.6 and 3.1 s), mixed down to mono, trimmed, level baked in. One is picked at random (never the same twice running) and played from an unseen spot to the left or
+    7.6 and 3.1 s), mixed down to mono, cleaned (the recordings carry a heavy hiss: a 900 Hz high-pass and an adaptive noise gate bring the calls from 13-16 dB over the
+    background to 21-25 dB, as clear as the other courses' birds), trimmed, the loudest calls baked in as loud as the other birds'. One is picked at random (never the same twice running) and played from an unseen spot to the left or
     right, at 0.7 of the other courses' birdsong level (`gain`), then a pause of 12-30 s (`pause`; the other courses' birds pause 4-16 s) before the next; about one clip
     every 28 s; quieter and rarer in the rain. The birds wait while the crowd is loud (a roar, applause, a gasp or a groan: `BIRD.hold`).
   - NO rare unseen sound (the fart), plane drone, truck sounds, cart radio or hole song. The strikes, landing, trees, water, cup, chimes and interface are as

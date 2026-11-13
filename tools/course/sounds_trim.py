@@ -13,7 +13,10 @@ Bird_sounds_01..05.m4a -> sounds/bird1..5.mp3: the ambient birdsong pool (`birdT
 with a 0.3 s fade at each end, downsampled to 32 kHz, mono at 64 kbps, the playing level baked in (BIRD_RMS_DB), so the game plays them at gain ~1.
 Augusta_birds_01..04.m4a -> sounds/augbird1..4.mp3: Augusta's own birdsong pool (`AUG_BIRD_POOL`, played by `birdTick` in place of the generic birds; stereo recordings mixed down to
 mono), each trimmed of its leading and trailing silence (clip 1 starts with a second of it), a 0.3 s fade at each end, 32 kHz mono at 64 kbps, level baked in (AUG_BIRD_RMS_DB,
-the same as the other birds; the game plays them at 0.7 of that, `scene.birds.gain` in courses.json).
+the other birds' loudest moments; the game plays them at 0.7 of that, `scene.birds.gain` in courses.json). The recordings carry a heavy broadband hiss (their calls stand only 13-16 dB
+above it, against 22 dB for the other birds, so they sounded like white noise), so each is cleaned first by `denoise`: a 900 Hz high-pass for the rumble and an adaptive spectral gate
+(each frequency's floor from its quietest frames, over-subtracted 3x, at most 24 dB down, smoothed over 3 bins by 3 frames so it does not turn watery): the calls keep their level
+(within 1 dB) and the contrast comes up to 21-22 dB.
 Plane.m4a -> sounds/plane.mp3: the banner plane's flyby (`SFX.plane`), trimmed to the sound (-45 dB), 0.4 s fades, 32 kHz mono at 64 kbps, level baked in (PLANE_RMS_DB, about what the old
 synthesised drone was), played at gain 1.
 Truck_horn.m4a -> sounds/truckhorn.mp3, Truck_rumble.m4a -> sounds/truckrumble.mp3: trimmed like the strikes, mono at 96 kbps (the rumble at 64), peak -3 dBFS;
@@ -32,7 +35,7 @@ SR = 48000
 MUSIC_PEAK_DB = -15.5   # the song's loudest peak: -1.5 dBFS at full scale, 14 dB (a factor of .2) down
 FART_RMS_DB = -44.8     # the song's RMS over the whole file is -35.7 dB; Med is x.35 (-9.1 dB)
 BIRD_RMS_DB = -42.9     # a soft background: the raw beds sit near -35 dB RMS (was -42.0; 10 % quieter = -0.9 dB)
-AUG_BIRD_RMS_DB = BIRD_RMS_DB   # Augusta's four clips: the same soft background as the other courses' birds
+AUG_BIRD_ENV_DB = -38.9   # Augusta's four clips: their loudest moments (99th percentile of the 46 ms RMS envelope) as loud as the other birds' (-38.9 dB, the mean of bird1-5)
 PLANE_RMS_DB = -36.0    # the raw recording is -24 dB RMS; the old synthesised drone was about -35
 BIRDS = [f'Bird_sounds_{i:02d}' for i in range(1, 6)]   # bird1.mp3 ... in this order
 FARTS = ['Fart_01', 'Fart_02', 'Fart_03', 'Fart_04', 'Fart_05', 'Fart_06', 'Fart_07', 'Penis'] + [f'Fart_{i:02d}' for i in range(8, 19)]   # fart1.mp3 ... in this order (fart9-19 are Fart_08-18)
@@ -129,16 +132,28 @@ def birds():
         print(f'{nm} -> sounds/bird{i}.mp3  {len(y) / sr:.1f} s  (peak {20 * np.log10(np.abs(y).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
 
 
+def denoise(x, sr=SR, hp=900, beta=3.0, gmin_db=-24, floor_pct=25, nper=2048):
+    from scipy.ndimage import uniform_filter
+    from scipy.signal import butter, istft, sosfiltfilt, stft
+    x = sosfiltfilt(butter(4, hp, 'high', fs=sr, output='sos'), x)            # the rumble: birdsong sits above about 1.5 kHz
+    f, t, Z = stft(x, sr, nperseg=nper, noverlap=nper * 3 // 4); mag = np.abs(Z)
+    noise = np.percentile(mag, floor_pct, axis=1, keepdims=True)              # each frequency's floor: its quiet frames (the calls are intermittent)
+    g = np.clip(1 - beta * noise ** 2 / (mag ** 2 + 1e-20), 10 ** (gmin_db / 20), 1)
+    g = np.maximum(uniform_filter(g, size=(3, 3)), 10 ** (gmin_db / 20))      # smoothed over 3 bins x 3 frames: no musical noise
+    _, y = istft(Z * g, sr, nperseg=nper, noverlap=nper * 3 // 4); return y[:len(x)]
+
+
 def augusta_birds():
     from scipy.signal import resample_poly
     for i in range(1, 5):
         nm = f'Augusta_birds_{i:02d}'; p = os.path.join(SOUNDS_RAW, nm + '.m4a')
         if not os.path.exists(p):
             print('missing', p); continue
-        y, a, b = trim_music(load(p), .02, .1, -40)   # (load mixes the stereo down to mono; -40 dB: clip 1 opens with 1.4 s of faint hiss that -45 dB keeps)
+        y, a, b = trim_music(denoise(load(p)), .02, .1, -40)   # (load mixes the stereo down to mono; denoise cleans the hiss; -40 dB: clip 1 opens with 1.4 s of faint hiss that -45 dB keeps)
         y = resample_poly(y, 2, 3).astype(np.float32); sr = 32000
         f = int(.3 * sr); y[:f] *= np.linspace(0, 1, f); y[-f:] *= np.linspace(1, 0, f)
-        y = y / np.sqrt((y ** 2).mean()) * 10 ** (AUG_BIRD_RMS_DB / 20)
+        n = int(.046 * sr); env = np.sqrt(np.convolve(y ** 2, np.ones(n) / n, 'same'))
+        y = y / np.percentile(env, 99) * 10 ** (AUG_BIRD_ENV_DB / 20)
         assert np.abs(y).max() < 10 ** (-6 / 20), p
         d = os.path.join(DEST, f'augbird{i}.mp3'); write(y, d, 64, sr)
         print(f'{nm} -> sounds/augbird{i}.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / sr:.1f} s, peak {20 * np.log10(np.abs(y).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
