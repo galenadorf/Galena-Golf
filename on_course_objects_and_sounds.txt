@@ -693,7 +693,7 @@ Landmarks, always (scene keys in courses.json; `buildClubhouseANGC`, `buildCabin
 Swirling wind on 11, 12 and 13 (Amen Corner, `engine.swirl`): the wind keeps shifting until the swing starts and, above the pines, blows 15-35 degrees round from the wind shown (the way the petals swirl);
   pine needles and azalea petals whirl round the player there.
 Side roads (out of bounds, looks only, no traffic): every OSM road near a hole, Magnolia Lane and Washington Road among them.
-The Masters dressing, always (`scene.dressing`, `buildDressingANGC`; only round the hole in play; nothing moves). The ball bounces off the patrons
+The Masters dressing, always (`scene.dressing`, `buildDressingANGC`; only round the hole in play; only the patrons and the ropes move, see below). The ball bounces off the patrons
   ("You killed a guy!") and the grandstands ("Off the grandstand!"), and passes through the ropes, stakes, towers and boards:
   - TV camera towers, OSM's 12: dark-green scaffolding 9-12 m tall (four legs, cross braces), a railed platform under a canopy, a camera on it. Green, as
     "the scoreboards and the camera towers" are at the Masters (GOLF.com).
@@ -707,8 +707,12 @@ The Masters dressing, always (`scene.dressing`, `buildDressingANGC`; only round 
     4 m and a white rope (the rope colour is a guess; no source found).
   - Patrons behind the ropes: sparse down the fairway, thicker by the tee, packed round the green, many in caps; at the green some seated in the green
     folding chairs. Up to 2,600 a hole, in instanced parts.
+  - The gallery moves (`galleryPart`, `galleryHit`, `galleryTick`): a ball that comes to rest among the patrons (one within 1.5 m, or two within 3 m) parts
+    the crowd: everyone within 4.6 m walks out to the edge of a clear ring (staying behind the rope) and turns to watch, and any stakes inside the ring are
+    carried to its edge, the rope with them; once the next shot is struck they all walk back. A patron the ball hits flinches and those within 2.6 m step
+    away from the spot, drifting back about 5 s later. The patrons in the grandstands stay put. Their collision boxes move with them.
   - Two green trash cans beside each tee.
-NOT here yet: concession stands and restroom buildings of their own (the OSM buildings stand in for them), patrons walking. Also NOT here: turkeys, gopher, banner plane, deer, highway traffic, parked carts, moving cart, hot dog, fountain, signs, songs.
+NOT here yet: concession stands and restroom buildings of their own (the OSM buildings stand in for them), patrons walking about on their own. Also NOT here: turkeys, gopher, banner plane, deer, highway traffic, parked carts, moving cart, hot dog, fountain, signs, songs.
 
 SOUNDS
 ------

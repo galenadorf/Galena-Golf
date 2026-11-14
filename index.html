@@ -3950,9 +3950,9 @@ function buildDressingANGC(C, grp) {
       const d = dsA[di], [x0, z0, ux, uz] = along(d), nx = -uz * sd, nz = ux * sd; let got = null;
       if (offF[di] != null) got = [x0 + nx * offF[di], z0 + nz * offF[di]];
       if (!got || !clearAt(got[0], got[1])) { prev = null; continue; }
-      const sx = got[0], sz = got[1], y = groundY(sx, sz); stakes.push([sx, y, sz]);
-      if (prev && Math.hypot(sx - prev[0], sz - prev[2]) < 7) stakes.push(['rope', prev, [sx, y, sz]]);
-      prev = [sx, y, sz];
+      const sx = got[0], sz = got[1], y = groundY(sx, sz), st = [sx, y, sz]; stakes.push(st);
+      if (prev && Math.hypot(sx - prev[0], sz - prev[2]) < 7) stakes.push(['rope', prev, st]);
+      prev = st;
       const nearG = total - d < 70, nearT = d < 90, dens = nearG ? 2.2 : nearT ? 1.4 : .55;
       for (let k = 0; k < dens * 2 + r(); k++) { const o2 = 1.3 + r() * (nearG ? 5 : 3.2), q = (r() - .5) * 3.6, x = sx + nx * o2 + ux * q, z = sz + nz * o2 + uz * q; if (clearAt(x, z)) stand.push([x, groundY(x, z), z, Math.atan2(-nx, -nz) + (r() - .5) * .9]); }
       if (nearG && r() < .55) { const o2 = .8, q = (r() - .5) * 3, x = sx + nx * o2 + ux * q, z = sz + nz * o2 + uz * q; if (clearAt(x, z)) chairs.push([x, groundY(x, z), z, Math.atan2(-nx, -nz)]); }
@@ -3961,14 +3961,23 @@ function buildDressingANGC(C, grp) {
   // round the back of the green: an arc of rope 14 m past its edge, patrons packed behind it
   { const [gx, gz] = ln[ln.length - 1], [qx, qz] = ln[ln.length - 2], a0 = Math.atan2(gx - qx, gz - qz); let prev = null;
     for (let t = -1.9; t <= 1.9; t += .07) { const a = a0 + t; let got = null; for (let o = 10; o < 60; o += 1) { const x = gx + Math.sin(a) * o, z = gz + Math.cos(a) * o; if (C.fieldAt(C.F.green, x, z) > 10 && C.fieldAt(C.F.sand, x, z) > 2) { got = [x, z]; break; } }
-      if (!got || !clearAt(got[0], got[1])) { prev = null; continue; } const y = groundY(got[0], got[1]); stakes.push([got[0], y, got[1]]); if (prev && Math.hypot(got[0] - prev[0], got[1] - prev[2]) < 7) stakes.push(['rope', prev, [got[0], y, got[1]]]); prev = [got[0], y, got[1]];
+      if (!got || !clearAt(got[0], got[1])) { prev = null; continue; } const y = groundY(got[0], got[1]), st = [got[0], y, got[1]]; stakes.push(st); if (prev && Math.hypot(got[0] - prev[0], got[1] - prev[2]) < 7) stakes.push(['rope', prev, st]); prev = st;
       for (let k = 0; k < 4; k++) { const o2 = 1.2 + r() * 6, x = got[0] + Math.sin(a) * o2 + (r() - .5) * 2, z = got[1] + Math.cos(a) * o2 + (r() - .5) * 2; if (clearAt(x, z)) stand.push([x, groundY(x, z), z, a + Math.PI + (r() - .5) * .6]); }
       if (r() < .5) { const x = got[0] + Math.sin(a) * .9, z = got[1] + Math.cos(a) * .9; if (clearAt(x, z)) chairs.push([x, groundY(x, z), z, a + Math.PI]); } } }
-  // the stakes and ropes, merged; green trash cans by the tee
-  for (const s0 of stakes) {
-    if (s0[0] === 'rope') { const [a, b] = [s0[1], s0[2]], l = Math.hypot(b[0] - a[0], b[2] - a[2]); parts.push({ g: new THREE.BoxGeometry(l, .035, .035), c: 0xf4f4f0, m: new THREE.Matrix4().makeRotationFromEuler(_le.set(0, -Math.atan2(b[2] - a[2], b[0] - a[0]), Math.atan2(b[1] - a[1], l))).setPosition((a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + .85, (a[2] + b[2]) / 2) }); }
-    else bx(.06, .95, .06, s0[0], s0[1] + .45, s0[2], GRN);
+  // the stakes and the ropes between them: instanced (one draw call each), so the marshals can move a stretch back when a ball comes to rest in the
+  // gallery (galleryPart); each stake is { x, y, z, ox, oz (where it was set), ri (its instance) }, each rope segment joins two of them
+  const GAL = { pats: [], stakes: [], segs: [], moving: new Set(), parted: false, back: 0, dirty: new Map() }, sMap = new Map();
+  for (const s0 of stakes) if (s0[0] !== 'rope') { const o = { x: s0[0], y: s0[1], z: s0[2], ox: s0[0], oz: s0[2], ri: GAL.stakes.length }; sMap.set(s0, o); GAL.stakes.push(o); }
+  for (const s0 of stakes) if (s0[0] === 'rope' && sMap.has(s0[1]) && sMap.has(s0[2])) GAL.segs.push({ a: sMap.get(s0[1]), b: sMap.get(s0[2]), ri: GAL.segs.length });
+  if (GAL.stakes.length) {
+    GAL.stakeIM = new THREE.InstancedMesh(new THREE.BoxGeometry(.06, .95, .06).translate(0, .45, 0), lambert(GRN), GAL.stakes.length);
+    GAL.ropeIM = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .035, .035), lambert(0xf4f4f0), Math.max(1, GAL.segs.length)); GAL.ropeIM.count = GAL.segs.length;
+    for (const m of [GAL.stakeIM, GAL.ropeIM]) { m.castShadow = true; m.receiveShadow = true; grp.add(m); }
+    for (const o of GAL.stakes) galStake(GAL, o); for (const g of GAL.segs) galSeg(GAL, g);
+    GAL.stakeIM.instanceMatrix.needsUpdate = GAL.ropeIM.instanceMatrix.needsUpdate = true; GAL.dirty.clear();
   }
+  W.gallery = GAL;
+  // green trash cans by the tee
   { const [tx, tz] = ln[0], [nx2, nz2] = ln[1], ul2 = Math.hypot(nx2 - tx, nz2 - tz) || 1, px2 = -(nz2 - tz) / ul2, pz2 = (nx2 - tx) / ul2;
     for (const sd of [-1, 1]) { const x = tx + px2 * sd * 12, z = tz + pz2 * sd * 12; if (clearAt(x, z)) { const y = groundY(x, z); parts.push({ g: new THREE.CylinderGeometry(.32, .3, .9, 10), c: 0x1f5a35, m: new THREE.Matrix4().makeTranslation(x, y + .45, z) }); } } }
   if (parts.length) { const m = new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true })); m.castShadow = true; m.receiveShadow = true; grp.add(m); }
@@ -3980,9 +3989,11 @@ function buildDressingANGC(C, grp) {
   const N = Math.min(all.length, 2600), mk = (geo) => { const m = new THREE.InstancedMesh(geo, lambert(0xffffff), N); m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(N * 3), 3); m.count = 0; m.castShadow = true; grp.add(m); return m; };
   const legs = mk(new THREE.BoxGeometry(.34, .82, .22).translate(0, .41, 0)), body = mk(new THREE.BoxGeometry(.44, .62, .26).translate(0, 1.13, 0)), head = mk(new THREE.SphereGeometry(.12, 7, 5).translate(0, 1.58, 0)), cap = mk(new THREE.CylinderGeometry(.13, .13, .08, 8).translate(0, 1.7, .02));
   const chairM = mk(new THREE.BoxGeometry(.5, .45, .48).translate(0, .22, 0)), M = new THREE.Matrix4(), Q = new THREE.Quaternion(), V = new THREE.Vector3(), Sc = new THREE.Vector3(1, 1, 1), cc = new THREE.Color(), Y = new THREE.Vector3(0, 1, 0);
-  const put = (im, x, y, z, ry, col, sy) => { if (im.count >= N) return; Q.setFromAxisAngle(Y, ry); M.compose(V.set(x, y, z), Q, Sc.set(1, sy || 1, 1)); im.setMatrixAt(im.count, M); im.setColorAt(im.count, cc.setHex(col)); im.count++; };
+  let PI = null;   // the patron being put: its pieces (instance, index, height above its feet, height scale), so it can walk (galleryTick)
+  const put = (im, x, y, z, ry, col, sy) => { if (im.count >= N) return; Q.setFromAxisAngle(Y, ry); M.compose(V.set(x, y, z), Q, Sc.set(1, sy || 1, 1)); im.setMatrixAt(im.count, M); im.setColorAt(im.count, cc.setHex(col)); if (PI) PI.inst.push([im, im.count, y - PI.y, sy || 1]); im.count++; };
   for (let i = 0; i < N; i++) {
     const [[x, y, z, ry], kind] = all[i], hs = .92 + r() * .14, sit = kind > 0, sh = PATRON_SHIRT[(r() * PATRON_SHIRT.length) | 0];
+    PI = kind === 2 ? null : { kind, x, y, z, ry, ox: x, oz: z, ory: ry, inst: [], col: null }; if (PI) GAL.pats.push(PI);   // (in the grandstands they stay put)
     if (kind === 1) put(chairM, x, y, z, ry, 0x1f5a35);   // the Masters' own green folding chair
     const dy = sit ? -.4 : 0;
     put(legs, x, y + (sit ? .02 : 0), z, ry, PATRON_LEGS[(r() * PATRON_LEGS.length) | 0], sit ? .5 : hs);
@@ -3992,20 +4003,123 @@ function buildDressingANGC(C, grp) {
   }
   for (const m of [legs, body, head, cap, chairM]) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; if (!m.count) m.visible = false; }
   // the ball bounces off the patrons and the grandstands (the ropes it passes through): a body-sized box for each patron drawn, standing or seated
-  for (let i = 0; i < N; i++) { const [[x, y, z, ry], kind] = all[i]; if (kind === 2) continue; solid.push({ x, z, c: Math.cos(ry), s: Math.sin(ry), hw: .27, hd: .2, y1: y + (kind ? 1.3 : 1.75), t: 400001 }); }
-  dressingColliders(C, solid);
+  let pk = 0; for (let i = 0; i < N; i++) { const [[x, y, z, ry], kind] = all[i]; if (kind === 2) continue; const c = { x, z, c: Math.cos(ry), s: Math.sin(ry), hw: .27, hd: .2, y1: y + (kind ? 1.3 : 1.75), h1: kind ? 1.3 : 1.75, t: 400001 }; solid.push(c); GAL.pats[pk++].col = c; }
+  GAL.rehash = dressingColliders(C, solid);
 }
 function dressingColliders(C, solid) {
   if (!solid.length) return;
   C.colNames[400001] = 'You killed a guy!'; C.colNames[400002] = 'Off the grandstand!';
   const cell = 8, hash = new Map();
-  solid.forEach((c, i) => { const r = Math.hypot(c.hw, c.hd) + .5; for (let gx = Math.floor((c.x - r) / cell); gx <= Math.floor((c.x + r) / cell); gx++) for (let gz = Math.floor((c.z - r) / cell); gz <= Math.floor((c.z + r) / cell); gz++) { const k = gx * 73856 + gz; if (!hash.has(k)) hash.set(k, []); hash.get(k).push(i); } });
+  const fill = () => { hash.clear(); solid.forEach((c, i) => { const r = Math.hypot(c.hw, c.hd) + .5; for (let gx = Math.floor((c.x - r) / cell); gx <= Math.floor((c.x + r) / cell); gx++) for (let gz = Math.floor((c.z - r) / cell); gz <= Math.floor((c.z + r) / cell); gz++) { const k = gx * 73856 + gz; if (!hash.has(k)) hash.set(k, []); hash.get(k).push(i); } }); };
+  fill();
   const base = C.treeHit;
   C.treeHit = (x, y, z, noTrunk) => {
     const a = hash.get(Math.floor(x / cell) * 73856 + Math.floor(z / cell));
     if (a) for (const i of a) { const c = solid[i], dx = x - c.x, dz = z - c.z; if (y < c.y1 && Math.abs(dx * c.c - dz * c.s) < c.hw && Math.abs(dx * c.s + dz * c.c) < c.hd) { HIT.kind = 'box'; return c.t; } }
     return base ? base(x, y, z, noTrunk) : -1;
   };
+  return fill;   // (galleryTick calls it again once patrons have moved)
+}
+/* --- The gallery moves (Augusta's dressing). A ball that comes to rest among the patrons: the crowd parts round it, everyone within GAL_R steps back
+   to the edge of a clear ring and turns to watch, and the stakes inside the ring are carried out to its edge, the rope with them, as the marshals do
+   for a recovery shot (galleryPart, from finishShot). A patron the ball hits flinches, and those beside him step away from where it struck
+   (galleryHit, from the flight's 'tree' event 400001), coming back a few seconds later. A parted crowd walks back to its places once the next shot is
+   struck (galleryLeave, from impact). The patrons' collision boxes go with them, so the next shot plays from the cleared ground. --- */
+const GAL_R = 4.6, GAL_WALK = 1.3, _gM = new THREE.Matrix4(), _gQ = new THREE.Quaternion(), _gV = new THREE.Vector3(), _gS = new THREE.Vector3(), _gY = new THREE.Vector3(0, 1, 0), _gE = new THREE.Euler();
+function galDirty(GAL, im, i) { const d = GAL.dirty.get(im); if (d) { d[0] = Math.min(d[0], i); d[1] = Math.max(d[1], i); } else GAL.dirty.set(im, [i, i]); }
+function galStake(GAL, o) { o.y = groundY(o.x, o.z); _gM.makeTranslation(o.x, o.y, o.z); GAL.stakeIM.setMatrixAt(o.ri, _gM); galDirty(GAL, GAL.stakeIM, o.ri); }
+function galSeg(GAL, g) {
+  const a = g.a, b = g.b, dx = b.x - a.x, dz = b.z - a.z, dy = b.y - a.y, l = Math.max(.01, Math.hypot(dx, dz));
+  _gQ.setFromEuler(_gE.set(0, -Math.atan2(dz, dx), Math.atan2(dy, l))); _gM.compose(_gV.set((a.x + b.x) / 2, (a.y + b.y) / 2 + .85, (a.z + b.z) / 2), _gQ, _gS.set(Math.hypot(l, dy), 1, 1));
+  GAL.ropeIM.setMatrixAt(g.ri, _gM); galDirty(GAL, GAL.ropeIM, g.ri);
+}
+// a patron drawn at (x, z) turned ry, bobbing by `bob` as he walks: every piece of him (and his chair) recomposed
+function galPose(GAL, p, x, z, ry, bob) {
+  const y = groundY(x, z) + bob; _gQ.setFromAxisAngle(_gY, ry);
+  for (const [im, i, dy, sy] of p.inst) { _gM.compose(_gV.set(x, y + dy, z), _gQ, _gS.set(1, sy, 1)); im.setMatrixAt(i, _gM); galDirty(GAL, im, i); }
+  p.x = x; p.z = z; p.ry = ry; p.y = y - bob;
+}
+// send someone (a patron or a stake) to (tx, tz) [turned try], starting after `wait` s, taking `dur` s
+function galGo(GAL, o, tx, tz, tr, wait, dur) {
+  const now = performance.now() / 1000; Object.assign(o, { fx: o.x, fz: o.z, fr: o.ry, tx, tz, tr: tr == null ? o.ry : tr, t0: now + (wait || 0), dur: dur || GAL_WALK }); GAL.moving.add(o);
+}
+const galDry = (x, z) => G.C && !G.C.isOB(x, z) && G.C.wl(x, z) < G.C.h(x, z) - .05;
+// a spot a patron may step to: dry, in bounds, off the greens, tees and bunkers, and on the gallery side of the rope: farther from the hole's centre
+// line than the nearest stretch of rope (as it was strung) is at that point, so nobody steps through the rope onto the course
+function galSpot(GAL, x, z) {
+  const C = G.C; if (!galDry(x, z) || C.fieldAt(C.F.green, x, z) < 4 || C.fieldAt(C.F.tee, x, z) < 2 || C.fieldAt(C.F.sand, x, z) < 1 || C.fieldAt(C.F.fair, x, z) < 2) return false;
+  let fx = 0, fz = 0, nd = 6;
+  for (const g of GAL.segs) {
+    const ax = g.a.ox, az = g.a.oz, ux = g.b.ox - ax, uz = g.b.oz - az, l2 = ux * ux + uz * uz || 1e-6, u = clamp(((x - ax) * ux + (z - az) * uz) / l2, 0, 1), px = ax + ux * u, pz = az + uz * u, d = Math.hypot(x - px, z - pz);
+    if (d < nd) { nd = d; fx = px; fz = pz; }
+  }
+  return nd >= 6 || polyQ(C.center, x, z, 600).d >= polyQ(C.center, fx, fz, 600).d + .3;
+}
+// out from (cx, cz) along (dx, dz) to distance k, or if that spot is not allowed, the nearest of a fan of directions either side of it (along the crowd)
+function galAway(GAL, cx, cz, dx, dz, k) {
+  for (const a of [0, .45, -.45, .9, -.9, 1.35, -1.35]) { const ca = Math.cos(a), sa = Math.sin(a), ux = dx * ca - dz * sa, uz = dx * sa + dz * ca, x = cx + ux * k, z = cz + uz * k; if (galSpot(GAL, x, z)) return [x, z]; }
+  return null;
+}
+function galleryPart(bx, bz) {
+  const GAL = W.gallery; if (!GAL || !GAL.pats.length) return;
+  // "among the patrons": one within 1.5 m of the ball, or two within 3 m
+  let n3 = 0, n15 = 0; for (const p of GAL.pats) { const d = Math.hypot(p.x - bx, p.z - bz); if (d < 3) n3++; if (d < 1.5) n15++; }
+  if (!n15 && n3 < 2) return;
+  GAL.parted = true; GAL.back = 0;
+  for (const p of GAL.pats) {
+    let dx = p.x - bx, dz = p.z - bz; const d = Math.hypot(dx, dz); if (d >= GAL_R) continue;
+    if (d < .05) { const a = Math.random() * TAU; dx = Math.sin(a); dz = Math.cos(a); } else { dx /= d; dz /= d; }
+    const to = galAway(GAL, bx, bz, dx, dz, GAL_R + .25 + .9 * (d / GAL_R) + .35 * Math.random()); if (!to) continue;
+    galGo(GAL, p, to[0], to[1], Math.atan2(bx - to[0], bz - to[1]), .15 + .55 * Math.random(), GAL_WALK + .4 * Math.random());   // (they turn to watch the shot)
+  }
+  for (const o of GAL.stakes) {
+    let dx = o.x - bx, dz = o.z - bz; const d = Math.hypot(dx, dz); if (d >= GAL_R + .4) continue;
+    if (d < .05) { dx = 1; dz = 0; } else { dx /= d; dz /= d; }
+    const tx = bx + dx * (GAL_R + .4), tz = bz + dz * (GAL_R + .4); if (galDry(tx, tz)) galGo(GAL, o, tx, tz, null, .3, 1.1);
+  }
+}
+function galleryHit(hx, hz) {
+  const GAL = W.gallery; if (!GAL || !GAL.pats.length) return;
+  for (const p of GAL.pats) {
+    let dx = p.x - hx, dz = p.z - hz; const d = Math.hypot(dx, dz); if (d > 2.6) continue;
+    if (d < .05) { dx = 1; dz = 0; } else { dx /= d; dz /= d; }
+    const to = galAway(GAL, p.x, p.z, dx, dz, 1 + .7 * Math.random() + (d < .6 ? .5 : 0)); if (!to) continue;
+    galGo(GAL, p, to[0], to[1], Math.atan2(hx - to[0], hz - to[1]), d < .6 ? 0 : .1 + .25 * Math.random(), .7 + .3 * Math.random());   // (quick: a flinch, not a stroll)
+  }
+  if (!GAL.parted) GAL.back = performance.now() / 1000 + 5;   // they drift back in a few seconds
+}
+// everyone who has moved walks back to where they stood
+function galleryHome() {
+  const GAL = W.gallery; if (!GAL) return; GAL.parted = false; GAL.back = 0;
+  for (const p of GAL.pats) if (p.x !== p.ox || p.z !== p.oz || p.ry !== p.ory) galGo(GAL, p, p.ox, p.oz, p.ory, .2 + .8 * Math.random(), GAL_WALK + .5 * Math.random());
+  for (const o of GAL.stakes) if (o.x !== o.ox || o.z !== o.oz) galGo(GAL, o, o.ox, o.oz, null, .6, 1.2);
+}
+// the swing: the crowd's colliders are where the patrons are drawn now (a walk still under way finishes at once), and a parted crowd goes home behind the ball
+function galleryLeave() {
+  const GAL = W.gallery; if (!GAL) return;
+  if (GAL.moving.size) galleryTick(1e9, true);
+  if (GAL.parted) { GAL.parted = false; GAL.back = performance.now() / 1000 + 2.5; }
+}
+function galleryTick(nowMs, snap) {   // snap: every walk under way ends where it is going, now
+  const GAL = W.gallery; if (!GAL) return;
+  const now = nowMs / 1000;
+  if (!snap && GAL.back && now >= GAL.back) galleryHome();
+  if (!GAL.moving.size) return;
+  const ropes = new Set();
+  for (const o of [...GAL.moving]) {
+    const u = clamp((now - o.t0) / o.dur, 0, 1); if (u <= 0) continue;
+    const e = smooth(0, 1, u), x = o.fx + (o.tx - o.fx) * e, z = o.fz + (o.tz - o.fz) * e;
+    if (o.inst) {
+      let dr = o.tr - o.fr; dr = Math.atan2(Math.sin(dr), Math.cos(dr));
+      galPose(GAL, o, x, z, o.fr + dr * smooth(0, .45, u), u < 1 ? .035 * Math.abs(Math.sin(u * Math.PI * 5)) : 0);   // (they turn first, and bob as they walk)
+      const c = o.col; if (c) { c.x = x; c.z = z; c.c = Math.cos(o.ry); c.s = Math.sin(o.ry); c.y1 = o.y + c.h1; }
+    } else { o.x = x; o.z = z; galStake(GAL, o); ropes.add(o); }
+    if (u >= 1) GAL.moving.delete(o);
+  }
+  if (ropes.size) for (const g of GAL.segs) if (ropes.has(g.a) || ropes.has(g.b)) galSeg(GAL, g);
+  for (const [im, [a, b]] of GAL.dirty) { const at = im.instanceMatrix; at.updateRange.offset = a * 16; at.updateRange.count = (b - a + 1) * 16; at.needsUpdate = true; }   // (only the stretch that moved goes to the GPU)
+  GAL.dirty.clear();
+  if (!GAL.moving.size && GAL.rehash) GAL.rehash();   // everyone has arrived: the collision grid follows them
 }
 // the leader board's faces (canvas textures): the main board's HOLE and PAR rows and ten player rows, the scores the Masters way, over and under par through each
 // hole (red under par, green level, black over; the photograph shows the same), names in dark capitals; the THRU panel; a blank panel; the LEADERS cap
@@ -4671,7 +4785,7 @@ function buildHole(C) {
   for (const p of W.ren.info.programs) if (!p.kept) { p.kept = true; p.usedTimes++; }
   if (W.holeGroup) { W.scene.remove(W.holeGroup); disposeGroup(W.holeGroup); }
   const grp = new THREE.Group(); W.holeGroup = grp; W.scene.add(grp);
-  W.treeOcc = null;
+  W.treeOcc = null; W.gallery = null;
   buildRealHole(C, grp);
   try { W.ren.compile(W.scene, W.cam); } catch (e) { }   // any shader the hole brings is compiled now, in the build's own pause, not on the flyover's first frame
 }
@@ -7994,6 +8108,7 @@ function impact(tImp) {
   document.body.classList.remove('swing'); document.body.classList.add('flight');
   SW.pathDeg = pathAngle(); SW.pathAt = performance.now();
   let fr = 0; if (G.surf === S.FRINGE && isPutt()) { const d = aimDir(); while (fr < 3 && G.C.surf(G.ball.x + d[0] * fr, G.ball.z + d[1] * fr) === S.FRINGE) fr += .1; } // how far the ball has to roll over fringe
+  galleryLeave();   // (Augusta: the patrons' colliders are where they stand; a crowd that parted for this shot goes back once it is struck)
   const L = computeLaunch(G.club, { p: trackToPower(Math.min(SW.pMax, 1.05), SW.map || TMAP_LIN), Tb, Td, range: G.puttRange, pathDeg: SW.pathDeg, fr }, st, G.surf, G.yaw, settings.hand, G.teed, Math.random());
   L.Tb = Tb; L.Td = Td; L.loose = st.loose; SW.last = L;
   SFX.hit(L.qualityLevel, L.putt, L.ballSpeed); buzz(L.qualityLevel < 1 ? 12 : 30);
@@ -8119,7 +8234,7 @@ function updateFlight(dt) {
       const wall = e.id >= 100000;
       if (e.trunk) { SFX.trunk(); readoutNote('Off the trunk!', 'bad'); burst(e.x, e.y, e.z, 0, 0, [0x7d604a, 0x9a7b5f, 0x5e4636], 8, 1.6, 1); }
       else if (e.pass) { SFX.leaves(); readoutNote('Through the branches', 'ok'); burst(e.x, e.y, e.z, 0, 0, [0x3a7d43, 0x4c8a4a, 0x7dbb5e], 10, 1.4, .6); }
-      else { SFX.tree(); if (e.id === 400001) crowdGasp(); readoutNote(wall ? ((G.C.colNames && G.C.colNames[e.id]) || 'Off the clubhouse wall!') : 'Timber! Clipped the trees', 'bad'); burst(e.x, e.y, e.z, 0, 0, wall ? [0xf4ecd9, 0xcfc5b4, 0xb9574a] : [0x3a7d43, 0x4c8a4a, 0x7dbb5e], 16, 2, 1); }
+      else { SFX.tree(); if (e.id === 400001) { crowdGasp(); if (!sh.replay) galleryHit(e.x, e.z); } readoutNote(wall ? ((G.C.colNames && G.C.colNames[e.id]) || 'Off the clubhouse wall!') : 'Timber! Clipped the trees', 'bad'); burst(e.x, e.y, e.z, 0, 0, wall ? [0xf4ecd9, 0xcfc5b4, 0xb9574a] : [0x3a7d43, 0x4c8a4a, 0x7dbb5e], 16, 2, 1); }
     }
     else if (e.type === 'splash') { SFX.splash(); crowdGroan(e.x, e.z); readoutNote(SPLASH_NOTES[(Math.random() * SPLASH_NOTES.length) | 0], 'bad'); burst(e.x, e.y + .05, e.z, 0, 0, [0xffffff, 0xcfeef5, 0x9fd6e2], 30, 2.6, 4.5); }
     else if (e.type === 'pin') { SFX.pin(); readoutNote(e.drop ? 'Off the flagstick and in!' : 'Off the flagstick!', e.drop ? 'good' : ''); }
@@ -8304,7 +8419,7 @@ function finishShot() {
     G.strokes++; G.pens[h]++;
     placeBall(G.prev.x, G.prev.z, G.prev.teed); big = `<span class="bad">${r.lost ? 'Ball not found' : 'Out of bounds'}</span>`; sub = 'Stroke and distance';
   } else {
-    placeBall(r.final.x, r.final.z, false); cornCheck(r.final);
+    placeBall(r.final.x, r.final.z, false); cornCheck(r.final); if (!G.pg) galleryPart(r.final.x, r.final.z);   // (Augusta: at rest among the patrons, the crowd parts)
     big = SURF[G.surf].name; sub = sh.L.putt ? fmtDistShort(r.total) + ' putt' : `Total ${toLen(r.total)} ${lenU()} · carry ${toLen(r.carry)} ${lenU()}`;
     if (first && par >= 4) G.fir[h] = G.surf === S.FAIR;
   }
@@ -10481,7 +10596,7 @@ function frame(now) {
   if (W.trail.visible && G.state !== 'flight') { W.trail.material.opacity -= dt * .35; if (W.trail.material.opacity <= 0) W.trail.visible = false; }
   if (W.landRing.visible) { const lr = W.landRing, u = (lr.userData.t += dt) / 1.6; if (u >= 1) lr.visible = false; else { lr.scale.setScalar(.5 + 2.2 * smooth(0, 1, u) + .01 * W.cam.position.distanceTo(lr.position)); lr.material.opacity = .75 * (1 - u) * (1 - u); } }
   if (W.tracer.visible) { const o = .8 * clamp(4 - (now - W.tracerT0) / 1000, 0, 1); W.tracer.material.opacity = o; if (o <= 0) W.tracer.visible = false; }
-  swirlWind(dt); updateSwirl(dt); mpUpdate(dt); if (G.state === 'spec') mpSpecCam(dt); else updateCamera(dt); updateWeatherVisuals(dt); updateRainbow(dt); updateRain(now, dt); if (W.treeOcc) updateTreeOcc(); updateParticles(dt); if (SG_U.sgOn.value) SG_U.sgT.value = (now / 1000) % 1000; updateSea(now / 1000); updateFountains(now / 1000); updateLife(dt, now / 1000);
+  swirlWind(dt); updateSwirl(dt); galleryTick(now); mpUpdate(dt); if (G.state === 'spec') mpSpecCam(dt); else updateCamera(dt); updateWeatherVisuals(dt); updateRainbow(dt); updateRain(now, dt); if (W.treeOcc) updateTreeOcc(); updateParticles(dt); if (SG_U.sgOn.value) SG_U.sgT.value = (now / 1000) % 1000; updateSea(now / 1000); updateFountains(now / 1000); updateLife(dt, now / 1000);
   { // the flyover sees the course from high up: shadows reach four times as far there
     const ext = G.state === 'intro' ? 300 : 75, sc = W.sun.shadow.camera;
     if (sc.right !== ext) { sc.left = -ext; sc.right = ext; sc.top = ext; sc.bottom = -ext; sc.far = ext > 100 ? 900 : 420; sc.updateProjectionMatrix(); }
