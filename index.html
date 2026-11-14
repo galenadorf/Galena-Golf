@@ -4207,7 +4207,7 @@ function courseList(reg) {
     if (c.hidden) continue;   // switched off in courses.json (the disc golf courses): not listed, not loaded, not cached; their files stay
     const k = c.key;
     COURSES[k] = { key: k, name: c.name, card: c.card || '', short: c.short, place: c.place || '', tee: c.tee || '', rating: c.rating || 0, slope: c.slope || 0, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, blurb: c.blurb || '', trip: c.trip || null, noTrip: !!c.noTrip, logo: c.logo || '', about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: Array.isArray(c.music) ? c.music.slice() : !!c.music,   // (true: everywhere on the course; a list: only on those holes, from 1)
-      only: Array.isArray(c.only) ? c.only.map(String) : null,
+      only: c.only === true ? true : Array.isArray(c.only) ? c.only.map(String) : null,
       defs: null, best: 'ssg-best-' + k, board: 'ssg-board-' + k, coll: 'rounds-' + k };
   }
 }
@@ -9065,7 +9065,7 @@ function pracFill() {
 }
 // a hole tapped on the Practice sheet: on another course, a round in progress here is kept for when you come back (as the menu's course picker does)
 function pracHole(i) {
-  if (!courseOpen(pracKey)) { courseLockedNote(); return; }
+  if (!courseOpen(pracKey)) { courseLockedNote(pracKey); return; }
   if (pracKey === COURSE.key) { startPractice(i); return; }
   const k = pracKey; leaveShot(); if (MP.spec) mpResume(true);
   if (!G.practice && G.state !== 'title') saveRound();
@@ -9638,8 +9638,9 @@ const b64 = u8 => { let s = ''; u8.forEach(c => s += String.fromCharCode(c)); re
 const isReg = () => !!(PID.reg && PID.key);
 // a course listed with `only` in courses.json (Augusta: ["P001"]) can be played (a round or practice) only by those registered players; everyone else sees it
 // in the picker and gets a note. A client-side gate: the course's data is public in the repo either way.
-function courseOpen(key) { const c = COURSES[key], o = c && c.only; return !o || (isReg() && o.includes(PID.reg.pid)); }
-function courseLockedNote() { readout('<div class="r1">Not open yet</div><div class="r2">This course is still being built</div>', 2.6); }
+// courses.json `only`: true = any registered player (a Player ID, Settings > Player ID), a list = just those player IDs (a course still being built)
+function courseOpen(key) { const c = COURSES[key], o = c && c.only; return !o || (isReg() && (o === true || o.includes(PID.reg.pid))); }
+function courseLockedNote(key) { const o = (COURSES[key || COURSE.key] || {}).only; readout(o === true ? '<div class="r1">Registered players only</div><div class="r2">Request a Player ID in Settings to play this course</div>' : '<div class="r1">Not open yet</div><div class="r2">This course is still being built</div>', 2.8); }
 function pidDeviceLabel() { const u = navigator.userAgent; return /iPad/.test(u) ? 'iPad' : /iPhone/.test(u) ? 'iPhone' : /Android/.test(u) ? (/Mobile/.test(u) ? 'Android phone' : 'Android tablet') : /Windows/.test(u) ? 'Windows' : /Mac/.test(u) ? 'Mac' : /Linux/.test(u) ? 'Linux' : 'Device'; }
 function pidInit() {
   return PID.ready || (PID.ready = (async () => {

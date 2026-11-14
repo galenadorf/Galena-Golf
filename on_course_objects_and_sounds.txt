@@ -22,7 +22,7 @@ GLOBAL
 A. WHICH COURSE HAS WHAT
 ------------------------
   Y = yes, - = no. WB Woodbine Bend, ERS Eagle Ridge South, ERN Eagle Ridge North, LG Legends, ERG Eagle Ridge The General, FT Fossil Trace, SH Stonehenge, TH Thunderhawk,
-  BS Bear Slide, GA Galena GC (beta), MX Maxwelton Braes, EP Elbel Park (alpha: keeps no rounds), PB Pebble Brook North (alpha), LB Lacoma Blue (alpha), BL Briar Leaf (alpha), AU Augusta National (alpha), CM Chestnut Mountain (disc), AD Adler Park (disc). Details are in each course's section.
+  BS Bear Slide, GA Galena GC (beta), MX Maxwelton Braes, EP Elbel Park (alpha: keeps no rounds), PB Pebble Brook North (alpha), LB Lacoma Blue (alpha), BL Briar Leaf (alpha), AU Augusta National, CM Chestnut Mountain (disc), AD Adler Park (disc). Details are in each course's section.
 
   OBJECTS                                       WB   ERS  ERN  LG   ERG  FT   SH   TH   BS   GA   MX   EP   PB   LB   BL   AU   CM   AD
   Weather, rainbow                              Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y    Y     (GLOBAL)
@@ -639,9 +639,9 @@ SCENERY AND DATA
 
 
 #####################################################################################################
-AUGUSTA NATIONAL GOLF CLUB (augusta)  "Augusta (alpha)"
+AUGUSTA NATIONAL GOLF CLUB (augusta)  "Augusta National"
 #####################################################################################################
-Also everything in GLOBAL. Alpha: built from OpenStreetMap and the lidar, keeps no rounds. Masters week: Masters tees 7,555 yd, par 72; the member, forward and
+Also everything in GLOBAL. A full course (promoted from alpha 2026-11-13; registered players only): built from OpenStreetMap and the lidar. Masters week: Masters tees 7,555 yd, par 72; the member, forward and
 short markers are estimates. The play page shows the Masters logo (img/masters.webp, courses.json `logo`) above the description. Each hole's card shows its name (Tea Olive, Pink Dogwood, ... Holly). No deep rough (`engine.paintedDeep`, nothing painted).
 
 OBJECTS

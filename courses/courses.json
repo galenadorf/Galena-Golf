@@ -88,6 +88,30 @@
       "scene": { "deer": 0.4, "squirrels": 3 }
     },
     {
+      "key": "augusta",
+      "name": "Augusta National Golf Club",
+      "card": "Augusta National\nGolf Club",
+      "short": "Augusta National", "only": true, "logo": "img/masters.webp", "noTrip": true, "music": [1], "place": "Augusta, GA", "tee": "Masters", "rating": 78.1, "slope": 148,
+      "pars": [4, 5, 4, 3, 4, 3, 4, 5, 4, 4, 4, 3, 5, 4, 5, 3, 4, 4],
+      "recFrom": "2026-11-13",
+      "about": "Augusta National Golf Club (Augusta, Georgia; Alister MacKenzie and Bobby Jones, 1933; par 72) in Masters week, played from the Masters tees (7,555 yd, the 2025 card); the member, forward and short markers are estimates. Alpha: hole lines and names, greens, tees, bunkers, ponds, bridges and buildings from \u00a9 OpenStreetMap contributors (ODbL); the ground from the USGS 3DEP 1 m elevation model; the trees from the 2018 Georgia lidar (USGS), checked against the September 2025 USDA NAIP aerial, after Hurricane Helene.",
+      "blurb": "MacKenzie and Jones built this in 1933: a par 72 of 7,555 yards from the Masters tees, with azaleas, pine straw, blindingly white bunkers and greens so fast and sloped that we would three-putt from the fringe and call it a good hole. Rae's Creek on 12 takes a sleeve of balls a round, Amen Corner takes the rest of the bag, and our best score here would be a number we would take to our graves. The pimento cheese is the only thing we would get right.",
+      "engine": { "lush": true, "conifer": "pine", "paintedDeep": true, "swirl": [11, 12, 13], "alt": 76, "z0": 200, "gr": { "e0": -850, "n0": -900, "res": 2, "W": 900, "H": 1000 } },
+      "scene": {
+        "plain": true, "flocks": false, "balloon": false, "birds": { "gain": 0.7, "pause": [12, 30] }, "crowd": true,
+        "clubhouse": { "style": "augusta", "at": [423.2, 377.9], "front": [422, 418], "minArea": 1e9 },
+        "cabins": [[498.0, 342.0, "butler", 423, 378], [464.1, 290.2, "ike", 398, 274]],
+        "bldColors": { "wall": 16118766, "roof": 5593438, "cottage": 900 },
+        "founders": { "flag": [414, 404], "beds": [[420.3, 416.8, 422.4, 415.6, 423.0, 415.7, 423.3, 415.8, 423.6, 415.4, 422.7, 414.6, 421.7, 413.7, 421.6, 413.3, 421.3, 413.4, 421.1, 414.4, 420.5, 414.6, 420.0, 414.3, 419.8, 414.2, 419.5, 414.9, 419.0, 415.5, 418.7, 415.9, 418.7, 416.5, 419.3, 417.1, 419.6, 417.4], [425.0, 420.4, 422.9, 421.7, 422.3, 421.6, 422.0, 421.5, 421.8, 422.0, 422.7, 422.7, 423.7, 423.6, 423.8, 424.0, 424.1, 423.8, 424.3, 422.9, 424.8, 422.6, 425.3, 422.9, 425.6, 423.0, 425.8, 422.2, 426.3, 421.7, 426.6, 421.3, 426.6, 420.7, 426.0, 420.0, 425.6, 419.8]] },
+        "leaderboard": { "at": [258.4, 434.2], "face": 130 },
+        "dressing": {
+          "towers": [[-167, -241], [122, -434], [335, -192], [190, -384], [-27, 125], [-315, 290], [-399, -65], [83, -11], [208, -380], [99, -433], [82, -378], [-357, 292]],
+          "boards": [{ "at": [320, 204], "face": [20] }, { "at": [-10, 452], "face": [40] }, { "at": [114, -23], "face": [310] }, { "at": [-152, -21], "face": [20, 200] }, { "at": [-281, -91], "face": [250] }, { "at": [-203, 188], "face": [50] }, { "at": [359, -115], "face": [240] }, { "at": [207, -482], "face": [350] }, { "at": [362, 262.6], "face": [110], "est": 1 }, { "at": [-167.5, -287], "face": [50], "est": 1 }, { "at": [-203.8, 20.7], "face": [250], "est": 1 }, { "at": [197.1, -65.8], "face": [240], "est": 1 }],
+          "stands": [{ "hole": 7, "at": "green", "side": "behind", "off": 24, "w": 30, "also": [17] }, { "hole": 12, "at": "tee", "side": "behind", "off": 10, "w": 32, "also": [11, 13] }, { "hole": 15, "at": "green", "side": "left", "off": 24, "w": 26, "also": [16] }, { "hole": 15, "at": "green", "side": "right", "off": 24, "w": 26, "also": [16] }]
+        }
+      }
+    },
+    {
       "key": "eagle_general",
       "name": "The General at Eagle Ridge",
       "short": "ER The General (beta)", "place": "Galena, IL", "tee": "3-Star", "rating": 70.6, "slope": 132,
@@ -245,30 +269,6 @@
       "blurb": "Adler Park, Libertyville: nine baskets through hilly woods along the Des Plaines River, which only bites on 9 if you really overcook it. Free to play, about an hour a round, and we play it twice for eighteen. Not played yet, but we’re stretching.",
       "engine": { "alt": 205, "disc": true, "z0": 200, "gr": { "e0": -450, "n0": -450, "res": 2, "W": 450, "H": 450 } },
       "scene": {}
-    },
-    {
-      "key": "augusta",
-      "name": "Augusta National Golf Club",
-      "card": "Augusta National\nGolf Club",
-      "short": "nothing here (alpha)", "alpha": true, "only": ["P001"], "logo": "img/masters.webp", "noTrip": true, "music": [1], "place": "Augusta, GA", "tee": "Masters", "rating": 78.1, "slope": 148,
-      "pars": [4, 5, 4, 3, 4, 3, 4, 5, 4, 4, 4, 3, 5, 4, 5, 3, 4, 4],
-      "recFrom": "2026-11-13",
-      "about": "Augusta National Golf Club (Augusta, Georgia; Alister MacKenzie and Bobby Jones, 1933; par 72) in Masters week, played from the Masters tees (7,555 yd, the 2025 card); the member, forward and short markers are estimates. Alpha: hole lines and names, greens, tees, bunkers, ponds, bridges and buildings from \u00a9 OpenStreetMap contributors (ODbL); the ground from the USGS 3DEP 1 m elevation model; the trees from the 2018 Georgia lidar (USGS), checked against the September 2025 USDA NAIP aerial, after Hurricane Helene.",
-      "blurb": "MacKenzie and Jones built this in 1933: a par 72 of 7,555 yards from the Masters tees, with azaleas, pine straw, blindingly white bunkers and greens so fast and sloped that we would three-putt from the fringe and call it a good hole. Rae's Creek on 12 takes a sleeve of balls a round, Amen Corner takes the rest of the bag, and our best score here would be a number we would take to our graves. The pimento cheese is the only thing we would get right.",
-      "engine": { "lush": true, "conifer": "pine", "paintedDeep": true, "swirl": [11, 12, 13], "alt": 76, "z0": 200, "gr": { "e0": -850, "n0": -900, "res": 2, "W": 900, "H": 1000 } },
-      "scene": {
-        "plain": true, "flocks": false, "balloon": false, "birds": { "gain": 0.7, "pause": [12, 30] }, "crowd": true,
-        "clubhouse": { "style": "augusta", "at": [423.2, 377.9], "front": [422, 418], "minArea": 1e9 },
-        "cabins": [[498.0, 342.0, "butler", 423, 378], [464.1, 290.2, "ike", 398, 274]],
-        "bldColors": { "wall": 16118766, "roof": 5593438, "cottage": 900 },
-        "founders": { "flag": [414, 404], "beds": [[420.3, 416.8, 422.4, 415.6, 423.0, 415.7, 423.3, 415.8, 423.6, 415.4, 422.7, 414.6, 421.7, 413.7, 421.6, 413.3, 421.3, 413.4, 421.1, 414.4, 420.5, 414.6, 420.0, 414.3, 419.8, 414.2, 419.5, 414.9, 419.0, 415.5, 418.7, 415.9, 418.7, 416.5, 419.3, 417.1, 419.6, 417.4], [425.0, 420.4, 422.9, 421.7, 422.3, 421.6, 422.0, 421.5, 421.8, 422.0, 422.7, 422.7, 423.7, 423.6, 423.8, 424.0, 424.1, 423.8, 424.3, 422.9, 424.8, 422.6, 425.3, 422.9, 425.6, 423.0, 425.8, 422.2, 426.3, 421.7, 426.6, 421.3, 426.6, 420.7, 426.0, 420.0, 425.6, 419.8]] },
-        "leaderboard": { "at": [258.4, 434.2], "face": 130 },
-        "dressing": {
-          "towers": [[-167, -241], [122, -434], [335, -192], [190, -384], [-27, 125], [-315, 290], [-399, -65], [83, -11], [208, -380], [99, -433], [82, -378], [-357, 292]],
-          "boards": [{ "at": [320, 204], "face": [20] }, { "at": [-10, 452], "face": [40] }, { "at": [114, -23], "face": [310] }, { "at": [-152, -21], "face": [20, 200] }, { "at": [-281, -91], "face": [250] }, { "at": [-203, 188], "face": [50] }, { "at": [359, -115], "face": [240] }, { "at": [207, -482], "face": [350] }, { "at": [362, 262.6], "face": [110], "est": 1 }, { "at": [-167.5, -287], "face": [50], "est": 1 }, { "at": [-203.8, 20.7], "face": [250], "est": 1 }, { "at": [197.1, -65.8], "face": [240], "est": 1 }],
-          "stands": [{ "hole": 7, "at": "green", "side": "behind", "off": 24, "w": 30, "also": [17] }, { "hole": 12, "at": "tee", "side": "behind", "off": 10, "w": 32, "also": [11, 13] }, { "hole": 15, "at": "green", "side": "left", "off": 24, "w": 26, "also": [16] }, { "hole": 15, "at": "green", "side": "right", "off": 24, "w": 26, "also": [16] }]
-        }
-      }
     }
   ]
 }
