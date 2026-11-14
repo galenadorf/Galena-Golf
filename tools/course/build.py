@@ -277,6 +277,12 @@ def describe(h, demZ1, greens_near, F, fair):
     return ' · '.join(bits) if bits else 'Native grass all round'
 
 
+PIN_SHEETS = None
+_pj = os.path.join(os.path.dirname(os.path.abspath(course.__file__)), 'pins.json')
+if os.path.exists(_pj):
+    PIN_SHEETS = json.load(open(_pj))   # courses/<key>/pins.json beside course.py: four hole-location sheets (Augusta)
+
+
 def build_holes(F, demZ1):
     tees = [t['poly'] for t in F['tee']]
     sp = os.path.join(OUT, 'tee_starts.json')  # yellow dots painted on the tee map: where a hole's played tee should be
@@ -316,6 +322,10 @@ def build_holes(F, demZ1):
             raw = Point(xy)
             q, gap[k] = snap_to_tee(raw, [min(tees, key=lambda t: t.distance(raw))], L, across=fn)
             pos[k] = (round(q.x, 2), round(q.y, 2))
+        for k, xy in KEEP_TEES.get(hh['ref'], {}).items():   # a tee set stays in the box it stood in before face_tees turned it
+            raw = Point(xy)
+            q, gap[k] = snap_to_tee(raw, [min(tees, key=lambda t: t.distance(raw))], L, across=fn)
+            pos[k] = (round(q.x, 2), round(q.y, 2))
         if i in starts:
             pos[play] = starts[i]
             q, gap[play] = snap_to_tee(Point(starts[i]), tees, L, marks[str(hh['ref'])]['half'] if str(hh['ref']) in marks else 2.6, across=fn)
@@ -337,9 +347,80 @@ def build_holes(F, demZ1):
         h['desc'] = describe(dict(tee=tee, green=(gc.x, gc.y), L=LineString(line), par=h['par']), demZ1, None, F, None)
         if getattr(card, 'NAMES', None):
             h['nm'] = card.NAMES[i]   # the hole's name (Augusta: Tea Olive, Pink Dogwood, ...): the game shows it on the hole card
+        if PIN_SHEETS and str(hh['ref']) in PIN_SHEETS['pins']:   # the club's hole locations, round 1-4: [depth from the front as a share of the green's depth, place between the left and right edges] (masters_pins.py)
+            h['pins'] = PIN_SHEETS['pins'][str(hh['ref'])]
         h['_green_poly'] = g
         out.append(h)
     return out
+
+
+def tee_target(L, at, fu, green):
+    """where a tee box at `at` should face: a par 4 or 5 straight down the start of its fairway (the fairway's middle 25 m past
+    the point where the hole line first enters it, and at least 120 m out, so a fairway that starts just in front of the tee does
+    not swing the line to one side), a par 3 (green given) or a hole whose line never meets a fairway at the green"""
+    if green is None and fu is not None:
+        s0 = L.project(at)
+        sE = next((s for s in np.arange(s0 + 4, L.length, 2.0) if fu.contains(L.interpolate(s))), None)
+        if sE is not None:
+            s1 = min(L.length - 2, max(sE + 25, s0 + 120)); q = L.interpolate(s1); q2 = L.interpolate(s1 + 2)
+            ux, uy = q2.x - q.x, q2.y - q.y; ul = math.hypot(ux, uy) or 1; nx, ny = -uy / ul, ux / ul
+            cut = LineString([(q.x - nx * 80, q.y - ny * 80), (q.x + nx * 80, q.y + ny * 80)]).intersection(fu)
+            parts = [g for g in getattr(cut, 'geoms', [cut]) if g.geom_type == 'LineString' and g.length > 0]
+            if parts:
+                m = min(parts, key=lambda g: g.distance(q)).interpolate(.5, normalized=True)
+                return (m.x, m.y)
+            return (q.x, q.y)
+    g = green if green is not None else Point(L.coords[-1])
+    return (g.x, g.y)
+
+
+KEEP_TEES = {}   # hole ref -> {tee set: (e, n)}: face_tees keeps each tee set in the box it stood in, turned with it (build_holes snaps it there)
+
+
+def face_tees(F, fair, holes0):
+    """every tee box near the start of a hole turned about its centre so that its sides run straight down the start of the hole's
+    fairway, or at the green on a par 3 (the tee boxes as mapped or painted often sit a few degrees, sometimes 20-40, off the line);
+    course.TEE_FACE_OFF = True leaves a course's boxes as they are"""
+    if getattr(course, 'TEE_FACE_OFF', False) or not F['tee'] or not F['hole']:
+        return
+    fu = unary_union(fair) if fair else None
+    rep, dbg = [], []
+    byref = {hh['ref']: hh for hh in F['hole']}
+    for t in F['tee']:
+        P = t['poly']; c = P.centroid
+        # the box's hole: the one whose tee markers (a first build_holes pass) stand in it; a box no tee set uses, or one two holes share, is left alone
+        own = {i + 1 for i, h0 in enumerate(holes0) for m in h0['mk'].values() if P.distance(Point(m)) < 1.5}
+        if len(own) != 1 or next(iter(own)) not in byref:
+            if own: print('  face_tees skip: box shared by holes', sorted(own))
+            continue
+        hh = byref[next(iter(own))]; L = hh['line']
+        par = card.PAR[hh['ref'] - 1]
+        green = min(F['green'], key=lambda q: q['poly'].distance(Point(L.coords[-1])))['poly'].centroid if par == 3 or fu is None else None
+        tx, ty = tee_target(L, c, fu, green)
+        r = P.minimum_rotated_rectangle
+        if r.geom_type != 'Polygon' or P.area / max(r.area, 1e-6) < .6:   # too irregular to have a facing
+            print('  face_tees skip: irregular box, hole', hh['ref']); continue
+        rc = list(r.exterior.coords); a = math.hypot(rc[1][0] - rc[0][0], rc[1][1] - rc[0][1]); b = math.hypot(rc[2][0] - rc[1][0], rc[2][1] - rc[1][1])
+        k = 0 if a >= b else 1; e0 = math.atan2(rc[k + 1][1] - rc[k][1], rc[k + 1][0] - rc[k][0])   # the long side
+        if max(a, b) > 80:   # a long strip of several tees: turning it would swing its ends far out
+            continue
+        tb = math.atan2(ty - c.y, tx - c.x)
+        dl = (tb - e0 + math.pi / 2) % math.pi - math.pi / 2   # the turn that runs the long side down the line
+        # a tee box is longer front to back than across, so its long side goes down the line; a squarish box (or one plainly built
+        # wide, its long side over 60 degrees off the line) just takes the smallest turn that lines a side up
+        dev = dl if max(a, b) > 1.3 * min(a, b) and abs(dl) <= math.radians(60) else (tb - e0 + math.pi / 4) % (math.pi / 2) - math.pi / 4
+        if abs(dev) < math.radians(1.5):
+            continue
+        t['poly'] = affinity.rotate(P, dev, origin=c, use_radians=True)
+        for i, h0 in enumerate(holes0):
+            for m, xy in h0['mk'].items():
+                if P.distance(Point(xy)) < 1.5:
+                    q = affinity.rotate(Point(xy), dev, origin=c, use_radians=True)
+                    KEEP_TEES.setdefault(i + 1, {})[h0['sets'][m]] = (q.x, q.y)
+        dbg.append(dict(hole=hh['ref'], par=par, dev=round(math.degrees(dev), 1), c=[round(c.x, 1), round(c.y, 1)], t=[round(tx, 1), round(ty, 1)], before=mapping(P), after=mapping(t['poly']), line=list(L.coords)))
+        rep.append(f"{hh['ref']}:{math.degrees(dev):+.0f}")
+    print(f'tee boxes turned to face their holes (hole:degrees): {len(rep)}', ' '.join(rep))
+    json.dump(dbg, open(os.path.join(OUT, 'tees_turned.json'), 'w'))   # (to check the turns by eye)
 
 
 def link_fairways(fair, F, reach=18.0):
@@ -764,6 +845,7 @@ def main():
     demZ1 = lambda e, n: float(sample(d1, tr1, [e], [n])[0])
     water = unary_union([w['poly'] for w in F['water']] + creek_pieces()) if getattr(course, 'RELIEF_OFF_WATER', False) else None
     relief = build_relief(demZ, course_poly.buffer(40).bounds, course_poly.buffer(30), water)
+    face_tees(F, fair, [{'mk': h['mk'], 'sets': dict(zip('wybr', [card.MARKERS[m][0] for m in 'wybr']))} for h in build_holes(F, demZ1)])   # (a first pass finds which box each hole's tees stand in; the real pass places them in the turned boxes)
     holes = build_holes(F, demZ1)
     alti = {i: green_alti(h.pop('_green_poly')) for i, h in enumerate(holes)}
     prac = None   # the practice green (practice_read.py): a scene of its own, not one of the 18 holes

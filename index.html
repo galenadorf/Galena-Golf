@@ -2124,12 +2124,22 @@ function makeRealCourse(idx, pin) {
     const L2 = H0.line, pa = L2.length > 2 ? loc(L2[L2.length - 2][0], L2[L2.length - 2][1]) : [0, 0];
     let ax = G1.cx - pa[0], az = G1.cz + pa[1]; const al = Math.hypot(ax, az) || 1; ax /= al; az /= al;
     const off = [[-.45, 0], [.45, 0], [0, .42], [0, -.42]][((pin | 0) % 4 + 4) % 4];
-    const thr = Math.max(mn * .6, -3.5), tx = G1.cx + (ax * off[0] - az * off[1]) * G1.R, tz = G1.cz + (az * off[0] + ax * off[1]) * G1.R;
+    let thr = Math.max(mn * .6, -3.5), tx = G1.cx + (ax * off[0] - az * off[1]) * G1.R, tz = G1.cz + (az * off[0] + ax * off[1]) * G1.R;
+    // a course with the club's own hole locations (H0.pins: per round [share of the green's depth from the front, place between the left and right edges], Augusta's
+    // four daily sheets, masters_pins.py): the hole goes there, on this green's own outline, as close as 2.3 m (2.5 yd) to the edge
+    const ps = H0.pins && H0.pins[((pin | 0) % 4 + 4) % 4];
+    if (ps) {
+      let s0 = 1e9, s1 = -1e9; const sOf = (X, Z) => (X - G1.cx) * ax + (Z - G1.cz) * az, lOf = (X, Z) => -(X - G1.cx) * az + (Z - G1.cz) * ax;   // (along the approach, and to the right of it)
+      for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) if (sd[j * ww + i] <= 0) { const s = sOf(x0 + (i + i0) * res, z0 + (j + j0) * res); if (s < s0) s0 = s; if (s > s1) s1 = s; }
+      const sc = s0 + ps[0] * (s1 - s0); let l0 = 1e9, l1 = -1e9;
+      for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) if (sd[j * ww + i] <= 0) { const X = x0 + (i + i0) * res, Z = z0 + (j + j0) * res; if (Math.abs(sOf(X, Z) - sc) <= res) { const l = lOf(X, Z); if (l < l0) l0 = l; if (l > l1) l1 = l; } }
+      if (l1 > l0) { const lc = l0 + ps[1] * (l1 - l0); tx = G1.cx + ax * sc - az * lc; tz = G1.cz + az * sc + ax * lc; thr = Math.max(mn * .6, -2.3); }
+    }
     let bd = 1e18;
     // never on a severe slope: the ground round the hole (1.5 m out, four ways) must stay under 4 % (and the cell itself too)
     const sl = (X, Z) => { const q = [0, 0]; let m = 0; for (const [ox, oz] of [[0, 0], [1.5, 0], [-1.5, 0], [0, 1.5], [0, -1.5]]) { C.grad(X + ox, Z + oz, q); m = Math.max(m, Math.hypot(q[0], q[1])); } return m; };
     for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) if (sd[j * ww + i] <= thr) {
-      const X = x0 + (i + i0) * res, Z = z0 + (j + j0) * res, sm = sl(X, Z), dd = (X - tx) ** 2 + (Z - tz) ** 2 + (sm > .04 ? 1e5 * (sm - .03) : 0);
+      const X = x0 + (i + i0) * res, Z = z0 + (j + j0) * res, sm = sl(X, Z), dd = (X - tx) ** 2 + (Z - tz) ** 2 + (sm > .04 ? (ps ? 600 * (sm - .04) : 1e5 * (sm - .03)) : 0);   // (a sheet's spot may stand on a slope: only a mild push off a steep one)
       if (dd < bd) { bd = dd; cup = { x: X, z: Z }; }
     }
   }
@@ -2812,6 +2822,18 @@ function buildRealDecor(C, grp) {
   });
   W.flag = W.flags[0].flag; W.flagBase = W.flags[0].base; W.pole = W.flags[0].pole;
   // tee markers where the tracker puts each tee (white, yellow, blue, red), snapped onto the nearest tee box
+  // (build.py's face_tees turns the tee boxes the same way: tee_target)
+  const teeFacing = (C, x, z) => {
+    if (C.def.par === 3 || !C.center) return [C.cup.x, C.cup.z];
+    const ce = C.center, inF = (a, b) => C.fieldAt(C.F.fair, a, b) < 0; let s0 = 0, bd = 1e18;
+    for (let s = 0; s <= ce.L; s += 2) { const q = polyAt(ce, s), dd = (q[0] - x) ** 2 + (q[1] - z) ** 2; if (dd < bd) { bd = dd; s0 = s; } }
+    let sE = null; for (let s = s0 + 4; s <= ce.L - 2; s += 2) { const q = polyAt(ce, s); if (inF(q[0], q[1])) { sE = s; break; } }
+    if (sE == null) return [C.green.cx, C.green.cz];
+    const s1 = Math.min(ce.L - 2, Math.max(sE + 25, s0 + 120)), q = polyAt(ce, s1), q2 = polyAt(ce, s1 + 2), ul = Math.hypot(q2[0] - q[0], q2[1] - q[1]) || 1, nx = -(q2[1] - q[1]) / ul, nz = (q2[0] - q[0]) / ul;
+    const at = u => inF(q[0] + nx * u, q[1] + nz * u); let lo = null, hi = null;   // the fairway's width across the line there; its middle is the target
+    for (let u = 0; u < 60 && lo == null; u += .5) for (const sg of u ? [1, -1] : [1]) if (lo == null && at(sg * u)) { let a = sg * u, c = sg * u; while (Math.abs(a) < 80 && at(a - .5)) a -= .5; while (Math.abs(c) < 80 && at(c + .5)) c += .5; lo = a; hi = c; }
+    const m = lo == null ? 0 : (lo + hi) / 2; return [q[0] + nx * m, q[1] + nz * m];
+  };
   const FG = C.fg, MC = RDC.data.mkc || { w: 0xffffff, y: 0xffd966, b: 0x6fa8dc, r: 0xf4a0a0 };
   const snapTee = (X, Z) => {
     if (C.fieldAt(C.F.tee, X, Z) < -.4) return [X, Z];
@@ -2828,9 +2850,8 @@ function buildRealDecor(C, grp) {
     else { const m = H0.mk[k]; if (!m) continue; const q = C.loc(m[0], m[1]); p = snapTee(q[0], -q[1]); }
     if (!p || markers.some(o => Math.hypot(o[0] - p[0], o[1] - p[1]) < 3)) continue;
     markers.push(p);
-    // markers square to the line from this tee to the green
-    const dx = C.green.cx - p[0], dz = C.green.cz - p[1], dl = Math.hypot(dx, dz) || 1, px = -dz / dl, pz = dx / dl;
-    let mx = px, mz = pz; if (H0.mkd) { const fr = C.frame, de = H0.mkd[0], dn = H0.mkd[1]; mx = de * fr.rx + dn * fr.ry; mz = -(de * fr.ux + dn * fr.uy); } // course data with mkd (Legends): the pair stands along the tee box's own front edge, the same way for every tee set
+    // markers square to the line this tee faces: straight down the start of the fairway, on a par 3 at the hole (teeFacing)
+    const [fx, fz] = teeFacing(C, p[0], p[1]), dx = fx - p[0], dz = fz - p[1], dl = Math.hypot(dx, dz) || 1, mx = -dz / dl, mz = dx / dl;
     const hw = H0.mkh && H0.mkh[k] ? H0.mkh[k] : k === 'w' && H0.mkw ? H0.mkw : 2.6; // the marker gap the data allows for this tee box (a narrow box gets a narrower gap)
     for (const sd of [-hw, hw]) { let x = p[0] + mx * sd, z = p[1] + mz * sd; const sn = snapTee(x, z); if (sn) { x = sn[0]; z = sn[1]; } /* a marker never stands outside its tee box */ const m = new THREE.Mesh(new THREE.IcosahedronGeometry(.17, 1), lambert(MC[k])); m.position.set(x, C.h(x, z) + .2, z); m.castShadow = true; grp.add(m); }
   }
@@ -7568,7 +7589,11 @@ function pinDay(now) {
   const p = {}; f.formatToParts(new Date(now == null ? Date.now() : now)).forEach(x => { p[x.type] = +x.value; });
   return new Date(Date.UTC(p.year, p.month - 1, p.day, p.hour - 5, p.minute)).toISOString().slice(0, 10); // Chicago wall clock minus 5 h: before 5:00 it is still yesterday
 }
+// a course with the club's own four hole-location sheets (Augusta: the 2026 Masters rounds 1-4, data holes[].pins) plays one sheet a day, the same on every hole and for everyone,
+// stepping on at the pin day's roll-over (5:00 AM Central) through round 1 (Thursday) to round 4 (Sunday) and round again; 2026-04-09, the Thursday of that Masters, is round 1
+function pinRound(now) { const [y, m, d] = pinDay(now).split('-').map(Number); return ((Math.round(Date.UTC(y, m - 1, d) / 864e5) - Math.round(Date.UTC(2026, 3, 9) / 864e5)) % 4 + 4) % 4; }
 function pinSheet(now) {
+  if (HOLE_DEFS[0] && HOLE_DEFS[0].rh && HOLE_DEFS[0].rh.pins) { const r = pinRound(now); return HOLE_DEFS.map(() => r); }
   const room = typeof MP !== 'undefined' && MP.room && !mpIsLobby(MP.room) ? MP.room : 'open';
   return HOLE_DEFS.map((d, i) => {
     let h = 2166136261; const k = pinDay(now) + '|' + COURSE.key + '|' + room + '|' + i;
