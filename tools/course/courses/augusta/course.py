@@ -47,7 +47,7 @@ RELIEF_OFF_WATER = True
 PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 TREES_OFF_TEES_GREENS = True
 TREES_OFF_FAIRWAYS = True
-TREES_OFF_TEE_FRONT = {11: (290, 9)}   # hole 11's tee faced a wall of pines from the lidar and aerial trees (and its small trees and white dogwoods stood in the line): a 290 m x 18 m corridor out of the tee is clear (the real tee looks down an open chute between pines)
+TREES_OFF_TEE_FRONT = {11: (290, 9), 13: (130, 9)}   # hole 11's tee faced a wall of pines from the lidar and aerial trees (and its small trees and white dogwoods stood in the line): a 290 m x 18 m corridor out of the tee is clear (the real tee looks down an open chute between pines)
 SMOOTH_MORE = True
 FINAL_ROUND = dict(fair=(3, 3), water=(2.5, 0), fescue=(3, 1.5), bound=(3, 3))
 SMOOTH_PAINTED = True
