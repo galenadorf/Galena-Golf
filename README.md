@@ -12,7 +12,7 @@ This pals golf game was inspired by and is dedicated Andy in honor of his first 
 
 ## Milestones
 
-**v1.3.** Build `__V13__`, 2026-11-14.
+**v1.3.** Build `cb99828`, 2026-11-14.
 
 - **Every Galena!!! trip course.** All the courses the trip has played over the years are now in the game, built from public map and terrain data.
 - **The Pals Masters is live.** Augusta National in Masters week, open to registered players, with the 2026 Masters hole locations (a new sheet each day, rounds 1 to 4).
