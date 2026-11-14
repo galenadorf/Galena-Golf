@@ -544,6 +544,9 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 <div id="scrim"></div>
 <div class="sheet" id="bagSheet"><div class="grab"></div><div class="sht">Your bag <small id="bagLie">From the tee</small></div><div class="bag" id="bag"></div></div>
 <div class="sheet" id="menuSheet"><div class="grab"></div><div class="sht">Settings</div>
+  <div class="mlist">
+    <div class="sub"><span>Players online</span></div><div class="mpList" id="mpList"></div>
+  </div>
   <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn danger wide" id="mRestart">↺ Restart round</button><button class="mbtn dark wide" id="mChange">⛳ Change practice</button><button class="mbtn dark wide" id="mQuit">Save and quit</button><button class="mbtn danger wide" id="mAbandon">✕ Abandon round</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
   <div class="mlist setBlock">
     <div class="mrow">Name<input id="mName" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="done"></div>
@@ -561,7 +564,6 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
     <div class="mrow" id="crowdRow" hidden>Crowd<div class="seg" id="segCrowd"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
     <div class="mrow mpRow">Live room<div class="mpRoom"><input id="mpCode" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Code" enterkeyhint="go"><button class="mpb" id="mpJoin">Join</button></div></div>
     <div class="mpInfo" id="mpInfo">Play live with friends: everyone in the same room sees the others' balls fly on the same hole, and the scores.<div class="mpBtns"><button class="mpb" id="mpNew">New room</button><button class="mpb" id="mpShare">Share link</button></div></div>
-    <div class="sub"><span>Players online</span></div><div class="mpList" id="mpList"></div>
     <div id="buildNo" style="font:500 13px var(--sans,system-ui);color:#b4b4b4;padding:6px 4px 2px;text-align:center;font-variant-numeric:tabular-nums">Build …</div>
   </div>
 </div>
@@ -7072,7 +7074,7 @@ function mpPlace(el) {
 function mpList() {
   const el = $('mpList'); if (!el) return;
   const all = [...MP.peers.values()].filter(pr => Date.now() - pr.at < MP_GHOST && COURSES[pr.c]).sort((a, b) => (a.c === COURSE.key ? 0 : 1) - (b.c === COURSE.key ? 0 : 1) || a.tp - b.tp);
-  const sig = all.map(pr => [pr.id, pr.n, pr.c, pr.h, pr.tp, pr.th].join(',')).join('|') + (MP.follow || '');
+  const sig = MP.st + '|' + all.map(pr => [pr.id, pr.n, pr.c, pr.h, pr.tp, pr.th].join(',')).join('|') + (MP.follow || '');   // (the connection state too: an empty list says "Not connected." until it is, then "No one else...")
   if (sig === MP.listSig) return; MP.listSig = sig; el.textContent = '';
   if (!all.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = MP.st === 'on' ? 'No one else is playing right now.' : 'Not connected.'; el.appendChild(e); return; }
   for (const pr of all.slice(0, 30)) {
