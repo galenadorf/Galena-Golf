@@ -154,6 +154,8 @@ body.rev #strike{right:auto;left:calc(var(--sl) + 10px)}
 /* what the trip log says about this course: plain floating text over the course scene, no tile (it wraps at a fixed size; it scrolls only if it ever outgrows the space) */
 #playBlurb{flex:1 1 0;min-height:0;overflow-y:auto;touch-action:pan-y;display:flex;flex-direction:column;justify-content:safe center;gap:7px;padding:4px 6px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 12px rgba(0,0,0,.65),0 0 3px rgba(0,0,0,.6)}
 #playBlurb p{margin:0}
+#playBlurb #pbLogo{display:block;height:84px;width:auto;margin:0 auto 2px;flex:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.45))}
+#playBlurb #pbLogo[hidden]{display:none}
 #playBlurb .pbJoke{font:600 18px/1.36 var(--body)}
 #playBlurb .pbStat{font:700 14px/1.3 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:#ffe9a6}
 #playBlurb .pbWin{font:500 15px/1.4 var(--body);color:#f4f1e4}
@@ -527,7 +529,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 </div>
 <div class="layer" id="play">
   <div class="playLeft"><div class="card playHead"><button class="playBack" id="btnPlayBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><p id="playCourse" class="pcName"></p><p id="playPlace"></p><p id="playPar"></p></div></div>
-  <div id="playBlurb"><p class="pbJoke" id="pbJoke"></p><p class="pbStat" id="pbStat"></p><p class="pbWin" id="pbWin"></p></div></div>
+  <div id="playBlurb"><img id="pbLogo" alt="" hidden><p class="pbJoke" id="pbJoke"></p><p class="pbStat" id="pbStat"></p><p class="pbWin" id="pbWin"></p></div></div>
   <div class="tb">
     <label class="card nameRow courseRow" hidden><span>Course</span><select class="courseSel" id="selCourse" aria-label="Course"></select></label>
     <div class="playRow"><button class="btn alt" id="btnResume" style="display:none">Continue round<small id="resumeInfo"></small></button><button class="btn" id="btnNew">New round</button></div>
@@ -4204,7 +4206,7 @@ function courseList(reg) {
   for (const c of reg.courses) {
     if (c.hidden) continue;   // switched off in courses.json (the disc golf courses): not listed, not loaded, not cached; their files stay
     const k = c.key;
-    COURSES[k] = { key: k, name: c.name, card: c.card || '', short: c.short, place: c.place || '', tee: c.tee || '', rating: c.rating || 0, slope: c.slope || 0, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, blurb: c.blurb || '', trip: c.trip || null, about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: Array.isArray(c.music) ? c.music.slice() : !!c.music,   // (true: everywhere on the course; a list: only on those holes, from 1)
+    COURSES[k] = { key: k, name: c.name, card: c.card || '', short: c.short, place: c.place || '', tee: c.tee || '', rating: c.rating || 0, slope: c.slope || 0, pars: c.pars, recFrom: c.recFrom, alpha: !!c.alpha, blurb: c.blurb || '', trip: c.trip || null, noTrip: !!c.noTrip, logo: c.logo || '', about: c.about || '', scene: c.scene || {}, engine: c.engine || {}, music: Array.isArray(c.music) ? c.music.slice() : !!c.music,   // (true: everywhere on the course; a list: only on those holes, from 1)
       only: Array.isArray(c.only) ? c.only.map(String) : null,
       defs: null, best: 'ssg-best-' + k, board: 'ssg-board-' + k, coll: 'rounds-' + k };
   }
@@ -7133,7 +7135,7 @@ function mpInit() {
      far      a muffled roar from another hole (the back nine mostly: Augusta's roars carry), now and then
    A great moment (a hole-out from off the green, a birdie or better, a putt of 20 ft or more, an approach inside 8 ft) is cheered with polite applause or a roar, the dice
    rolled each time (CROWD.roarP). Nothing is stored or sent. */
-const CROWD = { roarP: .5, vol: 2.5, murmurVol: .009, last: 0, farAt: 0, farHole: -1, ac: null, out: null, mur: null, noise: null };
+const CROWD = { roarP: .5, vol: 2.5, murmurVol: .009, murRecVol: .02, last: 0, farAt: 0, farHole: -1, ac: null, out: null, mur: null, noise: null };
 const crowdOn = () => !!(settings.sound && settings.crowd !== false && RDC && RDC.scene && RDC.scene.crowd && !document.hidden && AC && AC.state === 'running');   // (RDC: none yet before a course is chosen, and crowdTick runs from page load)
 function crowdNoise(a) { if (a._crNoise) return a._crNoise; const n = Math.floor(a.sampleRate * 3), b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return a._crNoise = b; }
 // a stretch of filtered noise, shaped by an envelope [[time s, gain], ...] (linear between the points), panned
@@ -7156,13 +7158,24 @@ function crVoice(a, out, t, f0, f1, dur, v, fm, att) {
 }
 const CR_OH = [[520, 5, 1], [930, 6, .7], [2400, 5, .15]], CR_AH = [[780, 5, 1], [1200, 6, .6], [2600, 5, .15]], CR_OO = [[330, 6, 1], [800, 6, .45]];
 const crSpread = () => Math.random() * 1.6 - .8;
+const CROWD_POLITE_POOL = { n: ['crowdpolite1', 'crowdpolite2'], noRepeat: true };   // the user's two recordings of polite applause (sounds/crowdpolite1-2.mp3, a polite cheer and soft clapping, about 13 s each, level baked in); the synthesised applause below is the fallback until it is loaded
 function crowdPolite(a, out, t) {
+  const rk = poolReady(CROWD_POLITE_POOL);
+  if (rk) { const s = a.createBufferSource(); s.buffer = SND[rk]; s.connect(out); s.start(t); const d = s.buffer.duration; poolUsed(CROWD_POLITE_POOL); return d; }
   const D = 3.8; crNoise(a, out, t, D, 'bandpass', 2300, .7, [[.8, .012], [1.6, .03], [2.6, .02]], 0); crNoise(a, out, t, D, 'bandpass', 700, .6, [[.5, .01], [1.4, .016]], 0);
   for (let i = 0; i < 4; i++) crVoice(a, out, t + Math.random() * .25, 200 + Math.random() * 120, 190 + Math.random() * 100, .7 + Math.random() * .5, .012, CR_AH, .18);   // the soft "ahh" of a crowd that likes what it saw
   const n = 95; for (let i = 0; i < n; i++) { const u = Math.random(), k = .2 + 3.2 * u, env = Math.sin(Math.PI * Math.pow(u, .75)); if (Math.random() < .18 + .8 * env) crClap(a, out, t + k, .02 + .05 * Math.random() * (.4 + env), crSpread()); }
   return D;
 }
+const CROWD_ROAR_POOL = { n: ['crowdroar'] }, CROWD_GROAN_POOL = { n: ['crowdgroan'] };   // the user's cheer (sounds/crowdroar.mp3, 16 s, faded in and out, level baked in) and groan (crowdgroan.mp3, 1.6 s); the synthesised ones below play until they are loaded
 function crowdRoar(a, out, t, far) {
+  const rk = poolReady(CROWD_ROAR_POOL);
+  if (rk) {   // far off: the same recording, muffled, quiet and cut at 7 s
+    const s = a.createBufferSource(); s.buffer = SND[rk]; let d = s.buffer.duration;
+    if (far) { const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 600; lp.Q.value = .4; const g = a.createGain(); g.gain.setValueAtTime(.32, t); g.gain.setValueAtTime(.32, t + 5); g.gain.linearRampToValueAtTime(0, t + 7); s.connect(lp).connect(g).connect(out); s.start(t); s.stop(t + 7.05); d = 7; }
+    else { s.connect(out); s.start(t); }
+    poolUsed(CROWD_ROAR_POOL); return d;
+  }
   const D = far ? 6.2 : 5.6, at = far ? 1.4 : .45;
   const body = a.createGain(); body.gain.value = 1; let dst = out;
   if (far) { const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 600; lp.Q.value = .4; const fg = a.createGain(); fg.gain.value = .32; body.connect(lp).connect(fg).connect(out); dst = body; } else body.connect(out);
@@ -7182,6 +7195,8 @@ function crowdGaspSnd(a, out, t) {
   return .9;
 }
 function crowdGroanSnd(a, out, t) {
+  const gk = poolReady(CROWD_GROAN_POOL);
+  if (gk) { const s = a.createBufferSource(); s.buffer = SND[gk]; s.connect(out); s.start(t); const d = s.buffer.duration; poolUsed(CROWD_GROAN_POOL); return d; }
   crNoise(a, out, t, 1.8, 'bandpass', 800, .8, [[.3, .012], [1.0, .016]], 0);
   for (let i = 0; i < 6; i++) { const f = 150 + Math.random() * 130; crVoice(a, out, t + Math.random() * .2, f * 1.05, f * .82, 1.2 + Math.random() * .5, .03, CR_OO, .3); }   // "ohhhh", sinking
   return 1.9;
@@ -7221,13 +7236,19 @@ function crowdGroan(x, z) { if (!crowdOn() || crowdLevel(x, z) < .12) return; co
 function crowdTick() {
   const a = AC, on = crowdOn() && G.state !== 'title' && G.C;
   if (!on) { if (CROWD.mur) { try { const m = CROWD.mur; m.g.gain.setTargetAtTime(0, a.currentTime, .3); setTimeout(() => { try { m.src.forEach(x => x.stop()); } catch (e) { } }, 1500); } catch (e) { } CROWD.mur = null; } return; }
-  const out = crowdBus(a);
+  const out = crowdBus(a), nowp = performance.now(); poolNext(CROWD_POLITE_POOL, nowp); poolNext(CROWD_ROAR_POOL, nowp); poolNext(CROWD_GROAN_POOL, nowp);
+  if (!SND.s_crowdmurmur && !CROWD.murReq) { CROWD.murReq = true; sndFetch(a, 'crowdmurmur', () => { CROWD.murReq = false; }); }
+  if (CROWD.mur && !CROWD.mur.rec && SND.s_crowdmurmur) { const m = CROWD.mur; CROWD.mur = null; try { m.g.disconnect(); m.src.forEach(x => x.stop()); } catch (e) { } }   // the recording is in: swap the synthesised hum for it
+  if (!CROWD.mur && SND.s_crowdmurmur) {   // the user's murmur, muffled and looped seamlessly (sounds/crowdmurmur.mp3)
+    const g = a.createGain(); g.gain.value = 0; g.connect(out); const s = a.createBufferSource(); s.buffer = SND.s_crowdmurmur; s.loop = true; s.connect(g); s.start(0, Math.random() * s.buffer.duration);
+    CROWD.mur = { g, src: [s], rec: true };
+  }
   if (!CROWD.mur) {   // two layers of looped noise, each breathing slowly: a low hum of voices and a brighter chatter
     const g = a.createGain(); g.gain.value = 0; g.connect(out); const src = [];
     for (const [f, q, v, rate] of [[420, .7, 1, .17], [1100, .8, .55, .29]]) { const s = a.createBufferSource(); s.buffer = crowdNoise(a); s.loop = true; const fl = a.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = f; fl.Q.value = q; const lg = a.createGain(); lg.gain.value = v; const lf = a.createOscillator(), lfg = a.createGain(); lf.frequency.value = rate; lfg.gain.value = v * .3; lf.connect(lfg).connect(lg.gain); s.connect(fl).connect(lg).connect(g); s.start(0, Math.random() * 2); lf.start(); src.push(s, lf); }
     CROWD.mur = { g, src };
   }
-  const lv = crowdLevel(G.ball.x, G.ball.z); CROWD.mur.g.gain.setTargetAtTime(CROWD.murmurVol * Math.pow(lv, 1.3), a.currentTime, 1.2);
+  const lv = crowdLevel(G.ball.x, G.ball.z); CROWD.mur.g.gain.setTargetAtTime((CROWD.mur.rec ? CROWD.murRecVol : CROWD.murmurVol) * Math.pow(lv, 1.3), a.currentTime, 1.2);
   // a roar from another hole: back nine mostly (11-16 every minute or two), now and then elsewhere
   const now = performance.now(), hole = G.hole + 1;
   if (CROWD.farHole !== G.hole) { CROWD.farHole = G.hole; const hot = hole >= 11 && hole <= 16; CROWD.farAt = now + (hot ? 25000 + Math.random() * 60000 : 90000 + Math.random() * 150000); }
@@ -8935,9 +8956,10 @@ function playBlurbFill() {
   // every course with a description shows the same sections: the joke, a rounds line only when the crew has played it (trip.n > 0), and always a champs line
   // (the champions, or "none yet" when the crew has not played it or no champion is recorded)
   const CO = COURSE, t = CO.trip; $('pbJoke').textContent = CO.blurb || '';
-  $('pbStat').textContent = !CO.blurb || !t || !t.n ? '' : `${t.n} ${t.n === 1 ? 'round' : 'rounds'} \u00b7 ${tripYears(t.years)}`;
+  const lg = $('pbLogo'); if (CO.logo) { if (lg.getAttribute('src') !== CO.logo) lg.src = CO.logo; lg.hidden = false; } else lg.hidden = true;   // (courses.json logo: Augusta's Masters logo, above the description)
+  $('pbStat').textContent = !CO.blurb || CO.noTrip || !t || !t.n ? '' : `${t.n} ${t.n === 1 ? 'round' : 'rounds'} \u00b7 ${tripYears(t.years)}`;
   const w = $('pbWin'); w.textContent = '';
-  if (CO.blurb) {
+  if (CO.blurb && !CO.noTrip) {   // (courses.json noTrip, Augusta: only the description, no rounds line and no champions line)
     const b = document.createElement('b'); b.textContent = 'Trip champs '; w.appendChild(b);
     w.append(t && t.win && t.win.length ? t.win.map(([n, y]) => n + ' ' + y.map(v => '\u2019' + String(v).slice(2)).join(' ')).join(' \u00b7 ') : 'none yet, the Brown Jacket awaits');
   }

@@ -11,6 +11,7 @@ Bob Lohmann’s links-style layout (2002) rolls through the driftless farmland o
 # WHAT THE GAME ADDS UNDER EACH DESCRIPTION (not edited here)
 #   - The rounds, years and trip champions come from the trip spreadsheet (the "trip" data in courses/courses.json). The # notes below each description show what
 #     the game will print there, for reference only; editing those notes changes nothing.
+#   - A course with "noTrip": true in courses.json (Augusta) shows only its description: no rounds line and no "Trip champs" line.
 #   - Every course shows the same sections: the description, a "N rounds - years" line only when the crew has played it, and a "Trip champs" line always (the champions,
 #     or "none yet, the Brown Jacket awaits" when the crew has not played it or no champion is recorded).
 #
@@ -90,3 +91,8 @@ A 1973 layout in La Porte, Indiana, with water on eight holes, an island green, 
 
 [maxwelton] Maxwelton Braes Golf Resort
 Door County’s historic 1929 layout by Roseman and O’Neil, tucked beside the Maxwelton Braes Lodge in Baileys Harbor, with Highway 57 cutting through the middle and dense woods on nearly every side. A par 72 of about 6,000 yards from the green tees (69.5/119), short enough to be friendly. It’s Andy’s home course, so he knows every bounce and isn’t telling.
+
+[augusta] Augusta National Golf Club
+MacKenzie and Jones built this in 1933: a par 72 of 7,555 yards from the Masters tees, with azaleas, pine straw, blindingly white bunkers and greens so fast and sloped that we would three-putt from the fringe and call it a good hole. Rae's Creek on 12 takes a sleeve of balls a round, Amen Corner takes the rest of the bag, and our best score here is a number we will carry to our graves. The pimento cheese is the only thing we would get right.
+# shown under it: nothing (noTrip in courses.json: no rounds line and no "Trip champs" line)
+

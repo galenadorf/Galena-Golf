@@ -159,6 +159,66 @@ def augusta_birds():
         print(f'{nm} -> sounds/augbird{i}.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / sr:.1f} s, peak {20 * np.log10(np.abs(y).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
 
 
+CROWD_POLITE_DB = -38   # the median 0.5 s level of the cheer before the game's crowd bus (gain 2.5, +8 dB): about -30 dB out, what the synthesised polite applause peaked at
+
+
+def crowd_polite():
+    from scipy.signal import resample_poly
+    for src, dst in (('Augusta_polite_cheer', 'crowdpolite1'), ('Augusta_soft_clapping', 'crowdpolite2')):
+        p = os.path.join(SOUNDS_RAW, src + '.m4a')
+        if not os.path.exists(p):
+            print('missing', p); continue
+        y, a, b = trim_music(load(p), .05, .1, -40)   # (the file has 1.9 s of near silence before the swell and 2.5 s after the fade)
+        y = resample_poly(y, 2, 3).astype(np.float32); sr = 32000
+        f = int(.25 * sr); y[:f] *= np.linspace(0, 1, f); y[-f:] *= np.linspace(1, 0, f)
+        h = sr // 2; w = [np.sqrt(np.mean(y[k:k + h] ** 2)) for k in range(0, len(y) - h, h)]
+        y = y / np.median([v for v in w if v > np.max(w) * .1]) * 10 ** (CROWD_POLITE_DB / 20)
+        assert np.abs(y).max() < 10 ** (-6 / 20), np.abs(y).max()
+        d = os.path.join(DEST, dst + '.mp3'); write(y, d, 64, sr)
+        print(f'{src} -> sounds/{dst}.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / sr:.1f} s, peak {20 * np.log10(np.abs(y).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
+
+
+def _lp(y, sr, f):
+    from scipy.signal import butter, sosfilt
+    return sosfilt(butter(4, f, 'low', fs=sr, output='sos'), y).astype(np.float32)
+
+
+def _med_db(y, sr, db):
+    h = sr // 2; w = [np.sqrt(np.mean(y[k:k + h] ** 2)) for k in range(0, len(y) - h, h)]
+    return y / np.median([v for v in w if v > np.max(w) * .1]) * 10 ** (db / 20)
+
+
+def crowd_more():
+    from scipy.signal import resample_poly
+    sr = 32000; rs = lambda y: resample_poly(y, 2, 3).astype(np.float32)
+    # the roar: the user's crowd cheer, faded in over 1.5 s and out over 2.5 s; median level -30 dB before the crowd bus (about the synthesised roar's)
+    p = os.path.join(SOUNDS_RAW, 'Augusta_crowd_cheer.m4a')
+    if os.path.exists(p):
+        y, a, b = trim_music(load(p), .05, .1, -40); y = rs(y)
+        fi, fo = int(1.5 * sr), int(2.5 * sr); y[:fi] *= np.sin(np.linspace(0, np.pi / 2, fi)) ** 2; y[-fo:] *= np.cos(np.linspace(0, np.pi / 2, fo)) ** 2
+        y = _med_db(y, sr, -30); assert np.abs(y).max() < .5
+        d = os.path.join(DEST, 'crowdroar.mp3'); write(y, d, 64, sr)
+        print(f'cheer -> sounds/crowdroar.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / sr:.1f} s, peak {20 * np.log10(np.abs(y).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
+    # the murmur: muffled (a 4th-order low-pass at 1 kHz), a seamless loop (the last 2 s cross-faded into the first 2 s), RMS -20 dB; the game plays it at a low gain
+    p = os.path.join(SOUNDS_RAW, 'Augusta_crowd_murmur.m4a')
+    if os.path.exists(p):
+        y, a, b = trim_music(load(p), 0, 0, -40); y = _lp(rs(y), sr, 1000)
+        c = int(2 * sr); t = np.linspace(0, np.pi / 2, c)
+        # equal-power: the loop starts with the file's first 2 s fading in over the file's tail fading out
+        loop = np.concatenate([y[:c] * np.sin(t) + y[-c:] * np.cos(t), y[c:-c]])
+        loop = _med_db(loop, sr, -20); assert np.abs(loop).max() < .5
+        d = os.path.join(DEST, 'crowdmurmur.mp3'); write(loop, d, 48, sr)
+        print(f'murmur -> sounds/crowdmurmur.mp3  ({len(loop) / sr:.1f} s loop, peak {20 * np.log10(np.abs(loop).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
+    # the groan: trimmed, 80 ms in, 0.4 s out; the loudest 0.5 s at -32 dB before the bus
+    p = os.path.join(SOUNDS_RAW, 'Augusta_groan.m4a')
+    if os.path.exists(p):
+        y, a, b = trim_music(load(p), .05, .15, -40); y = rs(y)
+        fi, fo = int(.08 * sr), int(.4 * sr); y[:fi] *= np.linspace(0, 1, fi); y[-fo:] *= np.linspace(1, 0, fo)
+        h = sr // 2; pk = max(np.sqrt(np.mean(y[k:k + h] ** 2)) for k in range(0, len(y) - h, h // 4)); y = y / pk * 10 ** (-32 / 20); assert np.abs(y).max() < .5
+        d = os.path.join(DEST, 'crowdgroan.mp3'); write(y, d, 64, sr)
+        print(f'groan -> sounds/crowdgroan.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / sr:.1f} s, peak {20 * np.log10(np.abs(y).max()):.1f} dB, {os.path.getsize(d) / 1024:.1f} KB)')
+
+
 def plane():
     from scipy.signal import resample_poly
     p = os.path.join(SOUNDS_RAW, 'Plane.m4a')
@@ -197,6 +257,8 @@ def main():
     farts()
     birds()
     augusta_birds()
+    crowd_polite()
+    crowd_more()
     plane()
     trucks()
     cows()

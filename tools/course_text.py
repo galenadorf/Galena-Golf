@@ -30,6 +30,7 @@ HEAD = """# COURSE DESCRIPTIONS: the text shown on the play page, between the co
 #   - The rounds, years and trip champions come from the trip spreadsheet (the "trip" data in courses/courses.json). The # notes below each description show what
 #     the game will print there, for reference only; editing those notes changes nothing.
 #   - A course the crew has not played shows only "Trip champs: none yet, the Brown Jacket awaits".
+#   - A course with "noTrip": true in courses.json (Augusta) shows only its description: no rounds line and no "Trip champs" line.
 #
 # APPLYING YOUR EDITS
 #   - Push this file: the deploy copies it into the game automatically.
@@ -63,6 +64,8 @@ def export(courses):
             out.append(f'# shown under it: {t["n"]} round{"" if t["n"] == 1 else "s"} - {years(t["years"])}')
             if t['win']:
                 out.append('# trip champs: ' + ' | '.join(n + ' ' + ' '.join("'" + str(y)[2:] for y in v) for n, v in t['win']))
+        elif c.get('noTrip'):
+            out.append('# shown under it: nothing (noTrip in courses.json: no rounds line and no "Trip champs" line)')
         else:
             out.append('# shown under it: (nothing: the crew has not played it yet; "Trip champs: none yet" is shown)')
         out.append('')

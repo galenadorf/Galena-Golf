@@ -3,3 +3,4 @@ public domain (work of the U.S. federal government); on Wikimedia Commons as Fil
 The sky was keyed out and the edge cleaned; the photo is otherwise unchanged. The eagle's screech (sounds/eagle.mp3) is synthesised by tools/course/eagle_sound.py.
 albatross.webp: "108 - LAYSAN ALBATROSS (9-06) aleutians, ak (3)" by Alan Schmierer (Flickr 8724575170, https://www.flickr.com/photos/sloalan/8724575170/), released under CC0 1.0 (public domain
 dedication); on Wikimedia Commons as File:108 - LAYSAN ALBATROSS (9-06) aleutians, ak (3) (8724575170).jpg. Cut out of the water, edge cleaned, mirrored; otherwise unchanged.
+masters.webp: the Masters Tournament logo, supplied by the project owner (img from their own file Masters_Logo.png, converted to WebP, otherwise unchanged). A registered trademark of Augusta National, Inc.; shown only on Augusta's play page.

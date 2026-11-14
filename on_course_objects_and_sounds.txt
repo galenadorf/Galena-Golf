@@ -642,7 +642,7 @@ SCENERY AND DATA
 AUGUSTA NATIONAL GOLF CLUB (augusta)  "Augusta (alpha)"
 #####################################################################################################
 Also everything in GLOBAL. Alpha: built from OpenStreetMap and the lidar, keeps no rounds. Masters week: Masters tees 7,555 yd, par 72; the member, forward and
-short markers are estimates. Each hole's card shows its name (Tea Olive, Pink Dogwood, ... Holly). No deep rough (`engine.paintedDeep`, nothing painted).
+short markers are estimates. The play page shows the Masters logo (img/masters.webp, courses.json `logo`) above the description. Each hole's card shows its name (Tea Olive, Pink Dogwood, ... Holly). No deep rough (`engine.paintedDeep`, nothing painted).
 
 OBJECTS
 -------
@@ -719,6 +719,13 @@ SOUNDS
     background to 21-25 dB, as clear as the other courses' birds), trimmed, the loudest calls baked in as loud as the other birds'. One is picked at random (never the same twice running) and played from an unseen spot to the left or
     right, at 0.7 of the other courses' birdsong level (`gain`), then a pause of 12-30 s (`pause`; the other courses' birds pause 4-16 s) before the next; about one clip
     every 28 s; quieter and rarer in the rain. The birds wait while the crowd is loud (a roar, applause, a gasp or a groan: `BIRD.hold`).
+  - The crowd (`scene.crowd`, `CROWD`): a gasp for a patron hit or a missed putt under 6 ft and the far-off roars are synthesised; the rest are the user's recordings,
+    each with the synthesised version as the fallback until it is loaded (all level-baked, mono, in sounds/):
+    POLITE APPLAUSE (`CROWD_POLITE_POOL`, crowdpolite1-2.mp3: a polite cheer and soft clapping, about 13 s each, one at random, never the same twice running);
+    ROAR (`CROWD_ROAR_POOL`, crowdroar.mp3: a crowd cheer, 16 s, faded in over 1.5 s and out over 2.5 s; also the far roars, muffled at 600 Hz, quiet and cut at 7 s);
+    GROAN (`CROWD_GROAN_POOL`, crowdgroan.mp3, 1.6 s, for a near miss or a ball in the water near a crowd);
+    MURMUR (crowdmurmur.mp3: a crowd murmur muffled with a 1 kHz low-pass and looped seamlessly, 12 s, `CROWD.murRecVol` .02, rising as the ball nears a green, tee or stand).
+    A roar or polite applause for a great moment is a 50/50 dice roll.
   - NO rare unseen sound (the fart), plane drone, truck sounds, cart radio or hole song. The strikes, landing, trees, water, cup, chimes and interface are as
     on every course; the ball off a patron or a grandstand gives the thud the clubhouse walls give.
 
