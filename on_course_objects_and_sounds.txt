@@ -639,7 +639,7 @@ SCENERY AND DATA
 
 
 #####################################################################################################
-AUGUSTA NATIONAL GOLF CLUB (augusta)  "Augusta National"
+AUGUSTA NATIONAL GOLF CLUB (augusta)  "The Pals Masters"
 #####################################################################################################
 Also everything in GLOBAL. A full course (promoted from alpha 2026-11-13; registered players only): built from OpenStreetMap and the lidar. Masters week: Masters tees 7,555 yd, par 72; the member, forward and
 short markers are estimates. The hole is cut where the club cut it: one of the four official hole-location sheets of the 2026 Masters (round 1 Thursday to round 4 Sunday), the same on all 18 greens, a different sheet each day (a pin day starts at 5:00 AM Central), so the famous Sunday spots are there (12 back right, 16 back left, 18 front left) and the Saturday 16 on the back-right shelf. The play page shows the Masters logo (img/masters.webp, courses.json `logo`) above the description. Each hole's card shows its name (Tea Olive, Pink Dogwood, ... Holly). No deep rough (`engine.paintedDeep`, nothing painted).

@@ -91,7 +91,7 @@
       "key": "augusta",
       "name": "Augusta National Golf Club",
       "card": "Augusta National\nGolf Club",
-      "short": "Augusta National", "only": true, "logo": "img/masters.webp", "noTrip": true, "music": [1], "place": "Augusta, GA", "tee": "Masters", "rating": 78.1, "slope": 148,
+      "short": "The Pals Masters", "only": true, "logo": "img/masters.webp", "noTrip": true, "music": [1], "place": "Augusta, GA", "tee": "Masters", "rating": 78.1, "slope": 148,
       "pars": [4, 5, 4, 3, 4, 3, 4, 5, 4, 4, 4, 3, 5, 4, 5, 3, 4, 4],
       "recFrom": "2026-11-13",
       "about": "Augusta National Golf Club (Augusta, Georgia; Alister MacKenzie and Bobby Jones, 1933; par 72) in Masters week, played from the Masters tees (7,555 yd, the 2025 card); the member, forward and short markers are estimates. Alpha: hole lines and names, greens, tees, bunkers, ponds, bridges and buildings from \u00a9 OpenStreetMap contributors (ODbL); the ground from the USGS 3DEP 1 m elevation model; the trees from the 2018 Georgia lidar (USGS), checked against the September 2025 USDA NAIP aerial, after Hurricane Helene.",

@@ -1244,6 +1244,10 @@ function lieTable(c, surf, teed) {
 }
 function shownTable(c) { return G.C && G.ball ? lieTable(c, G.surf, G.teed) : c.table; }
 function shownCarry(c, p) {
+  if (G.rt && c === CLUBS[G.rt.club] && c === CLUBS[G.club] && G.state === 'address') {   // the club in hand at address: simulated on the real ground (predictCarry), so the labels agree with the aim ring and the shot
+    const q = G.rt.t, f = clamp(p, 0, 1) * RT_N, i = Math.min(Math.floor(f), RT_N - 1), u = f - i;
+    return q[i] * (1 - u) + q[i + 1] * u;
+  }
   const t = shownTable(c); if (!t) return 0;
   const f = clamp(p, 0, 1) * 20, i = Math.floor(f), u = f - i, v = i >= 20 ? t[20] : t[i] * (1 - u) + t[i + 1] * u;
   // the club in hand: scaled so its full swing reads what the aim line says (G.carry, worked out on the real ground, a bunker's face included)
@@ -3927,9 +3931,23 @@ function buildDressingANGC(C, grp) {
   const along = d => { for (const [a, b, l, t0] of segs) if (d <= t0 + l) { const f = (d - t0) / l; return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, (b[0] - a[0]) / l, (b[1] - a[1]) / l]; } const [a, b, l] = segs[segs.length - 1]; return [b[0], b[1], (b[0] - a[0]) / l, (b[1] - a[1]) / l]; };
   for (const sd of [-1, 1]) {
     let prev = null;
+    // the rope's distance from the hole line at each stake: where the fairway's edge lets it stand, then evened out along the hole (the widest edge within 16 m, then averaged over 32 m),
+    // so the rope runs in long straight-ish lines instead of following every wobble of the fairway's edge
+    const dsA = [], offA = [];
     for (let d = 40; d < total - 6; d += 4) {
-      const [x0, z0, ux, uz] = along(d), nx = -uz * sd, nz = ux * sd; let got = null;
-      for (let o = 8; o < 60; o += 1.5) { const x = x0 + nx * o, z = z0 + nz * o; if (C.fieldAt(C.F.fair, x, z) > 5 && C.fieldAt(C.F.green, x, z) > 6) { got = [x, z]; break; } }
+      const [x0, z0, ux, uz] = along(d), nx = -uz * sd, nz = ux * sd; let oo = null;
+      for (let o = 8; o < 60; o += 1.5) { const x = x0 + nx * o, z = z0 + nz * o; if (C.fieldAt(C.F.fair, x, z) > 5 && C.fieldAt(C.F.green, x, z) > 6) { oo = o; break; } }
+      dsA.push(d); offA.push(oo);
+    }
+    const offS = offA.map((v, i) => {
+      if (v == null) return null; let mx = v; for (let j = Math.max(0, i - 4); j <= Math.min(offA.length - 1, i + 4); j++) if (offA[j] != null && offA[j] > mx) mx = offA[j];
+      return mx; });
+    const offF = offS.map((v, i) => {
+      if (v == null) return null; let sum = 0, n = 0; for (let j = Math.max(0, i - 4); j <= Math.min(offS.length - 1, i + 4); j++) if (offS[j] != null) { sum += offS[j]; n++; }
+      return sum / n; });
+    for (let di = 0; di < dsA.length; di++) {
+      const d = dsA[di], [x0, z0, ux, uz] = along(d), nx = -uz * sd, nz = ux * sd; let got = null;
+      if (offF[di] != null) got = [x0 + nx * offF[di], z0 + nz * offF[di]];
       if (!got || !clearAt(got[0], got[1])) { prev = null; continue; }
       const sx = got[0], sz = got[1], y = groundY(sx, sz); stakes.push([sx, y, sz]);
       if (prev && Math.hypot(sx - prev[0], sz - prev[2]) < 7) stakes.push(['rope', prev, [sx, y, sz]]);
@@ -7823,12 +7841,23 @@ function placeAimGeo() {
   const rs = putt ? .62 : Math.max(1.4, L * .022); W.ring.scale.set(rs, rs, rs); W.ring.userData.s = rs;
   if (SG_U.sgOn.value) { slopeAim(); puttReadFill(); }
 }
+const RT_N = 10;
 function predictCarry() {
   const L = computeLaunch(G.club, { p: 1, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, G.yaw, settings.hand, G.teed);
   const r = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, disc: L.disc, maxT: 12, noTrees: true });
   const carry = r.land ? r.land.carry : r.total, f = r.frames, ax = Math.sin(G.yaw), az = -Math.cos(G.yaw), arc = [0, G.ball.y + (G.teed ? .03 : 0)];   // the flight's height along the aim line, which the aim line follows (the club's loft sets how steeply it climbs)
   for (let k = 1; k < r.n; k += 2) { const d = (f[k * 5 + 1] - G.ball.x) * ax + (f[k * 5 + 3] - G.ball.z) * az; if (d > carry) break; if (d > arc[arc.length - 2]) arc.push(d, f[k * 5 + 2]); }
   G.arc = arc.length > 4 ? arc : null;
+  // the tempo bar's labels for the club in hand: what a pure swing at each tenth of power carries from here, on the real ground along the aim line (RT_N+1 points; 0 and the full swing are known)
+  const c = CLUBS[G.club], rt = [0];
+  if (c.type !== 'putter' && c.type !== 'disc') {
+    for (let j = 1; j < RT_N; j++) {
+      const Lj = computeLaunch(G.club, { p: j / RT_N, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, G.yaw, settings.hand, G.teed);
+      const rj = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: Lj.v, w: Lj.w, bs: Lj.biteSpin, maxT: 12, noTrees: true });
+      rt.push(rj.land ? rj.land.carry : rj.total);
+    }
+    rt.push(carry); G.rt = { club: G.club, t: rt };
+  } else G.rt = null;
   return carry;
 }
 
