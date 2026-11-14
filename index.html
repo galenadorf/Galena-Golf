@@ -7664,9 +7664,10 @@ function startHole(i) {
   const r = mulberry32((Date.now() & 0xffff) + i * 7), wa = r() * TAU, ws = (.25 + .75 * r()) * G.C.def.windMax;
   G.wind = [Math.sin(wa) * ws, -Math.cos(wa) * ws];
   // Amen Corner (Augusta 11-13): the wind swirls - it keeps shifting until the swing starts (swirlWind), and above the pines
-  // it blows from 40-85 degrees round from the wind down low (simulateShot, C.swirl)
+  // it blows from 15-35 degrees round from the wind down low (simulateShot, C.swirl; the petals swirl the way it turns). It was 40-85 degrees until
+  // 2026-11-14: in a 14 mph wind that moved a pure 8-iron on 12 up to 13 yd long or short and 13 yd sideways with nothing on screen to read; now 4-8 yd
   G.swirl = G.C.def.swirl ? { a: wa, s: ws, ph: r() * TAU, t: 0 } : null;
-  if (G.C.def.swirl) G.C.swirl = (r() < .5 ? -1 : 1) * (.7 + .78 * r());
+  if (G.C.def.swirl) G.C.swirl = (r() < .5 ? -1 : 1) * (15 + 20 * r()) * DEG;
   // weather: from the clock and the course, the same for everyone (see wxClock)
   { const wc = wxClock(COURSE.key, Date.now()); G.weather = wc.w; G.wxV = wc.v; G.wxPass = wc.pass; G.wxLead = wc.lead; }
   setWeather(G.weather);

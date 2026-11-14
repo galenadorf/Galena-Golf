@@ -690,7 +690,7 @@ Landmarks, always (scene keys in courses.json; `buildClubhouseANGC`, `buildCabin
   - Every other building on the property: white walls and the same slate grey roof as the rest (`scene.bldColors`); the smaller ones (the members' cabins, the
     shops: under 900 m2 of footprint, `cottage`) as white cottages with black shutters, a gabled roof and a white chimney. Every roof on the property, the
     clubhouse's and the cabins' too, is the one slate grey. The 12 TV towers OSM maps as buildings are left out until the Masters dressing (`BUILDINGS_SKIP`).
-Swirling wind on 11, 12 and 13 (Amen Corner, `engine.swirl`): the wind keeps shifting until the swing starts and blows from another direction above the pines;
+Swirling wind on 11, 12 and 13 (Amen Corner, `engine.swirl`): the wind keeps shifting until the swing starts and, above the pines, blows 15-35 degrees round from the wind shown (the way the petals swirl);
   pine needles and azalea petals whirl round the player there.
 Side roads (out of bounds, looks only, no traffic): every OSM road near a hole, Magnolia Lane and Washington Road among them.
 The Masters dressing, always (`scene.dressing`, `buildDressingANGC`; only round the hole in play; nothing moves). The ball bounces off the patrons
