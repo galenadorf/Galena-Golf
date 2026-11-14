@@ -7135,7 +7135,7 @@ function mpInit() {
      far      a muffled roar from another hole (the back nine mostly: Augusta's roars carry), now and then
    A great moment (a hole-out from off the green, a birdie or better, a putt of 20 ft or more, an approach inside 8 ft) is cheered with polite applause or a roar, the dice
    rolled each time (CROWD.roarP). Nothing is stored or sent. */
-const CROWD = { roarP: .5, vol: 2.5, murmurVol: .009, murRecVol: .02, last: 0, farAt: 0, farHole: -1, ac: null, out: null, mur: null, noise: null };
+const CROWD = { roarP: .5, vol: 2.5, murmurVol: .0045, murRecVol: .01, last: 0, farAt: 0, farHole: -1, ac: null, out: null, mur: null, noise: null };
 const crowdOn = () => !!(settings.sound && settings.crowd !== false && RDC && RDC.scene && RDC.scene.crowd && !document.hidden && AC && AC.state === 'running');   // (RDC: none yet before a course is chosen, and crowdTick runs from page load)
 function crowdNoise(a) { if (a._crNoise) return a._crNoise; const n = Math.floor(a.sampleRate * 3), b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return a._crNoise = b; }
 // a stretch of filtered noise, shaped by an envelope [[time s, gain], ...] (linear between the points), panned

@@ -47,6 +47,7 @@ RELIEF_OFF_WATER = True
 PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 TREES_OFF_TEES_GREENS = True
 TREES_OFF_FAIRWAYS = True
+TREES_OFF_TEE_FRONT = {11: (100, 9)}   # hole 11's tee faced a wall of pines from the lidar and aerial trees (and its small trees and white dogwoods stood in the line): a 100 m x 18 m corridor out of the tee is clear (the real tee looks down an open chute between pines)
 SMOOTH_MORE = True
 FINAL_ROUND = dict(fair=(3, 3), water=(2.5, 0), fescue=(3, 1.5), bound=(3, 3))
 SMOOTH_PAINTED = True
@@ -127,7 +128,7 @@ SPECIMENS = [
     dict(kind='carolina_cherry', hole=9, along=(.3, .85), side='right', n=5, d=5, h=7),
     dict(kind='camellia', hole=10, along=(.4, .9), side='left', n=5, d=3.5, h=4),
     dict(kind='camellia', hole=10, at='green', side='both', n=4, d=3.5, h=4, reach=50),
-    dict(kind='dogwood_white', hole=11, along=(.15, .85), side='both', n=12, d=6, h=7),
+    dict(kind='dogwood_white', hole=11, along=(.25, .85), side='both', n=12, d=6, h=7),
     dict(kind='golden_bell', hole=12, at='green', side='both', n=6, d=3, h=2.2, reach=60),
     dict(kind='chinese_fir', hole=14, along=(.2, .8), side='left', n=5, d=5, h=14),
     dict(kind='firethorn', hole=15, near='green', n=3, d=3, h=2.4, reach=80),

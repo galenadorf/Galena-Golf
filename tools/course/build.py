@@ -828,10 +828,12 @@ def main():
         n0 = len(trees)
         trees = [t for t in trees if not keep.contains(Point(t['e'], t['n']))]
         print(n0 - len(trees), 'trees taken out of tee boxes and greens (course.TREES_OFF_TEES_GREENS)')
-    if getattr(course, 'TREES_OFF_TEE_FRONT', None):   # TREES_OFF_TEE_FRONT = (length m, half width m): no tree whose crown reaches the corridor straight out of each tee along its hole line (a tee that faces a tree wall; the guessed tees of Briar Leaf)
-        L, W = course.TREES_OFF_TEE_FRONT
-        cor = unary_union([LineString([(h['tee'][0] - (h['green'][0] - h['tee'][0]) / max(1, math.hypot(h['green'][0] - h['tee'][0], h['green'][1] - h['tee'][1])) * 3, h['tee'][1] - (h['green'][1] - h['tee'][1]) / max(1, math.hypot(h['green'][0] - h['tee'][0], h['green'][1] - h['tee'][1])) * 3),
-                                      (h['tee'][0] + (h['green'][0] - h['tee'][0]) / max(1, math.hypot(h['green'][0] - h['tee'][0], h['green'][1] - h['tee'][1])) * L, h['tee'][1] + (h['green'][1] - h['tee'][1]) / max(1, math.hypot(h['green'][0] - h['tee'][0], h['green'][1] - h['tee'][1])) * L)]).buffer(W) for h in holes])
+    if getattr(course, 'TREES_OFF_TEE_FRONT', None):   # TREES_OFF_TEE_FRONT = (length m, half width m) for every hole, or {hole: (length m, half width m)} for the named holes (Augusta 11): no tree whose crown reaches the corridor straight out of each tee along its hole line (a tee that faces a tree wall; the guessed tees of Briar Leaf)
+        TF = course.TREES_OFF_TEE_FRONT
+        def corridor(h, L, W):
+            dx, dy = h['green'][0] - h['tee'][0], h['green'][1] - h['tee'][1]; n = max(1, math.hypot(dx, dy))
+            return LineString([(h['tee'][0] - dx / n * 3, h['tee'][1] - dy / n * 3), (h['tee'][0] + dx / n * L, h['tee'][1] + dy / n * L)]).buffer(W)
+        cor = unary_union([corridor(h, *(TF[i + 1] if isinstance(TF, dict) else TF)) for i, h in enumerate(holes) if not isinstance(TF, dict) or (i + 1) in TF])
         n0 = len(trees)
         trees = [t for t in trees if not cor.intersects(Point(t['e'], t['n']).buffer(t['d'] / 2))]
         print(n0 - len(trees), 'trees taken out in front of the tees (course.TREES_OFF_TEE_FRONT)')
