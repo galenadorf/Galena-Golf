@@ -12,6 +12,14 @@ This pals golf game was inspired by and is dedicated Andy in honor of his first 
 
 ## Milestones
 
+**v1.3.** Build `__V13__`, 2026-11-14.
+
+- **Every Galena!!! trip course.** All the courses the trip has played over the years are now in the game, built from public map and terrain data.
+- **The Pals Masters is live.** Augusta National in Masters week, open to registered players, with the 2026 Masters hole locations (a new sheet each day, rounds 1 to 4).
+- **Faster.** Holes build up to a third faster (most on the courses with houses and Augusta's dressing), the clouds and first frame of each hole cost less, and the tempo bar's distances now come from the real ground, so they match the aim ring.
+- **Tidier menus.** Settings shows only what applies: no round buttons on the title screen, Restart and Abandon in red, and Players online beside Live room.
+- **Under the hood.** mqtt 5.16.1 (kept in the game for offline play), newer GitHub Actions, and a leaderboard that no longer drops a round when several are posted at once.
+
 **v1.2.** Build `39e00cf`, 2026-11-03.
 
 - **Putting read.** Every putt now shows a grid on the green with small dots flowing downhill (steeper is faster and pinker) and a short read such as "Downhill · Breaks right". It replaces the old arrows, which are gone.

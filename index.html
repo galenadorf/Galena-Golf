@@ -275,6 +275,7 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
 .mbtns .wide{grid-column:1 / -1}
 .mbtn{height:50px;border-radius:16px;background:var(--soft);font:600 16px var(--cond);text-transform:uppercase;letter-spacing:.04em}
 .mbtn.dark{background:linear-gradient(180deg,#4a9a4c,#2f6b35);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.mbtn.danger{background:linear-gradient(180deg,#d9604f,#a8362a);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
 
 /* settings: the same see-through glass as the game's cards (the blurred 3D scene shows through), light text */
 #menuSheet{--ink:#fff;--ink2:rgba(255,255,255,.82);--ink3:rgba(255,255,255,.66);--hair:rgba(255,255,255,.28);--soft:rgba(255,255,255,.14);
@@ -282,13 +283,13 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
   box-shadow:0 -10px 40px rgba(8,34,16,.28),inset 0 1px 0 rgba(255,255,255,.55);color:#fff;text-shadow:var(--tsh)}
 #menuSheet .grab{background:rgba(255,255,255,.5)}
 #menuSheet .shX{background:rgba(255,255,255,.2);color:#fff}#menuSheet .shX:active{background:rgba(255,255,255,.34)}
-#menuSheet .mrow,#menuSheet .mpLr,#menuSheet .mbtn:not(.dark),#menuSheet .mpBtns .mpb{box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),inset 0 1px 0 rgba(255,255,255,.3)}
+#menuSheet .mrow,#menuSheet .mpLr,#menuSheet .mbtn:not(.dark):not(.danger),#menuSheet .mpBtns .mpb{box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),inset 0 1px 0 rgba(255,255,255,.3)}
 #menuSheet .mrow input{color:#fff;background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);text-shadow:var(--tsh)}
 #menuSheet .mrow input::placeholder{color:rgba(255,255,255,.55)}
 #menuSheet .seg{background:rgba(255,255,255,.14)}
 #menuSheet .seg button{color:rgba(255,255,255,.8)}
 #menuSheet .seg button.sel{background:rgba(255,255,255,.92);color:#16211c;text-shadow:none;box-shadow:0 2px 6px rgba(8,34,16,.25)}
-#menuSheet .mbtn.dark,#menuSheet .mpb{text-shadow:none}
+#menuSheet .mbtn.dark,#menuSheet .mbtn.danger,#menuSheet .mpb{text-shadow:none}
 #menuSheet .mpBtns .mpb{background:rgba(255,255,255,.18);color:#fff;text-shadow:var(--tsh)}
 body:has(#menuSheet.on) #scrim{background:rgba(10,30,18,.08)}
 body:has(#menuSheet.on) #tempo,body:has(#menuSheet.on) #strike,body:has(#menuSheet.on) #mpPanel{opacity:0!important;transition:opacity .2s}
@@ -543,10 +544,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 <div id="scrim"></div>
 <div class="sheet" id="bagSheet"><div class="grab"></div><div class="sht">Your bag <small id="bagLie">From the tee</small></div><div class="bag" id="bag"></div></div>
 <div class="sheet" id="menuSheet"><div class="grab"></div><div class="sht">Settings</div>
-  <div class="mlist">
-    <div class="sub"><span>Players online</span></div><div class="mpList" id="mpList"></div>
-  </div>
-  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn dark wide" id="mRestart">↺ Restart round</button><button class="mbtn dark wide" id="mChange">⛳ Change practice</button><button class="mbtn dark wide" id="mQuit">Save and quit</button><button class="mbtn dark wide" id="mAbandon">✕ Abandon round</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
+  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn danger wide" id="mRestart">↺ Restart round</button><button class="mbtn dark wide" id="mChange">⛳ Change practice</button><button class="mbtn dark wide" id="mQuit">Save and quit</button><button class="mbtn danger wide" id="mAbandon">✕ Abandon round</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
   <div class="mlist setBlock">
     <div class="mrow">Name<input id="mName" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="done"></div>
     <div class="mrow">Player ID<span id="pidState" style="opacity:.8">Guest</span></div>
@@ -563,6 +561,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
     <div class="mrow" id="crowdRow" hidden>Crowd<div class="seg" id="segCrowd"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
     <div class="mrow mpRow">Live room<div class="mpRoom"><input id="mpCode" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Code" enterkeyhint="go"><button class="mpb" id="mpJoin">Join</button></div></div>
     <div class="mpInfo" id="mpInfo">Play live with friends: everyone in the same room sees the others' balls fly on the same hole, and the scores.<div class="mpBtns"><button class="mpb" id="mpNew">New room</button><button class="mpb" id="mpShare">Share link</button></div></div>
+    <div class="sub"><span>Players online</span></div><div class="mpList" id="mpList"></div>
     <div id="buildNo" style="font:500 13px var(--sans,system-ui);color:#b4b4b4;padding:6px 4px 2px;text-align:center;font-variant-numeric:tabular-nums">Build …</div>
   </div>
 </div>
@@ -3288,7 +3287,7 @@ function realCarMesh(C, b, mat) {
 // g.userData.wheels lists the four wheel meshes (rotation.y is the spin; the hub has a bar so it shows) so a moving cart can turn them.
 const CART_RIDERS = [{ x: .26, shirt: 0xC4DCF0 }, { x: -.26, shirt: 0xF7A780 }], CART_SKIN = 0xe3b48f, CART_HAIR = 0x2b1c14, CART_PANTS = 0x6d7076, CART_GEO = {};
 let CART_GLASS = null, SITE_VMAT = null;
-const siteVMat = () => SITE_VMAT || (SITE_VMAT = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide }));   // opaque, so mergeStatic folds parked carts into the hole
+const siteVMat = () => SITE_VMAT || (SITE_VMAT = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));   // opaque, so mergeStatic folds parked carts into the hole
 function cartGeo(riders) {
   const body = 0xfcfbf6, black = 0x18181a, seat = 0xb89f6e, post = 0x2a2b2e, trim = 0x3a7a52, P = [];
   const cyl = (rt, rb, h, seg, x, y, z, c, rx) => ({ g: new THREE.CylinderGeometry(rt, rb, h, seg), c, m: new THREE.Matrix4().makeRotationX(rx || 0).setPosition(x, y, z) });
@@ -3603,7 +3602,7 @@ function buildClubhouseMN(C, grp, b, ch) {
   for (const r of [0, 1]) bx(9.5, 1.0, 1.25, -W / 2 + 4 + r * 11, y0 + .5, zf + 13.5 + r * .4, 0x2d5f2e, 0, r * .05, 0);
   for (let k = 0; k < 6; k++) bx(.28, .9, .28, PW / 2 + 1.8 + k * 1.3, y0 + .45, zf + 3 + k * .5, 0x33363b);
   bx(.14, 2.3, 6.5, W / 2 + .4, y0 + 1.15, zf - 3.4, 0x6e747b); bx(.2, 2.5, .2, W / 2 + .4, y0 + 1.25, zf - .2, 0x4d5258); bx(.2, 2.5, .2, W / 2 + .4, y0 + 1.25, zf - 6.7, 0x4d5258);
-  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true });
+  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide });
   const g = new THREE.Group(), cg = new THREE.Group(); cg.add(new THREE.Mesh(mergeParts(parts), mat)); cg.rotation.y = flip ? Math.PI : 0; g.add(cg);
   C._clubFront = wz(0, zf + 6);
   g.position.set(b.x, 0, b.z); g.rotation.y = a; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
@@ -3654,7 +3653,7 @@ function hipPart(parts, cx, cz, w, d, ey0, rise, col) {
 }
 const ANGC_WHITE = 0xf5f3ee, ANGC_TRIM = 0xffffff, ANGC_ROOF = 0x55595e, ANGC_SHINGLE = ANGC_ROOF, ANGC_GLASS = 0x2e3a40, ANGC_SHUTTER = 0x1c1e1d;
 function buildClubhouseANGC(C, grp, b, ch) {
-  const parts = [], bx = (w, h, d, x, y, z, c, rx, ry, rz) => parts.push(lbx(w, h, d, x, y, z, c, rx, ry, rz));
+  const parts = [];
   // the wings: the real outline, extruded (world frame)
   const P = b.pts, yb = b.lo - .8, Hw = 8.4, ytop = b.lo + Hw;
   { const sh = new THREE.Shape(P.map(q => new THREE.Vector2(q[0], -q[1]))), eg = new THREE.ExtrudeGeometry(sh, { depth: ytop - yb, bevelEnabled: false }); eg.rotateX(-Math.PI / 2); eg.translate(0, yb, 0); parts.push({ g: eg, c: ANGC_WHITE });
@@ -3713,9 +3712,9 @@ function buildClubhouseANGC(C, grp, b, ch) {
   // clipped boxwood domes in a row along the front, and two big clipped domes either side of the entrance
   for (let x = -OW / 2 + 1; x <= OW / 2 - 1; x += 1.25) { if (Math.abs(x) < 4.2) continue; const r = .7; hp.push({ g: new THREE.SphereGeometry(r, 8, 6), c: [0x5d8a3a, 0x648f3e, 0x57843a][Math.abs(Math.round(x * 4)) % 3], m: new THREE.Matrix4().makeScale(1, .95, 1).setPosition(x, y0 + .55, OZ1 + 1.1) }); }
   for (const sx of [-1, 1]) hp.push({ g: new THREE.SphereGeometry(1.5, 9, 7), c: 0x2f5530, m: new THREE.Matrix4().makeScale(1, 1.35, 1).setPosition(sx * 5.2, y0 + 1.9, OZ1 + 1.3) });
-  const hg = new THREE.Group(); hg.add(new THREE.Mesh(mergeParts(hp), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true })));
+  const hg = new THREE.Group(); hg.add(new THREE.Mesh(mergeParts(hp), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide })));
   hg.position.set(e[0] - ux / ul * 2, 0, e[1] - uz / ul * 2); hg.rotation.y = a; grp.add(hg);   // (the house's front wall, local z = 2, stands on the outline's edge; the verandas stand out in front of it)
-  const m = new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true }));
+  const m = new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide }));
   grp.add(m);
   for (const o of [m, hg]) o.traverse(x => { if (x.isMesh) { x.castShadow = true; x.receiveShadow = true; } });
   C._clubFront = [fx, fz];
@@ -3729,7 +3728,7 @@ function buildCabinANGC(C, grp, b) {
   for (const sz of [1, -1]) for (let x = -W / 2 + 2; x <= W / 2 - 2; x += 3.2) { bx(1.1, 1.6, .1, x, y0 + 1.9, sz * (D / 2 + .04), ANGC_GLASS); for (const sx of [-1, 1]) bx(.5, 1.7, .08, x + sx * .85, y0 + 1.9, sz * (D / 2 + .07), ANGC_SHUTTER); }
   const rf = new THREE.Mesh(gableRoof(W, D, rise, .5), new THREE.MeshLambertMaterial({ color: ANGC_ROOF, side: THREE.DoubleSide })); rf.position.y = y0 + He;
   bx(1.3, rise + 2.2, 1.3, W / 2 - 2.2, y0 + He + (rise + 2.2) / 2 - .6, -D * .15, ANGC_WHITE);   // the chimney
-  const g = new THREE.Group(); g.add(new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, flatShading: true }))); g.add(rf);
+  const g = new THREE.Group(); g.add(new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }))); g.add(rf);
   g.position.set(b.x, 0, b.z); g.rotation.y = a; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
 }
 // Eisenhower Cabin (scene.cabins entry [e, n, 'ike', front e, front n]), after a photograph of its front: a white painted-brick Cape Cod of one and a half storeys under
@@ -3749,7 +3748,7 @@ function buildIkeCabin(C, grp, b, cb) {
   const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); rg.setIndex(ri); parts.push({ g: rg, c: ROOFK });
   for (const sx of [-1, 1]) { const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute([sx * W / 2, ey, D / 2, sx * W / 2, ey, -D / 2, sx * W / 2, ey + rise * (D / 2) / ez, 0], 3)); gg.setIndex([0, 1, 2]); parts.push({ g: gg, c: BRICK }); }
   bx(1.1, 2.2, 1.1, W * .12, ey + rise - .4, -.6, 0x3a3532);   // the chimney
-  const slope = Math.atan2(rise, ez), zAt = h => ez - h / rise * ez;   // a point on the front roof slope at height h above the eaves
+  const zAt = h => ez - h / rise * ez;   // a point on the front roof slope at height h above the eaves
   // the front-facing gable at the left end, and the two dormers
   const gable = (cx, gw, gh, depth) => {
     const z1 = zf + .1, z0 = z1 - depth, pts = [-gw / 2, 0, z1, gw / 2, 0, z1, 0, gh, z1, -gw / 2, 0, z0, gw / 2, 0, z0, 0, gh, z0], g = new THREE.BufferGeometry();
@@ -3779,7 +3778,7 @@ function buildIkeCabin(C, grp, b, cb) {
   // the clipped hedge along the front and the round topiaries
   bx(W * .45, 1.0, 1.1, -W * .05, y0 + .1, zf + 1.6, 0x2c4a2a); bx(W * .22, .9, 1.0, W / 2 - 1.2, y0 + .05, zf + 1.8, 0x2c4a2a);
   for (const tx of [-W / 2 + 6.4, W / 2 + .8]) { bx(.25, 1.4, .25, tx, y0 + .7, zf + 2.2, 0x5a4330); parts.push({ g: new THREE.SphereGeometry(1.8, 9, 7), c: 0x2f5530, m: new THREE.Matrix4().makeTranslation(tx, y0 + 2.8, zf + 2.2) }); }
-  const g = new THREE.Group(); g.add(new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true })));
+  const g = new THREE.Group(); g.add(new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide })));
   g.position.set(b.x, 0, b.z); g.rotation.y = a; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
 }
 // Butler Cabin (scene.cabins entry [e, n, 'butler', front e, front n]), after a photograph of its front: white painted brick, one and a half storeys under a
@@ -3818,7 +3817,7 @@ function buildButlerCabin(C, grp, b, cb) {
   // clipped hedges along the front, azaleas in bloom at the left corner
   bx(W * .38, 1.0, 1.1, -W * .27, y0 - .05, zf + 1.6, 0x2c4a2a); bx(W * .4 + wing, 1.2, 1.3, W * .3 + wing * .3, y0 + .05, zf + 1.8, 0x2c4a2a);
   for (let k = 0; k < 6; k++) parts.push({ g: new THREE.SphereGeometry(.6, 7, 5), c: [0xbf3a93, 0xec7393, 0xf2c0db][k % 3], m: new THREE.Matrix4().makeScale(1.2, .7, 1.2).setPosition(-Wt / 2 - .5 + (k % 3) * 1.1, y0 - .1, zf + 1.4 + (k > 2 ? 1 : 0)) });
-  const g = new THREE.Group(); g.add(new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true })));
+  const g = new THREE.Group(); g.add(new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide })));
   g.position.set(b.x, 0, b.z); g.rotation.y = a; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
 }
 // Founders Circle (scene.founders: the lawn inside the roundabout at the end of Magnolia Lane; golfcompendium.com, augusta.com): the club's main flagpole flying
@@ -3970,7 +3969,7 @@ function buildDressingANGC(C, grp) {
   }
   { const [tx, tz] = ln[0], [nx2, nz2] = ln[1], ul2 = Math.hypot(nx2 - tx, nz2 - tz) || 1, px2 = -(nz2 - tz) / ul2, pz2 = (nx2 - tx) / ul2;
     for (const sd of [-1, 1]) { const x = tx + px2 * sd * 12, z = tz + pz2 * sd * 12; if (clearAt(x, z)) { const y = groundY(x, z); parts.push({ g: new THREE.CylinderGeometry(.32, .3, .9, 10), c: 0x1f5a35, m: new THREE.Matrix4().makeTranslation(x, y + .45, z) }); } } }
-  if (parts.length) { const m = new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, flatShading: true })); m.castShadow = true; m.receiveShadow = true; grp.add(m); }
+  if (parts.length) { const m = new THREE.Mesh(mergeParts(parts), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true })); m.castShadow = true; m.receiveShadow = true; grp.add(m); }
   // the on-course leader boards
   for (const bd of D.boards || []) { const [x, z] = at(bd.at); if (!inView([x, z], 200)) continue; for (const f of bd.face) buildLeaderBoard(C, grp, bd.at, f, .62); }
   // the patrons: standing (legs, shirt, head, and a cap or a hat on some), seated (in stands and in the green folding chairs), as instanced parts
@@ -4093,7 +4092,7 @@ function buildClubhouse(C, grp, b, ch) {
   // shrubs in the beds along the front
   const R = mulberry32(77);
   for (let i = 0; i < 26; i++) { const sx = (i % 2 ? 1 : -1) * (PW / 2 + 1.5 + R() * (W / 2 - PW / 2 - 3)), r = .45 + R() * .5; parts.push({ g: new THREE.SphereGeometry(r, 6, 5), c: [0x3f7a3c, 0x4f8a45, 0x6a9a3c, 0x2f6a3a][i % 4], m: new THREE.Matrix4().makeScale(1.2, .85, 1).setPosition(sx, y0 + r * .6, zf + 2.4 + R() * 1.2) }); }
-  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true });
+  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide });
   const g = new THREE.Group(), cg = new THREE.Group(); cg.add(new THREE.Mesh(mergeParts(parts), mat));
   const sign = new THREE.Mesh(new THREE.CircleGeometry(1.3, 40), new THREE.MeshLambertMaterial({ map: clubSignTexture(ch.sign || []) })); sign.position.set(0, ry + rise * .4, zg + .09); cg.add(sign);
   cg.rotation.y = flip ? Math.PI : 0; g.add(cg);
@@ -4119,7 +4118,7 @@ function realBuildingMeshes(C, grp) {
     g.position.set(b.x, 0, b.z); g.rotation.y = -b.rot * DEG; g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
   }
   if (hp.length) {   // every house of the hole in one mesh (one draw call)
-    const m = new THREE.Mesh(mergeParts(hp), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true }));
+    const m = new THREE.Mesh(mergeParts(hp), new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide }));
     m.castShadow = true; m.receiveShadow = true; grp.add(m);
   }
 }
@@ -4514,7 +4513,7 @@ function updateWeatherVisuals(dt) {
   const bg = W.scene.background; bg.copy(P.bg).lerp(P.grey, g * .85); W.scene.fog.color.copy(bg); W.scene.fog.near = 330 - 150 * g; W.scene.fog.far = 1400 - 650 * g;
   W.sky.material.color.setRGB(1 - .38 * g, 1 - .34 * g, 1 - .28 * g);
   const cm = W.cloudMat; cm.color.copy(P.cloudW).lerp(P.cloudG, g); cm.emissive.copy(P.emW).lerp(P.emG, g); cm.emissiveIntensity = .45 - .2 * g;
-  W.clouds.children.forEach(cl => { const show = cl.userData.rank < .22 + .78 * c; cl.visible = show; const sc = .75 + .9 * c; cl.scale.setScalar(sc); cl.position.y = cl.userData.y0 * (1 - .3 * g); });
+  W.clouds.children.forEach(cl => { const show = cl.userData.rank < .22 + .78 * c; cl.visible = show; const sc = .75 + .9 * c; cl.scale.setScalar(sc); cl.position.y = cl.userData.y0 * (1 - .3 * g); }); W.cloudT = 0;   // (the next frame re-sends the puffs)
 }
 function updateRainbow(dt) {
   const B = W.rainbow; if (!B) return;
@@ -4672,6 +4671,7 @@ function buildHole(C) {
   const grp = new THREE.Group(); W.holeGroup = grp; W.scene.add(grp);
   W.treeOcc = null;
   buildRealHole(C, grp);
+  try { W.ren.compile(W.scene, W.cam); } catch (e) { }   // any shader the hole brings is compiled now, in the build's own pause, not on the flyover's first frame
 }
 /* ---------- terrain shading: smooth light, crisp per-pixel surface edges ---------- */
 const TERRAIN_GLSL = `
@@ -5057,7 +5057,7 @@ function buildProps(C, grp) {
     if (p.kind === 'bench') {
       box(1.9, .08, .5, wood, 0, .5, 0); box(1.9, .42, .07, wood, 0, .78, -.24); for (const o of [-.8, .8]) box(.08, .5, .46, dark, o, .25, 0);
     } else if (p.kind === 'hut') {
-      box(3.2, 2.4, 2.6, lambert(0xd9c3a3), 0, 1.2, 0); const rf = new THREE.Mesh(gableRoof(3.2, 2.6, 1.2, .35), new THREE.MeshLambertMaterial({ color: 0x9a5a48, side: THREE.DoubleSide, flatShading: true })); rf.position.y = 2.4; g.add(rf);
+      box(3.2, 2.4, 2.6, lambert(0xd9c3a3), 0, 1.2, 0); const rf = new THREE.Mesh(gableRoof(3.2, 2.6, 1.2, .35), new THREE.MeshLambertMaterial({ color: 0x9a5a48, side: THREE.DoubleSide })); rf.position.y = 2.4; g.add(rf);
       box(1, 1.8, .08, dark, -.6, .9, 1.31); box(.9, .7, .06, lambert(0x8fb3c0), .8, 1.5, 1.31);
     } else if (p.kind === 'scoreboard') {
       const cv = document.createElement('canvas'); cv.width = 256; cv.height = 160; const x = cv.getContext('2d');
@@ -5070,7 +5070,7 @@ function buildProps(C, grp) {
       box(1.8, .16, len, wood, 0, lv + .5 - C.h(p.x, -p.f), len / 2);
       for (let k = 0; k <= len; k += 2.4) for (const o of [-.8, .8]) box(.16, 1.6, .16, dark, o, lv - .2 - C.h(p.x, -p.f), k);
     } else if (p.kind === 'boathouse') {
-      box(5, 2.8, 4, lambert(0xf2e9d8), 0, 1.4, 0); const rf = new THREE.Mesh(gableRoof(5, 4, 1.6, .4), new THREE.MeshLambertMaterial({ color: 0x4f7a8c, side: THREE.DoubleSide, flatShading: true })); rf.position.y = 2.8; g.add(rf);
+      box(5, 2.8, 4, lambert(0xf2e9d8), 0, 1.4, 0); const rf = new THREE.Mesh(gableRoof(5, 4, 1.6, .4), new THREE.MeshLambertMaterial({ color: 0x4f7a8c, side: THREE.DoubleSide })); rf.position.y = 2.8; g.add(rf);
       box(2.2, 2, .08, lambert(0x4f7a8c), 0, 1, 2.02);
     } else if (p.kind === 'stand') {
       const w = p.w || 10; for (let k = 0; k < 4; k++) { box(w, .14, .8, lambert(0xe9eef0), 0, .55 + k * .55, -k * .8); box(w, .55 + k * .55, .08, lambert(0x2f6b35), 0, (.55 + k * .55) / 2, -k * .8 + .4); }
@@ -5126,7 +5126,7 @@ const _lm = new THREE.Matrix4(), _lm2 = new THREE.Matrix4(), _ld = new THREE.Obj
 // vertex-coloured lambert; the instanced grass sways in the wind
 const LIFE_CAM = { value: new THREE.Vector3() };
 function lifeMat(sway, far, fade) {
-  const m = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: !sway, transparent: !sway });
+  const m = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, transparent: !sway });
   if (sway) m.onBeforeCompile = sh => {
     sh.uniforms.uT = LIFE_T; sh.uniforms.uCam = LIFE_CAM; sh.uniforms.uFar = { value: far || 120 }; sh.uniforms.uFade = { value: fade || 40 };
     sh.vertexShader = 'uniform float uT; uniform vec3 uCam; uniform float uFar; uniform float uFade;\n' + sh.vertexShader.replace('#include <begin_vertex>', `vec3 transformed = vec3( position );
@@ -5157,21 +5157,34 @@ function mergeGeos(geos) {
   if (uv) out.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2));
   out.setIndex(I); return out;
 }
+// every part (a geometry, a colour, an optional matrix) into one flat-shaded, vertex-coloured geometry: each triangle's corners take its face normal, as
+// computeVertexNormals gives a non-indexed geometry. Written straight into typed arrays (no clone, toNonIndexed or per-part normals pass): building a hole
+// merges thousands of parts (the houses, the Augusta dressing, the props), and this was a large share of the time it takes.
+const _mpA = new THREE.Vector3(), _mpB = new THREE.Vector3(), _mpC = new THREE.Vector3(), _mpN = new THREE.Vector3(), _mpU = new THREE.Vector3();
 function mergeParts(parts) {
-  const P = [], N = [], K = [];
+  let n = 0; for (const p of parts) n += p.g.index ? p.g.index.count : p.g.attributes.position.count;
+  n -= n % 3;
+  const P = new Float32Array(n * 3), N = new Float32Array(n * 3), K = new Float32Array(n * 3); let o = 0;
   for (const p of parts) {
-    const g = p.g.index ? p.g.toNonIndexed() : p.g.clone(); if (p.m) g.applyMatrix4(p.m); g.deleteAttribute('uv'); g.computeVertexNormals();
+    const pa = p.g.attributes.position, ix = p.g.index, cnt = ix ? ix.count : pa.count, m = p.m;
     if (typeof p.c === 'number') _lc.setHex(p.c); else _lc.setRGB(p.c[0], p.c[1], p.c[2]);
-    const pa = g.attributes.position, na = g.attributes.normal;
-    for (let i = 0; i < pa.count; i++) { P.push(pa.getX(i), pa.getY(i), pa.getZ(i)); N.push(na.getX(i), na.getY(i), na.getZ(i)); K.push(_lc.r, _lc.g, _lc.b); }
-    g.dispose();
+    for (let t = 0; t + 2 < cnt && o < n; t += 3) {
+      const a = ix ? ix.getX(t) : t, b = ix ? ix.getX(t + 1) : t + 1, c = ix ? ix.getX(t + 2) : t + 2;
+      _mpA.fromBufferAttribute(pa, a); _mpB.fromBufferAttribute(pa, b); _mpC.fromBufferAttribute(pa, c);
+      if (m) { _mpA.applyMatrix4(m); _mpB.applyMatrix4(m); _mpC.applyMatrix4(m); }
+      _mpN.subVectors(_mpC, _mpB).cross(_mpU.subVectors(_mpA, _mpB)).normalize();
+      for (const v of [_mpA, _mpB, _mpC]) { const k = o * 3; P[k] = v.x; P[k + 1] = v.y; P[k + 2] = v.z; N[k] = _mpN.x; N[k + 1] = _mpN.y; N[k + 2] = _mpN.z; K[k] = _lc.r; K[k + 1] = _lc.g; K[k + 2] = _lc.b; o++; }
+    }
   }
   const out = new THREE.BufferGeometry();
-  out.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); out.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); out.setAttribute('color', new THREE.Float32BufferAttribute(K, 3));
+  out.setAttribute('position', new THREE.BufferAttribute(P, 3)); out.setAttribute('normal', new THREE.BufferAttribute(N, 3)); out.setAttribute('color', new THREE.BufferAttribute(K, 3));
   return out;
 }
-const lbx = (w, h, d, x, y, z, c, rx, ry, rz) => { const m = new THREE.Matrix4(); if (rx || ry || rz) m.makeRotationFromEuler(_le.set(rx || 0, ry || 0, rz || 0)); m.setPosition(x, y, z); return { g: new THREE.BoxGeometry(w, h, d), c, m }; };
-const lsp = (sx, sy, sz, x, y, z, c, det) => { const m = new THREE.Matrix4().makeScale(sx, sy, sz); m.setPosition(x, y, z); return { g: new THREE.SphereGeometry(1, det || 6, det ? Math.max(3, det - 2) : 4), c, m }; };
+// a box or an ellipsoid part for mergeParts: one shared unit shape, sized by the part's matrix (the same corners as a new BoxGeometry(w, h, d) or a sphere
+// scaled by (sx, sy, sz), without making a geometry for every part). The shared shapes are never drawn, so a part's g.dispose() does nothing to them.
+const _LBX_BOX = new THREE.BoxGeometry(1, 1, 1), _LSP_SPH = {}, _lbxQ = new THREE.Quaternion(), _lbxP = new THREE.Vector3(), _lbxS = new THREE.Vector3();
+const lbx = (w, h, d, x, y, z, c, rx, ry, rz) => { _lbxQ.setFromEuler(_le.set(rx || 0, ry || 0, rz || 0)); return { g: _LBX_BOX, c, m: new THREE.Matrix4().compose(_lbxP.set(x, y, z), _lbxQ, _lbxS.set(w, h, d)) }; };
+const lsp = (sx, sy, sz, x, y, z, c, det) => { const k = det || 0, g = _LSP_SPH[k] || (_LSP_SPH[k] = new THREE.SphereGeometry(1, det || 6, det ? Math.max(3, det - 2) : 4)); const m = new THREE.Matrix4().makeScale(sx, sy, sz); m.setPosition(x, y, z); return { g, c, m }; };
 const lmesh = (geo, mat) => { const m = new THREE.Mesh(geo, mat); m.frustumCulled = false; return m; };
 const LIFE_MAT = () => lifeMat(false);
 
@@ -5537,7 +5550,7 @@ function cobGeo() {
   return mergeParts(parts);
 }
 function makeCob(L) {
-  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, flatShading: true }), g = new THREE.Group(), body = lmesh(cobGeo(), mat);
+  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide }), g = new THREE.Group(), body = lmesh(cobGeo(), mat);
   g.add(body); g.visible = false; g.scale.setScalar(.27); L.grp.add(g);
   const e = { kind: 'cob', g, st: 'wait', p: new THREE.Vector3(), v: new THREE.Vector3(), w: new THREE.Vector3(), q: new THREE.Quaternion(), qT: new THREE.Quaternion(), bounces: 0, rest: 0, tmr: 0, delay: 0 };
   e.go = () => {   // from just behind and to the left of the camera, past its right shoulder, down the hole
@@ -6580,7 +6593,6 @@ function mergeStatic(grp) {
     const geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
     m4.multiplyMatrices(inv, o.matrixWorld); geo.applyMatrix4(m4);
     if (!geo.attributes.normal) geo.computeVertexNormals();
-    if (o.material.flatShading) { geo.deleteAttribute('normal'); geo.computeVertexNormals(); }
     const P = geo.attributes.position, N = geo.attributes.normal, side = o.material.side === THREE.DoubleSide ? 1 : 0, B = parts[side];
     c.copy(o.material.color); if (o.material.emissive) c.add(o.material.emissive);
     const K = o.material.vertexColors ? geo.attributes.color : null;   // vertex-coloured parts keep their own colours (tinted by the material's)
@@ -6851,7 +6863,7 @@ const mpCol = id => { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(
 function mpLib() {
   if (window.mqtt) return Promise.resolve(window.mqtt);
   if (MP.lib) return MP.lib;
-  return MP.lib = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'vendor/mqtt.5.10.1.min.js'; sc.onload = () => window.mqtt ? ok(window.mqtt) : no(); sc.onerror = () => { MP.lib = null; no(); }; document.head.appendChild(sc); });
+  return MP.lib = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'vendor/mqtt.5.16.1.min.js'; sc.onload = () => window.mqtt ? ok(window.mqtt) : no(); sc.onerror = () => { MP.lib = null; no(); }; document.head.appendChild(sc); });
 }
 function mpJoin(code) {
   code = mpClean(code); if (code.length < 3) return false;
@@ -9096,6 +9108,13 @@ function syncMenu() {
   $('mAbandon').style.display = !G.practice && !G.pg && G.state !== 'title' && G.scores ? '' : 'none';   // only during a round
   $('mRestart').style.display = !G.practice && !G.pg && G.state !== 'title' && G.scores ? '' : 'none';   // only during a round
   $('mChange').style.display = G.practice && G.state !== 'title' ? '' : 'none';   // only while practising
+  // from the title screen there is no shot to replay and no card to show, and Tee off starts a round (through the course picker); in a round, Restart
+  // round is the way to start again, so New round is offered only while practising. A button left alone on its row takes the whole row.
+  const title = G.state === 'title', inRound = !title && !G.practice && !G.pg && !!G.scores;
+  $('mReplay').style.display = title ? 'none' : '';
+  $('mCard').style.display = title ? 'none' : '';
+  $('mRound').style.display = title || inRound ? 'none' : '';
+  $('mBoard').classList.toggle('wide', title); $('mHelp').classList.toggle('wide', title || inRound);
 }
 // the Practice sheet (from the start screen): every hole with its par and length, of the course picked on it (`pracKey`: the course in play
 // when the sheet opens; its dropdown lists another course's holes, and the switch to that course happens only when one of them is tapped)
@@ -9393,7 +9412,8 @@ function roundMarks(e) {
 // the world records of a course (records/<course>.json: key -> the best 5 players), fetched when the Stats sheet opens and when a round ends; true when it changed
 const Rec = { gh: {}, at: {}, err: {}, open: new Set() };
 async function loadRecords(key, force) {
-  key = key || COURSE.key; if (!force && Rec.at[key] && Date.now() - Rec.at[key] < 60000) return false; Rec.at[key] = Date.now();
+  key = key || COURSE.key; if (COURSES[key] && COURSES[key].alpha) { const had = !!Rec.gh[key]; Rec.gh[key] = { rec: {} }; Rec.err[key] = false; return !had; }   // (an alpha course keeps no records: no file to fetch)
+  if (!force && Rec.at[key] && Date.now() - Rec.at[key] < 60000) return false; Rec.at[key] = Date.now();
   try {
     const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/records/${key}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' });
     const old = JSON.stringify(Rec.gh[key]);
@@ -9942,7 +9962,8 @@ async function postAuto(r) {
   } catch (e) { return false; }
 }
 async function loadWorld(force, key) {
-  key = key || COURSE.key; if (!force && Board.ghAt[key] && Date.now() - Board.ghAt[key] < 60000) return; Board.ghAt[key] = Date.now();
+  key = key || COURSE.key; if (COURSES[key] && COURSES[key].alpha) { Board.gh[key] = []; return; }   // (an alpha course keeps no rounds: it has no board file to fetch)
+  if (!force && Board.ghAt[key] && Date.now() - Board.ghAt[key] < 60000) return; Board.ghAt[key] = Date.now();
   try {
     const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/leaderboard/${key}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' }); if (!r.ok && r.status !== 404) throw new Error('http');
     const a = r.ok ? await r.json() : []; Board.gh[key] = Array.isArray(a) ? a.filter(x => x && typeof x.name === 'string' && Number.isFinite(x.strokes) && Number.isFinite(x.toPar) && Number.isFinite(x.at) && x.holes === 18).map(x => ({ name: String(x.name).slice(0, 14), strokes: x.strokes, toPar: x.toPar, at: x.at, holes: 18, pid: x.pid, mu: x.mu | 0 })) : []; // (a 404 is an empty board: no round posted on this course yet)
@@ -10474,7 +10495,8 @@ function frame(now) {
   if (W.ring.visible) { const k = 1 + Math.sin(tt * 3) * .05; W.ringPulse.scale.set(k, k, 1); }
   // the flag cloth is re-sent to the GPU at most 30 times a second
   if (W.flags && C && now - (W.flagT || 0) >= 33) for (const f of (W.flagT = now, W.flags)) { const pa = f.flag.geometry.attributes.position, b = f.base, ws = Math.hypot(G.wind[0], G.wind[1]); for (let i = 0; i < pa.count; i++) { const x0 = b[i * 3]; pa.array[i * 3 + 2] = Math.sin(x0 * 5 - tt * (3 + ws)) * .08 * x0; } pa.needsUpdate = true; f.flag.rotation.y = Math.atan2(-G.wind[1], G.wind[0]); }
-  W.clouds.children.forEach(c => { c.position.x += c.userData.sp * dt; if (c.position.x > 1400) c.position.x = -1400; }); syncClouds();
+  // the clouds drift a metre or so a second, 500-1100 m away: their puffs are re-sent to the GPU four times a second, not every frame (no visible step)
+  W.clouds.children.forEach(c => { c.position.x += c.userData.sp * dt; if (c.position.x > 1400) c.position.x = -1400; }); if (now - (W.cloudT || 0) >= 250) { W.cloudT = now; syncClouds(); }
   if (UI.readT > 0) { UI.readT -= dt; if (UI.readT <= 0) { $('readout').classList.remove('on'); if ($('mpPanel').classList.contains('on')) mpPlace($('mpPanel')); } }
   if (C) { updateSeeThru(); updatePinTag(); updateWindArrow(); updateBallTag(); }
   updateSkipBtn(); updateMullBtn();

@@ -23,10 +23,10 @@ jobs:
   approve:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: main
-      - uses: actions/github-script@v8
+      - uses: actions/github-script@v9
         env:
           ISSUE: ${{ inputs.issue }}
           TO: ${{ inputs.to }}
