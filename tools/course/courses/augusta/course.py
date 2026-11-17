@@ -109,7 +109,7 @@ PLANTINGS = [
 #   15 firethorn: ESTIMATE, no guide says where (round the green); covered in creamy-white flowers in April (both guides); the red berries are autumn's
 #   16 redbud: ESTIMATE on the tree line nearest the green (NBC puts it on 16; Outdoor Dreams: "along the fairways throughout the course"); orchid pink
 #   17 nandina: along the left side of the fairway (Outdoor Dreams); flowers in May: in leaf, bronze-red new growth
-#   18 holly: both sides of the tee (NBC) and along the fairway, "several varieties" (Outdoor Dreams); a few red berries left
+#   18 holly: along the fairway (the pair that stood either side of the tee is gone: not on the real hole), "several varieties" (Outdoor Dreams); a few red berries left
 SPECIMENS = [
     dict(kind='magnolia', way=[951829126, 871993723], count=60, offset=6.5, d=12, h=16, trim=(10, 8)),
     dict(kind='bigoak', node=11927490812, d=30, h=20),
@@ -134,7 +134,6 @@ SPECIMENS = [
     dict(kind='firethorn', hole=15, near='green', n=3, d=3, h=2.4, reach=80),
     dict(kind='redbud', hole=16, near='green', n=2, d=6, h=6, reach=80),
     dict(kind='nandina', hole=17, along=(.3, .85), side='left', n=8, d=1.6, h=1.8, reach=100),
-    dict(kind='holly', hole=18, at='tee', side='both', n=4, d=5, h=9, reach=25),
     dict(kind='holly', hole=18, along=(.3, .85), side='both', n=6, d=5, h=9),
 ]
 
