@@ -665,8 +665,8 @@ Namesake and landmark plants, always, hand-placed (`course.SPECIMENS`, `pines.sp
     7 pampas left (green clumps, a few faded plumes); 8 yellow jasmine (ESTIMATE: by the green, a little yellow left); 9 Carolina cherry right (creamy-white
     flowers); 10 camellias left and behind the green (in leaf, their bloom is over); 11 white dogwoods framing the hole (in bloom); 12 golden bell behind
     the green (half yellow, the end of its bloom); 14 Chinese firs left (with brown old foliage); 15 firethorn (ESTIMATE: by the green, creamy-white
-    flowers); 16 redbuds (ESTIMATE: on the tree line nearest the green, orchid pink); 17 nandina left (bronze-red new growth); 18 hollies along
-    the fairway, none at the tee (a few red berries).
+    flowers); 16 redbuds (ESTIMATE: on the tree line nearest the green, orchid pink); 17 nandina left (bronze-red new growth); 18 hollies both sides of
+    the tee and along the fairway (a few red berries).
   - Every conifer is a loblolly pine (`engine.conifer`); no blue spruces. No long grass or wild daisies anywhere but the deep rough (none here): the second
     cut is short turf and the floor under the pines is straw.
 Landmarks, always (scene keys in courses.json; `buildClubhouseANGC`, `buildCabinANGC`, `buildGroundsANGC`):
