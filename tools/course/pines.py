@@ -112,6 +112,86 @@ def stone_bridges(water, detail):
     return out
 
 
+def tee_rooms(tees, holes):
+    """course.TEE_ROOMS -> the walled tee rooms (Augusta 13, after the user's photographs: the tee in a long grass chute, a low stone wall straight across
+    the back and partway up both sides, azaleas packed in behind the wall and along both sides of the chute right up to its grass, trees close behind them,
+    nothing in front). Each spec: dict(hole, near=(e, n) a point in its tee box, width m of grass between the side walls, back m from the tee's back edge to the
+    wall, left/right m the side walls run forward from the back wall, chute m the grass runs on from the tee's back edge, chute_w its width at the far end,
+    bed m of azaleas, trees m of trees beyond the beds, bench=(across, along) m from the tee's back middle, right +).
+    Returns dicts with grass, beds, band (shapely), walls [[(e, n), ...]], bench ((e, n), deg), u (the tee's way), spec."""
+    out = []
+    for z in getattr(course, 'TEE_ROOMS', []):
+        h = holes[z['hole'] - 1]
+        c = Point(z['near'])
+        tp = min(tees, key=lambda t: t.distance(c))
+        rr = list(tp.minimum_rotated_rectangle.exterior.coords)[:4]
+        e0, e1 = (rr[0], rr[1]), (rr[1], rr[2])
+        L0, L1 = math.dist(*e0), math.dist(*e1)
+        (a, b), wd = (e0, L1) if L0 >= L1 else (e1, L0)
+        ux, uy = (b[0] - a[0]) / max(L0, L1), (b[1] - a[1]) / max(L0, L1)
+        g = h['line'][-1]
+        cx, cy = tp.centroid.x, tp.centroid.y
+        if (g[0] - cx) * ux + (g[1] - cy) * uy < 0:
+            ux, uy = -ux, -uy
+        rx, ry = uy, -ux   # the right hand, looking out of the tee
+        ln = max(L0, L1)
+        ox, oy = cx - ux * ln / 2, cy - uy * ln / 2   # the middle of the tee's back edge
+        P = lambda s, r: (ox + ux * s + rx * r, oy + uy * s + ry * r)
+        W2, B, ch = z['width'] / 2, z['back'], z['chute']
+        w2f = z.get('chute_w', z['width']) / 2
+        wl = max(z['left'], z['right'])
+        half = lambda s: W2 if s <= wl else W2 + (w2f - W2) * (s - wl) / max(1, ch - wl)
+        ss = [-B] + [wl + (ch - wl) * k / 8 for k in range(9)]
+        grass = Polygon([P(s, -half(s)) for s in ss] + [P(s, half(s)) for s in reversed(ss)])
+        bd, tr = z.get('bed', 4.5), z.get('trees', 14)
+        outer = grass.buffer(bd, join_style=2)
+        far = Polygon([P(-B - 60, -200), P(-B - 60, 200), P(ch, 200), P(ch, -200)])   # nothing past the chute's open end
+        beds = outer.difference(grass).intersection(far)
+        band = grass.buffer(bd + tr, join_style=2).difference(outer.buffer(.2)).intersection(far)
+        walls = [[P(z['left'], -W2), P(-B, -W2), P(-B, W2), P(z['right'], W2)]]
+        bn = z.get('bench')
+        bench = (P(bn[1], bn[0]), math.degrees(math.atan2(uy, ux))) if bn else None
+        out.append(dict(spec=z, grass=grass, beds=beds, band=band, walls=walls, bench=bench, u=(ux, uy)))
+        print(f'  tee room hole {z["hole"]}: tee {ln:.1f} x {wd:.1f} m, facing {math.degrees(math.atan2(ux, uy)):.1f} deg; dressing:')
+        print('    "walls": ' + json.dumps([{"hole": z['hole'], "h": 0.55, "t": 0.5, "pts": [[round(x, 1), round(y, 1)] for x, y in w]} for w in walls]))
+        if bench:
+            print('    "benches": ' + json.dumps([{"hole": z['hole'], "at": [round(bench[0][0], 1), round(bench[0][1], 1)], "ang": round(bench[1], 1)}]))
+    return out
+
+
+def room_azaleas(rooms, rng):
+    out = []
+    for rm in rooms:
+        z, bd = rm['spec'], rm['beds']
+        x0, y0, x1, y1 = bd.bounds
+        gp, cols = z.get('gap', 1.15), z.get('cols', [1, 1, 0, 2, 3])
+        for gx in np.arange(x0, x1, gp):
+            for gy in np.arange(y0, y1, gp):
+                q = Point(gx + (rng.random() - .5) * gp * .8, gy + (rng.random() - .5) * gp * .8)
+                r = z.get('r', 1.3) * (.8 + .45 * rng.random())
+                if bd.contains(q) and rm['grass'].distance(q) > r * .55:
+                    out.append([round(q.x, 1), round(q.y, 1), round(r, 1), int(cols[rng.integers(len(cols))])])
+        print(f'  azaleas hole {z["hole"]} (tee room): {len(out)} clumps')
+    return out
+
+
+def room_trees(rooms, rng):
+    out = []
+    for rm in rooms:
+        z, bd = rm['spec'], rm['band']
+        x0, y0, x1, y1 = bd.bounds
+        mix = z.get('kinds', [('holly', 4, 7)])
+        gp = z.get('tree_gap', 4.2)
+        for gx in np.arange(x0, x1, gp):
+            for gy in np.arange(y0, y1, gp):
+                q = Point(gx + (rng.random() - .5) * gp * .7, gy + (rng.random() - .5) * gp * .7)
+                if bd.contains(q):
+                    k, d, hh = mix[rng.integers(len(mix))]
+                    out.append(dict(e=round(q.x, 1), n=round(q.y, 1), d=round(d * (.85 + .3 * rng.random()), 1), h=round(hh * (.85 + .3 * rng.random()), 1), kind=KINDS[k]))
+        print(f'  trees hole {z["hole"]} (tee room): {len(out)}')
+    return out
+
+
 def flowers(area, holes, greens):
     rng = np.random.default_rng(1934)   # the first Masters
     edge = area.boundary

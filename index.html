@@ -855,7 +855,9 @@ function cupZone(C, o, x, yb, z, vx, vy, vz, t, fr, ev, mu, air, w, cup) {
 // what the last tree query hit: 'crown', 'trunk' (centre and radius) or 'box' (a building)
 const HIT = { kind: '', x: 0, z: 0, r: 0 };
 const _g2 = [0, 0], _w3 = [0, 0, 0];
+const STEEP_FROM = .08;   // the grade where a course's steepRoll starts to count
 function simulateShot(C, o) {
+  const steepK = (typeof RDC !== 'undefined' && RDC && RDC.steepRoll) || 0;
   if (o.disc) return simulateDisc(C, o);
   const KA = KAERO * AIR_K;   // (the air at this course's altitude)
   const dt = o.dt || 1 / 240, maxT = o.maxT || 40; // predictions may step coarser
@@ -1002,8 +1004,11 @@ function simulateShot(C, o) {
       // rolling
       const surf = C.surf(x, z);
       if (surf === S.WATER) { res.water = true; y = C.wl ? C.wl(x, z) : y; ev.push({ t, type: 'splash', x, y, z, s: Math.hypot(vx, vz) }); fr.push(t, x, y, z, 2); break; }
-      const sfr = SURF_WX[surf], mu = sfr.mu, kq = sfr.k;
+      const sfr = SURF_WX[surf];
       C.grad(x, z, _g2);
+      // engine.steepRoll (Augusta): firm turf holds a ball on a steep hillside, which a fixed rolling friction cannot: past STEEP_FROM the friction grows with the grade
+      // (steepRoll > 5/7 stops a ball on any slope; off the greens and their fringe, never on a putt), so a fairway shot no longer runs on down a 12 % stretch for ever
+      const mu = sfr.mu + (steepK && !o.putt && surf !== S.GREEN && surf !== S.FRINGE ? steepK * Math.max(0, Math.hypot(_g2[0], _g2[1]) - STEEP_FROM) : 0), kq = sfr.k;
       if (Math.hypot(_g2[0], _g2[1]) > 1.1 && drops < 8) { drops++; mode = 0; vy = 0; t += dt; step++; continue; } // rolls off a cliff edge
       const kx = -(5 / 7) * GRAV * _g2[0], kz = -(5 / 7) * GRAV * _g2[1];
       const slopeA = Math.hypot(kx, kz);
@@ -3924,7 +3929,7 @@ function buildDressingANGC(C, grp) {
     C.crowdAt.push([cx + dx * bk / 2, cz + dz * bk / 2, 60, 1.1]);
     solid.push({ x: cx + dx * bk / 2, z: cz + dz * bk / 2, c: Math.cos(ry), s: Math.sin(ry), hw: W / 2 + .2, hd: bk / 2 + .4, y1: y0 + .35 + rows * .45 + 1.4, t: 400002 });
   }
-  { const ln0 = hole.line.map(p => at(p)); C.crowdAt.push([ln0[ln0.length - 1][0], ln0[ln0.length - 1][1], 75, 1], [ln0[0][0], ln0[0][1], 45, .6]); }   // the crowd round the green and the tee (crowdLevel); the stands add theirs below
+  { const ln0 = hole.line.map(p => at(p)); C.crowdAt.push([ln0[ln0.length - 1][0], ln0[ln0.length - 1][1], 75, 1]); if (!(D.quiet || {})[G.hole + 1]) C.crowdAt.push([ln0[0][0], ln0[0][1], 45, .6]); }   // (D.quiet: a tee with no fans round it, hole 13)   // the crowd round the green and the tee (crowdLevel); the stands add theirs below
   // the ropes and the patrons along them: both sides of the hole line, the first spot past the fairway's edge (+5 m), from 40 m out to the green
   const ln = hole.line.map(p => at(p)), stakes = [], stand = [], chairs = [];
   const clearAt = (x, z) => !C.isOB(x, z) && C.wl(x, z) < C.h(x, z) - .05 && C.fieldAt(C.F.green, x, z) > 4 && C.fieldAt(C.F.tee, x, z) > 2 && C.fieldAt(C.F.sand, x, z) > 1 && C.fieldAt(C.F.fair, x, z) > 2 && !(C.treeHit && C.treeHit(x, groundY(x, z) + 1, z, false) >= 0);
@@ -3935,7 +3940,8 @@ function buildDressingANGC(C, grp) {
     // the rope's distance from the hole line at each stake: where the fairway's edge lets it stand, then evened out along the hole (the widest edge within 16 m, then averaged over 32 m),
     // so the rope runs in long straight-ish lines instead of following every wobble of the fairway's edge
     const dsA = [], offA = [];
-    for (let d = 40; d < total - 6; d += 4) {
+    const quietD = (D.quiet || {})[G.hole + 1] || 0, tsd = ((D.teeSide || {})[G.hole + 1] || {})[sd < 0 ? 'left' : 'right'] || {};   // quietD: no rope or patron within this many m of the tee; teeSide: how thick (k) the crowd is by the tee on a side, and where its rope starts (from)
+    for (let d = Math.max(tsd.from != null ? tsd.from : 40, quietD); d < total - 6; d += 4) {
       const [x0, z0, ux, uz] = along(d), nx = -uz * sd, nz = ux * sd; let oo = null;
       for (let o = 8; o < 60; o += 1.5) { const x = x0 + nx * o, z = z0 + nz * o; if (C.fieldAt(C.F.fair, x, z) > 5 && C.fieldAt(C.F.green, x, z) > 6) { oo = o; break; } }
       dsA.push(d); offA.push(oo);
@@ -3953,7 +3959,7 @@ function buildDressingANGC(C, grp) {
       const sx = got[0], sz = got[1], y = groundY(sx, sz), st = [sx, y, sz]; stakes.push(st);
       if (prev && Math.hypot(sx - prev[0], sz - prev[2]) < 7) stakes.push(['rope', prev, st]);
       prev = st;
-      const nearG = total - d < 70, nearT = d < 90, dens = nearG ? 2.2 : nearT ? 1.4 : .55;
+      const nearG = total - d < 70, nearT = d < 90, dens = (nearG ? 2.2 : nearT ? 1.4 * (tsd.k != null ? tsd.k : 1) : .55);
       for (let k = 0; k < dens * 2 + r(); k++) { const o2 = 1.3 + r() * (nearG ? 5 : 3.2), q = (r() - .5) * 3.6, x = sx + nx * o2 + ux * q, z = sz + nz * o2 + uz * q; if (clearAt(x, z)) stand.push([x, groundY(x, z), z, Math.atan2(-nx, -nz) + (r() - .5) * .9]); }
       if (nearG && r() < .55) { const o2 = .8, q = (r() - .5) * 3, x = sx + nx * o2 + ux * q, z = sz + nz * o2 + uz * q; if (clearAt(x, z)) chairs.push([x, groundY(x, z), z, Math.atan2(-nx, -nz)]); }
     }
@@ -3977,6 +3983,26 @@ function buildDressingANGC(C, grp) {
     GAL.stakeIM.instanceMatrix.needsUpdate = GAL.ropeIM.instanceMatrix.needsUpdate = true; GAL.dirty.clear();
   }
   W.gallery = GAL;
+  // low stone-and-mortar walls round a tee (hole 13's: behind it and along both sides, azaleas beyond) and a bench: courses of stone blocks over a dark mortar core
+  for (const wl of D.walls || []) {
+    if (wl.hole - 1 !== G.hole) continue;
+    const P = wl.pts.map(at), t = wl.t || .5, H = wl.h || .55, nc = 3, STONE = [0x8f8c80, 0x9a968a, 0x7f7c72, 0xa39e90, 0x88857a], rw = mulberry32(C.def.seed + 1313);
+    for (let i = 1; i < P.length; i++) {
+      const [x0, z0] = P[i - 1], [x1, z1] = P[i], L = Math.hypot(x1 - x0, z1 - z0), ux = (x1 - x0) / L, uz = (z1 - z0) / L, ry = Math.atan2(-uz, ux);
+      for (let k = 0; k < nc; k++) { let s0 = k % 2 ? .3 : 0; while (s0 < L) {
+        const bl = Math.min(L - s0, .55 + rw() * .5), mid = s0 + bl / 2, x = x0 + ux * mid, z = z0 + uz * mid, gy = groundY(x, z) - .15, ch = (H + .15) / nc;
+        if (bl > .12) bx(bl - .035, ch - .03, t, x, gy + ch * (k + .5), z, STONE[(rw() * STONE.length) | 0], ry);
+        s0 += bl; } }
+      for (let s0 = 0; s0 < L; s0 += 1.2) { const bl = Math.min(1.2, L - s0), mid = s0 + bl / 2, x = x0 + ux * mid, z = z0 + uz * mid; bx(bl, H + .15, t - .06, x, groundY(x, z) - .15 + (H + .15) / 2, z, 0x6e6b62, ry); }   // (the mortar behind the blocks)
+      for (let s0 = 0; s0 < L; s0 += 1.2) { const bl = Math.min(1.2, L - s0), mid = s0 + bl / 2, x = x0 + ux * mid, z = z0 + uz * mid; bx(bl - .03, .07, t + .08, x, groundY(x, z) + H - .035, z, 0x9d998c, ry); }   // (the coping)
+    }
+  }
+  for (const bn of D.benches || []) {
+    if (bn.hole - 1 !== G.hole) continue;
+    const [x, z] = at(bn.at), ry = bn.ang * Math.PI / 180, c = Math.cos(ry), sn = Math.sin(ry), y = groundY(x, z);
+    bx(1.7, .06, .42, x, y + .45, z, 0xb9a98a, ry);
+    for (const u of [-.7, .7]) bx(.08, .45, .38, x + c * u, y + .22, z - sn * u, 0x8c7f66, ry);
+  }
   // green trash cans by the tee
   { const [tx, tz] = ln[0], [nx2, nz2] = ln[1], ul2 = Math.hypot(nx2 - tx, nz2 - tz) || 1, px2 = -(nz2 - tz) / ul2, pz2 = (nx2 - tx) / ul2;
     for (const sd of [-1, 1]) { const x = tx + px2 * sd * 12, z = tz + pz2 * sd * 12; if (clearAt(x, z)) { const y = groundY(x, z); parts.push({ g: new THREE.CylinderGeometry(.32, .3, .9, 10), c: 0x1f5a35, m: new THREE.Matrix4().makeTranslation(x, y + .45, z) }); } } }

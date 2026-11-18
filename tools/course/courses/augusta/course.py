@@ -139,6 +139,14 @@ SPECIMENS = [
 ]
 
 # single specimens taken out by place (e, n): hole 18's fairway hollies 10303 and 10304 on the numbered map
+# the 13th tee as the user's photographs show it (one from behind it looking out, one from the fairway looking back): a long grass chute, a low stone-and-mortar
+# wall straight across the back and partway up both sides (the left one longer), azaleas packed in behind the wall and along both sides of the chute right
+# up to its grass on a straw edge, trees close behind them, nothing in front; the bench inside the right wall near the back, running along the tee.
+# pines.tee_rooms builds it round the tee box and prints the wall and bench for courses.json's dressing (copy them there when the tee moves)
+TEE_ROOMS = [dict(hole=13, near=(45.0, -632.8), width=10, back=2.5, left=14, right=9, chute=60, chute_w=14, bed=4.5, trees=12, bench=(3.6, 3.5),
+                  gap=1.15, r=1.35, cols=[1, 0, 2, 3, 1, 0], tree_gap=4.2,
+                  kinds=[('holly', 4, 7), ('juniper', 3.6, 9), ('dogwood_white', 4.5, 5.5), ('magnolia', 7, 11), ('camellia', 3.5, 4), ('tea_olive', 4, 5)])]
+
 SPECIMENS_OFF = [(217.3, 13.2), (235.0, 51.0)]
 
 # the 12 OSM buildings tagged man_made=tower are the tournament's TV towers: not drawn as buildings (they belong with the Masters dressing)

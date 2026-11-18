@@ -1113,8 +1113,17 @@ def main():
         if getattr(course, 'STRAW', False):
             mown = list(fair) + [f['poly'] for f in F['tee'] + F['green'] + F['bunker'] + F['rough']]
             sa = pines.straw_area(trees, mown, list(water) + list(creek) + list(paths), bound)
+            rooms = pines.tee_rooms([f['poly'] for f in F['tee']], holes)   # walled tee rooms (course.TEE_ROOMS: Augusta 13): straw beds packed with azaleas round a grass chute
+            if rooms:
+                rgrass = unary_union([rm['grass'] for rm in rooms])
+                sa = sa.union(unary_union([rm['beds'] for rm in rooms])).difference(rgrass)
+                rkeep = unary_union([rm['grass'].buffer(rm['spec'].get('bed', 4.5) - .5) for rm in rooms])   # no lidar tree stands in the chute or its beds
+                n0 = len(trees); trees = [t for t in trees if not rkeep.contains(Point(t['e'], t['n'])) and rgrass.distance(Point(t['e'], t['n'])) > t['d'] * .4]
+                print(f'tee rooms: {n0 - len(trees)} lidar trees taken out of the chutes and beds')
             straw = b64i16(pines.straw_rle(sa))
             fl = pines.flowers(sa, holes, [f['poly'] for f in F['green']])
+            if rooms:
+                fl = [f for f in fl if rgrass.distance(Point(f[0], f[1])) > f[2] * .55 and not any(rm['beds'].buffer(1.5).contains(Point(f[0], f[1])) for rm in rooms)] + pines.room_azaleas(rooms, np.random.default_rng(1313))
             flowers = b64i16([int(round(v * 10)) if k < 3 else int(v) for c in fl for k, v in enumerate(c)]) if fl else ''
             json.dump([mapping(g) for g in getattr(sa, 'geoms', [sa])], open(os.path.join(OUT, 'straw.json'), 'w'))
             json.dump(fl, open(os.path.join(OUT, 'flowers.json'), 'w'))
@@ -1123,8 +1132,13 @@ def main():
                 for z in course.SPECIMENS:
                     z['_greens'] = [f['poly'] for f in F['green']]
                 sp, clr = pines.specimens(holes, sa, mown)
+                if rooms:
+                    rbed = unary_union([rm['grass'].buffer(rm['spec'].get('bed', 4.5), join_style=2) for rm in rooms])
+                    sp = [t for t in sp if not rbed.intersects(Point(t['e'], t['n']).buffer(t['d'] * .3))]
                 if TEE_COR is not None:   # the cleared corridor out of a tee (course.TREES_OFF_TEE_FRONT) is clear of hand-placed plants too (hole 11's white dogwoods)
                     n0 = len(sp); sp = [t for t in sp if not TEE_COR.intersects(Point(t['e'], t['n']).buffer(t['d'] / 2))]; print(n0 - len(sp), 'specimens taken out of the tee corridors')
+                if rooms:   # (the tee room's own trees come after the corridor: they stand behind its beds, out of the chute)
+                    sp += pines.room_trees(rooms, np.random.default_rng(1314))
                 off = getattr(course, 'SPECIMENS_OFF', [])   # single hand-placed plants taken out by place (e, n in local metres, within 1 m)
                 if off:
                     n0 = len(sp); sp = [t for t in sp if not any(math.hypot(t['e'] - e, t['n'] - n) < 1.0 for e, n in off)]; print(n0 - len(sp), 'specimens taken out by place')
