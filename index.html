@@ -2833,17 +2833,6 @@ function buildRealDecor(C, grp) {
   W.flag = W.flags[0].flag; W.flagBase = W.flags[0].base; W.pole = W.flags[0].pole;
   // tee markers where the tracker puts each tee (white, yellow, blue, red), snapped onto the nearest tee box
   // (build.py's face_tees turns the tee boxes the same way: tee_target)
-  const teeFacing = (C, x, z) => {
-    if (C.def.par === 3 || !C.center) return [C.cup.x, C.cup.z];
-    const ce = C.center, inF = (a, b) => C.fieldAt(C.F.fair, a, b) < 0; let s0 = 0, bd = 1e18;
-    for (let s = 0; s <= ce.L; s += 2) { const q = polyAt(ce, s), dd = (q[0] - x) ** 2 + (q[1] - z) ** 2; if (dd < bd) { bd = dd; s0 = s; } }
-    let sE = null; for (let s = s0 + 4; s <= ce.L - 2; s += 2) { const q = polyAt(ce, s); if (inF(q[0], q[1])) { sE = s; break; } }
-    if (sE == null) return [C.green.cx, C.green.cz];
-    const s1 = Math.min(ce.L - 2, Math.max(sE + 25, s0 + 120)), q = polyAt(ce, s1), q2 = polyAt(ce, s1 + 2), ul = Math.hypot(q2[0] - q[0], q2[1] - q[1]) || 1, nx = -(q2[1] - q[1]) / ul, nz = (q2[0] - q[0]) / ul;
-    const at = u => inF(q[0] + nx * u, q[1] + nz * u); let lo = null, hi = null;   // the fairway's width across the line there; its middle is the target
-    for (let u = 0; u < 60 && lo == null; u += .5) for (const sg of u ? [1, -1] : [1]) if (lo == null && at(sg * u)) { let a = sg * u, c = sg * u; while (Math.abs(a) < 80 && at(a - .5)) a -= .5; while (Math.abs(c) < 80 && at(c + .5)) c += .5; lo = a; hi = c; }
-    const m = lo == null ? 0 : (lo + hi) / 2; return [q[0] + nx * m, q[1] + nz * m];
-  };
   const FG = C.fg, MC = RDC.data.mkc || { w: 0xffffff, y: 0xffd966, b: 0x6fa8dc, r: 0xf4a0a0 };
   const snapTee = (X, Z) => {
     if (C.fieldAt(C.F.tee, X, Z) < -.4) return [X, Z];
@@ -4508,6 +4497,7 @@ const PAL = {
   [S.FRINGE]: 0x94d571, [S.GREEN]: 0xb0e78b, [S.SAND]: 0xf2e3bf, [S.WATER]: 0x8fcbd8, [S.PATH]: 0x66686d, [S.STRAW]: 0x9c6239
 };
 const BEACH = rgbToHsl(...hexToRgb(0xecdcb4));
+const WHITE_SAND = [0xfbfaf5, 0xf2f1ec, 0xffffff];   // engine.whiteSand (Augusta): the bright white feldspar sand of its bunkers, in place of PAL's tan, on the ground, the yardage map and the splash
 const PAL_HSL = {}; for (const k in PAL) { const c = hexToRgb(PAL[k]); PAL_HSL[k] = rgbToHsl(c[0], c[1], c[2]); }
 const LEAF_COLS = [0x7dbb5e, 0x8cc76a, 0x6fae57, 0x9acb6e, 0x79b86a];
 const W = { scene: null, cam: null, ren: null, sun: null, holeGroup: null, trees: [] };
@@ -4861,6 +4851,7 @@ uniform vec4 farA, farB;
 uniform vec4 cupP[4];
 uniform sampler2D tSlope; uniform vec4 sgBox, sgAim; uniform float sgOn, sgT, sgLen;
 vec3 sgC; float sgA = 0.;
+uniform float wSand; float sandW = 0.;   // engine.whiteSand: how much of this pixel is white bunker sand (kept bright and neutral over the lit result, below)
 uniform vec3 cStraw, cRough, cDeep, cOut, cFirst, cFairA, cFairB, cGreenA, cGreenB, cFringe, cSand, cWaste, cTee, cPath, cBeach, cPond, cRock, cBed1, cBed2, cDune, cGranite;
 varying vec3 vWPos; varying vec3 vWN;
 float dcF(float v) { return (v * 2. - 1.) * fR; }
@@ -4922,6 +4913,7 @@ vec3 surfaceColor() {
   float isW = step(waste, sand + .02);
   col *= 1. - .16 * lineAt(sand - .2, .2) * (1. - isW);
   col = mix(col, mix(cSand, cWaste, isW), ins(sand));
+  sandW = ins(sand) * wSand * (1. - isW);
   // shoreline: damp sand just above the water, darker bed below it
   float hasW = step(.5 / 255., c.g) * inF, wl = wLo + (c.g * 255. - 1.) / 254. * (wHi - wLo);
   col = mix(col, cBeach, ins(vWPos.y - (wl + .15)) * hasW * (1. - ins(fw)) * (1. - ins(gr - frW)) * (1. - ins(tee)) * (1. - ins(path)));
@@ -4954,7 +4946,7 @@ function terrainMatFrom(o) {
     tFar: { value: far ? far.tex : NO_FAR.tex }, hasFar: { value: far ? 1 : 0 }, farA: { value: far ? far.A : new THREE.Vector4() }, farB: { value: far ? far.B : new THREE.Vector4(0, 0, 1, 1) }, cupP: CUP_U, tSlope: SG_U.tSlope, sgBox: SG_U.sgBox, sgAim: SG_U.sgAim, sgOn: SG_U.sgOn, sgT: SG_U.sgT, sgLen: SG_U.sgLen,
     // dry = a links-style course: sun-bleached, more olive and straw in the rough, a touch drier on the fairways (greens stay healthy)
     cRough: { value: pc(S.ROUGH, dr * .035, -dr * .05, -dr * .04) }, cDeep: { value: o.fescue ? v3(hslToRgb(...(o.longRough ? LONG_HSL : FESCUE_HSL))) : pc(S.DEEP, dr * .045, -dr * .06, -dr * .052) }, cFirst: { value: pc(S.FIRST, dr * .03, -dr * .035, -dr * .036) }, cFairA: { value: pc(S.FAIR, .045 + dr * .035, -dr * .03, -dr * .04) }, cFairB: { value: pc(S.FAIR, -.025 + dr * .025, -dr * .03, -dr * .04) },
-    cGreenA: { value: pc(S.GREEN, .02 + dr * .008, -dr * .012, -dr * .026) }, cGreenB: { value: pc(S.GREEN, -.008 + dr * .008, -dr * .012, -dr * .026) }, cFringe: { value: pc(S.FRINGE, dr * .012, -dr * .025, -dr * .032) }, cSand: { value: pc(S.SAND) }, cWaste: { value: pc(S.SAND, -.05, -.08, .012) },
+    cGreenA: { value: pc(S.GREEN, .02 + dr * .008, -dr * .012, -dr * .026) }, cGreenB: { value: pc(S.GREEN, -.008 + dr * .008, -dr * .012, -dr * .026) }, cFringe: { value: pc(S.FRINGE, dr * .012, -dr * .025, -dr * .032) }, cSand: { value: RDC.whiteSand ? v3(hexToRgb(WHITE_SAND[0])) : pc(S.SAND) }, wSand: { value: RDC.whiteSand ? 1 : 0 }, cWaste: { value: pc(S.SAND, -.05, -.08, .012) },
     cTee: { value: o.dry ? pc(S.FRINGE, dr * .012, -dr * .025, -dr * .032) : o.lush ? pc(S.FRINGE, -.02, .04, .02) : pc(S.TEE) }, // links (Alsace): tee boxes are cut like the fringe, the same colour
     cPath: { value: o.dry ? v3(hslToRgb(.125, .30, .84)) : pc(S.PATH) }, // links: sandy paths
     cBeach: { value: v3(hslToRgb(BEACH[0], BEACH[1], BEACH[2])) }, cPond: { value: pc(S.WATER, -.16, -.12) },
@@ -4971,7 +4963,7 @@ function terrainMatFrom(o) {
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWN;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = position; vWN = normal;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + TERRAIN_GLSL).replace('#include <color_fragment>', (cut ? 'for (int ci = 0; ci < 4; ci++) if (cupP[ci].w > .5 && length(vWPos.xz - cupP[ci].xy) < cupP[ci].z) discard;\n' : '') + 'diffuseColor.rgb *= surfaceColor();').replace('gl_FragColor = vec4( outgoingLight, diffuseColor.a );', 'outgoingLight = mix(outgoingLight, sgC, sgA);\ngl_FragColor = vec4( outgoingLight, diffuseColor.a );');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + TERRAIN_GLSL).replace('#include <color_fragment>', (cut ? 'for (int ci = 0; ci < 4; ci++) if (cupP[ci].w > .5 && length(vWPos.xz - cupP[ci].xy) < cupP[ci].z) discard;\n' : '') + 'diffuseColor.rgb *= surfaceColor();').replace('gl_FragColor = vec4( outgoingLight, diffuseColor.a );', 'outgoingLight = mix(outgoingLight, cSand * clamp(dot(outgoingLight, vec3(.299, .587, .114)) * 1.5 + .28, 0., 1.), sandW * .85);\noutgoingLight = mix(outgoingLight, sgC, sgA);\ngl_FragColor = vec4( outgoingLight, diffuseColor.a );');
   };
   mat.userData.disposeTex = () => { U.tFA.value.dispose(); U.tFB.value.dispose(); U.tFC.value.dispose(); };
   return mat;
@@ -5181,6 +5173,7 @@ function renderPlan(C) {
     colOf[S.ROUGH] = pcc(S.ROUGH, dr * .035, -dr * .05, -dr * .04); colOf[S.DEEP] = RDC.fescue ? hslToRgb(...(RDC.longRough ? LONG_HSL : FESCUE_HSL)) : pcc(S.DEEP, dr * .045, -dr * .06, -dr * .052); colOf[S.FIRST] = pcc(S.FIRST, dr * .03, -dr * .035, -dr * .036);
     colOf[S.FAIR] = pcc(S.FAIR, .01 + dr * .03, -dr * .03, -dr * .04); colOf[S.GREEN] = pcc(S.GREEN, .006 + dr * .008, -dr * .012, -dr * .026); colOf[S.FRINGE] = pcc(S.FRINGE, dr * .012, -dr * .025, -dr * .032);
     colOf[S.TEE] = RDC.dry ? colOf[S.FRINGE] : RDC.lush ? pcc(S.FRINGE, -.02, .04, .02) : pcc(S.TEE); colOf[S.PATH] = RDC.dry ? hslToRgb(.125, .30, .84) : pcc(S.PATH);
+    if (RDC.whiteSand) colOf[S.SAND] = hexToRgb(WHITE_SAND[0]);
   }
   // heights first, for a soft hillshade so slopes and hummocks read on the yardage map
   const Hs = new Float32Array(w * h);
@@ -7893,6 +7886,19 @@ function autoDiscAndAim() {
   if (treeOnLine(yaw, reach)) for (let a = 1; a <= 40; a++) { const y2 = yaw + Math.ceil(a / 2) * 1.5 * DEG * (a & 1 ? 1 : -1); if (!treeOnLine(y2, reach)) { yaw = y2; break; } }
   G.club = pick; G.suggested = pick; G.yaw = yaw; G.carryKey = ''; updateAim(true);
 }
+// the line a tee box faces: straight down the start of its fairway, on a par 3 at the hole (build.py's face_tees turns the boxes the same way: tee_target)
+function teeFacing(C, x, z) {
+  if (C.def.par === 3 || !C.center) return [C.cup.x, C.cup.z];
+  const ce = C.center, inF = (a, b) => C.fieldAt(C.F.fair, a, b) < 0; let s0 = 0, bd = 1e18;
+  for (let s = 0; s <= ce.L; s += 2) { const q = polyAt(ce, s), dd = (q[0] - x) ** 2 + (q[1] - z) ** 2; if (dd < bd) { bd = dd; s0 = s; } }
+  let sE = null; for (let s = s0 + 4; s <= ce.L - 2; s += 2) { const q = polyAt(ce, s); if (inF(q[0], q[1])) { sE = s; break; } }
+  if (sE == null) return [C.green.cx, C.green.cz];
+  const s1 = Math.min(ce.L - 2, Math.max(sE + 25, s0 + 120)), q = polyAt(ce, s1), q2 = polyAt(ce, s1 + 2), ul = Math.hypot(q2[0] - q[0], q2[1] - q[1]) || 1, nx = -(q2[1] - q[1]) / ul, nz = (q2[0] - q[0]) / ul;
+  const at = u => inF(q[0] + nx * u, q[1] + nz * u); let lo = null, hi = null;   // the fairway's width across the line there; its middle is the target
+  for (let u = 0; u < 60 && lo == null; u += .5) for (const sg of u ? [1, -1] : [1]) if (lo == null && at(sg * u)) { let a = sg * u, c = sg * u; while (Math.abs(a) < 80 && at(a - .5)) a -= .5; while (Math.abs(c) < 80 && at(c + .5)) c += .5; lo = a; hi = c; }
+  const m = lo == null ? 0 : (lo + hi) / 2; return [q[0] + nx * m, q[1] + nz * m];
+}
+
 function autoClubAndAim() {
   if (isDisc()) { autoDiscAndAim(); return; }
   const C = G.C, d = distToPin(), lw = CLUBS[PUTTER - 1];
@@ -7947,6 +7953,9 @@ function autoClubAndAim() {
     }
     if (!clear) yaw = bestY;
   }
+  // a hole in the course's scene.teeAim (Augusta 13: its tee boxed in by a walled chute) starts the tee shot down the tee box's own line
+  const ta = RDC.scene && RDC.scene.teeAim;
+  if (G.teed && G.strokes === 0 && ta && ta.includes(G.hole + 1)) { const [fx, fz] = teeFacing(C, G.ball.x, G.ball.z); yaw = Math.atan2(fx - G.ball.x, -(fz - G.ball.z)); }
   G.club = pick; G.suggested = pick; G.yaw = yaw;
   G.carryKey = ''; updateAim(true);
 }
@@ -8191,7 +8200,7 @@ function impact(tImp) {
   $('aimHint').classList.remove('on');
   W.tracer.geometry.setDrawRange(0, 0);
   if (!L.putt && !L.disc) {
-    const d = aimDir(), sand = G.surf === S.SAND, colors = sand ? [0xf2e3bf, 0xe9d6a8, 0xfff3dc] : G.teed ? [0xffffff, 0xf7dc2e, 0x8dce69] : [0x8dce69, 0x6ab353, 0xa5d987, 0x7a5c45];
+    const d = aimDir(), sand = G.surf === S.SAND, colors = sand ? (RDC.whiteSand ? WHITE_SAND : [0xf2e3bf, 0xe9d6a8, 0xfff3dc]) : G.teed ? [0xffffff, 0xf7dc2e, 0x8dce69] : [0x8dce69, 0x6ab353, 0xa5d987, 0x7a5c45];
     burst(G.ball.x, G.ball.y + .05, G.ball.z, d[0], d[1], colors, sand ? 26 : 14, sand ? 4 : 6, sand ? 3.5 : 2);
   }
   const qq = ['good', 'good', 'ok', 'bad'][L.qualityLevel], tq = L.tempoGrade;
@@ -8293,7 +8302,7 @@ function updateFlight(dt) {
     if (e.type === 'land' || e.type === 'bounce') {
       SFX.land(e.s * 4);
       const sand = e.surf === S.SAND, dr = drama(), minS = dr ? .5 : 2, k = dr ? clamp(e.s / 8, .4, 1.6) : 1;
-      if (e.s > minS) burst(e.x, e.y + .05, e.z, 0, 0, sand ? [0xf2e3bf, 0xfff3dc] : [0x8dce69, 0xacE287, 0x6ab353], Math.round((sand ? 18 : 8) * (dr ? 1.5 * k : 1)), (sand ? 2.5 : 1.6) * (dr ? .7 + .5 * k : 1), (sand ? 2.5 : 1.6) * (dr ? .7 + .5 * k : 1));
+      if (e.s > minS) burst(e.x, e.y + .05, e.z, 0, 0, sand ? (RDC.whiteSand ? WHITE_SAND : [0xf2e3bf, 0xfff3dc]) : [0x8dce69, 0xacE287, 0x6ab353], Math.round((sand ? 18 : 8) * (dr ? 1.5 * k : 1)), (sand ? 2.5 : 1.6) * (dr ? .7 + .5 * k : 1), (sand ? 2.5 : 1.6) * (dr ? .7 + .5 * k : 1));
       if (dr && e.type === 'land' && !sh.L.putt && e.surf !== S.WATER) { const lr = W.landRing; lr.position.set(e.x, G.C.h(e.x, e.z) + .06, e.z); lr.userData.t = 0; lr.visible = true; }
     }
     else if (e.type === 'tree') {

@@ -648,6 +648,8 @@ OBJECTS
 -------
 None of the shared course life or furniture (`scene.plain`, `flocks` and `balloon` false, no squirrels): no bird flocks, hot air balloon, animals, white
   boundary stakes, red pond stakes or 200/150/100 distance posts. The eagle and albatross fly-overs, weather and the rainbow are as everywhere.
+Bunkers: bright white sand (the club's white feldspar), on the ground, the yardage map and the splash out of a bunker; kept bright and neutral under
+  the low orange sun, with its hollows still shaded (`engine.whiteSand`, `WHITE_SAND`, `wSand` in the terrain shader).
 Pine straw: rust-brown straw on the floor under every stand of trees (`straw` in the data, `pines.py`); never on anything mown. It is a lie of its own,
   "Pine straw" (`S.STRAW`): a dead landing (the ball stops within a couple of yards) and a loose lie (about 90 % of the carry, little spin, a wider spread).
 Azaleas in bloom (mounded clumps in the four Southern Indica cultivars reported as the club's common ones: 'Formosa' magenta-violet, two in five;
