@@ -2,7 +2,7 @@
 
 Called by build.py when the course sets them (course.STRAW, course.STONE_BRIDGES, course.PLANTINGS); everything is in local metres.
 
-  straw     pine straw under the trees: every tree crown (its radius plus STRAW_REACH m) inside the course, closed so the floor of a stand is one sheet,
+  straw     pine straw under the trees: every pine crown (its radius plus STRAW_REACH m) and big broadleaf crown (plus STRAW_REACH_B) inside the course, gaps under STRAW_CLOSE m closed,
             less everything mown (fairway, the second cut OSM maps as golf=rough, green, tee, bunker) and the paths, ponds and creeks (each buffered
             STRAW_CLEAR m), plus any area OSM tags golf=pine straw. Run-length coded on the game's 2 m class grid (engine gr in courses.json, the
             course's ROAD_AREA): alternating off/on runs as int16, the game's GC.straw.
@@ -24,7 +24,9 @@ from shapely.ops import linemerge, unary_union
 
 from common import cache, course, to_local
 
-STRAW_REACH = 3.0
+STRAW_REACH = 2.0
+STRAW_REACH_B = 1.0
+STRAW_CLOSE = 3.0
 STRAW_CLEAR = 1.5
 
 
@@ -34,8 +36,11 @@ def grid():
 
 
 def straw_area(trees, mown, wet, bound):
-    crowns = unary_union([Point(t['e'], t['n']).buffer(t['d'] / 2 + STRAW_REACH, quad_segs=4) for t in trees if t['d'] >= 2])
-    crowns = crowns.buffer(6, quad_segs=4).buffer(-6, quad_segs=4)
+    # beds, not a sheet: a bed runs STRAW_REACH (pines) or STRAW_REACH_B (big broadleaf) m past the crown, shrubs and small trees make none, and only
+    # gaps under STRAW_CLOSE m between stands are closed (public photographs show beds round the stands with turf between them)
+    crowns = unary_union([Point(t['e'], t['n']).buffer(t['d'] / 2 + (STRAW_REACH if t['kind'] == 2 else STRAW_REACH_B), quad_segs=4)
+                          for t in trees if t['d'] >= 2 and (t['kind'] == 2 or (t['kind'] == 0 and t['d'] >= 3.5))])
+    crowns = crowns.buffer(STRAW_CLOSE, quad_segs=4).buffer(-STRAW_CLOSE, quad_segs=4)
     osm = []
     els = json.load(open(cache('osm.json')))['elements']
     nodes = {q['id']: to_local(q['lon'], q['lat']) for q in els if q['type'] == 'node'}

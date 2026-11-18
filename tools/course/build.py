@@ -911,13 +911,14 @@ def main():
         trees = [t for t in trees if not keep.contains(Point(t['e'], t['n']))]
         print(n0 - len(trees), 'trees taken out of tee boxes and greens (course.TREES_OFF_TEES_GREENS)')
     TEE_COR = None
-    if getattr(course, 'TREES_OFF_TEE_FRONT', None):   # TREES_OFF_TEE_FRONT = (length m, half width m) for every hole, or {hole: (length m, half width m)} for the named holes (Augusta 11): no tree whose crown reaches the corridor straight out of each tee along its hole line (a tee that faces a tree wall; the guessed tees of Briar Leaf)
+    if getattr(course, 'TREES_OFF_TEE_FRONT', None):   # TREES_OFF_TEE_FRONT = (length m, half width m) for every hole, or {hole: (length m, half width m)} for the named holes (Augusta 11; an 'all' key is the default for the rest, Lacoma): no tree whose crown reaches the corridor straight out of each tee along its hole line (a tee that faces a tree wall; the guessed tees of Briar Leaf)
         TF = course.TREES_OFF_TEE_FRONT
         def corridor(h, L, W):   # the hole's own line (tee to green through its bends), the first L metres of it, W each side
             from shapely.ops import substring
             ln = LineString([tuple(h['tee'])] + [tuple(q) for q in h['line'] if math.hypot(q[0] - h['tee'][0], q[1] - h['tee'][1]) > 6])
             return substring(ln, 0, min(L, ln.length)).buffer(W)
-        cor = TEE_COR = unary_union([corridor(h, *(TF[i + 1] if isinstance(TF, dict) else TF)) for i, h in enumerate(holes) if not isinstance(TF, dict) or (i + 1) in TF])
+        tf = lambda i: TF.get(i + 1, TF.get('all')) if isinstance(TF, dict) else TF   # a dict may carry 'all' for the holes it does not name
+        cor = TEE_COR = unary_union([corridor(h, *tf(i)) for i, h in enumerate(holes) if tf(i)])
         n0 = len(trees)
         trees = [t for t in trees if not cor.intersects(Point(t['e'], t['n']).buffer(t['d'] / 2))]
         print(n0 - len(trees), 'trees taken out in front of the tees (course.TREES_OFF_TEE_FRONT)')

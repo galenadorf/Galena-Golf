@@ -44,7 +44,7 @@ TEE_BOXES = {
     4: {'white': (528.9, 150.8), 'gold': (461.8, 210.5)},                 # 341 yd and 295 yd: the boxes 344 and 294 yd from the green (the line starts in the blue box, 40-60 m off)
     16: {'blue': (311.5, -392), 'white': (314.5, -392), 'gold': (317.5, -392), 'red': (320.5, -392)},   # the clear box at the card's 370 yd (the nearest-box rule picks the shaded one 28 m east)
 }
-TREES_OFF_TEE_FRONT = (70, 9)   # every hole: no tree whose crown reaches the 70 m x 18 m corridor straight out of the tee along the hole line (OSM's tees and lines here are rough: several tees stood in the woods, 7, 11, 13, 14, 17, with the aerial's canopy right in front)
+TREES_OFF_TEE_FRONT = {'all': (70, 9), 13: (150, 9), 14: (150, 9), 17: (110, 9)}   # 13, 14 and 17: tees under canopy with no clear box at the card yardage, so a longer strip is cleared   # every hole: no tree whose crown reaches the 70 m x 18 m corridor straight out of the tee along the hole line (OSM's tees and lines here are rough: several tees stood in the woods, 7, 11, 13, 14, 17, with the aerial's canopy right in front)
 SMOOTH_MORE = True
 FINAL_ROUND = dict(fair=(3, 3), water=(2.5, 0), fescue=(3, 1.5), bound=(3, 3))
 SMOOTH_PAINTED = True
