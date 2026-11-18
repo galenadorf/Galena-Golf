@@ -1124,6 +1124,9 @@ def main():
                 sp, clr = pines.specimens(holes, sa, mown)
                 if TEE_COR is not None:   # the cleared corridor out of a tee (course.TREES_OFF_TEE_FRONT) is clear of hand-placed plants too (hole 11's white dogwoods)
                     n0 = len(sp); sp = [t for t in sp if not TEE_COR.intersects(Point(t['e'], t['n']).buffer(t['d'] / 2))]; print(n0 - len(sp), 'specimens taken out of the tee corridors')
+                off = getattr(course, 'SPECIMENS_OFF', [])   # single hand-placed plants taken out by place (e, n in local metres, within 1 m)
+                if off:
+                    n0 = len(sp); sp = [t for t in sp if not any(math.hypot(t['e'] - e, t['n'] - n) < 1.0 for e, n in off)]; print(n0 - len(sp), 'specimens taken out by place')
                 from scipy.spatial import cKDTree
                 kd = cKDTree([(e, n) for e, n, _ in clr])
                 gone = {i for i, t in enumerate(trees) if any(r >= math.hypot(t['e'] - clr[j][0], t['n'] - clr[j][1]) for j in kd.query_ball_point((t['e'], t['n']), 20) for r in [clr[j][2]])}

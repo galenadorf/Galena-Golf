@@ -138,5 +138,8 @@ SPECIMENS = [
     dict(kind='holly', hole=18, along=(.3, .85), side='both', n=6, d=5, h=9),
 ]
 
+# single specimens taken out by place (e, n): hole 18's fairway hollies 10303 and 10304 on the numbered map
+SPECIMENS_OFF = [(217.3, 13.2), (235.0, 51.0)]
+
 # the 12 OSM buildings tagged man_made=tower are the tournament's TV towers: not drawn as buildings (they belong with the Masters dressing)
 BUILDINGS_SKIP = {'man_made': 'tower'}
