@@ -260,7 +260,7 @@ def specimens(holes, area, mown):
       dict(kind, node=osm id, d, h)                              one tree on an OSM node (the Big Oak)
       dict(kind, way=osm id, count, offset, d, h, trim=(a, b))   an avenue: `count` trees in two rows `offset` m either side of an OSM way (or of
                                                                  several end to end), a m left bare at its start and b at its end (Magnolia Lane)
-      dict(kind, hole, along=(f0, f1), side, n, d, h)            `n` trees at the tree line beside a hole's line, from f0 to f1 of its length, on its
+      dict(kind, hole, along=(f0, f1), side, n, d, h, skip)      `n` trees (less the row numbers in `skip`, from 0) at the tree line beside a hole's line, from f0 to f1 of its length, on its
                                                                  left, right or both sides (the first spot in the straw stepping out from the line, then
                                                                  1.5 m further in)
       dict(kind, hole, at='tee'|'green', side, n, d, h, reach)   `n` trees at the straw's edge within `reach` m of the tee or green, on that side
@@ -343,6 +343,8 @@ def specimens(holes, area, mown):
             if 'along' in z:
                 f0, f1 = z['along']
                 for j in range(z['n']):
+                    if j in z.get('skip', ()):   # (single trees of the row taken out: by their place in the row, which does not move when the straw is refit)
+                        continue
                     sd = sides[j % len(sides)]
                     s = L.length * (f0 + (f1 - f0) * (j + .5) / z['n'])
                     p, q = L.interpolate(s), L.interpolate(min(L.length, s + 2))
