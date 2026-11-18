@@ -711,7 +711,7 @@ The Masters dressing, always (`scene.dressing`, `buildDressingANGC`; only round 
     the crowd: everyone within 4.6 m walks out to the edge of a clear ring (staying behind the rope) and turns to watch, and any stakes inside the ring are
     carried to its edge, the rope with them; once the next shot is struck they all walk back. A patron the ball hits flinches and those within 2.6 m step
     away from the spot, drifting back about 5 s later. The patrons in the grandstands stay put. Their collision boxes move with them.
-    The sight line (`galleryClear`, once the aim is set at each tee and after each shot): patrons standing in the strip 55 m long and 4.8 m wide straight ahead of the ball along the default aim step out to its edge and turn to watch; those moved for an earlier shot go back if their places are clear.
+    Clear ground (`galleryClear`, once the aim is set at each tee and after each shot): nobody within 20 yd of the ball, and nobody in the 4.8 m wide strips along the default aim (55 m) and along the line to the hole (all the way to it and a little past); patrons whose places are in that ground walk out of it and turn to watch, and those moved for an earlier shot go back only if their places are clear (a few with no legal spot, on the gallery side of the rope, stay).
   - Two green trash cans beside each tee.
 NOT here yet: concession stands and restroom buildings of their own (the OSM buildings stand in for them), patrons walking about on their own. Also NOT here: turkeys, gopher, banner plane, deer, highway traffic, parked carts, moving cart, hot dog, fountain, signs, songs.
 

@@ -4078,23 +4078,40 @@ function galleryPart(bx, bz) {
     const tx = bx + dx * (GAL_R + .4), tz = bz + dz * (GAL_R + .4); if (galDry(tx, tz)) galGo(GAL, o, tx, tz, null, .3, 1.1);
   }
 }
-// the sight line: patrons standing in the strip straight ahead of the ball along the default aim (GAL_LINE long, GAL_HALF either side) step out to its
-// edge, turning to watch; those who stepped aside for an earlier shot and whose places are clear of it go back. Called once the aim is set (hole start, after each shot).
-const GAL_LINE = 55, GAL_HALF = 2.4;
+// the clear ground round a player (Augusta): nobody within GAL_CLEAR (20 yd) of the ball, and nobody in the strips GAL_HALF either side of the default aim
+// (GAL_LINE long) and of the line to the hole (all the way to it, and a little past). Called once the aim is set (hole start, after each shot): a patron whose
+// place is in that ground steps out of it (turning to watch), those who stepped aside for an earlier shot and whose places are clear go back.
+// GAL.clr keeps it, so a crowd walking home (galleryHome) never walks back into it.
+const GAL_LINE = 55, GAL_HALF = 2.4, GAL_CLEAR = 18.3;
+function galTarget(GAL, p) {
+  const c = GAL.clr; if (!c) return [p.ox, p.oz, p.ory];
+  const bx = c.bx, bz = c.bz; let x = p.ox, z = p.oz, moved = false;
+  const d = Math.hypot(x - bx, z - bz);
+  if (d < GAL_CLEAR) {   // out along the way it lies from the ball, to the edge of the ring
+    const dx = d < .05 ? 1 : (x - bx) / d, dz = d < .05 ? 0 : (z - bz) / d; let to = null;
+    for (const k of [0, 4, 9, 15]) { to = galAway(GAL, bx, bz, dx, dz, GAL_CLEAR + .5 + k + 1.2 * Math.random()); if (to) break; }
+    if (to) { x = to[0]; z = to[1]; moved = true; }
+  }
+  for (const [ux, uz, len] of c.lines) {
+    const hx = x - bx, hz = z - bz, t = hx * ux + hz * uz, s = hx * -uz + hz * ux;
+    if (t <= 1 || t >= len || Math.abs(s) >= GAL_HALF) continue;
+    const sg = Math.abs(s) < .15 ? (Math.random() < .5 ? -1 : 1) : Math.sign(s); let to = null;
+    for (const [side, extra] of [[sg, 0], [-sg, 0], [sg, 1.2], [-sg, 1.2], [sg, 2.6], [-sg, 2.6], [sg, 5], [-sg, 5], [sg, 9], [-sg, 9]]) {
+      const w = Math.max(GAL_HALF + .5 + extra + .8 * Math.random(), t < GAL_CLEAR + .5 ? Math.sqrt((GAL_CLEAR + .5) ** 2 - t * t) : 0), qx = bx + ux * t - uz * w * side, qz = bz + uz * t + ux * w * side;
+      if (galSpot(GAL, qx, qz)) { to = [qx, qz]; break; }
+    }
+    if (to) { x = to[0]; z = to[1]; moved = true; }
+  }
+  return moved ? [x, z, Math.atan2(bx - x, bz - z)] : [p.ox, p.oz, p.ory];
+}
 function galleryClear() {
   const GAL = W.gallery; if (!GAL || !GAL.pats.length || !G.ball || G.pg) return;
-  const bx = G.ball.x, bz = G.ball.z, ux = Math.sin(G.yaw), uz = -Math.cos(G.yaw);
+  const bx = G.ball.x, bz = G.ball.z, lines = [[Math.sin(G.yaw), -Math.cos(G.yaw), GAL_LINE]], C = G.C;
+  if (C && C.cup) { const dx = C.cup.x - bx, dz = C.cup.z - bz, d = Math.hypot(dx, dz); if (d > 1) lines.push([dx / d, dz / d, d + 8]); }
+  GAL.clr = { bx, bz, lines }; GAL.parted = false;
   for (const p of GAL.pats) {
-    if (Math.hypot(p.x - bx, p.z - bz) < GAL_R + .5 && GAL.parted) continue;   // (the ring round a ball among them is galleryPart's)
-    const hx = p.ox - bx, hz = p.oz - bz, t = hx * ux + hz * uz, s = hx * -uz + hz * ux;   // its own place, along and across the line
-    let tx = p.ox, tz = p.oz, tr = p.ory;
-    if (t > 1 && t < GAL_LINE && Math.abs(s) < GAL_HALF) {
-      const sg = Math.abs(s) < .15 ? (Math.random() < .5 ? -1 : 1) : Math.sign(s); let to = null;
-      for (const [side, extra] of [[sg, 0], [-sg, 0], [sg, 1.2], [-sg, 1.2], [sg, 2.6], [-sg, 2.6]]) { const w = GAL_HALF + .5 + extra + .8 * Math.random(); const x = bx + ux * t - uz * w * side, z = bz + uz * t + ux * w * side; if (galSpot(GAL, x, z)) { to = [x, z]; break; } }
-      if (!to) continue;
-      [tx, tz] = to; tr = Math.atan2(bx + ux * t - tx, bz + uz * t - tz);
-    }
-    if (Math.abs(p.x - tx) > .05 || Math.abs(p.z - tz) > .05) galGo(GAL, p, tx, tz, tr, .1 + .6 * Math.random(), GAL_WALK + .4 * Math.random());
+    const [tx, tz, tr] = galTarget(GAL, p);
+    if (Math.abs(p.x - tx) > .05 || Math.abs(p.z - tz) > .05) galGo(GAL, p, tx, tz, tr, .1 + .6 * Math.random(), GAL_WALK + .5 + .5 * Math.random());
   }
 }
 function galleryHit(hx, hz) {
@@ -4110,7 +4127,10 @@ function galleryHit(hx, hz) {
 // everyone who has moved walks back to where they stood
 function galleryHome() {
   const GAL = W.gallery; if (!GAL) return; GAL.parted = false; GAL.back = 0;
-  for (const p of GAL.pats) if (p.x !== p.ox || p.z !== p.oz || p.ry !== p.ory) galGo(GAL, p, p.ox, p.oz, p.ory, .2 + .8 * Math.random(), GAL_WALK + .5 * Math.random());
+  for (const p of GAL.pats) {
+    const [tx, tz, tr] = galTarget(GAL, p);   // (home, unless the clear ground round the ball still covers it)
+    if (p.x !== tx || p.z !== tz || p.ry !== tr) galGo(GAL, p, tx, tz, tr, .2 + .8 * Math.random(), GAL_WALK + .5 * Math.random());
+  }
   for (const o of GAL.stakes) if (o.x !== o.ox || o.z !== o.oz) galGo(GAL, o, o.ox, o.oz, null, .6, 1.2);
 }
 // the swing: the crowd's colliders are where the patrons are drawn now (a walk still under way finishes at once), and a parted crowd goes home behind the ball
@@ -7745,6 +7765,7 @@ function resumeRound(course) {
   }
   placeBall(mid.x, mid.z, mid.teed);
   if (mid.club != null && mid.yaw != null) { G.club = mid.club; G.suggested = mid.club; G.yaw = mid.yaw; G.target = mid.target || null; G.carryKey = ''; updateAim(true); } else autoClubAndAim();
+  galleryClear();   // (a resumed round: the crowd clears for the ball where it lies)
   beginHole(); G.snapCam = true; updateHUD(); // straight to the address view, no flyover
   return true;
 }
@@ -8194,7 +8215,7 @@ function mulligan() {
   SW.phase = 'idle'; SW.mark = null; SW.p = 0; document.body.classList.remove('flight', 'swing');
   G.state = 'settle'; G.settleT = 0; G.camFrom = W.cam.position.clone(); G.lookFrom = G.camLook.clone(); // the camera travels back to the address view, as after any shot
   readout('<div class="r1">Mulligan</div><div class="r3"><span>Shot undone · no stroke</span></div>', 2.6); SFX.blip();
-  updateAim(true); updateHUD(); drawMapThumb(); saveRound(); mpState(true);
+  updateAim(true); galleryClear(); updateHUD(); drawMapThumb(); saveRound(); mpState(true);
 }
 function skipShot() {
   const sh = G.shot; if (G.state !== 'flight' || !sh || sh.skipped) return;
