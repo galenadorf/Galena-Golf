@@ -4078,6 +4078,25 @@ function galleryPart(bx, bz) {
     const tx = bx + dx * (GAL_R + .4), tz = bz + dz * (GAL_R + .4); if (galDry(tx, tz)) galGo(GAL, o, tx, tz, null, .3, 1.1);
   }
 }
+// the sight line: patrons standing in the strip straight ahead of the ball along the default aim (GAL_LINE long, GAL_HALF either side) step out to its
+// edge, turning to watch; those who stepped aside for an earlier shot and whose places are clear of it go back. Called once the aim is set (hole start, after each shot).
+const GAL_LINE = 55, GAL_HALF = 2.4;
+function galleryClear() {
+  const GAL = W.gallery; if (!GAL || !GAL.pats.length || !G.ball || G.pg) return;
+  const bx = G.ball.x, bz = G.ball.z, ux = Math.sin(G.yaw), uz = -Math.cos(G.yaw);
+  for (const p of GAL.pats) {
+    if (Math.hypot(p.x - bx, p.z - bz) < GAL_R + .5 && GAL.parted) continue;   // (the ring round a ball among them is galleryPart's)
+    const hx = p.ox - bx, hz = p.oz - bz, t = hx * ux + hz * uz, s = hx * -uz + hz * ux;   // its own place, along and across the line
+    let tx = p.ox, tz = p.oz, tr = p.ory;
+    if (t > 1 && t < GAL_LINE && Math.abs(s) < GAL_HALF) {
+      const sg = Math.abs(s) < .15 ? (Math.random() < .5 ? -1 : 1) : Math.sign(s); let to = null;
+      for (const [side, extra] of [[sg, 0], [-sg, 0], [sg, 1.2], [-sg, 1.2], [sg, 2.6], [-sg, 2.6]]) { const w = GAL_HALF + .5 + extra + .8 * Math.random(); const x = bx + ux * t - uz * w * side, z = bz + uz * t + ux * w * side; if (galSpot(GAL, x, z)) { to = [x, z]; break; } }
+      if (!to) continue;
+      [tx, tz] = to; tr = Math.atan2(bx + ux * t - tx, bz + uz * t - tz);
+    }
+    if (Math.abs(p.x - tx) > .05 || Math.abs(p.z - tz) > .05) galGo(GAL, p, tx, tz, tr, .1 + .6 * Math.random(), GAL_WALK + .4 * Math.random());
+  }
+}
 function galleryHit(hx, hz) {
   const GAL = W.gallery; if (!GAL || !GAL.pats.length) return;
   for (const p of GAL.pats) {
@@ -7790,7 +7809,7 @@ function startHole(i) {
   G.strokes = 0; G.putts[i] = 0; G.pens[i] = 0; G.shot = null; G.target = null;
   placeBall(G.C.startPos.x, G.C.startPos.z, true);
   G.prev = { x: G.ball.x, z: G.ball.z, teed: true };
-  autoClubAndAim();
+  autoClubAndAim(); galleryClear();
   Object.assign(SW, { phase: 'idle', mark: null, last: null, resultT: 0, trail: [] });
   W.tracer.geometry.setDrawRange(0, 0); W.ball.visible = true; W.aim.visible = W.ring.visible = false;
   G.state = 'intro'; G.introT = 0; G.introSnap = true;
@@ -8444,7 +8463,7 @@ function finishShot() {
   if (!restsOnGreen(r)) readout(`<div class="r1">${big}</div><div class="r3"><span>${sub}</span><span>To pin <b>${fmtDistShort(distToPin())}</b></span></div>`, 3.2);
   G.state = 'settle'; G.settleT = 0; G.camFrom = W.cam.position.clone(); G.lookFrom = G.camLook.clone();
   SW.phase = 'idle';
-  autoClubAndAim(); drawMapThumb();
+  autoClubAndAim(); galleryClear(); drawMapThumb();
 }
 
 /* ---------- camera ---------- */
