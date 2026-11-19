@@ -4116,14 +4116,15 @@ function galGo(GAL, o, tx, tz, tr, wait, dur) {
 const galDry = (x, z) => G.C && !G.C.isOB(x, z) && G.C.wl(x, z) < G.C.h(x, z) - .05;
 // a spot a patron may step to: dry, in bounds, off the greens, tees and bunkers, and on the gallery side of the rope: farther from the hole's centre
 // line than the nearest stretch of rope (as it was strung) is at that point, so nobody steps through the rope onto the course
+const GAL_ROPE_NEAR = 25;
 function galSpot(GAL, x, z) {
   const C = G.C; if (!galDry(x, z) || C.fieldAt(C.F.green, x, z) < 4 || C.fieldAt(C.F.tee, x, z) < 2 || C.fieldAt(C.F.sand, x, z) < 1 || C.fieldAt(C.F.fair, x, z) < 2) return false;
-  let fx = 0, fz = 0, nd = 6;
+  let fx = 0, fz = 0, nd = GAL_ROPE_NEAR;   // (within GAL_ROPE_NEAR m of a rope a spot must be on its gallery side; a spot 7 m inside a rope was allowed when this was 6)
   for (const g of GAL.segs) {
     const ax = g.a.ox, az = g.a.oz, ux = g.b.ox - ax, uz = g.b.oz - az, l2 = ux * ux + uz * uz || 1e-6, u = clamp(((x - ax) * ux + (z - az) * uz) / l2, 0, 1), px = ax + ux * u, pz = az + uz * u, d = Math.hypot(x - px, z - pz);
     if (d < nd) { nd = d; fx = px; fz = pz; }
   }
-  return nd >= 6 || polyQ(C.center, x, z, 600).d >= polyQ(C.center, fx, fz, 600).d + .3;
+  return nd >= GAL_ROPE_NEAR || polyQ(C.center, x, z, 600).d >= polyQ(C.center, fx, fz, 600).d + .3;
 }
 // out from (cx, cz) along (dx, dz) to distance k, or if that spot is not allowed, the nearest of a fan of directions either side of it (along the crowd)
 function galAway(GAL, cx, cz, dx, dz, k) {
