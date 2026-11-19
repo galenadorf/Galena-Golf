@@ -3116,6 +3116,21 @@ function buildAzaleas(C, grp) {
 // bank, level with the higher bank and clear of the water (it tilts if the banks differ), girders under it, a sill at each end, and timber rails and posts
 // along both sides. A ball over the deck lands on it as on a cart path (C.h, C.surf, C.surfInfo, C.wl and C.grad are wrapped: the deck is flat ground, hard
 // surface, no water; the rails are scenery and the ball passes through them). Wrapped here, after the terrain mesh is built from the unwrapped C.h.
+// bridge decks the ball can land, bounce and roll on (the cart-path bridges, Augusta's stone bridges): over a deck's footprint the ground is the deck
+// (height y(u) and slope dy(u) at u m along it), there is no water under it, and its surface is the deck's own (a cart path's, or fairway turf);
+// C.deckY gives the drawn ground there too (groundY), so a ball at rest on a bridge is drawn on it, not on the creek bed below
+const _dk = { d: null, u: 0 };
+function addDecks(C, decks) {
+  if (!decks.length) return;
+  const at = (x, z) => { for (const d of decks) { const dx = x - d.cx, dz = z - d.cz, u = dx * d.ax + dz * d.az, v = -dx * d.az + dz * d.ax; if (Math.abs(u) <= d.L / 2 && Math.abs(v) <= d.W / 2) { _dk.d = d; _dk.u = u; return _dk; } } return null; };
+  const h0 = C.h, wl0 = C.wl, grad0 = C.grad, info0 = C.surfInfo, surf0 = C.surf, dy0 = C.deckY;
+  C.h = (x, z) => { const k = at(x, z); return k ? k.d.y(k.u) : h0(x, z); };
+  C.wl = (x, z) => at(x, z) ? -1e9 : wl0(x, z);
+  C.grad = (x, z, o) => { const k = at(x, z); if (!k) return grad0(x, z, o); const sl = k.d.dy(k.u); o[0] = sl * k.d.ax; o[1] = sl * k.d.az; return o; };
+  C.surfInfo = (x, z, hh) => { const inf = info0(x, z, hh), k = at(x, z); if (k) { inf.surf = k.d.surf; inf.water = -1; inf.stripe = 0; } return inf; };
+  C.surf = (x, z) => { const k = at(x, z); return k ? k.d.surf : surf0(x, z); };
+  C.deckY = (x, z) => { const k = at(x, z); return k ? k.d.y(k.u) : dy0 ? dy0(x, z) : null; };
+}
 function buildCartBridges(C, grp) {
   const I = C.inner, list = RDC.data.cartBridges || []; if (!list.length) return;
   const decks = [];
@@ -3129,7 +3144,7 @@ function buildCartBridges(C, grp) {
     for (let d = -1.5; d <= .5; d += .5) { y0 = Math.max(y0, hAt(-L / 2 - d)); y1 = Math.max(y1, hAt(L / 2 + d)); }
     if (wl > -1e8) { y0 = Math.max(y0, wl + .45); y1 = Math.max(y1, wl + .45); }
     y0 += .12; y1 += .12;
-    const al = Math.hypot(ax, az) || 1; decks.push({ cx, cz, ax: ax / al, az: az / al, L, W: Wd, ym: (y0 + y1) / 2, sl: (y1 - y0) / L });
+    const al = Math.hypot(ax, az) || 1; const ym = (y0 + y1) / 2, sl = (y1 - y0) / L; decks.push({ cx, cz, ax: ax / al, az: az / al, L, W: Wd, y: u => ym + u * sl, dy: () => sl, surf: S.PATH });
     const g = new THREE.Group(), tilt = new THREE.Group(); g.position.set(cx, (y0 + y1) / 2, cz); g.rotation.y = Math.atan2(-az, ax); tilt.rotation.z = Math.atan2(y1 - y0, L); g.add(tilt);
     const box = (sx, sy, sz, m, x, y, z) => { const o = new THREE.Mesh(unitBox, m); o.scale.set(sx, sy, sz); o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true; tilt.add(o); };
     box(L, .2, Wd, deckM, 0, -.1, 0);
@@ -3141,14 +3156,7 @@ function buildCartBridges(C, grp) {
     for (const sd of [-1, 1]) box(.45, .6, Wd + .5, girderM, sd * (L / 2 - .1), -.3, 0);
     grp.add(g);
   }
-  if (!decks.length) return;
-  const deckAt = (x, z) => { for (const d of decks) { const dx = x - d.cx, dz = z - d.cz, u = dx * d.ax + dz * d.az, v = -dx * d.az + dz * d.ax; if (Math.abs(u) <= d.L / 2 && Math.abs(v) <= d.W / 2) return d; } return null; };
-  const h0 = C.h, wl0 = C.wl, grad0 = C.grad, info0 = C.surfInfo, surf0 = C.surf;
-  C.h = (x, z) => { const d = deckAt(x, z); return d ? d.ym + ((x - d.cx) * d.ax + (z - d.cz) * d.az) * d.sl : h0(x, z); };
-  C.wl = (x, z) => deckAt(x, z) ? -1e9 : wl0(x, z);
-  C.grad = (x, z, o) => { const d = deckAt(x, z); if (!d) return grad0(x, z, o); o[0] = d.sl * d.ax; o[1] = d.sl * d.az; return o; };
-  C.surfInfo = (x, z, hh) => { const inf = info0(x, z, hh); if (deckAt(x, z)) { inf.surf = S.PATH; inf.water = -1; inf.stripe = 0; } return inf; };
-  C.surf = (x, z) => deckAt(x, z) ? S.PATH : surf0(x, z);
+  addDecks(C, decks);
 }
 // Augusta's stone bridges (Ben Hogan to the 12th green, Byron Nelson off the 13th tee, Gene Sarazen on 15 and the unnamed spans), after the user's
 // photograph: a low, gently humped span on round arches springing from the water (three on a long bridge, two or one on a short one), walls of dark
@@ -3173,7 +3181,7 @@ function fieldTex() {
   const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(.36, .36); t.anisotropy = 4; _fieldTex = t; return t;   // (a tile about 2.8 m: stones of 20-45 cm)
 }
 function buildStoneBridges(C, grp) {
-  const I = C.inner, mat = new THREE.MeshLambertMaterial({ map: fieldTex() }), fc = hexToRgb(PAL[S.FAIR]), turfM = new THREE.MeshLambertMaterial({ color: new THREE.Color(fc[0] * .78, fc[1] * .82, fc[2] * .7) });
+  const decks = [], I = C.inner, mat = new THREE.MeshLambertMaterial({ map: fieldTex() }), fc = hexToRgb(PAL[S.FAIR]), turfM = new THREE.MeshLambertMaterial({ color: new THREE.Color(fc[0] * .78, fc[1] * .82, fc[2] * .7) });
   for (const b of RDC.data.bridges || []) {
     if (typeof b[5] !== 'string') continue;
     const q0 = C.loc(b[0], b[1]), q1 = C.loc(b[0] + Math.cos(b[4] * DEG), b[1] + Math.sin(b[4] * DEG)), cx = q0[0], cz = -q0[1];
@@ -3224,7 +3232,11 @@ function buildStoneBridges(C, grp) {
     }
     g.position.set(cx, 0, cz); g.rotation.y = Math.atan2(-az, ax);
     g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
+    // solid: the turf top is played as fairway, across its full width (the lips are only a few inches high)
+    const al = Math.hypot(ax, az) || 1, dyd = u => (deck(Math.min(L / 2, u + .25)) - deck(Math.max(-L / 2, u - .25))) / .5;
+    decks.push({ cx, cz, ax: ax / al, az: az / al, L, W: Wd, y: u => deck(u) + .03, dy: dyd, surf: S.FAIR });
   }
+  addDecks(C, decks);
 }
 // a free rough spot beside (x, z): `side` metres across the line to the green, `back` metres along it
 function spotBeside(C, x, z, side, back) {
@@ -5053,6 +5065,7 @@ function _triY(g, a, b, c, x, z) {
 }
 const _gyOff = [0, -1, 1];
 function groundY(x, z) {
+  const dk = G.C && G.C.deckY; if (dk) { const y = dk(x, z); if (y != null) return y; }   // (on a bridge deck: addDecks)
   const g = W.tgrid; if (!g) return G.C.h(x, z);
   const i0 = _bsearch(g.xs, x), j0 = _bsearch(g.zs, z), nx = g.nx;
   for (let dj = 0; dj < 3; dj++) for (let di = 0; di < 3; di++) {
