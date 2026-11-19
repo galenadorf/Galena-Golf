@@ -139,10 +139,10 @@ SPECIMENS = [
 ]
 
 # the 13th tee as the user's photographs show it (one from behind it looking out, one from the fairway looking back): a long grass chute, a low stone-and-mortar
-# wall straight across the back and partway up both sides (the left one longer), azaleas packed in behind the wall and along both sides of the chute right
+# wall straight across the back and partway up both sides (the left one longer), the chute running on to Rae's Creek, azaleas packed in behind the wall and along both sides of the chute right
 # up to its grass on a straw edge, trees close behind them, nothing in front; the bench inside the right wall near the back, running along the tee.
 # pines.tee_rooms builds it round the tee box and prints the wall and bench for courses.json's dressing (copy them there when the tee moves)
-TEE_ROOMS = [dict(hole=13, near=(45.0, -632.8), width=10, back=2.5, left=14, right=9, chute=60, chute_w=14, bed=4.5, trees=12, bench=(3.6, 3.5),
+TEE_ROOMS = [dict(hole=13, near=(45.0, -632.8), width=10, back=2.5, left=14, right=9, chute=95, chute_w=18, bed=4.5, trees=12, bench=(3.6, 3.5),
                   gap=1.15, r=1.35, cols=[1, 0, 2, 3, 1, 0], tree_gap=4.2,
                   kinds=[('holly', 4, 7), ('juniper', 3.6, 9), ('dogwood_white', 4.5, 5.5), ('magnolia', 7, 11), ('camellia', 3.5, 4), ('tea_olive', 4, 5)])]
 

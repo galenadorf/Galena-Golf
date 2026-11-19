@@ -28,6 +28,7 @@ STRAW_REACH = 2.0
 STRAW_REACH_B = 1.0
 STRAW_CLOSE = 3.0
 STRAW_CLEAR = 1.5
+STRAW_SMOOTH = 1.5   # bed edges rounded: notches and slivers under 3 m taken out (straw_area)
 
 
 def grid():
@@ -50,7 +51,11 @@ def straw_area(trees, mown, wet, bound):
             if len(c) >= 4:
                 osm.append(Polygon(c).buffer(0))
     area = unary_union([crowns] + osm).intersection(bound.buffer(25))
-    area = area.difference(unary_union(mown).buffer(STRAW_CLEAR, quad_segs=4)).difference(unary_union(wet).buffer(STRAW_CLEAR, quad_segs=4))
+    keep_off = unary_union(mown).buffer(STRAW_CLEAR, quad_segs=4).union(unary_union(wet).buffer(STRAW_CLEAR, quad_segs=4))
+    area = area.difference(keep_off)
+    # rounded off: notches and slivers under 2 x STRAW_SMOOTH m (a tooth of rough between two crowns, a thin tongue of straw squeezed between the mown
+    # grass's clearances) closed and opened away, so no bed edge comes to a point
+    area = area.buffer(STRAW_SMOOTH, quad_segs=6).buffer(-2 * STRAW_SMOOTH, quad_segs=6).buffer(STRAW_SMOOTH, quad_segs=6).difference(keep_off)
     return area
 
 
@@ -112,7 +117,7 @@ def stone_bridges(water, detail):
     return out
 
 
-def tee_rooms(tees, holes):
+def tee_rooms(tees, holes, mown=(), wet=()):
     """course.TEE_ROOMS -> the walled tee rooms (Augusta 13, after the user's photographs: the tee in a long grass chute, a low stone wall straight across
     the back and partway up both sides, azaleas packed in behind the wall and along both sides of the chute right up to its grass, trees close behind them,
     nothing in front). Each spec: dict(hole, near=(e, n) a point in its tee box, width m of grass between the side walls, back m from the tee's back edge to the
@@ -146,8 +151,9 @@ def tee_rooms(tees, holes):
         bd, tr = z.get('bed', 4.5), z.get('trees', 14)
         outer = grass.buffer(bd, join_style=2)
         far = Polygon([P(-B - 60, -200), P(-B - 60, 200), P(ch, 200), P(ch, -200)])   # nothing past the chute's open end
-        beds = outer.difference(grass).intersection(far)
-        band = grass.buffer(bd + tr, join_style=2).difference(outer.buffer(.2)).intersection(far)
+        off = unary_union([g.buffer(1.5) for g in mown] + [g.buffer(2.5) for g in wet]) if (mown or wet) else Point(0, 0).buffer(0)   # (no bed or tree on a green, a fairway, a tee or in the creek)
+        beds = outer.difference(grass).intersection(far).difference(off)
+        band = grass.buffer(bd + tr, join_style=2).difference(outer.buffer(.2)).intersection(far).difference(off)
         walls = [[P(z['left'], -W2), P(-B, -W2), P(-B, W2), P(z['right'], W2)]]
         bn = z.get('bench')
         bench = (P(bn[1], bn[0]), math.degrees(math.atan2(uy, ux))) if bn else None

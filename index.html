@@ -1647,7 +1647,12 @@ function realPrep() {
     const rn = b64i16(D.straw), m = new Uint8Array(W * H); let o = 0, v = 0;
     for (let i = 0; i < rn.length; i++) { const n = rn[i]; if (v) m.fill(1, o, Math.min(W * H, o + n)); o += n; v ^= 1; }
     for (let k = 0; k < W * H; k++) if (m[k] && (cls[k] === GCL.ROUGH || cls[k] === GCL.OUT)) cls[k] = GCL.WOOD;
-    GC.straw = m;
+    // softened once (a 1-4-6-4-1 blur each way, about 2 m) so the bed's edge, drawn and played, follows smooth curves instead of the grid's stair steps
+    // and single-cell points; GC.straw holds 0-1, straw where it is .5 or more (strawAt)
+    const K = [1, 4, 6, 4, 1], t = new Float32Array(W * H), f = new Float32Array(W * H);
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { let a = 0, wsum = 0; for (let d = -2; d <= 2; d++) { const ii = i + d; if (ii < 0 || ii >= W) continue; a += K[d + 2] * m[j * W + ii]; wsum += K[d + 2]; } t[j * W + i] = a / wsum; }
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { let a = 0, wsum = 0; for (let d = -2; d <= 2; d++) { const jj = j + d; if (jj < 0 || jj >= H) continue; a += K[d + 2] * t[jj * W + i]; wsum += K[d + 2]; } f[j * W + i] = a / wsum; }
+    GC.straw = f;
   }
   // azaleas: e, n (dm), clump radius (dm), colour index
   GC.flowers = [];
@@ -1801,6 +1806,33 @@ function tierGreen(RA, sd, ww, hh, i0, j0, cx, cz, maxS, fixCut) {
 function rangeScene(H0) {   // the range's painted polygons and boundary, decoded once
   if (!H0.dec) { const f = {}; for (const k in H0.feat) f[k] = decPolys(H0.feat[k]); H0.dec = { feat: f, bnd: decPolys(H0.boundary)[0][0] }; }
   return H0.dec;
+}
+// engine.creekSlope (Augusta): a long, thin water outline (a creek mapped as water, Rae's Creek and its tributary down 13) gets a water level that falls
+// with its banks instead of one flat level from its lowest bank, which left the upper reaches a near-dry ravine metres under the banks. Per cell of the
+// pond's window: the lowest bank (the undug ground .6-3 m outside the outline) within CREEK_REACH m, less .3 m, then softened along the channel.
+// Ponds and anything wider than CREEK_W m on average, or shorter than CREEK_L m, keep the flat level (null).
+const CREEK_REACH = 14, CREEK_W = 16, CREEK_L = 120;
+function creekLevels(q, W2, Hw, w, res) {
+  const r = q.enu[0]; let A = 0, P = 0;
+  for (let k = 0, n = r.length; k < n; k += 2) { const k2 = (k + 2) % n; A += r[k] * r[k2 + 1] - r[k2] * r[k + 1]; P += Math.hypot(r[k2] - r[k], r[k2 + 1] - r[k + 1]); }
+  A = Math.abs(A) / 2; if (P / 2 < CREEK_L || 2 * A / P > CREEK_W) return null;
+  const { i0, j0, ww, hh, sd } = W2, N = ww * hh, bank = new Float32Array(N).fill(Infinity), R = Math.max(1, Math.round(CREEK_REACH / res));
+  for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) { const v = sd[j * ww + i]; if (v > .6 && v < 3) bank[j * ww + i] = Hw[(j + j0) * w + i + i0]; }
+  const t = new Float32Array(N), m = new Float32Array(N);   // a square minimum filter, rows then columns
+  for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) { let a = Infinity; for (let d = Math.max(0, i - R); d <= Math.min(ww - 1, i + R); d++) a = Math.min(a, bank[j * ww + d]); t[j * ww + i] = a; }
+  for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) { let a = Infinity; for (let d = Math.max(0, j - R); d <= Math.min(hh - 1, j + R); d++) a = Math.min(a, t[d * ww + i]); m[j * ww + i] = a; }
+  let lo = Infinity; for (let k = 0; k < N; k++) if (m[k] < lo) lo = m[k];
+  if (!isFinite(lo)) return null;
+  for (let k = 0; k < N; k++) if (!isFinite(m[k])) m[k] = lo;
+  // softened: a box of about 8 m each way, twice (no steps left from the minimum filter; each pass keeps the level under every bank within
+  // CREEK_REACH - 4 m of the cell, since every cell it averages took its minimum over those banks)
+  const B = Math.max(1, Math.round(4 / res)), o = new Float32Array(N);
+  for (let pass = 0; pass < 2; pass++) {
+    for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) { let a = 0, c = 0; for (let d = Math.max(0, i - B); d <= Math.min(ww - 1, i + B); d++) { a += m[j * ww + d]; c++; } t[j * ww + i] = a / c; }
+    for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) { let a = 0, c = 0; for (let d = Math.max(0, j - B); d <= Math.min(hh - 1, j + B); d++) { a += t[d * ww + i]; c++; } m[j * ww + i] = a / c; }
+  }
+  for (let k = 0; k < N; k++) o[k] = m[k] - .3 - (RDC.waterDrop || 0);
+  return o;
 }
 function makeRealCourse(idx, pin) {
   realPrep();
@@ -1958,14 +1990,15 @@ function makeRealCourse(idx, pin) {
     let mn = 1e9;
     for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) { const v = sd[j * ww + i]; if (v > .6 && v < 3) mn = Math.min(mn, Hw[(j + j0) * w + i + i0]); }
     if (mn > 1e8) return;
-    const lv = mn - .3 - (RDC.waterDrop || 0);
+    const lv = mn - .3 - (RDC.waterDrop || 0), lc = RDC.creekSlope ? creekLevels(q, W2, Hw, w, res) : null, L = lc ? k2 => lc[k2] : () => lv;
     for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) {
-      const v = sd[j * ww + i]; if (v >= 6) continue; const k = (j + j0) * w + i + i0;
-      if (v < 0) Hg[k] = lv - .45 - 1.2 * smooth(0, 7, -v);
-      else if (v < 3) Hg[k] = lerp(lv - .3, Math.max(Hg[k], lv + .25), smooth(0, 3, v));
-      else Hg[k] = Math.max(Hg[k], lv + .25 * smooth(6, 3, v));
+      const v = sd[j * ww + i]; if (v >= 6) continue; const k = (j + j0) * w + i + i0, l = L(j * ww + i);
+      if (v < 0) Hg[k] = l - .45 - 1.2 * smooth(0, lc ? 3 : 7, -v);
+      else if (v < 3) Hg[k] = lerp(l - .3, Math.max(Hg[k], l + .25), smooth(0, lc ? 1.2 : 3, v));   // (a sloping creek's banks rise in 1.2 m, so its fuller water stays in the channel)
+      else Hg[k] = Math.max(Hg[k], l + .25 * smooth(6, 3, v));
     }
-    ponds.push({ q, lv, win: W2, o: {} });
+    let lo = lv; if (lc) { lo = Infinity; for (const l of lc) if (l < lo) lo = l; }
+    ponds.push({ q, lv: lo, lc, win: W2, o: {} });
   });
   // creeks (short ribbon pieces): a shallow, narrow channel; each piece's water sits just under its own banks
   P.creek.forEach(q => {
@@ -2036,8 +2069,10 @@ function makeRealCourse(idx, pin) {
   C.ponds = ponds;
   // water level per lattice cell around each pond (shader shoreline, splash test)
   const wlGrid = new Float32Array(N).fill(-1e9);
-  for (const p of ponds) { const { i0, j0, ww, hh, sd } = p.win; for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) if (sd[j * ww + i] < 5) wlGrid[(j + j0) * w + i + i0] = p.lv; }
+  const wiGrid = new Int16Array(N);   // which pond a cell's water belongs to
+  ponds.forEach((p, pi) => { const { i0, j0, ww, hh, sd } = p.win; for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) if (sd[j * ww + i] < 5) { const k = (j + j0) * w + i + i0; wlGrid[k] = p.lc ? p.lc[j * ww + i] : p.lv; wiGrid[k] = pi; } });
   C.wlGrid = wlGrid;
+  const pondAt = (X, Z) => { const u = Math.round((X - x0) / res), v = Math.round((Z - z0) / res); return u < 0 || v < 0 || u >= w || v >= h ? 0 : wiGrid[v * w + u]; };
   // ---- queries
   const Hof = (X, Z) => demZ(enuE(X, Z), enuN(X, Z)) - zBase;
   function Hh(X, Z) {
@@ -2072,13 +2107,18 @@ function makeRealCourse(idx, pin) {
   const fF = F.fair, fG = F.green, fT = F.tee, fS = F.sand, fP = F.path, fW = F.water, fR = F.range;
   const fCk = F.creek; // creeks (Augusta's Rae's Creek, Woodbine's creek) are penalty areas like the ponds
   const SM = GC.straw; // pine straw (course data `straw`, the 2 m class grid): it takes the place of rough and deep rough where it lies
-  const onStraw = (X, Z) => { const i = Math.floor((enuE(X, Z) - GR.e0) / GR.res), j = Math.floor((enuN(X, Z) - GR.n0) / GR.res); return i >= 0 && j >= 0 && i < GR.W && j < GR.H && SM[j * GR.W + i] === 1; };
+  const onStraw = (X, Z) => {   // (the softened mask, bilinear, as it is drawn: strawAt)
+    const u = (enuE(X, Z) - GR.e0) / GR.res - .5, v = (enuN(X, Z) - GR.n0) / GR.res - .5;
+    if (u < 0 || v < 0 || u >= GR.W - 1 || v >= GR.H - 1) return false;
+    const iu = u | 0, iv = v | 0, fu = u - iu, fv = v - iv, k = iv * GR.W + iu;
+    return (SM[k] * (1 - fu) + SM[k + 1] * fu) * (1 - fv) + (SM[k + GR.W] * (1 - fu) + SM[k + GR.W + 1] * fu) * fv >= .5;
+  };
   function surfInfo(X, Z, hh) {
     info.stripe = 0; info.water = -1; info.waste = false;
     const u = (X - x0) / res, v = (Z - z0) / res;
     if (u < 0 || v < 0 || u >= w - 1 || v >= h - 1) {
       const lv0 = C.wl(X, Z);   // a pond can reach the edge of the lattice
-      if (lv0 > -1e8 && (hh != null ? hh : Hh(X, Z)) < lv0 - WET_HALF) { info.surf = S.WATER; info.water = Math.max(0, ponds.findIndex(p => p.lv === lv0)); return info; }
+      if (lv0 > -1e8 && (hh != null ? hh : Hh(X, Z)) < lv0 - WET_HALF) { info.surf = S.WATER; info.water = pondAt(X, Z); return info; }
       info.surf = farSurf(X, Z); return info;
     }
     const i = u | 0, j = v | 0, fx = u - i, fy = v - j, k = j * w + i, a = (1 - fx) * (1 - fy), b = fx * (1 - fy), c = (1 - fx) * fy, d = fx * fy;
@@ -2088,7 +2128,7 @@ function makeRealCourse(idx, pin) {
     const lv = C.wl(X, Z);
     if (lv > -1e8) {
       const hv = hh != null ? hh : Hh(X, Z);
-      if (hv < lv - (at(fW) < 0 || (fCk && at(fCk) < 0) ? .02 : WET_HALF)) { info.surf = S.WATER; info.water = Math.max(0, ponds.findIndex(p => p.lv === lv)); return info; }
+      if (hv < lv - (at(fW) < 0 || (fCk && at(fCk) < 0) ? .02 : WET_HALF)) { info.surf = S.WATER; info.water = pondAt(X, Z); return info; }
     }
     if (at(fS) < 0) { info.surf = S.SAND; return info; }
     const dg = at(fG); if (dg < 0) { info.surf = S.GREEN; return info; }
@@ -2185,18 +2225,33 @@ function makeRealCourse(idx, pin) {
   return C;
 }
 
+// the nearest point on the waterline (ground = water level) to (x, z), looked for across the water outline (along its field's gradient) within
+// `mx` m; the point itself when there is no waterline that near
+function waterSnap(C, x, z, mx) {
+  const f = (a, b) => C.fieldAt(C.F.water, a, b), v = f(x, z);
+  if (Math.abs(v) > mx + 1.5) return [x, z];
+  let gx = f(x + .25, z) - f(x - .25, z), gz = f(x, z + .25) - f(x, z - .25); const gl = Math.hypot(gx, gz); if (gl < 1e-6) return [x, z];
+  gx /= gl; gz /= gl;
+  const d = t => { const X = x + gx * t, Z = z + gz * t, l = C.wl(X, Z); return l > -1e8 ? C.h(X, Z) - l : 1; };
+  let best = null, p = d(-mx);
+  for (let t = -mx + .1; t <= mx + 1e-6; t += .1) { const c = d(t); if ((p < 0) !== (c < 0)) { const u = t - .1 + .1 * p / (p - c); if (best == null || Math.abs(u) < Math.abs(best)) best = u; } p = c; }
+  return best == null ? [x, z] : [x + gx * best, z + gz * best];
+}
 /* ---------- the hole's world ---------- */
 const CUP_PATCH = 5;
 function buildRealHole(C, grp) {
   const I = C.inner;
   const gr = C.green, gf = gr.R + 9, xs = axisCoords(I.minX, I.maxX, 2.5, 1300, [gr.cx - gf, gr.cx + gf, 1.25]), zs = axisCoords(I.minZ, I.maxZ, 2.5, 1300, [gr.cz - gf, gr.cz + gf, 1.25]);
-  const nx = xs.length, nz = zs.length;
+  const nx = xs.length, nz = zs.length, snapW = !!RDC.creekSlope && C.F && C.F.water;
   const PX = new Float32Array(nx * nz), PZ = new Float32Array(nx * nz), PY = new Float32Array(nx * nz);
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     const k = j * nx + i; let x = xs[i], z = zs[j];
     if (i > 0 && i < nx - 1 && j > 0 && j < nz - 1) {
       const sx = Math.min(xs[i + 1] - x, x - xs[i - 1]), sz = Math.min(zs[j + 1] - z, z - zs[j - 1]);
       x += (hash2(i, j, 3) - .5) * .4 * sx; z += (hash2(i, j, 4) - .5) * .4 * sz;
+      // (engine.creekSlope, Augusta: a vertex near the water is moved onto the waterline, across the outline, so the shore is drawn as a smooth
+      // curve instead of the sawtooth a flat sheet cuts across 2.5 m facets on a gentle bank)
+      if (snapW && C.wl(x, z) > -1e8) { const q = waterSnap(C, x, z, .45 * Math.min(sx, sz)); x = q[0]; z = q[1]; }
     }
     PX[k] = x; PZ[k] = z; PY[k] = C.h(x, z);
   }
@@ -2366,15 +2421,15 @@ function realTerrainMat(C) {
   const A = new Uint8Array(n * 4), B = new Uint8Array(n * 4), T = new Uint8Array(n * 4);
   const [FC_F, FC_T, FC_G, FC_X] = firstCutW(fringeW());
   const enc = v => { const t = v / R * .5 + .5; return t <= 0 ? 0 : t >= 1 ? 255 : Math.round(t * 255); };
-  let wlo = 1e9, whi = -1e9; for (const p of C.ponds) { wlo = Math.min(wlo, p.lv); whi = Math.max(whi, p.lv); }
+  let wlo = 1e9, whi = -1e9; for (const p of C.ponds) for (const l of p.lc || [p.lv]) if (isFinite(l)) { wlo = Math.min(wlo, l); whi = Math.max(whi, l); }
   if (wlo > 1e8) { wlo = 0; whi = 1; } wlo -= 3; whi += .5;
-  // pine straw: the course mask looked up (bilinear, 2 m) as a soft pseudo-distance with a ragged edge; never on anything mown
+  // pine straw: the softened course mask looked up (bilinear, 2 m) as a soft pseudo-distance with a ragged edge; never on anything mown
   const SM = GC.straw, straw = SM ? (X, Z) => {
     const u = (C.enu(X, Z)[0] - GR.e0) / GR.res - .5, v = (C.enu(X, Z)[1] - GR.n0) / GR.res - .5;
     if (u < 0 || v < 0 || u >= GR.W - 1 || v >= GR.H - 1) return R;
     const iu = u | 0, iv = v | 0, fu = u - iu, fv = v - iv, k = iv * GR.W + iu;
     const s = (SM[k] * (1 - fu) + SM[k + 1] * fu) * (1 - fv) + (SM[k + GR.W] * (1 - fu) + SM[k + GR.W + 1] * fu) * fv;
-    return (.5 - s) * 3.2 + .9 * fbm(X * .21, Z * .21, seed + 61, 2);
+    return (.5 - s) * 8 + .9 * fbm(X * .21, Z * .21, seed + 61, 2);   // (the softened mask's edge is about 2.5 times less steep than the raw one's: scaled up so the ragged edge stays as ragged)
   } : null;
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
     const k = j * w + i, q = k * 4, X = FG.x0 + i * FG.res, Z = FG.z0 + j * FG.res;
@@ -2399,8 +2454,8 @@ function buildRealWater(C, grp) {
     const { i0, j0, ww, hh, sd } = p.win, pos = [], idx = []; let nv = 0;
     for (let j = 0; j < hh - 1; j++) for (let i = 0; i < ww - 1; i++) {
       if (Math.min(sd[j * ww + i], sd[j * ww + i + 1], sd[(j + 1) * ww + i], sd[(j + 1) * ww + i + 1]) > 2.2) continue;
-      const X = FG.x0 + (i + i0) * res, Z = FG.z0 + (j + j0) * res;
-      pos.push(X, p.lv, Z, X + res, p.lv, Z, X, p.lv, Z + res, X + res, p.lv, Z + res);
+      const X = FG.x0 + (i + i0) * res, Z = FG.z0 + (j + j0) * res, lc = p.lc, l = lc ? k => lc[k] : () => p.lv, k0 = j * ww + i;
+      pos.push(X, l(k0), Z, X + res, l(k0 + 1), Z, X, l(k0 + ww), Z + res, X + res, l(k0 + ww + 1), Z + res);
       idx.push(nv, nv + 2, nv + 1, nv + 1, nv + 2, nv + 3); nv += 4;
     }
     if (!nv) continue;

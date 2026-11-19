@@ -1113,7 +1113,7 @@ def main():
         if getattr(course, 'STRAW', False):
             mown = list(fair) + [f['poly'] for f in F['tee'] + F['green'] + F['bunker'] + F['rough']]
             sa = pines.straw_area(trees, mown, list(water) + list(creek) + list(paths), bound)
-            rooms = pines.tee_rooms([f['poly'] for f in F['tee']], holes)   # walled tee rooms (course.TEE_ROOMS: Augusta 13): straw beds packed with azaleas round a grass chute
+            rooms = pines.tee_rooms([f['poly'] for f in F['tee']], holes, list(fair) + [f['poly'] for f in F['tee'] + F['green'] + F['bunker']], list(water) + list(creek))   # walled tee rooms (course.TEE_ROOMS: Augusta 13): straw beds packed with azaleas round a grass chute
             if rooms:
                 rgrass = unary_union([rm['grass'] for rm in rooms])
                 sa = sa.union(unary_union([rm['beds'] for rm in rooms])).difference(rgrass)
