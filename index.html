@@ -4158,6 +4158,19 @@ function galAway(GAL, cx, cz, dx, dz, k) {
   for (const a of [0, .45, -.45, .9, -.9, 1.35, -1.35]) { const ca = Math.cos(a), sa = Math.sin(a), ux = dx * ca - dz * sa, uz = dx * sa + dz * ca, x = cx + ux * k, z = cz + uz * k; if (galSpot(GAL, x, z)) return [x, z]; }
   return null;
 }
+// out from (cx, cz) to at least R, never giving up: the fan along the crowd first (galAway), then every way round at growing distances, and if no allowed spot
+// is that near (the rope, water, a green or the edge of the course in the way), straight out from the hole's line, away from the course, until clear
+// (a patron left standing beside the ball looked wrong)
+function galFar(GAL, cx, cz, dx, dz, R) {
+  for (const k of [0, 2, 5]) { const to = galAway(GAL, cx, cz, dx, dz, R + k + .8 * Math.random()); if (to) return to; }
+  const a0 = Math.atan2(dz, dx);
+  for (const k of [0, 4, 9, 15, 24]) for (let j = 1; j < 24; j++) { const a = a0 + (j % 2 ? 1 : -1) * Math.ceil(j / 2) * Math.PI / 12, x = cx + Math.cos(a) * (R + k), z = cz + Math.sin(a) * (R + k); if (galSpot(GAL, x, z)) return [x, z]; }
+  const C = G.C, q = polyQ(C.center, cx, cz, 600), sg = q.d < 1e5 ? C.center.segs[q.seg] : null; let ox = dx, oz = dz;
+  if (sg) { const px = sg.ax + (sg.bx - sg.ax) * q.u, pz = sg.az + (sg.bz - sg.az) * q.u; if (Math.hypot(cx - px, cz - pz) > .5) { ox = cx - px; oz = cz - pz; } }
+  const ol = Math.hypot(ox, oz) || 1; ox /= ol; oz /= ol;
+  for (let t = R; t < R + 60; t += 1.5) { const x = cx + ox * t, z = cz + oz * t; if (galDry(x, z) && C.fieldAt(C.F.fair, x, z) > 2 && C.fieldAt(C.F.green, x, z) > 4) return [x, z]; }
+  return null;
+}
 function galleryPart(bx, bz) {
   const GAL = W.gallery; if (!GAL || !GAL.pats.length) return;
   // "among the patrons": one within 1.5 m of the ball, or two within 3 m
@@ -4167,7 +4180,7 @@ function galleryPart(bx, bz) {
   for (const p of GAL.pats) {
     let dx = p.x - bx, dz = p.z - bz; const d = Math.hypot(dx, dz); if (d >= GAL_R) continue;
     if (d < .05) { const a = Math.random() * TAU; dx = Math.sin(a); dz = Math.cos(a); } else { dx /= d; dz /= d; }
-    const to = galAway(GAL, bx, bz, dx, dz, GAL_R + .25 + .9 * (d / GAL_R) + .35 * Math.random()); if (!to) continue;
+    const to = galFar(GAL, bx, bz, dx, dz, GAL_R + .25 + .9 * (d / GAL_R) + .35 * Math.random()); if (!to) continue;
     galGo(GAL, p, to[0], to[1], Math.atan2(bx - to[0], bz - to[1]), .15 + .55 * Math.random(), GAL_WALK + .4 * Math.random());   // (they turn to watch the shot)
   }
   for (const o of GAL.stakes) {
@@ -4186,8 +4199,7 @@ function galTarget(GAL, p) {
   const bx = c.bx, bz = c.bz; let x = p.ox, z = p.oz, moved = false;
   const d = Math.hypot(x - bx, z - bz);
   if (d < GAL_CLEAR) {   // out along the way it lies from the ball, to the edge of the ring
-    const dx = d < .05 ? 1 : (x - bx) / d, dz = d < .05 ? 0 : (z - bz) / d; let to = null;
-    for (const k of [0, 4, 9, 15]) { to = galAway(GAL, bx, bz, dx, dz, GAL_CLEAR + .5 + k + 1.2 * Math.random()); if (to) break; }
+    const dx = d < .05 ? 1 : (x - bx) / d, dz = d < .05 ? 0 : (z - bz) / d, to = galFar(GAL, bx, bz, dx, dz, GAL_CLEAR + .5 + 1.2 * Math.random());
     if (to) { x = to[0]; z = to[1]; moved = true; }
   }
   for (const [ux, uz, len] of c.lines) {
