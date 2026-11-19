@@ -659,7 +659,9 @@ Pine straw: rust-brown straw on the floor under every stand of trees (`straw` in
 Azaleas in bloom (mounded clumps in the four Southern Indica cultivars reported as the club's common ones: 'Formosa' magenta-violet, two in five;
   'Judge Solomon' rose-salmon pink, 'George L. Tabor' pale orchid pink, 'Mrs. G. G. Gerbing' white) along the edge of the straw, always: most on 13 (down the left along the creek and round the
   green, about 610 clumps), then 10 (left of the green), 12 (the hill behind the green), 2, 11, 16, 9 and 15 (`course.PLANTINGS`, `buildAzaleas`). None on 18 yet.
-Stone bridges (arched ashlar spans with parapets; a bronze plaque on the named ones), always, where OSM maps them: the Ben Hogan Bridge (12), the Byron Nelson Bridge
+Stone bridges (after the user's photograph of the Hogan and Nelson bridges: a low, gently crowned span on round arches springing from the water, three on a
+  long bridge and two or one on a short one, walls of dark fieldstone in pale mortar, a low stone lip along each edge and a strip of green turf on top; the
+  bronze name plaque on a short post at one end of the named ones; `buildStoneBridges`, `fieldTex`; drawn only, a ball passes through them), always, where OSM maps them: the Ben Hogan Bridge (12), the Byron Nelson Bridge
   (13 tee), the Gene Sarazen Bridge (15) and four unnamed spans (`bridges`, `buildStoneBridges`).
 Namesake and landmark plants, always, hand-placed (`course.SPECIMENS`, `pines.specimens`, tree kinds 5 and 9-15 in `buildRealTrees`):
   - Magnolia Lane: 60 Southern magnolias (61 planted in the late 1850s, one lost to Hurricane Helene in 2024) in two rows along the drive from Washington Road

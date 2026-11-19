@@ -3112,21 +3112,6 @@ function buildAzaleas(C, grp) {
 }
 // Augusta's stone bridges (real-course data with a name, possibly empty: [e, n, length, width, deck bearing, name]): an arched
 // ashlar span from bank to bank with an arch over the water, parapets with a coping, and a bronze plaque on the named ones
-let _stoneTex = null;
-function stoneTex() {
-  if (_stoneTex) return _stoneTex;
-  const cv = document.createElement('canvas'); cv.width = cv.height = 128; const g = cv.getContext('2d'), r = mulberry32(77);
-  g.fillStyle = '#a99c88'; g.fillRect(0, 0, 128, 128);
-  for (let row = 0; row < 4; row++) {
-    let x = row % 2 ? -18 : 0;
-    while (x < 128) {
-      const w = 26 + r() * 22, l = 70 + r() * 16, hu = 32 + r() * 10;
-      g.fillStyle = `hsl(${hu},${14 + r() * 10}%,${l}%)`; g.fillRect(x + 1.5, row * 32 + 1.5, w - 3, 29);
-      x += w;
-    }
-  }
-  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(.55, .7); _stoneTex = t; return t;
-}
 // cart-path bridges (course data `cartBridges`, [e, n, length, width, deck bearing]; Eagle Ridge South's creek crossings): a concrete deck from bank to
 // bank, level with the higher bank and clear of the water (it tilts if the banks differ), girders under it, a sill at each end, and timber rails and posts
 // along both sides. A ball over the deck lands on it as on a cart path (C.h, C.surf, C.surfInfo, C.wl and C.grad are wrapped: the deck is flat ground, hard
@@ -3165,47 +3150,77 @@ function buildCartBridges(C, grp) {
   C.surfInfo = (x, z, hh) => { const inf = info0(x, z, hh); if (deckAt(x, z)) { inf.surf = S.PATH; inf.water = -1; inf.stripe = 0; } return inf; };
   C.surf = (x, z) => deckAt(x, z) ? S.PATH : surf0(x, z);
 }
+// Augusta's stone bridges (Ben Hogan to the 12th green, Byron Nelson off the 13th tee, Gene Sarazen on 15 and the unnamed spans), after the user's
+// photograph: a low, gently humped span on round arches springing from the water (three on a long bridge, two or one on a short one), walls of dark
+// fieldstone set in pale mortar (fieldTex), a low stone lip along each edge instead of a parapet, and a strip of green turf on top (the real one is
+// artificial turf); the bronze name plaque stands on a low post at one end of a named bridge
+let _fieldTex = null;
+function fieldTex() {
+  if (_fieldTex) return _fieldTex;
+  const S2 = 256, cv = document.createElement('canvas'); cv.width = cv.height = S2; const g = cv.getContext('2d'), r = mulberry32(1934);
+  g.fillStyle = '#8e8a7f'; g.fillRect(0, 0, S2, S2);   // the mortar
+  const stone = (x, y, rx, ry) => {   // a rounded, lumpy stone (drawn three times across the edges, so the tile repeats seamlessly)
+    const n = 7 + (r() * 4 | 0), pts = []; for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2, f = .78 + r() * .3; pts.push([Math.cos(a) * rx * f, Math.sin(a) * ry * f]); }
+    const hu = 20 + r() * 25, sat = 4 + r() * 12, l = r() < .18 ? 52 + r() * 14 : 22 + r() * 22, col = `hsl(${hu},${sat}%,${l}%)`, hi = `hsl(${hu},${sat}%,${Math.min(80, l + 10)}%)`;
+    for (const ox of [-S2, 0, S2]) for (const oy of [-S2, 0, S2]) {
+      const cx = x + ox, cy = y + oy; if (cx < -40 || cx > S2 + 40 || cy < -40 || cy > S2 + 40) continue;
+      g.beginPath(); pts.forEach(([px, py], k) => k ? g.lineTo(cx + px, cy + py) : g.moveTo(cx + px, cy + py)); g.closePath(); g.fillStyle = col; g.fill();
+      g.beginPath(); g.ellipse(cx - rx * .25, cy - ry * .3, rx * .45, ry * .3, 0, 0, Math.PI * 2); g.fillStyle = hi; g.globalAlpha = .35; g.fill(); g.globalAlpha = 1;
+    }
+  };
+  for (let row = 0; row < 13; row++) { let x = r() * 20; const y = row * (S2 / 13) + 8; while (x < S2) { const rx = 9 + r() * 10, ry = 9 + r() * 4; stone(x + rx, y + (r() - .5) * 5, rx, ry); x += rx * 2 - 1 + r() * 2; } }   // (set close: thin joints)
+  for (let k = 0; k < 140; k++) stone(r() * S2, r() * S2, 4 + r() * 4, 3 + r() * 3);   // (chips filling the gaps)
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(.36, .36); t.anisotropy = 4; _fieldTex = t; return t;   // (a tile about 2.8 m: stones of 20-45 cm)
+}
 function buildStoneBridges(C, grp) {
-  const I = C.inner;
+  const I = C.inner, mat = new THREE.MeshLambertMaterial({ map: fieldTex() }), fc = hexToRgb(PAL[S.FAIR]), turfM = new THREE.MeshLambertMaterial({ color: new THREE.Color(fc[0] * .78, fc[1] * .82, fc[2] * .7) });
   for (const b of RDC.data.bridges || []) {
     if (typeof b[5] !== 'string') continue;
     const q0 = C.loc(b[0], b[1]), q1 = C.loc(b[0] + Math.cos(b[4] * DEG), b[1] + Math.sin(b[4] * DEG)), cx = q0[0], cz = -q0[1];
     if (cx < I.minX - 60 || cx > I.maxX + 60 || cz < I.minZ - 60 || cz > I.maxZ + 60) continue;
     const ax = q1[0] - q0[0], az = -(q1[1] - q0[1]), L = b[2], Wd = b[3];
-    // the deck: from bank to bank, humped over the middle and clear of the water
+    // the deck: from bank to bank, gently humped over the middle and clear of the water
     const hAt = u => C.h(cx + ax * u, cz + az * u), y0 = hAt(-L / 2) + .05, y1 = hAt(L / 2) + .05;
     let wl = -1e9; for (let u = -L / 2; u <= L / 2; u += 1) wl = Math.max(wl, C.wl(cx + ax * u, cz + az * u));
     let lo = 1e9; for (let u = -L / 2; u <= L / 2; u += .5) lo = Math.min(lo, hAt(u));
-    const mid = (y0 + y1) / 2, rise = Math.max(clamp(.25 + .045 * L, .35, 1.4), (wl > -1e8 ? wl : lo) + 1.25 - mid);
-    const deck = u => lerp(y0, y1, u / L + .5) + rise * Math.sin(Math.PI * (u / L + .5)), N = Math.max(8, Math.ceil(L / .8));
-    const base = Math.min(lo, wl > -1e8 ? wl : lo) - 1.2, spring = Math.max(base + .25, (wl > -1e8 ? wl : lo) - .25), span = L * .3, crown = Math.min(deck(0) - .55, spring + span * .9);
+    const water = wl > -1e8 ? wl : lo, mid = (y0 + y1) / 2, rise = Math.max(clamp(.2 + .03 * L, .3, 1), water + 2.1 - mid);   // (the deck about 2 m over the water at its middle: room for round arches)
+    const deck = u => lerp(y0, y1, u / L + .5) + rise * Math.pow(Math.sin(Math.PI * (u / L + .5)), .55), N = Math.max(10, Math.ceil(L / .6));   // (a flattish crown over the arches, easing down to the banks)
+    const base = Math.min(lo, water) - 1.2, spring = water - .1;
     const sh = new THREE.Shape(); sh.moveTo(-L / 2, base);
     for (let k = 0; k <= N; k++) { const u = -L / 2 + L * k / N; sh.lineTo(u, deck(u)); }
     sh.lineTo(L / 2, base); sh.lineTo(-L / 2, base);
-    if (crown > spring + .4) { const hole = new THREE.Path(); hole.moveTo(span, spring); hole.absellipse(0, spring, span, crown - spring, 0, Math.PI, false); hole.lineTo(span, spring); sh.holes.push(hole); }
-    const mat = new THREE.MeshLambertMaterial({ map: stoneTex() }), cap = lambert(0xd9d0c0), g = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: Wd, bevelEnabled: false, curveSegments: 18 }), mat); body.position.z = -Wd / 2; g.add(body);
-    // parapets and their coping
-    for (const sd of [-1, 1]) {
-      const ps = new THREE.Shape(); ps.moveTo(-L / 2 - .3, deck(-L / 2) + .02);
-      for (let k = 0; k <= N; k++) { const u = -L / 2 + L * k / N; ps.lineTo(u, deck(u) + .72); }
-      ps.lineTo(L / 2 + .3, deck(L / 2) + .02);
-      for (let k = N; k >= 0; k--) { const u = -L / 2 + L * k / N; ps.lineTo(u, deck(u) - .02); }
-      const pw = new THREE.Mesh(new THREE.ExtrudeGeometry(ps, { depth: .34, bevelEnabled: false }), mat); pw.position.z = sd * (Wd / 2 - .17) - .17; g.add(pw);
-      for (let k = 0; k < N; k++) {
-        const ua = -L / 2 + L * k / N, ub = ua + L / N, ya = deck(ua) + .72, yb = deck(ub) + .72, cl = Math.hypot(ub - ua, yb - ya);
-        const cp = new THREE.Mesh(unitBox, cap); cp.scale.set(cl + .04, .1, .46); cp.position.set((ua + ub) / 2, (ya + yb) / 2 + .05, sd * (Wd / 2 - .17)); cp.rotation.z = Math.atan2(yb - ya, ub - ua); g.add(cp);
-      }
-      for (const e of [-1, 1]) { const pier = new THREE.Mesh(unitBox, cap); pier.scale.set(.55, 1.05, .55); pier.position.set(e * (L / 2 + .15), deck(e * L / 2) + .5, sd * (Wd / 2 - .17)); g.add(pier); }
+    // the arches: round where there is room, flattened (half an ellipse) where the deck is close above the water
+    const nA = L >= 13 ? 3 : L >= 8 ? 2 : 1, ab = L * .07, pier = Math.max(.55, L * .05), sp = (L - 2 * ab - (nA - 1) * pier) / nA;
+    for (let k = 0; k < nA; k++) {
+      const c = -L / 2 + ab + sp / 2 + k * (sp + pier), top = Math.min(deck(c - sp / 2), deck(c + sp / 2), deck(c)) - .45;
+      const hw = Math.min(sp / 2, (top - spring) * 1.15), ry = Math.min(hw * 1.05, top - spring);   // (nearly round: an arch too wide for its height is narrowed, the pier takes the rest)
+      if (ry < .25) continue;
+      const hole = new THREE.Path(); hole.moveTo(c + hw, base + .15); hole.lineTo(c + hw, spring); hole.absellipse(c, spring, hw, ry, 0, Math.PI, false); hole.lineTo(c - hw, base + .15); hole.lineTo(c + hw, base + .15);
+      sh.holes.push(hole);
     }
-    if (b[5]) {
-      const cv = document.createElement('canvas'); cv.width = 256; cv.height = 72; const x2 = cv.getContext('2d');
-      x2.fillStyle = '#5b4a2e'; x2.fillRect(0, 0, 256, 72); x2.strokeStyle = '#c9a85c'; x2.lineWidth = 4; x2.strokeRect(4, 4, 248, 64);
-      x2.fillStyle = '#e9cf8a'; x2.font = '700 30px Georgia, serif'; x2.textAlign = 'center'; x2.textBaseline = 'middle'; x2.fillText(b[5], 128, 38);
-      for (const sd of [-1, 1]) {
-        const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.5, .42), new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(cv) }));
-        pl.position.set(0, deck(0) + .38, sd * (Wd / 2 + .01)); if (sd < 0) pl.rotation.y = Math.PI; g.add(pl);
-      }
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: Wd, bevelEnabled: false, curveSegments: 20 }), mat); body.position.z = -Wd / 2; g.add(body);
+    // the low stone lip along each edge
+    const lipH = .16, lipW = .3;
+    for (const sd of [-1, 1]) {
+      const ps = new THREE.Shape(); ps.moveTo(-L / 2, deck(-L / 2) - .02);
+      for (let k = 0; k <= N; k++) { const u = -L / 2 + L * k / N; ps.lineTo(u, deck(u) + lipH); }
+      for (let k = N; k >= 0; k--) { const u = -L / 2 + L * k / N; ps.lineTo(u, deck(u) - .02); }
+      const lp = new THREE.Mesh(new THREE.ExtrudeGeometry(ps, { depth: lipW, bevelEnabled: false }), mat); lp.position.z = sd * (Wd / 2 - lipW / 2) - lipW / 2; g.add(lp);
+    }
+    // the turf on top, between the lips
+    { const pos = [], idx = [], hw = Wd / 2 - lipW;
+      for (let k = 0; k <= N; k++) { const u = -L / 2 + L * k / N, y = deck(u) + .03; pos.push(u, y, -hw, u, y, hw); if (k) { const a = 2 * k - 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } }
+      const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); tg.setIndex(idx); tg.computeVertexNormals();
+      const tm = new THREE.Mesh(tg, turfM); tm.material.side = THREE.DoubleSide; g.add(tm); }
+    if (b[5]) {   // the plaque: bronze, raised letters, on a short post beside the end of the bridge, tilted up to be read
+      const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128; const x2 = cv.getContext('2d');
+      x2.fillStyle = '#6b5532'; x2.fillRect(0, 0, 256, 128); x2.strokeStyle = '#c9a85c'; x2.lineWidth = 5; x2.strokeRect(6, 6, 244, 116);
+      x2.fillStyle = '#ead293'; x2.textAlign = 'center'; x2.textBaseline = 'middle'; x2.font = '700 26px Georgia, serif';
+      const w2 = b[5].split(' '), l1 = w2.slice(0, -1).join(' '), l2 = w2[w2.length - 1]; x2.fillText(l1, 128, 48); x2.fillText(l2, 128, 84);
+      const u = L / 2 + .9, side = Wd / 2 + .35, py = C.h(cx + ax * u, cz + az * u);
+      const post = new THREE.Mesh(unitBox, lambert(0x4a3d29)); post.scale.set(.08, .5, .08); post.position.set(u, py + .25, side); g.add(post);
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(.62, .32), new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(cv) })); pl.position.set(u, py + .55, side); pl.rotation.set(-Math.PI / 2 + .6, -Math.PI / 2, 0, 'YXZ'); g.add(pl);
     }
     g.position.set(cx, 0, cz); g.rotation.y = Math.atan2(-az, ax);
     g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); grp.add(g);
@@ -4544,7 +4559,7 @@ function setCourse(key) {
   $('boardName').textContent = COURSE.name; $('aboutCourse').textContent = COURSE.about; $('musRow').hidden = !COURSE.music; $('crowdRow').hidden = !(COURSE.scene && COURSE.scene.crowd);
   document.querySelectorAll('.courseSel').forEach(el => { el.value = COURSE.key; });
   showBest(); refreshBoards(); try { loadWorld(); } catch (e) { } refreshResume();
-  if (MP.inited && mpIsLobby(MP.room) && MP.room !== mpLobby()) { if (MP.spec) mpResume(true); mpJoin(mpLobby()); } // each course has its own lobby
+  if (MP.inited && mpIsLobby(MP.room) && MP.room !== mpLobby()) { if (MP.spec) mpResume(true); if (MP.client) mpJoin(mpLobby()); else MP.room = mpLobby(); } // each course has its own lobby (joined now only if the server is connected: mpPower)
 }
 
 /* ================= WORLD (three.js) ================= */
@@ -6894,13 +6909,37 @@ function play(name, rate, vol, lp, delay) {
   if (lp) { const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; n.connect(f); n = f; }
   n.connect(g).connect(a.destination); s.start(a.currentTime + (delay || 0)); return true;
 }
+// battery: a running audio context keeps the phone's audio hardware and its render thread awake even when it plays nothing, so the context is
+// put to sleep (suspend) after ACT_IDLE ms with nothing sounding and no loop on (the crowd murmur, a song, the cart radio, the music), and woken by
+// whatever wants to sound next (audio(), acWake). Every source started on the context is stamped here: when it ends, or that it loops
+let ACT = { until: 0, loops: new Set(), sleep: false };
+const ACT_IDLE = 4000;
+function acTrack(a) {
+  const wrap = make => function (...x) {
+    const n = make.apply(a, x), st = n.start.bind(n);
+    n.start = (when, off, dur) => {
+      const t0 = performance.now() + Math.max(0, (when || 0) - a.currentTime) * 1000;
+      if (n.loop) { ACT.loops.add(n); n.addEventListener('ended', () => ACT.loops.delete(n)); }
+      else { const d = dur != null ? dur : n.buffer ? n.buffer.duration / Math.max(.05, n.playbackRate ? n.playbackRate.value : 1) : 1.5; ACT.until = Math.max(ACT.until, t0 + d * 1000); }
+      return st(when, off, dur);
+    };
+    return n;
+  };
+  a.createBufferSource = wrap(a.createBufferSource); a.createOscillator = wrap(a.createOscillator);
+}
+function acIdle(now) {
+  const a = AC; if (!a || ACT.sleep || a.state !== 'running' || ACT.loops.size || SONG.on || CARTM.on || now < ACT.until + ACT_IDLE) return;
+  ACT.sleep = true; try { const p = a.suspend(); if (p && p.catch) p.catch(() => { }); } catch (e) { }
+}
+function acWake() { const a = AC; if (!a || !ACT.sleep) return; ACT.sleep = false; ACT.until = performance.now() + 1000; try { const p = a.resume(); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
 let AC = null;
 // Safari 16.4+: play like media (also past the silent switch) and let the system hand the audio back after an interruption. The session is claimed
 // only while the game is on screen and given back ('auto') the moment the page is hidden, so music in another app is never held up by the game.
 const audioSess = t => { try { if (navigator.audioSession && navigator.audioSession.type !== t) navigator.audioSession.type = t; } catch (e) { } };
 function audio() {
-  if (!AC || AC.state === 'closed') { audioSess('playback'); try { AC = new (window.AudioContext || window.webkitAudioContext)(); loadSounds(AC); const me = AC; me.onstatechange = () => { if (AC === me && !document.hidden && me.state !== 'running') wakeAudio(false); }; } catch (e) { } }
-  if (AC && AC.state !== 'running') { try { const p = AC.resume(); if (p && p.catch) p.catch(() => { }); } catch (e) { } } // iOS also uses 'interrupted' after another app has had the audio
+  if (!settings.sound) { if (AC) dropAudio(); return null; }   // battery: no audio context at all with the sound off (it keeps the audio hardware awake)
+  if (!AC || AC.state === 'closed') { audioSess('playback'); try { AC = new (window.AudioContext || window.webkitAudioContext)(); acTrack(AC); loadSounds(AC); const me = AC; me.onstatechange = () => { if (AC === me && !document.hidden && !ACT.sleep && me.state !== 'running') wakeAudio(false); }; } catch (e) { } }
+  if (AC && AC.state !== 'running') { ACT.sleep = false; try { const p = AC.resume(); if (p && p.catch) p.catch(() => { }); } catch (e) { } } // iOS also uses 'interrupted' after another app has had the audio
   return AC;
 }
 // iOS suspends (or interrupts) the audio when the app is left, and only lets a touch bring it back: every return to the app and every
@@ -6915,7 +6954,7 @@ function wakeAudio(fromTouch) {
 ['pointerdown', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => { wakeAudio(true); songTick(performance.now(), true); }, true));
 // iOS can bring a context back reporting 'running' while it is silent (after another app or a call had the audio), and that state is not
 // reliable, so the context is dropped whenever the page is hidden; the next touch on return builds a fresh one (the decoded samples are reused)
-function dropAudio() { try { songPause(false); } catch (e) { } const a = AC; AC = null; if (a) { try { a.onstatechange = null; a.close(); } catch (e) { } } audioSess('auto'); }
+function dropAudio() { try { songPause(false); } catch (e) { } ACT.loops.clear(); ACT.sleep = false; const a = AC; AC = null; if (a) { try { a.onstatechange = null; a.close(); } catch (e) { } } audioSess('auto'); }
 document.addEventListener('visibilitychange', () => { if (document.hidden) { dropAudio(); try { saveRound(); } catch (e) { } } else wakeAudio(false); });
 window.addEventListener('pagehide', () => { try { saveRound(); } catch (e) { } });
 window.addEventListener('pagehide', dropAudio);
@@ -7020,7 +7059,7 @@ function cartMusicTick() {
   const want = e.st !== 'wait' && G.state !== 'title' && settings.sound && !document.hidden && songLevel() > 0;
   if (!want) { if (CARTM.on) cartMusicStop(); return; }
   if (!CARTM.buf) { cartMusicLoad(); return; }
-  const a = AC; if (!a || a.state !== 'running') { if (CARTM.on) cartMusicStop(); return; }
+  acWake(); const a = AC; if (!a || a.state !== 'running') { if (CARTM.on) cartMusicStop(); return; }
   if (!CARTM.on || CARTM.ctx !== a) {
     cartMusicStop();
     if (CARTM.ctx !== a) {
@@ -7065,6 +7104,7 @@ function birdTick(now) {
   if (settings.sound && !document.hidden) { poolNext(FART_POOL, now); poolNext(BP, now); if (GC.hw) poolNext(TRUCK_POOL, now); }   // one of each kind ready (the truck only on a course with a road)
   if (G.hole !== BIRD.hole) { BIRD.hole = G.hole; BIRD.next = now + 1500 + Math.random() * 2500; }
   if (now < BIRD.next) return;
+  if (ACT.sleep && settings.sound && !document.hidden && G.state !== 'title' && !holeSong(G.hole)) acWake();   // (a bird is due: the sleeping context wakes, it sings on the next check)
   if (!settings.sound || document.hidden || G.state === 'title' || holeSong(G.hole) || !AC || AC.state !== 'running') { BIRD.next = now + 1000; return; }
   if (now < BIRD.hold) { BIRD.next = BIRD.hold + 1500 + Math.random() * 4000; return; }   // the crowd is making a noise: the birds wait for it
   const bk = poolReady(BP);
@@ -7105,7 +7145,7 @@ function mpJoin(code) {
 function mpConnect(lib) {
   if (!MP.room) return;
   const q = new URLSearchParams(location.search).get('mqtt'), url = q || MP_BROKERS[MP.bi % MP_BROKERS.length];
-  const c = lib.connect(url, { clientId: 'ssg_' + MP.id + '_' + Math.random().toString(36).slice(2, 6), clean: true, keepalive: 30, reconnectPeriod: 4000, connectTimeout: 15000,
+  const c = lib.connect(url, { clientId: 'ssg_' + MP.id + '_' + Math.random().toString(36).slice(2, 6), clean: true, keepalive: 60, reconnectPeriod: 4000, connectTimeout: 15000,
     will: { topic: mpT('s/' + MP.id), payload: '', retain: true, qos: 0 } });
   MP.client = c;
   c.on('connect', () => { MP.fails = 0; MP.st = 'on'; c.subscribe([mpT('+/+')].concat(Object.keys(COURSES).map(k => `galena/v1/${mpLobby(k)}/+/+`).filter(t => !t.startsWith(mpT(''))))); mpState(true); mpSync(); }); // my room, and every course's public lobby (who is playing where)
@@ -7400,9 +7440,23 @@ function mpInit() {
   };
   const q = mpClean(new URLSearchParams(location.search).get('room'));
   MP.inited = true;
-  mpJoin(q || settings.room || mpLobby()); // a private room from the link or from before, else this course's public lobby
+  MP.room = q || mpClean(settings.room || '') || mpLobby(); // a private room from the link or from before, else this course's public lobby: joined once it is wanted (mpPower)
+  mpPower(performance.now(), true);
   mpSync();
 }
+// battery: the room server is connected only while it is any use: in a round or practice, while a sheet is open (Settings shows who is online), or in a
+// private room; MP_PARK ms after it stops being wanted (back on the title screen) it is let go, and at once when the app is hidden. An open socket wakes
+// the phone's radio for every keepalive and every other player's heartbeat
+const MP_PARK = 45000;
+function mpWanted() { return !document.hidden && !!MP.room && (G.state !== 'title' || sheetOpen() || !mpIsLobby(MP.room)); }
+function mpPower(now, force) {
+  if (!MP.inited || (!force && now - (MP.powT || 0) < 1000)) return; MP.powT = now;
+  if (mpWanted()) { MP.idleT = 0; if (!MP.client) mpJoin(MP.room); return; }
+  if (!MP.client) return;
+  if (document.hidden) { mpLeave(true); return; }
+  if (!MP.idleT) MP.idleT = now; else if (now - MP.idleT > MP_PARK) { MP.idleT = 0; mpLeave(true); }
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden && MP.client) mpLeave(true); else if (!document.hidden) mpPower(performance.now(), true); });
 
 /* ---------- the crowd (courses with scene.crowd: Augusta) ----------
    Synthesised, no recordings (the music is made the same way); every sound is built by a function that takes the audio context, an output node
@@ -7515,6 +7569,7 @@ function crowdGasp() { if (!crowdOn()) return; const now = performance.now(); if
 function crowdGroan(x, z) { if (!crowdOn() || crowdLevel(x, z) < .12) return; const now = performance.now(); if (now - CROWD.last < 2500) return; CROWD.last = now; setTimeout(() => { if (crowdOn()) crowdPlay(crowdGroanSnd); }, 450); }
 // the murmur and the far roars, checked a few times a second
 function crowdTick() {
+  if (ACT.sleep && settings.sound && settings.crowd !== false && RDC && RDC.scene && RDC.scene.crowd && !document.hidden && G.state !== 'title' && G.C) acWake();
   const a = AC, on = crowdOn() && G.state !== 'title' && G.C;
   if (!on) { if (CROWD.mur) { try { const m = CROWD.mur; m.g.gain.setTargetAtTime(0, a.currentTime, .3); setTimeout(() => { try { m.src.forEach(x => x.stop()); } catch (e) { } }, 1500); } catch (e) { } CROWD.mur = null; } return; }
   const out = crowdBus(a), nowp = performance.now(); poolNext(CROWD_POLITE_POOL, nowp); poolNext(CROWD_ROAR_POOL, nowp); poolNext(CROWD_GROAN_POOL, nowp);
@@ -7538,7 +7593,6 @@ function crowdTick() {
     else { crowdPlay(crowdRoar, true); const hot = hole >= 11 && hole <= 16; CROWD.farAt = now + (hot ? 70000 + Math.random() * 90000 : 180000 + Math.random() * 240000); }
   }
 }
-setInterval(crowdTick, 300);
 /* ---------- background music (courses with music: true in COURSES) ---------- */
 // An original, calm piece in the spirit of a spring afternoon in Georgia (not the Masters theme, which is copyrighted): fingerpicked
 // guitar (Karplus-Strong strings) under a soft piano in D major, 66 bpm. About ten minutes before it comes round again: the tune, two
@@ -7648,12 +7702,11 @@ function musStep(a, st, t) {
 }
 function musicTick() {
   if (!musicWanted()) { musicStop(); return; }
-  const a = AC; if (!a || a.state !== 'running') return; // the context is made (and woken) by a touch; music joins in once it runs
+  acWake(); const a = AC; if (!a || a.state !== 'running') return; // the context is made (and woken) by a touch; music joins in once it runs
   if (MUS.ac !== a) musSetup(a);
   if (MUS.next < a.currentTime) { MUS.next = a.currentTime + .1; }
   while (MUS.next < a.currentTime + .7) { musStep(a, MUS.step, MUS.next); MUS.next += MUS_E; MUS.step++; }
 }
-setInterval(musicTick, 200);
 const HIT_PITCH = .88, HIT_VOL = .76, HIT_LP = 2400; // the strike sound: playback rate, level and low-pass cutoff (Hz) multipliers
 const SFX = {
   // a putt: a soft, short "tap" (synthesised: a quick low thud and a faint click), a little firmer for a harder stroke
@@ -10589,7 +10642,7 @@ function initInput() {
   $('mBoard').onclick = openBoard;
   document.querySelectorAll('#segRev button').forEach(b => b.onclick = () => { settings.reverse = +b.dataset.v === 1; saveSettings(); syncMenu(); });
   document.querySelectorAll('#segHand button').forEach(b => b.onclick = () => { settings.hand = +b.dataset.v; saveSettings(); syncMenu(); if (G.C) { G.carryKey = ''; updateAim(true); } });
-  document.querySelectorAll('#segSnd button').forEach(b => b.onclick = () => { settings.sound = b.dataset.v === '1'; saveSettings(); syncMenu(); musicTick(); });
+  document.querySelectorAll('#segSnd button').forEach(b => b.onclick = () => { settings.sound = b.dataset.v === '1'; saveSettings(); syncMenu(); if (!settings.sound) dropAudio(); else wakeAudio(true); musicTick(); });
   $('pidSend').onclick = pidSend; $('pidReq').onclick = pidCopy; $('pidChk').onclick = pidCheck;
   document.querySelectorAll('#segSong button').forEach(b => b.onclick = () => { settings.song = +b.dataset.v; saveSettings(); syncMenu(); songLevelApply(); });
   document.querySelectorAll('#segZoom button').forEach(b => b.onclick = () => { settings.zoom = b.dataset.v === '1'; saveSettings(); syncMenu(); });
@@ -10651,7 +10704,8 @@ let lastT = performance.now(), dueT = 0;
 // and after IDLE_AFTER ms at rest with no touch or key (standing over the ball, or on the title screen; counted from the later of the last
 // touch and the last full-speed frame, so arriving at the ball after a long shot starts the count afresh) it drops to IDLE_FPS: the flag, the
 // clouds and the animals move a little less smoothly while nobody is looking closely, and the first touch brings back full speed
-const REST_FPS = 30, ACTIVE_FPS = 60, IDLE_FPS = 20, IDLE_AFTER = 10000;
+// (and after DEEP_AFTER ms like that, DEEP_FPS: the phone left lying on the table)
+const REST_FPS = 30, ACTIVE_FPS = 60, IDLE_FPS = 10, IDLE_AFTER = 10000, DEEP_FPS = 5, DEEP_AFTER = 60000;
 // a fingerprint of everything that casts a shadow: where each visible caster stands and how it is turned (matrixWorld), and for an
 // instanced one (birds, the life on the course) how many times its instances were moved. The same number twice means the shadow map
 // would come out the same, so it is not redrawn. Rounded to 2 cm / 0.02: the ball's drawn size follows the camera every frame by far less
@@ -10684,7 +10738,7 @@ function frameGap(now) {
   return g;
 }
 function frameGap0(now) {
-  const active = 1000 / ACTIVE_FPS, rest = 1000 / (now - Math.max(UI.touchT, UI.liveT) > IDLE_AFTER ? IDLE_FPS : REST_FPS);
+  const quiet = now - Math.max(UI.touchT, UI.liveT), active = 1000 / ACTIVE_FPS, rest = 1000 / (quiet > DEEP_AFTER ? DEEP_FPS : quiet > IDLE_AFTER ? IDLE_FPS : REST_FPS);
   if (sceneStill()) return rest;   // (a touch on the sheet does not bring back 60 fps either)
   if (G.state === 'title') return rest;
   if (G.state === 'holed') return G.holedT > 3 && now - UI.touchT >= 700 ? rest : active;
@@ -10693,14 +10747,30 @@ function frameGap0(now) {
   const R = G.rig; if (R && (R.pv.length() > .03 || R.lv.length() > .03)) return active;
   return rest;
 }
+// the light upkeep that must go on even while nothing is drawn: the songs, the cart radio, the birds, the music, the crowd, the audio's sleep and the room server
+function audioUpkeep(now) {
+  songTick(now); cartMusicTick(); birdTick(now);
+  if (now - (UI.musT || 0) >= 200) { UI.musT = now; musicTick(); }
+  if (now - (UI.crowdT || 0) >= 300) { UI.crowdT = now; crowdTick(); }
+  if (now - (UI.acT || 0) >= 1000) { UI.acT = now; acIdle(now); }
+  mpPower(now);
+}
+// battery: with a sheet open over a still scene (its last frame already on screen) the loop wakes 8 times a second instead of 60, for the upkeep only;
+// any touch (closing the sheet) brings the frames straight back
+let stillWait = null;
+function stillWake() { if (stillWait) { clearTimeout(stillWait); stillWait = null; requestAnimationFrame(frame); } }
+['pointerdown', 'pointerup', 'keydown'].forEach(ev => document.addEventListener(ev, stillWake, true));
 function frame(now) {
+  if (W.stillDrawn && sceneStill() && !document.hidden) { audioUpkeep(now); stillWait = setTimeout(() => { stillWait = null; requestAnimationFrame(frame); }, 125); lastT = now; return; }
   requestAnimationFrame(frame);
   const gap = frameGap(now);
   if (now < dueT - 4) return;
-  const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
+  // (the step is capped, so a stall never throws the ball or the animals far; at the idle frame rates it may be as long as the frame, so the
+  // flag, the clouds and the animals keep real time instead of slowing down)
+  const dt = Math.min(Math.max(.05, gap / 1000 * 1.3), (now - lastT) / 1000); lastT = now;
   dueT = Math.min(Math.max(dueT + gap, now - gap), now + gap); // carries the remainder over, so 40 fps on a 60 Hz screen would be two frames in three
   if (G.state === 'intro') G.introT += dt;
-  songTick(now); cartMusicTick(); birdTick(now);
+  audioUpkeep(now);
   if (G.state === 'flight') { updateFlight(dt); if ((G.savedT = (G.savedT || 0) + dt) > 1.5) { G.savedT = 0; saveRound(); } } // the round, with how far the ball has flown
   else if (G.state === 'holed') { G.holedT += dt; if (G.shot && G.shot.res.holed && G.holedT < 3) updateFlight(dt); }
   refreshMapLive(now);
