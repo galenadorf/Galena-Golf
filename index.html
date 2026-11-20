@@ -583,7 +583,7 @@ body:has(#menuSheet.on) #scrim,body:has(#practiceSheet.on) #scrim{background:rgb
 #menuSheet.page.on,#practiceSheet.page.on{opacity:1;pointer-events:auto}
 #menuSheet.page .scBody{padding-bottom:16px}#practiceSheet.page .pracGrid{padding-bottom:6px}
 #practiceSheet.page .pracPair{margin-top:0}
-body:has(#menuSheet.page.on) :is(#title,#play,#glb),body:has(#practiceSheet.page.on) :is(#title,#play,#glb){opacity:0;pointer-events:none}   /* (the page covers the home screen, as the Play and Boards pages do) */
+body:has(#menuSheet.page.on) :is(#title,#play,#glb,#hud),body:has(#practiceSheet.page.on) :is(#title,#play,#glb,#hud){opacity:0;pointer-events:none}   /* (the page covers the home screen, as the Play and Boards pages do) */
 /* TYPE (2026-11-20, picked from mock-ups): Playfair Display titles (B), Homemade Apple handwriting (D), Bebas Neue menu tabs (F), Courier Prime descriptions (C), engraved Cormorant Garamond buttons with a double rule (D); fonts/fonts.css */
 :root{--title:'Playfair Display',Georgia,serif;--hand:'Homemade Apple',cursive;--tab:'Bebas Neue','Oswald',sans-serif;--desc:'Courier Prime','Courier New',monospace;--btn:'Cormorant Garamond',Georgia,serif,'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji'}
 .scHead h1,.pcName,.scTop .pcName,.ic-n{font-family:var(--title);font-weight:900;text-transform:none;letter-spacing:.01em;font-variant-numeric:lining-nums}
@@ -600,7 +600,7 @@ body:has(#menuSheet.page.on) :is(#title,#play,#glb),body:has(#practiceSheet.page
 #menuSheet .mbtn:not(.danger),#menuSheet .mbtn.dark{background:var(--paper);color:var(--g1);border:0;border-radius:2px;text-shadow:none;box-shadow:inset 0 0 0 1.5px var(--g1),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--g1);font-family:var(--btn);font-weight:700;text-transform:uppercase;letter-spacing:.18em;box-shadow:inset 0 0 0 1.5px var(--g1),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--g1)!important}
 #menuSheet .mbtn.danger{background:var(--paper);color:var(--g1);border:0;border-radius:2px;text-shadow:none;box-shadow:inset 0 0 0 1.5px var(--g1),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--g1);font-family:var(--btn);font-weight:700;text-transform:uppercase;color:var(--penred);letter-spacing:.18em;box-shadow:inset 0 0 0 1.5px var(--penred),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--penred)!important}
 .qcard .btn{background:var(--paper);color:var(--g1);border:0;border-radius:2px;text-shadow:none;box-shadow:inset 0 0 0 1.5px var(--g1),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--g1);font-family:var(--btn);font-weight:700;text-transform:uppercase;letter-spacing:.18em}
-.qcard .btn.danger{color:var(--penred);box-shadow:inset 0 0 0 1.5px var(--penred),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--penred)}
+.qcard .btn.danger{background:var(--paper);color:var(--penred);box-shadow:inset 0 0 0 1.5px var(--penred),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--penred)}
 .ic-go{background:var(--g1);color:#fff;border:0;border-radius:2px;text-shadow:none;box-shadow:inset 0 0 0 1.5px #fff,inset 0 0 0 4px var(--g1),inset 0 0 0 5px #fff;font-family:var(--btn);font-weight:700;text-transform:uppercase;letter-spacing:.18em}
 .scStats b{font-family:var(--hand);font-weight:400;color:var(--pen);font-size:30px;line-height:1.35}
 /* play screen: Continue above New round, each the card's full width (side by side the engraved capitals did not fit) */
