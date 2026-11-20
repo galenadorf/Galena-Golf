@@ -68,3 +68,4 @@ PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 MARKERS = {'w': ('gold', 0xd9b23a), 'y': ('black', 0x26282b), 'b': ('white', 0xeeeeee), 'r': ('jade', 0x2f8f6f)}
 
 SMOOTH_MORE = True   # build.py low-passes every mapped line and outline (creeks, roads, cart paths; bunkers, tees, fairways, greens, ponds), area kept
+FINAL_SMOOTH = dict(fair=2.0, fescue=(2.5, 1.5), sand=1.0)   # build.py: a last area-keeping smoothing of the finished fairways, deep rough and bunkers (sigma m); the deep rough was repainted by hand 2026-11-19

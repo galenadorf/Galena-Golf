@@ -34,3 +34,4 @@ TEES = {  # name: (rating, slope, yards per hole)
 ALT = {1: {'black': 151, 'gold': 133, 'silver': 124, 'bronze': 105}, 6: {'gold': 157, 'silver': 147}}  # the other tee on 2 and 7
 # the game's four tee-marker slots: w is the set played, y/b/r the others (tee set, marker colour)
 MARKERS = {'w': ('gold', 0xd9b23a), 'y': ('black', 0x26282b), 'b': ('silver', 0xc9ced3), 'r': ('bronze', 0xb07045)}
+FINAL_SMOOTH = dict(fair=2.0, fescue=(2.5, 1.5), sand=1.0)   # build.py: a last area-keeping smoothing of the finished fairways, deep rough and bunkers (sigma m)

@@ -390,6 +390,9 @@ def face_tees(F, fair, holes0):
         P = t['poly']; c = P.centroid
         # the box's hole: the one whose tee markers (a first build_holes pass) stand in it; a box no tee set uses, or one two holes share, is left alone
         own = {i + 1 for i, h0 in enumerate(holes0) for m in h0['mk'].values() if P.distance(Point(m)) < 1.5}
+        if not own:   # a box no tee set stands in (a spare forward box): it belongs to the hole whose line starts nearest, if one starts within 60 m
+            near = min(F['hole'], key=lambda q: Point(q['line'].coords[0]).distance(c))
+            if Point(near['line'].coords[0]).distance(c) < 60: own = {near['ref']}
         if len(own) != 1 or next(iter(own)) not in byref:
             if own: print('  face_tees skip: box shared by holes', sorted(own))
             continue
@@ -398,7 +401,7 @@ def face_tees(F, fair, holes0):
         green = min(F['green'], key=lambda q: q['poly'].distance(Point(L.coords[-1])))['poly'].centroid if par == 3 or fu is None else None
         tx, ty = tee_target(L, c, fu, green)
         r = P.minimum_rotated_rectangle
-        if r.geom_type != 'Polygon' or P.area / max(r.area, 1e-6) < .6:   # too irregular to have a facing
+        if r.geom_type != 'Polygon' or P.area / max(r.area, 1e-6) < .85:   # not a rectangle (a kidney or other mapped shape): it keeps the way it was drawn
             print('  face_tees skip: irregular box, hole', hh['ref']); continue
         rc = list(r.exterior.coords); a = math.hypot(rc[1][0] - rc[0][0], rc[1][1] - rc[0][1]); b = math.hypot(rc[2][0] - rc[1][0], rc[2][1] - rc[1][1])
         k = 0 if a >= b else 1; e0 = math.atan2(rc[k + 1][1] - rc[k][1], rc[k + 1][0] - rc[k][0])   # the long side
@@ -409,6 +412,7 @@ def face_tees(F, fair, holes0):
         # a tee box is longer front to back than across, so its long side goes down the line; a squarish box (or one plainly built
         # wide, its long side over 60 degrees off the line) just takes the smallest turn that lines a side up
         dev = dl if max(a, b) > 1.3 * min(a, b) and abs(dl) <= math.radians(60) else (tb - e0 + math.pi / 4) % (math.pi / 2) - math.pi / 4
+        if os.environ.get('TEE_DBG'): print(f"  TEE hole {hh['ref']} par {par} c=({c.x:.0f},{c.y:.0f}) area {P.area:.0f} a={a:.1f} b={b:.1f} turn {math.degrees(dev):+.1f}")
         if abs(dev) < math.radians(1.5):
             continue
         t['poly'] = affinity.rotate(P, dev, origin=c, use_radians=True)
@@ -770,6 +774,8 @@ def main():
                     f['poly'] = smooth_poly(f['poly'], sg)
     for f in F['tee']:   # every tee box, mapped or painted, on every course: straight edges and square corners (common.tee_rect)
         f['poly'] = tee_rect(f['poly'])
+        if len(f['poly'].exterior.coords) > 5:   # a box that is not a rectangle (a kidney, an L): clean, smooth lines, no sharp points, its area kept
+            f['poly'] = smooth_poly(f['poly'], 1.6)
     if getattr(course, 'TEE_FACE', False):   # every tee box faces down its hole: front and back edges square to the way the hole plays (hole_dir)
         for f in F['tee']:
             hl = min(F['hole'], key=lambda hh: hh['line'].distance(f['poly']))
@@ -1105,6 +1111,26 @@ def main():
         elif key == 'fescue': fescue = [g for q in fescue for g in fin(q)]
         elif key == 'bound': bound = max(fin(bound), key=lambda g: g.area)
         print(f'FINAL_ROUND {key}: closed {rc} m, opened {ro} m')
+    for key, sg in getattr(course, 'FINAL_SMOOTH', {}).items():   # {layer: sigma m}: the same area-keeping low-pass as SMOOTH_MORE, as a last pass on the finished layer (hand-painted deep rough, fairways and bunkers keep corners and wobbles that freehand paint leaves)
+        sg, op = sg if isinstance(sg, (tuple, list)) else (sg, 0)   # (sigma, opening m): an opening takes off spikes and strips narrower than twice it
+        def sm(q, sg=sg, op=op):
+            q = q.buffer(0)
+            if op:
+                q = q.buffer(-op, quad_segs=8).buffer(op, quad_segs=8)
+                if q.is_empty: return []
+            r = smooth_poly(q, sg)
+            return [g for g in getattr(r, 'geoms', [r]) if g.geom_type == 'Polygon' and g.area > 2]
+        if key == 'fair':   # (the fairway ring round a green stays as it was)
+            gb = unary_union([g['poly'] for g in F['green']]).buffer(3)
+            fair = [g for q in fair for r in [unary_union(sm(q) + [q.intersection(gb)]).buffer(0)] for g in getattr(r, 'geoms', [r]) if g.geom_type == 'Polygon' and g.area > 2]
+        elif key == 'fescue':
+            fescue = [g.intersection(bound) for q in fescue for g in sm(q)]
+            fescue = [g for q in fescue for g in getattr(q, 'geoms', [q]) if g.geom_type == 'Polygon' and not g.is_empty]
+        elif key == 'sand':
+            for f in F['bunker']:
+                r = smooth_poly(f['poly'].buffer(0), sg)
+                if r.geom_type == 'Polygon' and not r.is_empty: f['poly'] = r
+        print(f'FINAL_SMOOTH {key}: sigma {sg} m, opened {op} m')
     straw, flowers, sbridges = '', '', []
     if getattr(course, 'STRAW', False) or getattr(course, 'STONE_BRIDGES', False):   # a southern parkland course (Augusta): pine straw, azaleas, stone bridges (pines.py)
         import pines
