@@ -575,6 +575,15 @@ body:has(#menuSheet.on) #scrim,body:has(#practiceSheet.on) #scrim{background:rgb
 .qcard .btn.danger{background:var(--penred);box-shadow:inset 0 0 0 3px var(--paper),0 0 0 2px var(--penred)}
 .qcard .btn.subBtn.light{background:transparent;color:var(--g1);box-shadow:inset 0 0 0 2px var(--g1)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* Settings and Practice are full pages like Play and Boards: a floating title and a back arrow over the course, the content on a paper card */
+.sheet.page .shX,.sheet.page .shBack,.sheet.page .grab{display:none!important}
+#menuSheet.page,#practiceSheet.page{top:0;max-height:none;max-width:none;width:auto;margin:0;border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column;align-items:center;gap:0;overflow:hidden;
+  padding:calc(var(--st) + 26px) calc(var(--sr) + 16px) calc(var(--sb) + 8px) calc(var(--sl) + 16px);background:linear-gradient(180deg,rgba(10,40,20,.5),rgba(10,40,20,.72));
+  transform:none;opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
+#menuSheet.page.on,#practiceSheet.page.on{opacity:1;pointer-events:auto}
+#menuSheet.page .scBody{padding-bottom:16px}#practiceSheet.page .pracGrid{padding-bottom:6px}
+#practiceSheet.page .pracPair{margin-top:0}
+body:has(#menuSheet.page.on) :is(#title,#play,#glb),body:has(#practiceSheet.page.on) :is(#title,#play,#glb){opacity:0;pointer-events:none}   /* (the page covers the home screen, as the Play and Boards pages do) */
 </style>
 <canvas id="gl"></canvas>
 <div id="hud" class="off">
@@ -644,7 +653,7 @@ body:has(#menuSheet.on) #scrim,body:has(#practiceSheet.on) #scrim{background:rgb
 <div class="layer" id="restartAsk"><div class="card qcard" role="alertdialog" aria-labelledby="rT"><div class="qt" id="rT">Restart this round?</div><p>Your scores so far will be lost and you start again at hole 1.</p><div class="qb"><button class="btn danger" id="rYes">Yes I'm sure</button><button class="btn subBtn light" id="rNo">No</button></div></div></div>
 <div id="scrim"></div>
 <div class="sheet" id="bagSheet"><div class="grab"></div><div class="sht">Your bag <small id="bagLie">From the tee</small></div><div class="bag" id="bag"></div></div>
-<div class="sheet" id="menuSheet"><div class="grab"></div><div class="sht">Settings</div>
+<div class="sheet page" id="menuSheet"><div class="scTop"><button class="playBack pageBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><p class="pcName">Settings</p></div></div><div class="scCard scFill"><div class="scBody">
   <div class="mlist">
     <div class="sub"><span>Players online</span></div><div class="mpList" id="mpList"></div>
   </div>
@@ -667,8 +676,8 @@ body:has(#menuSheet.on) #scrim,body:has(#practiceSheet.on) #scrim{background:rgb
     <div class="mpInfo" id="mpInfo">Play live with friends: everyone in the same room sees the others' balls fly on the same hole, and the scores.<div class="mpBtns"><button class="mpb" id="mpNew">New room</button><button class="mpb" id="mpShare">Share link</button></div></div>
     <div id="buildNo" style="font:500 13px var(--sans,system-ui);color:#b4b4b4;padding:6px 4px 2px;text-align:center;font-variant-numeric:tabular-nums">Build …</div>
   </div>
-</div>
-<div class="sheet" id="practiceSheet"><div class="grab"></div><div class="sht">Practice <small>Pick a hole · scores are not recorded</small></div><label class="pracCourse" hidden><span>Holes</span><select class="courseSel" id="selCourseP" aria-label="Course to practise"></select></label><div class="pracGrid" id="pracGrid"></div><div class="pracPair"><button class="pracPutt" id="pracPutt">Putting green</button><button class="pracPutt" id="pracRange">Driving range</button></div></div>
+</div></div></div>
+<div class="sheet page" id="practiceSheet"><div class="scTop"><button class="playBack pageBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><p class="pcName">Practice</p><p class="scSub">Pick a hole · scores are not recorded</p></div></div><div class="scCard scFill"><div class="scBody"><label class="pracCourse" hidden><span>Holes</span><select class="courseSel" id="selCourseP" aria-label="Course to practise"></select></label><div class="pracGrid" id="pracGrid"></div></div><div class="scFoot"><div class="pracPair"><button class="pracPutt" id="pracPutt">Putting green</button><button class="pracPutt" id="pracRange">Driving range</button></div></div></div></div>
 <div class="sheet" id="compSheet"><div class="grab"></div><div class="sht">Competitions <small>Admin only · not live</small></div><div id="compBody" class="cfList"></div><div class="cfAdd"><button class="mpb" id="compNewE">+Event</button><button class="mpb" id="compNewT">+Tourney</button><button class="mpb" id="compNewS">+Season</button></div><div id="compMsg" class="mpInfo"></div></div>
 <div class="sheet" id="compForm"><div class="grab"></div><div class="sht"><span id="compFormTitle">Event</span></div><div id="compFormBody" class="cfBody"></div><div class="cfAdd"><button class="mpb" id="compSave">Save</button><button class="mpb" id="compDel" style="background:#c0392b;color:#fff">Delete</button></div><div id="cfMsg" class="mpInfo"></div></div>
 <div class="sheet" id="cardSheet"><div class="grab"></div><div id="cardBody"></div></div>
@@ -10945,6 +10954,7 @@ function initInput() {
     k.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
     k.onclick = e => { e.stopPropagation(); sheetBack(); }; sh.appendChild(k);
   });
+  document.querySelectorAll('.sheet.page .pageBack').forEach(b => { b.onclick = e => { e.stopPropagation(); sheetBack(); }; });   // Settings and Practice: the arrow at the top left
   $('mCard').onclick = () => showScorecard(false);
   $('dReplay').onclick = () => { SFX.blip(); replayLast(); };
   $('mReplay').onclick = () => { closeSheets(); setTimeout(replayLast, 120); };
