@@ -391,8 +391,8 @@ def face_tees(F, fair, holes0):
         # the box's hole: the one whose tee markers (a first build_holes pass) stand in it; a box no tee set uses, or one two holes share, is left alone
         own = {i + 1 for i, h0 in enumerate(holes0) for m in h0['mk'].values() if P.distance(Point(m)) < 1.5}
         if not own:   # a box no tee set stands in (a spare forward box): it belongs to the hole whose line starts nearest, if one starts within 60 m
-            near = min(F['hole'], key=lambda q: Point(q['line'].coords[0]).distance(c))
-            if Point(near['line'].coords[0]).distance(c) < 60: own = {near['ref']}
+            cand = [q for q in F['hole'] if q['line'].distance(c) < 45 and q['line'].project(c) < 90]   # (its line passes within 45 m, in the first 90 m: a tee box is at the start of its hole)
+            if cand: own = {min(cand, key=lambda q: q['line'].distance(c))['ref']}
         if len(own) != 1 or next(iter(own)) not in byref:
             if own: print('  face_tees skip: box shared by holes', sorted(own))
             continue
