@@ -606,13 +606,24 @@ body:has(#menuSheet.page.on) :is(#title,#play,#glb),body:has(#practiceSheet.page
 /* play screen: Continue above New round, each the card's full width (side by side the engraved capitals did not fit) */
 #play .scBtns{flex-direction:column;gap:8px}
 #play .scBtns .scStamp,#play .scBtns .scBtn{flex:none;width:auto;margin:0}
-#play .scBtns .scBtn{height:58px;padding:0 14px}
+#play .scBtns .scBtn,#btnTitleResume{height:58px;padding:0 14px}
+#btnTitleResume{flex:none;width:auto;margin:3px}
 #play .scStats div{text-align:center}
-#play .scBtn small{font-family:var(--body);text-transform:none;letter-spacing:0;font-size:12px}
+#play .scBtn small,#btnTitleResume small{font-family:var(--body);text-transform:none;letter-spacing:0;font-size:12px}
 .icard canvas{border-radius:0;background:none;box-shadow:none}   /* the hole picture alone, no frame */
 .ic-f{gap:10px}.ic-f b{white-space:nowrap;font-size:19px}
 .scGrid td.scPen,.scGrid td.t.scPen{font-family:var(--hand);font-style:normal;font-weight:400;font-size:17px;color:var(--pen)}
 
+/* Settings choices (2026-11-20): an on/off or yes/no setting is one square box, a pen tick for on and a pen cross for off (tap to change; the old two buttons stay, hidden, for the code);
+   a setting with other choices shows each as a ruled box with a pen tick over the current one */
+#menuSheet .seg{background:none;padding:0;gap:6px;border-radius:0}
+#menuSheet .seg button[data-v]{position:relative;min-width:50px;height:34px;padding:0 10px;border-radius:2px;background:var(--paper);border:1.5px solid var(--g1);color:var(--g1);font:600 13px var(--cond);letter-spacing:.06em;box-shadow:none}
+#menuSheet .seg button[data-v].sel{background:var(--paper);color:var(--g1);box-shadow:none}
+#menuSheet .seg button[data-v].sel::after{content:'';position:absolute;left:50%;top:50%;width:34px;height:34px;transform:translate(-50%,-55%);background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f3a8a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 13.2c1.6 1 3.2 2.9 4.6 5.6.4.7 1 .7 1.4 0C12.3 12.5 16 7.3 21.2 3.2'/%3E%3C/svg%3E") center/contain no-repeat;pointer-events:none}
+#menuSheet .seg.chk button[data-v]{display:none}
+#menuSheet .seg.chk .box{display:block;cursor:pointer;width:34px;height:34px;padding:0;border:1.5px solid var(--g1);border-radius:2px;background:var(--paper) center/82% no-repeat;box-shadow:none}
+#menuSheet .seg.chk:has(button[data-v="1"].sel) .box{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f3a8a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 13.2c1.6 1 3.2 2.9 4.6 5.6.4.7 1 .7 1.4 0C12.3 12.5 16 7.3 21.2 3.2'/%3E%3C/svg%3E")}
+#menuSheet .seg.chk:has(button[data-v="0"].sel) .box{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f3a8a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5.2 4.6c3.6 4.4 8.1 9.6 13.4 15.1'/%3E%3Cpath d='M19.1 4.1C14.6 8.6 9.8 13.9 4.6 19.8'/%3E%3C/svg%3E")}
 </style>
 <canvas id="gl"></canvas>
 <div id="hud" class="off">
@@ -654,7 +665,7 @@ body:has(#menuSheet.page.on) :is(#title,#play,#glb),body:has(#practiceSheet.page
       <div id="scLast"></div><p class="scCap" id="scLastCap"></p>
     </div>
     <div class="scFoot">
-      <button class="scSlip" id="btnTitleResume" style="display:none"><span><b>Continue round</b><small id="titleResumeInfo"></small></span><i id="titleResumeTp"></i></button>
+      <button class="scBtn" id="btnTitleResume" style="display:none">Continue<small id="titleResumeInfo"></small></button>
       <button class="scStamp" id="btnPlay">Tee off ›</button>
     </div>
   </div>
@@ -686,7 +697,7 @@ body:has(#menuSheet.page.on) :is(#title,#play,#glb),body:has(#practiceSheet.page
   <div class="mlist">
     <div class="sub"><span>Players online</span></div><div class="mpList" id="mpList"></div>
   </div>
-  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn danger wide" id="mRestart">↺ Restart round</button><button class="mbtn dark wide" id="mChange">⛳ Change practice</button><button class="mbtn dark wide" id="mQuit">Save and quit</button><button class="mbtn danger wide" id="mAbandon">✕ Abandon round</button><button class="mbtn dark wide" id="mStats">📊 Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to swing</button><button class="mbtn dark" id="mRound">New round</button></div>
+  <div class="mbtns"><button class="mbtn dark wide" id="mReplay">▶ Replay last shot</button><button class="mbtn danger wide" id="mRestart">↺ Restart round</button><button class="mbtn dark wide" id="mChange">⛳ Change practice</button><button class="mbtn dark wide" id="mQuit">Save and quit</button><button class="mbtn danger wide" id="mAbandon">✕ Abandon round</button><button class="mbtn dark wide" id="mStats">Stats &amp; records</button><button class="mbtn dark" id="mBoard">Leaderboard</button><button class="mbtn dark" id="mCard">Scorecard</button><button class="mbtn dark" id="mHelp">How to play</button><button class="mbtn dark" id="mRound">New round</button></div>
   <div class="mlist setBlock">
     <div class="mrow">Name<input id="mName" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="done"></div>
     <div class="mrow">Player ID<span id="pidState" style="opacity:.8">Guest</span></div>
@@ -714,7 +725,7 @@ body:has(#menuSheet.page.on) :is(#title,#play,#glb),body:has(#practiceSheet.page
 <div class="sheet" id="mapSheet"><div class="grab"></div><div class="sht"><span id="mapTitle">Hole map</span><small id="mapInfo"></small></div><div class="mapwrap"><canvas id="mapCv"></canvas></div><div class="maph"><span id="mapHint">Tap or drag to place your target</span><button class="mbtn" id="mapRead" hidden style="height:44px;padding:0 16px">Slope</button><button class="mbtn dark" id="mapDone" style="height:44px;padding:0 22px">Done</button></div></div>
 <div class="sheet" id="holeSheet"><div class="grab"></div><div class="sht">Hole by hole <small id="hbhSub"></small></div><div id="hbhBody"></div></div>
 <div class="sheet" id="statsSheet"><div class="grab"></div><div class="sht">Stats <small id="stSub"></small></div><div id="statsBody"></div></div>
-<div class="sheet" id="helpSheet"><div class="grab"></div><div class="sht">How to swing</div><div class="help">
+<div class="sheet" id="helpSheet"><div class="grab"></div><div class="sht">How to play</div><div class="help">
   <div><b>Aim</b>Drag across the course, or open the map and tap a target. The white ring is where a pure, full swing lands with no wind.</div>
   <div><b>Tempo · <span class="hSw">left</span> thumb</b>Touch anywhere on the <span class="hSw">left</span> and slide down for the backswing. The scale shows the carry for your club; the low end of the scale is stretched for finer control, and when a part-shot line shows, the whole scale zooms so that line sits about two thirds of the way down (a readout beside your thumb shows the distance, and the phone buzzes as you reach the line). Short-game zoom in the menu turns this off. Slide back up past where you started to strike. The upstroke must take under 0.35 s for full power; every 0.2 s slower takes a further 20 % off the ball speed. Keep the upstroke straight: the sideways drift of your thumb on the way up (traced in yellow on the tempo scale, fading after the strike) sets the starting line, so drifting right sends the ball right of your aim line and drifting left sends it left. Backswing three times as long as the downswing gives the full smash factor; anywhere from 2:1 to 4:1 still strikes well. Putts want 2:1.</div>
   <div><b>Strike · <span class="hSt">right</span> thumb</b>Hold your thumb on the dial: the ball sits up-<span class="hSt2">left</span> of your thumb so it never hides, and where it lies on the club face is where the club will hit it. It wobbles, wilder the faster you swing. Keep it on the sweet spot. With no thumb on the dial the ball slips loose around the edge of the face and the strike is always a mishit. Toe hooks, heel slices. High on the face spins less and flies further, low spins more.</div>
@@ -8064,7 +8075,7 @@ function refreshResume() {
   try { titleCardFill(); } catch (e) { }
   if (!r) { b.style.display = 'none'; return; }
   const pars = COURSES[r.course].pars; let s = 0, p = 0; r.scores.forEach((v, i) => { if (v != null) { s += v; p += pars[i]; } });
-  $('resumeInfo').textContent = `${COURSES[r.course].short} · Next: Hole #${resumeHole(r) + 1} · ${p ? fmtToPar(s - p) : 'E'}`;
+  $('resumeInfo').textContent = `${COURSES[r.course].short} · Hole #${resumeHole(r) + 1} · ${p ? fmtToPar(s - p) : 'E'}`;
   b.style.display = '';
 }
 function resumeRound(course) {
@@ -9611,8 +9622,7 @@ function titleCardFill() {
   const r = savedRound(), b = $('btnTitleResume');
   if (!r || !COURSES[r.course]) { b.style.display = 'none'; return; }
   const rp = COURSES[r.course].pars; let sc = 0, pp = 0; r.scores.forEach((v, i) => { if (v != null) { sc += v; pp += rp[i]; } });
-  $('titleResumeInfo').textContent = `${COURSES[r.course].short.replace(/ \((beta|alpha)\)$/i, '')} · Next: Hole #${resumeHole(r) + 1}`;
-  $('titleResumeTp').textContent = pp ? fmtToPar(sc - pp) : 'E'; b.style.display = '';
+  $('titleResumeInfo').textContent = `${COURSES[r.course].short.replace(/ \((beta|alpha)\)$/i, '')} · Hole #${resumeHole(r) + 1} · ${pp ? fmtToPar(sc - pp) : 'E'}`; b.style.display = '';   // (the same button as the play screen's Continue)
 }
 function sheetOpen() { return !!document.querySelector('.sheet.on'); }
 // Menus open on top of each other (Settings > Stats > Hole by hole): the sheet being left goes on SHEET_BACK, and the Back button at the top left of the
@@ -10975,6 +10985,12 @@ function initInput() {
   $('btnPlayBack').onclick = () => { SFX.blip(); $('play').classList.remove('on'); $('title').classList.add('on'); };
   $('mBoard').onclick = openBoard;
   document.querySelectorAll('#segRev button').forEach(b => b.onclick = () => { settings.reverse = +b.dataset.v === 1; saveSettings(); syncMenu(); });
+  // the on/off settings as one tick box: a tap presses whichever of its two (hidden) buttons is not selected
+  for (const id of ['segRev', 'segSnd', 'segZoom', 'segDrama', 'segPals', 'segMus', 'segCrowd']) {
+    const sg = $(id); if (!sg) continue; sg.classList.add('chk');
+    const bx = document.createElement('span'); bx.className = 'box'; bx.setAttribute('role', 'button'); bx.setAttribute('aria-label', 'Change');   // (a span: the rows' own '#segX button' handlers must not take it)
+    bx.onclick = () => { const o = sg.querySelector('button[data-v]:not(.sel)'); if (o) o.click(); }; sg.appendChild(bx);
+  }
   document.querySelectorAll('#segHand button').forEach(b => b.onclick = () => { settings.hand = +b.dataset.v; saveSettings(); syncMenu(); if (G.C) { G.carryKey = ''; updateAim(true); } });
   document.querySelectorAll('#segSnd button').forEach(b => b.onclick = () => { settings.sound = b.dataset.v === '1'; saveSettings(); syncMenu(); if (!settings.sound) dropAudio(); else wakeAudio(true); musicTick(); });
   $('pidSend').onclick = pidSend; $('pidReq').onclick = pidCopy; $('pidChk').onclick = pidCheck;
