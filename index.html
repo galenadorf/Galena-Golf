@@ -781,7 +781,7 @@ SURF[S.DEEP] = { name: 'Deep rough', k: .09, e: .12, keep: .30, spinStop: 40000,
 // at the top end, a grabby lie at the bottom); aim previews and the caddie plan on the middle of that range
 SURF[S.FRINGE] = { name: 'Fringe', k: .006, e: .30, keep: .62, spinStop: 11500, mu: .10, lie: { speed: 1, spin: .95, launch: 0, wig: 1 } };
 SURF[S.GREEN] = { name: 'Green', k: 0, e: .30, keep: .62, spinStop: 10500, mu: .056, lie: { speed: 1, spin: 1, launch: 0, wig: 1 } };
-SURF[S.SAND] = { name: 'Bunker', k: .12, e: .04, keep: .12, spinStop: 30000, mu: 1.4, lie: { speed: .64, spin: .7, launch: 2, wig: 1.25 } };
+SURF[S.SAND] = { name: 'Bunker', k: .12, e: .04, keep: .12, spinStop: 30000, mu: 1.4, lie: { speed: .64, spin: 1, launch: 2, wig: 1.25 } };
 SURF[S.WATER] = { name: 'Water', k: 0, e: 0, keep: 0, spinStop: 1, mu: 9, lie: { speed: .5, spin: .5, launch: 0, wig: 1.5 } };
 // pine straw (Augusta: the floor under the pines, course data `straw`): a dead landing and a short roll (the needles soak up the ball's pace, between rough and
 // deep rough), and from it a ball that sits up on loose needles: little spin (needles between the face and the ball), a less steady stance (more wobble) and a
@@ -1224,7 +1224,7 @@ function computeLaunch(ci, sw, st, surf, yaw, hand, teed, lieRoll) {
       } else lieSpeed = f;
       out.lieF = f;
     }
-    let launch = clubLaunch(c, p) + launchAdd + lie.launch + (surf === S.SAND && c.type === 'wedge' ? SAND_WEDGE_LOFT * (.5 + .5 * (1 - p)) : 0);   // (out of sand a wedge's blow is steeper still)
+    let launch = clubLaunch(c, p) + launchAdd + lie.launch + (surf === S.SAND ? sandLift(c, p) : 0);   // (out of sand a wedge's blow is steeper still)
     if (c.id === 'Dr' && !teed) { lieSpeed *= .9; launch -= 2; }
     launch = clamp(launch, 1, 68);
     const ballSpeed = clubSpeed * c.smash * tempoMult * sm * lieSpeed;
@@ -1303,7 +1303,7 @@ function clubTables() {
     for (const sf of [S.ROUGH, S.DEEP, S.STRAW, S.SAND]) {
       const lie = SURF[sf].lie; c.lieCal[sf] = [];
       for (const pp of [.25, .5, .75, 1]) {
-        const v0 = c.ballSpeed * Math.pow(pp, POW_EXP), w0 = c.spin * spinFrac(pp), cf = flatCarry(v0, clubLaunch(c, pp), w0), xl = sf === S.SAND && c.type === 'wedge' ? SAND_WEDGE_LOFT * (.5 + .5 * (1 - pp)) : 0;   // (xl: the steeper blow a wedge makes out of sand, as in computeLaunch)
+        const v0 = c.ballSpeed * Math.pow(pp, POW_EXP), w0 = c.spin * spinFrac(pp), cf = flatCarry(v0, clubLaunch(c, pp), w0), xl = sf === S.SAND ? sandLift(c, pp) : 0;   // (xl: the steeper blow a wedge makes out of sand, as in computeLaunch)
         const c1 = flatCarry(v0, clubLaunch(c, pp) + lie.launch + xl, w0 * lie.spin), c2 = flatCarry(v0 * .8, clubLaunch(c, pp) + lie.launch + xl, w0 * lie.spin);
         c.lieCal[sf].push({ p: pp, k: Math.log(c1 / c2) / Math.log(1.25), r: cf / c1 });
       }
@@ -1337,6 +1337,9 @@ const PARTIAL_LOFT = 17, SAND_WEDGE_LOFT = 4;
 // the woods (and the driver, which loses a tenth more off the grass) about 38 %. SAND_F: the share at the two ends, SAND_LOFT: the lofts they belong to (the woods' and the sand wedge's).
 const SAND_F = [.62, .90], SAND_LOFT = [18, 56];
 const sandF = c => lerp(SAND_F[0], SAND_F[1], clamp((c.loft - SAND_LOFT[0]) / (SAND_LOFT[1] - SAND_LOFT[0]), 0, 1));
+// the steeper blow out of sand: a wedge's grows as the swing shortens (SAND_WEDGE_LOFT); every other club gets SAND_LIFT_OTHER degrees, so a long club's low, slow ball comes down steeply and does not run on far beyond the carry the bar shows
+const SAND_LIFT_OTHER = 5;
+const sandLift = (c, p) => c.type === 'wedge' ? SAND_WEDGE_LOFT * (.5 + .5 * (1 - p)) : SAND_LIFT_OTHER;
 const sandDist = c => { const f = sandF(c); return [f, f]; };
 function clubLaunch(c, p) {
   return c.launch + clamp((c.loft - 22) / 38, 0, 1) * PARTIAL_LOFT * Math.pow(1 - clamp(p, 0, 1), 1.2);   // (the extra grows with the club's loft: none for woods and hybrids, a little for mid irons, most for the lob wedge)
@@ -1359,6 +1362,12 @@ function lieTable(c, surf, teed) {
   return LIE_TAB[k] = t;
 }
 function shownTable(c) { return G.C && G.ball ? lieTable(c, G.surf, G.teed) : c.table; }
+// where a pure swing at power p ends up along the aim line, roll included, on the real ground (the club in hand; null when not worked out)
+function shownTotal(c, p) {
+  if (!(G.rt && G.rt.T && c === CLUBS[G.rt.club] && c === CLUBS[G.club] && G.state === 'address')) return null;
+  const q = G.rt.T, f = clamp(p, 0, 1) * RT_N, i = Math.min(Math.floor(f), RT_N - 1), u = f - i;
+  return q[i] * (1 - u) + q[i + 1] * u;
+}
 function shownCarry(c, p) {
   if (G.rt && c === CLUBS[G.rt.club] && c === CLUBS[G.club] && G.state === 'address') {   // the club in hand at address: simulated on the real ground (predictCarry), so the labels agree with the aim ring and the shot
     const q = G.rt.t, f = clamp(p, 0, 1) * RT_N, i = Math.min(Math.floor(f), RT_N - 1), u = f - i;
@@ -8331,19 +8340,19 @@ function placeAimGeo() {
 const RT_N = 10;
 function predictCarry() {
   const L = computeLaunch(G.club, { p: 1, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, G.yaw, settings.hand, G.teed);
-  const r = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, disc: L.disc, maxT: 12, noTrees: true });
+  const r = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: L.v, w: L.w, bs: L.biteSpin, disc: L.disc, maxT: 20, noTrees: true });
   const carry = r.land ? r.land.carry : r.total, f = r.frames, ax = Math.sin(G.yaw), az = -Math.cos(G.yaw), arc = [0, G.ball.y + (G.teed ? .03 : 0)];   // the flight's height along the aim line, which the aim line follows (the club's loft sets how steeply it climbs)
   for (let k = 1; k < r.n; k += 2) { const d = (f[k * 5 + 1] - G.ball.x) * ax + (f[k * 5 + 3] - G.ball.z) * az; if (d > carry) break; if (d > arc[arc.length - 2]) arc.push(d, f[k * 5 + 2]); }
   G.arc = arc.length > 4 ? arc : null;
   // the tempo bar's labels for the club in hand: what a pure swing at each tenth of power carries from here, on the real ground along the aim line (RT_N+1 points; 0 and the full swing are known)
-  const c = CLUBS[G.club], rt = [0];
+  const c = CLUBS[G.club], rt = [0], rtT = [0];
   if (c.type !== 'putter' && c.type !== 'disc') {
     for (let j = 1; j < RT_N; j++) {
       const Lj = computeLaunch(G.club, { p: j / RT_N, Tb: .45, Td: .15 }, { h: 0, v: 0 }, G.surf, G.yaw, settings.hand, G.teed);
-      const rj = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: Lj.v, w: Lj.w, bs: Lj.biteSpin, maxT: 12, noTrees: true });
-      rt.push(rj.land ? rj.land.carry : rj.total);
+      const rj = simulateShot(G.C, { x: G.ball.x, y: G.ball.y + (G.teed ? .03 : 0), z: G.ball.z, v: Lj.v, w: Lj.w, bs: Lj.biteSpin, maxT: 20, noTrees: true });
+      rt.push(rj.land ? rj.land.carry : rj.total); rtT.push(rj.final ? (rj.final.x - G.ball.x) * ax + (rj.final.z - G.ball.z) * az : rj.total);
     }
-    rt.push(carry); G.rt = { club: G.club, t: rt };
+    rt.push(carry); rtT.push((r.final.x - G.ball.x) * ax + (r.final.z - G.ball.z) * az); G.rt = { club: G.club, t: rt, T: rtT };
   } else G.rt = null;
   return carry;
 }
@@ -9103,7 +9112,7 @@ function drawTempo(now) {
     const s = SW.phase === 'back' ? SW.p : SW.pMax, pw = trackToPower(s, M), ch = G.chip;
     let rt;
     if (putt) rt = toFt(G.puttRange * s) + ' FT';
-    else if (ch) rt = fmtDistShort(ch.d * shownCarry(c, pw) / Math.max(.1, shownCarry(c, ch.p))).replace(' ', '').toUpperCase();
+    else if (ch) { const tt = shownTotal(c, pw); rt = fmtDistShort(tt != null ? Math.max(0, tt) : ch.d * shownCarry(c, pw) / Math.max(.1, shownCarry(c, ch.p))).replace(' ', '').toUpperCase(); }
     else rt = toLen(shownCarry(c, pw)) + ' ' + lenU().toUpperCase();
     const y = top + H * clamp(s, 0, 1.04);
     x.font = FONT(700, 12); x.textAlign = 'right'; x.textBaseline = 'middle';

@@ -83,7 +83,7 @@ jobs:
               if (newAces.length) { let al = []; try { al = JSON.parse(fs.readFileSync('aces.json', 'utf8')); } catch (e) { al = []; } for (const q of newAces) if (!al.some(z => z.pid === q.pid && z.c === q.c && z.h === q.h && z.at === q.at)) al.push(q); al.sort((a, b) => a.at - b.at); fs.writeFileSync('aces.json', JSON.stringify(al) + '\n'); }
               co.rounds++; if (!co.best || r.strokes < co.best.strokes) co.best = { strokes: r.strokes, at: r.at };
               // played.json (repo root): how many rounds have been filed on each course, {course: n}, for the game's play screen; tools/players/stats.py rebuilds it
-              let pl = {}; try { pl = JSON.parse(fs.readFileSync('played.json', 'utf8')) || {}; } catch (e) { pl = {}; } pl[r.course] = (pl[r.course] || 0) + 1; fs.writeFileSync('played.json', JSON.stringify(pl) + '\n');
+              let pj = {}; try { pj = JSON.parse(fs.readFileSync('played.json', 'utf8')) || {}; } catch (e) { pj = {}; } pj[r.course] = (pj[r.course] || 0) + 1; fs.writeFileSync('played.json', JSON.stringify(pj) + '\n');
               // records: only a full round of a registered player counts. The round's marks are compared with the player's own (co.rec: key -> [value, hole, at]), and a new
               // personal best goes into the top 5 players of that record on this course (records/<course>.json). tools/players/stats.py rebuilds both from the rounds.
               const par = PARS[r.course], cand = {}, low = { roundPutts: 1, bestNine: 1 };
