@@ -1151,11 +1151,13 @@ def main():
                     tq += [int(round(t['e'] * 10)), int(round(t['n'] * 10)), int(round(t['d'] * 10)), t['kind'] * 1000 + min(999, int(round(t['h'] * 10)))]
                 json.dump(sp, open(os.path.join(OUT, 'specimens.json'), 'w'))
                 print(f'specimens: {len(sp)} placed, {len(gone)} lidar trees under them taken out')
+    rough_p = os.path.join(OUT, 'rough_painted.json')   # ground painted white on the hole pictures (hole_images_read.py): regular rough, never deep rough (GeoJSON polygons, local metres)
+    rough_polys = [shape(g) for g in json.load(open(rough_p))] if os.path.exists(rough_p) else []
     rd = dict(
         name=NAME, origin=list(ORIGIN), dem=dem, holes=holes,
         feat=dict(fair=enc_polys(fair), green=enc_polys([f['poly'] for f in F['green']]), tee=enc_polys([f['poly'] for f in F['tee']]),
                   sand=enc_polys([f['poly'] for f in F['bunker']]), water=enc_polys(water), path=enc_polys(paths), creek=enc_polys(creek), fescue=enc_polys(fescue),
-                  range=enc_polys([f['poly'] for f in F['driving_range']])),
+                  range=enc_polys([f['poly'] for f in F['driving_range']]), **(dict(rough=enc_polys(rough_polys)) if rough_polys else {})),
         trees=b64i16(tq) if tq else '', ntrees=len(trees),
         forest=enc_polys(clip([f['poly'] for f in F['wood']])) if F['wood'] else enc_polys([]),
         orchard=enc_polys([]),

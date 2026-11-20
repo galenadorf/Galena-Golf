@@ -1877,7 +1877,7 @@ function makeRealCourse(idx, pin) {
     return out;
   };
   const RS = idx === RANGE ? rangeScene(H0) : null;   // the range's own painted features and boundary, drawn in its scene only
-  const P = {}; for (const k of ['fair', 'green', 'tee', 'sand', 'water', 'path', 'range', 'creek', 'fescue']) P[k] = pick((GC.feat[k] || []).concat(RS && RS.feat[k] || []));
+  const P = {}; for (const k of ['fair', 'green', 'tee', 'sand', 'water', 'path', 'range', 'creek', 'fescue', 'rough']) P[k] = pick((GC.feat[k] || []).concat(RS && RS.feat[k] || []));
   const F = {}; for (const k in P) F[k] = sdfField(w, h, res, P[k].map(q => q.px), SD_R);
   // the white tee is where the tracker puts it; where the map has no tee box drawn there (or drew it like a bunker),
   // a plain 7 x 12 m box square to the hole, and no sand on it
@@ -1901,6 +1901,7 @@ function makeRealCourse(idx, pin) {
     // positive: deep rough. A course with a painted fescue map (feat.fescue) has deep rough there and nowhere else (engine.paintedDeep: and none at all while nothing is painted); otherwise it is whatever lies well away from play
     deepF[k] = hasFescue ? clamp(-F.fescue[k] + .9 * (vnoise(X * .4, Z * .4, seed + 7) - .5), -SD_R, SD_R) : RDC.paintedDeep ? -SD_R : !inB[k] ? SD_R : clamp(Math.sqrt(dP[k]) * res - (22 + 6 * vnoise(X * .03, Z * .03, seed + 5)), -SD_R, SD_R);
   }
+  if (P.rough.length) for (let k = 0; k < N; k++) deepF[k] = Math.min(deepF[k], F.rough[k]);   // course data `rough`: ground painted to be regular rough, never deep rough (hole_images_read.py)
   C.deepF = deepF;
   // ground: terrain model, then greens and tees built as platforms, ponds dug, bunkers cut
   const Hg = new Float32Array(N);
@@ -2137,7 +2138,7 @@ function makeRealCourse(idx, pin) {
     if (at(fP) < 0) { info.surf = S.PATH; return info; }
     const df = at(fF);
     if (df < 0) { info.surf = S.FAIR; info.stripe = Math.sin(Math.PI * -Z / 12) > 0 ? 1 : 0; info.fwAlong = -Z; return info; }
-    if ((df < FC_F && dg >= FC_X) || dg < FC_G || dt < FC_T || at(fR) < 0) { info.surf = S.FIRST; return info; }
+    if (df < FC_F * firstCutS(dg, FR_W + COLLAR_W, FC_X) || dg < FC_G || dt < FC_T || at(fR) < 0) { info.surf = S.FIRST; return info; }
     if (SM && onStraw(X, Z)) { info.surf = S.STRAW; return info; }
     if (at(deepF) > 0) { info.surf = S.DEEP; return info; }
     info.surf = S.ROUGH; return info;
@@ -2411,15 +2412,17 @@ function realFarTex() {
 }
 // Round every green (every course, the practice green and the range's targets): the fringe (FRINGE_W, 3 ft), then a collar of fairway-height grass
 // (COLLAR_W, added to the fairway field in makeRealCourse), then rough. The first cut is a band beside the fairways only (FIRST_CUT [fair, tee,
-// green, clear] in m: none round tee boxes or greens, and none within `clear` of a green, so the band runs up the fairway to the green's collar and
-// stops there instead of wrapping the collar). engine.fringe / engine.firstCut can still override them per course; no course does.
-const FRINGE_W = .9, COLLAR_W = 1, FIRST_CUT = [2.8, 0, 0, 8];
+// green, taper] in m: none round tee boxes or greens; the band's width falls smoothly (smoothstep, firstCutS) from `fair` to nothing over the `taper` m
+// before the green's collar, so it curves into the collar tangentially and never ends in a point or a cut-off arc). engine.fringe / engine.firstCut can
+// still override them per course; no course does.
+const FRINGE_W = .9, COLLAR_W = 1, FIRST_CUT = [2.8, 0, 0, 10];
+function firstCutS(gr, cw, taper) { if (!(taper > 0)) return 1; const t = clamp((gr - cw) / taper, 0, 1); return t * t * (3 - 2 * t); }   // share of the first cut's width left `gr` m from a green (cw = fringe + collar)
 function fringeW() { return RDC && RDC.fringe || FRINGE_W; }
 function firstCutW(frW) { const f = RDC.firstCut || FIRST_CUT; return [f[0], f[1], Math.max(f[2], frW), f[3] || 0]; }
 function realTerrainMat(C) {
   const FG = C.fg, w = FG.w, h = FG.h, n = w * h, R = SD_R, F = C.F, seed = C.def.seed;
   const A = new Uint8Array(n * 4), B = new Uint8Array(n * 4), T = new Uint8Array(n * 4);
-  const [FC_F, FC_T, FC_G, FC_X] = firstCutW(fringeW());
+  const [FC_F, FC_T, FC_G, FC_X] = firstCutW(fringeW()), FRINGE_COLLAR = fringeW() + COLLAR_W;
   const enc = v => { const t = v / R * .5 + .5; return t <= 0 ? 0 : t >= 1 ? 255 : Math.round(t * 255); };
   let wlo = 1e9, whi = -1e9; for (const p of C.ponds) for (const l of p.lc || [p.lv]) if (isFinite(l)) { wlo = Math.min(wlo, l); whi = Math.max(whi, l); }
   if (wlo > 1e8) { wlo = 0; whi = 1; } wlo -= 3; whi += .5;
@@ -2434,7 +2437,7 @@ function realTerrainMat(C) {
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
     const k = j * w + i, q = k * 4, X = FG.x0 + i * FG.res, Z = FG.z0 + j * FG.res;
     const fw = F.fair[k], gr = F.green[k], te = F.tee[k];
-    A[q] = enc(fw); A[q + 1] = enc(Math.min(Math.max(fw - FC_F, FC_X - gr), gr - FC_G, te - FC_T, F.range[k])); A[q + 2] = enc(C.deepF[k]); A[q + 3] = enc(gr);
+    A[q] = enc(fw); A[q + 1] = enc(Math.min(fw - FC_F * firstCutS(gr, FRINGE_COLLAR, FC_X), gr - FC_G, te - FC_T, F.range[k])); A[q + 2] = enc(C.deepF[k]); A[q + 3] = enc(gr);
     B[q] = enc(F.sand[k]); B[q + 1] = straw ? enc(straw(X, Z)) : 255; B[q + 2] = enc(te); B[q + 3] = enc(F.path[k]);
     T[q] = Math.round((Math.sin(Math.PI * -Z / 12) * .5 + .5) * 255);
     const wl = C.wlGrid[k]; T[q + 1] = wl > -1e8 ? 1 + Math.round(clamp((wl - wlo) / (whi - wlo), 0, 1) * 254) : 0;

@@ -32,7 +32,7 @@
       "about": "The South Course at Eagle Ridge Resort & Spa (Galena, Illinois; Roger Packard, 1984) is played from the gold tees. Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL); trees from USGS 3DEP lidar; the ground from the USGS 3DEP 1 m elevation model.",
       "blurb": "Roger Packard’s 1984 design at Eagle Ridge Resort plays through dense woods and a dramatic, hidden valley, with narrow fairways, big elevation changes and a par 72 of about 6,350 yards from the gold tees. Slope 136 and a 71.8 rating make it one of the hardest cards we play. This is where the trip began in 2007: four dudes, Kalle’s mom’s condo, and scores that peaked at 110.",
       "trip": {"n":5,"years":[2007,2008,2014,2018,2023],"win":[["Brian",[2007]],["Kalle",[2008]],["Andy",[2014]],["Nate",[2018]],["Kevin",[2023]]]},
-      "engine": { "alt": 260, "fescue": true, "longRough": true, "allRoads": true, "z0": 200, "gr": { "e0": -1000, "n0": -1000, "res": 2, "W": 1000, "H": 1000 } },
+      "engine": { "alt": 260, "fescue": true, "longRough": true, "allRoads": true, "paintedDeep": true, "z0": 200, "gr": { "e0": -1000, "n0": -1000, "res": 2, "W": 1000, "H": 1000 } },
       "scene": {
         "turkeys": 0.4,
         "bannerPlane": true,
