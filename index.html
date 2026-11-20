@@ -578,7 +578,7 @@ body:has(#menuSheet.on) #scrim,body:has(#practiceSheet.on) #scrim{background:rgb
 /* Settings and Practice are full pages like Play and Boards: a floating title and a back arrow over the course, the content on a paper card */
 .sheet.page .shX,.sheet.page .shBack,.sheet.page .grab{display:none!important}
 #menuSheet.page,#practiceSheet.page{top:0;max-height:none;max-width:none;width:auto;margin:0;border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column;align-items:center;gap:0;overflow:hidden;
-  padding:calc(var(--st) + 26px) calc(var(--sr) + 16px) calc(var(--sb) + 8px) calc(var(--sl) + 16px);background:linear-gradient(180deg,rgba(10,40,20,.5),rgba(10,40,20,.72));
+  padding:calc(var(--st) + 26px) calc(var(--sr) + 16px) calc(var(--sb) + 8px) calc(var(--sl) + 16px);background:linear-gradient(180deg,rgba(10,40,20,0) 30%,rgba(10,40,20,.35) 100%);
   transform:none;opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
 #menuSheet.page.on,#practiceSheet.page.on{opacity:1;pointer-events:auto}
 #menuSheet.page .scBody{padding-bottom:16px}#practiceSheet.page .pracGrid{padding-bottom:6px}
@@ -11016,7 +11016,7 @@ function syncClouds() {
 // a sheet is open and nothing in the scene is on the move: the last frame stays on screen and the scene is not drawn again until it closes
 function sceneStill() {
   if (!sheetOpen() || cobFlying()) return false;
-  if (G.state === 'title') return true;
+  if (G.state === 'title') return !document.querySelector('.sheet.page.on');   // (Settings and Practice are pages over the live title scene, like Play and Boards)
   if (G.state === 'holed') return G.holedT > 3;
   if (G.state !== 'address' || SW.phase !== 'idle') return false;
   const R = G.rig; return !(R && (R.pv.length() > .03 || R.lv.length() > .03));
