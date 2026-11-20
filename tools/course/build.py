@@ -536,6 +536,10 @@ def osm_cartpaths(F, roads):
     join += [LineString(j) for j in getattr(course, 'PATH_JOINS', [])]   # gaps closed by hand (course.PATH_JOINS)
     parts = [LineString(round_line(g.coords)) if len(g.coords) > 2 else g for g in getattr(linemerge(lines + join), 'geoms', [linemerge(lines + join)])]
     polys = [g.buffer(1.2, cap_style=1 if getattr(course, 'ROUND_PATH_ENDS', False) else 2, join_style=1) for g in parts]   # ROUND_PATH_ENDS (Galena): a hand join (PATH_JOINS) that meets a path's end at an angle still overlaps it
+    pc = getattr(course, 'PATH_CLOSE', 0)
+    if pc:   # (ER South) fill the slivers between paths side by side and round the junctions' inside corners
+        u = unary_union(polys).buffer(pc, quad_segs=8).buffer(-pc, quad_segs=8).simplify(.05)
+        polys = [g for g in getattr(u, 'geoms', [u]) if g.geom_type == 'Polygon' and g.area > 2]
     decks = [LineString([(e - math.cos(math.radians(b)) * L / 2, n - math.sin(math.radians(b)) * L / 2), (e + math.cos(math.radians(b)) * L / 2, n + math.sin(math.radians(b)) * L / 2)]).buffer(1.5, cap_style=2)
              for e, n, b, L, _ in getattr(course, 'CART_BRIDGES', [])]
     if decks:   # no path polygon over a bridge's creek: the deck is the path there

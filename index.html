@@ -449,10 +449,10 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 @media (orientation:landscape){#glb{flex-direction:column}}
 /* ---------- SCORECARD: the title, play and Global leaderboard screens are a paper scorecard over the course scene (cream card stock with faint green
    rules, printed green headings, the player's writing in blue pen; birdies circled, bogeys boxed). The card keeps its foot (the buttons) and scrolls inside. */
-:root{--paper:#f6f1e3;--paper2:#e3dcc7;--pen:#1f3a8a;--pencil:#6b705f;--penred:#c0392b;--brass:#9a7b2f;--rule:repeating-linear-gradient(0deg,transparent 0 27px,rgba(47,107,53,.085) 27px 28px)}
+:root{--paper:#f6f1e3;--paper2:#e3dcc7;--pen:#1f3a8a;--pencil:#6b705f;--penred:#c0392b;--brass:#9a7b2f}
 #title,#play,#glb{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:0;padding:calc(var(--st) + 12px) calc(var(--sr) + 12px) calc(var(--sb) + 10px) calc(var(--sl) + 12px);background:linear-gradient(180deg,rgba(10,40,20,0) 30%,rgba(10,40,20,.35) 100%)}
 #play,#glb{justify-content:flex-start}
-.scCard{position:relative;flex:0 1 auto;min-height:0;display:flex;flex-direction:column;width:100%;max-width:520px;background:var(--paper) var(--rule);border-radius:6px;box-shadow:0 18px 40px rgba(0,0,0,.45);color:var(--ink);text-shadow:none}
+.scCard{position:relative;flex:0 1 auto;min-height:0;display:flex;flex-direction:column;width:100%;max-width:520px;background:var(--paper);border-radius:6px;box-shadow:0 18px 40px rgba(0,0,0,.45);color:var(--ink);text-shadow:none}
 .scTitle{margin-top:46px}
 .scFill{flex:1 1 auto}
 .scTabs{position:absolute;top:-38px;left:10px;right:10px;display:flex;gap:6px}
@@ -467,6 +467,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 .scLbl{flex:none;font:600 11px var(--cond);letter-spacing:.2em;color:#80866f;text-transform:uppercase}
 .scPlayer{display:flex;align-items:flex-end;gap:10px;margin-top:14px}
 .scPlayer input{flex:1;min-width:0;height:40px;border:0;outline:0;border-bottom:1.5px solid #555;border-radius:0;background:transparent;padding:0 4px;font:italic 600 26px var(--body);color:var(--pen)}
+.scHcp{flex:none;display:flex;align-items:flex-end;gap:6px}#hcpVal{width:62px;height:40px;border-bottom:1.5px solid #555;font:italic 600 24px/40px var(--body);color:var(--pen);text-align:center;white-space:nowrap}
 .scPlayer input::placeholder{color:rgba(31,58,138,.35)}.scPlayer input:focus{border-bottom-color:var(--pen)}
 .scPlayer.need{animation:shake .4s}.scPlayer.need input{border-bottom-color:var(--penred);background:rgba(247,220,46,.25)}
 .scGrid{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:12px;font:600 13px var(--body);text-align:center;font-variant-numeric:tabular-nums}
@@ -496,8 +497,8 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 .scTop .lt{flex:1;min-width:0}
 .scTop .pcName{margin:0;font:700 24px/1.02 var(--cond);text-transform:uppercase;letter-spacing:.02em;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .scTop .scSub{margin:4px 0 0;font:600 13px var(--cond);letter-spacing:.14em;color:var(--yel);text-transform:uppercase}
-.scTop .playBack,.scSw button{flex:none;width:44px;height:44px;border-radius:50%;background:rgba(246,241,227,.94);color:var(--g1);display:flex;align-items:center;justify-content:center;text-shadow:none;box-shadow:0 4px 12px rgba(0,0,0,.25)}
-.scTop .playBack:active,.scSw button:active{background:#e8e0c8}.scSw{flex:none;display:flex;gap:6px}.scSw svg{width:22px;height:22px}
+.scTop .playBack{flex:none;width:44px;height:44px;border-radius:50%;background:rgba(246,241,227,.94);color:var(--g1);display:flex;align-items:center;justify-content:center;text-shadow:none;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.scTop .playBack:active{background:#e8e0c8}
 .scTop .lt{position:relative}.scCourse{position:absolute;inset:0;margin:0}.scCourse[hidden]{display:none}
 .scTop .scChev{width:11px;height:8px;margin-left:7px;vertical-align:1px;display:none}.scTop .lt:has(.scCourse:not([hidden])) .scChev{display:inline}
 .scCourse .courseSel{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
@@ -528,7 +529,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 /* ---------- PAPER SHEETS: every menu sheet (practice, settings, stats, boards, help, the round's scorecard, map and bag) and the confirmation cards
    are the same scorecard paper as the start screens: cream stock, green printed titles over a rule, outlined or stamped green buttons, pen for what the player writes */
 .sheet,#menuSheet,#practiceSheet{--ink:#16211c;--ink2:rgba(22,33,28,.7);--ink3:rgba(22,33,28,.5);--hair:rgba(47,107,53,.22);--soft:#fbf8ef;
-  background:var(--paper) var(--rule);background-attachment:local;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:10px 10px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.42);color:var(--ink);text-shadow:none}
+  background:var(--paper);-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:10px 10px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.42);color:var(--ink);text-shadow:none}
 .sheet .grab,#menuSheet .grab,#practiceSheet .grab{background:rgba(47,107,53,.3)}
 .sheet .sht{color:var(--g1);font-weight:700;padding-bottom:6px;border-bottom:2px solid var(--g1);align-items:center}
 .sheet .sht small{color:var(--brass);letter-spacing:.14em}
@@ -565,9 +566,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 #practiceSheet .pracCourse{color:#80866f;letter-spacing:.18em;font-size:12px}
 .sheet .courseSel,.sheet .boardSel,#practiceSheet .courseSel,#boardSheet .boardSel{color:var(--ink);background-color:var(--soft);box-shadow:inset 0 0 0 1.5px rgba(47,107,53,.4);border-radius:10px;text-shadow:none}
 body:has(#menuSheet.on) #scrim,body:has(#practiceSheet.on) #scrim{background:rgba(10,30,18,.25)}
-.qcard{background:var(--paper) var(--rule);border:0;border-radius:8px;box-shadow:0 18px 50px rgba(0,0,0,.5);color:var(--ink);text-shadow:none}
-.scBody,.qcard .cfList,.qcard .cfBody,.sheet .cfList,.sheet .cfBody{background:var(--paper) var(--rule);background-attachment:local}
-.scBody{border-radius:inherit}
+.qcard{background:var(--paper);border:0;border-radius:8px;box-shadow:0 18px 50px rgba(0,0,0,.5);color:var(--ink);text-shadow:none}
 .qcard .qt{color:var(--g1);padding-bottom:8px;border-bottom:2px solid var(--g1)}
 .qcard p{color:#3d4a3f}
 .qcard .btn{height:54px;border-radius:10px;background:var(--g1);color:#fff;text-shadow:none;box-shadow:inset 0 0 0 3px var(--paper),0 0 0 2px var(--g1)}
@@ -611,7 +610,7 @@ body:has(#menuSheet.on) #scrim,body:has(#practiceSheet.on) #scrim{background:rgb
     <div class="scTabs"><span class="scTab on">Play</span><button class="scTab" id="btnPractice">Practice</button><button class="scTab" id="btnGlobal">Boards</button><button class="scTab" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button></div>
     <div class="scBody">
       <div class="scHead"><img src="crest.png" width="123" height="126" alt="Galena crest" decoding="async"><h1>Galena!!!<br>Pocket Edition<small>Est. 2007 · Scorecard</small></h1></div>
-      <label class="scPlayer" id="nameRow"><span class="scLbl">Player</span><input id="nameIn" maxlength="14" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Your name" enterkeyhint="go"></label>
+      <label class="scPlayer" id="nameRow"><span class="scLbl">Player</span><input id="nameIn" maxlength="14" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Your name" enterkeyhint="go"><span class="scHcp"><span class="scLbl">HCP</span><b id="hcpVal"></b></span></label>
       <div id="scLast"></div><p class="scCap" id="scLastCap"></p>
     </div>
     <div class="scFoot">
@@ -625,7 +624,7 @@ body:has(#menuSheet.on) #scrim,body:has(#practiceSheet.on) #scrim{background:rgb
   <div class="scCard scFill"><div class="scBody" id="glbList"></div></div>
 </div>
 <div class="layer" id="play">
-  <div class="scTop"><button class="playBack" id="btnPlayBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><p id="playCourse" class="pcName"></p><p class="scSub"><span id="playPlace"></span><svg class="scChev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></p><label class="scCourse courseRow" hidden><select class="courseSel" id="selCourse" aria-label="Course"></select></label></div><div class="scSw"><button id="crsPrev" aria-label="Previous course"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><button id="crsNext" aria-label="Next course"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></div></div>
+  <div class="scTop"><button class="playBack" id="btnPlayBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><p id="playCourse" class="pcName"></p><p class="scSub"><span id="playPlace"></span><svg class="scChev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></p><label class="scCourse courseRow" hidden><select class="courseSel" id="selCourse" aria-label="Course"></select></label></div></div>
   <div class="scCard scFill">
     <div class="scBody">
       <p class="scTee" id="playPar"></p>
@@ -1739,8 +1738,12 @@ function realPrep() {
   for (const p of GC.forest) scanFill(wood, W, H, toG(p), 1);
   // inside the maps the drawn trees are the wood; OSM woods only count beyond them
   for (let k = 0; k < W * H; k++) if (wood[k] && !cov[k]) cls[k] = GCL.WOOD;
-  for (const [k, v] of [['fescue', GCL.FESCUE], ['range', GCL.RANGE], ['fair', GCL.FAIR], ['path', GCL.PATH], ['tee', GCL.TEE], ['green', GCL.GREEN], ['sand', GCL.SAND], ['water', GCL.WATER], ['creek', GCL.WATER]])
+  let under = null;
+  for (const [k, v] of [['fescue', GCL.FESCUE], ['range', GCL.RANGE], ['fair', GCL.FAIR], ['path', GCL.PATH], ['tee', GCL.TEE], ['green', GCL.GREEN], ['sand', GCL.SAND], ['water', GCL.WATER], ['creek', GCL.WATER]]) {
+    if (k === 'path') under = cls.slice();   // (the class under the paths, for the far ground's map: realFarTex)
     for (const p of GC.feat[k] || []) scanFill(cls, W, H, toG(p), v);
+  }
+  GC.clsUnder = under;
   // pine straw (Augusta): a 2 m mask on the class map's grid, alternating off/on runs; beyond the hole it shows as the wood class
   GC.straw = null;
   if (D.straw) {
@@ -2505,10 +2508,36 @@ let FAR_LAST = null;
 function realFarTex() {
   if (!GC.farTex) {
     if (FAR_LAST) FAR_LAST.dispose();   // the previous course's (only the hole being built draws with this one; the old hole is already gone)
-    const t = FAR_LAST = new THREE.DataTexture(GC.cls, GR.W, GR.H, THREE.LuminanceFormat, THREE.UnsignedByteType);
+    // the far ground's class map has no paths: they are drawn from their own distance map (realFarPath), so their edges are smooth curves, not 2 m blocks
+    const fc = GC.cls.slice(), un = GC.clsUnder; if (un) for (let k = 0; k < fc.length; k++) if (fc[k] === GCL.PATH) fc[k] = un[k];
+    const t = FAR_LAST = new THREE.DataTexture(fc, GR.W, GR.H, THREE.LuminanceFormat, THREE.UnsignedByteType);
     t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.unpackAlignment = 1; t.needsUpdate = true; GC.farTex = t;
   }
   return GC.farTex;
+}
+// the cart paths beyond the hole's own fields: a course-wide signed distance map (FARP_RES m cells over the paths' extent, +-FARP_R m, sampled
+// bilinear), so a path seen across the course or in the fly-over has the same smooth edges as one on the hole; P maps the class map's cells to its uv
+const FARP_RES = 1, FARP_R = 3;
+let FARP_LAST = null;
+function realFarPath() {
+  if (!GC.farPath) {
+    if (FARP_LAST) FARP_LAST.dispose();
+    const ps = GC.feat.path || [];
+    let e0 = 1e9, n0 = 1e9, e1 = -1e9, n1 = -1e9;
+    for (const p of ps) for (const r of p) for (let i = 0; i < r.length; i += 2) { e0 = Math.min(e0, r[i]); e1 = Math.max(e1, r[i]); n0 = Math.min(n0, r[i + 1]); n1 = Math.max(n1, r[i + 1]); }
+    let d = new Uint8Array(1), w = 1, h = 1;
+    if (ps.length) {
+      e0 -= FARP_R + 1; n0 -= FARP_R + 1; w = Math.ceil((e1 + FARP_R + 1 - e0) / FARP_RES); h = Math.ceil((n1 + FARP_R + 1 - n0) / FARP_RES);
+      const px = ps.map(p => p.map(r => { const o = new Float64Array(r.length); for (let i = 0; i < r.length; i += 2) { o[i] = (r[i] - e0) / FARP_RES; o[i + 1] = (r[i + 1] - n0) / FARP_RES; } return o; }));
+      const f = sdfField(w, h, FARP_RES, px, FARP_R); d = new Uint8Array(w * h);
+      for (let k = 0; k < f.length; k++) d[k] = Math.round(clamp(f[k] / FARP_R * .5 + .5, 0, 1) * 255);
+    } else d[0] = 255;   // no paths
+    const t = FARP_LAST = new THREE.DataTexture(d, w, h, THREE.LuminanceFormat, THREE.UnsignedByteType);
+    t.magFilter = t.minFilter = THREE.LinearFilter; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.generateMipmaps = false; t.unpackAlignment = 1; t.needsUpdate = true;
+    const k = GR.res / FARP_RES;
+    GC.farPath = { tex: t, P: new THREE.Vector4((e0 - GR.e0) / GR.res, (n0 - GR.n0) / GR.res, k / w, k / h) };
+  }
+  return GC.farPath;
 }
 // Round every green (every course, the practice green and the range's targets): the fringe (FRINGE_W, 3 ft), then a collar of fairway-height grass
 // (COLLAR_W, added to the fairway field in makeRealCourse), then rough. The first cut is a band beside the fairways only (FIRST_CUT [fair, tee,
@@ -2545,7 +2574,7 @@ function realTerrainMat(C) {
     T[q + 3] = Math.round(clamp(.5 + .6 * fbm(X * .05, Z * .05, seed + 41, 2), 0, 1) * 255);
   }
   const f = C.frame, r = GR.res;
-  const far = { tex: realFarTex(), A: new THREE.Vector4(f.rx / r, -f.ux / r, f.ry / r, -f.uy / r), B: new THREE.Vector4((f.e - GR.e0) / r, (f.n - GR.n0) / r, GR.W, GR.H) };
+  const fp = realFarPath(), far = { tex: realFarTex(), ptex: fp.tex, P: fp.P, A: new THREE.Vector4(f.rx / r, -f.ux / r, f.ry / r, -f.uy / r), B: new THREE.Vector4((f.e - GR.e0) / r, (f.n - GR.n0) / r, GR.W, GR.H) };
   return terrainMatFrom({ A, B, T, w, h, x0: FG.x0, z0: FG.z0, res: FG.res, R, wlo, whi, far, dry: RDC.dry, lush: RDC.lush, fescue: RDC.fescue, longRough: RDC.longRough, straw: !!SM });
 }
 function buildRealWater(C, grp) {
@@ -5044,8 +5073,8 @@ function buildHole(C) {
 }
 /* ---------- terrain shading: smooth light, crisp per-pixel surface edges ---------- */
 const TERRAIN_GLSL = `
-uniform sampler2D tFA, tFB, tFC, tFar; uniform vec2 fO, fN; uniform float fInv, fR, wLo, wHi, seaLv, hasCoast, isLinks, isRocky, hasFar, isStraw, frW;
-uniform vec4 farA, farB;
+uniform sampler2D tFA, tFB, tFC, tFar, tFarP; uniform vec2 fO, fN; uniform float fInv, fR, wLo, wHi, seaLv, hasCoast, isLinks, isRocky, hasFar, isStraw, frW;
+uniform vec4 farA, farB, farP;
 uniform vec4 cupP[4];
 uniform sampler2D tSlope; uniform vec4 sgBox, sgAim; uniform float sgOn, sgT, sgLen;
 vec3 sgC; float sgA = 0.;
@@ -5079,6 +5108,10 @@ vec3 farColor() {
   vec3 col = cRough;
   if (c < .5) col = cOut * 1.02; else if (c < 1.5) col = cRough; else if (c < 2.5) col = cFairA; else if (c < 3.5) col = cGreenA;
   else if (c < 4.5) col = cTee; else if (c < 5.5) col = cSand; else if (c < 6.5) col = cPond; else if (c < 7.5) col = cPath; else if (c < 8.5) col = isStraw > .5 ? cStraw : cOut * .86; else if (c < 9.5) col = cFirst; else col = cDeep;
+  // the cart paths from their own distance map (realFarPath): smooth edges, not the class map's 2 m blocks
+  vec2 pu = (en - farP.xy) * farP.zw;
+  float pd = (pu.x < 0. || pu.y < 0. || pu.x > 1. || pu.y > 1.) ? 9. : (texture2D(tFarP, pu).r * 2. - 1.) * 3.;
+  col = mix(col, cPath, ins(pd));
   return col;
 }
 vec3 surfaceColor() {
@@ -5141,7 +5174,7 @@ function terrainMatFrom(o) {
   const U = {
     tFA: { value: tex(A) }, tFB: { value: tex(B) }, tFC: { value: tex(T) }, fO: { value: new THREE.Vector2(x0, z0) }, fN: { value: new THREE.Vector2(w, h) }, fInv: { value: 1 / res }, fR: { value: R },
     wLo: { value: wlo }, wHi: { value: whi }, seaLv: { value: o.sea != null ? o.sea : -1e4 }, hasCoast: { value: o.sea != null ? 1 : 0 }, isLinks: { value: o.links ? 1 : 0 }, isRocky: { value: o.rocky ? 1 : 0 }, frW: { value: fringeW() },
-    tFar: { value: far ? far.tex : NO_FAR.tex }, hasFar: { value: far ? 1 : 0 }, farA: { value: far ? far.A : new THREE.Vector4() }, farB: { value: far ? far.B : new THREE.Vector4(0, 0, 1, 1) }, cupP: CUP_U, tSlope: SG_U.tSlope, sgBox: SG_U.sgBox, sgAim: SG_U.sgAim, sgOn: SG_U.sgOn, sgT: SG_U.sgT, sgLen: SG_U.sgLen,
+    tFar: { value: far ? far.tex : NO_FAR.tex }, tFarP: { value: far ? far.ptex : NO_FAR.tex }, farP: { value: far ? far.P : new THREE.Vector4(-9, -9, 0, 0) }, hasFar: { value: far ? 1 : 0 }, farA: { value: far ? far.A : new THREE.Vector4() }, farB: { value: far ? far.B : new THREE.Vector4(0, 0, 1, 1) }, cupP: CUP_U, tSlope: SG_U.tSlope, sgBox: SG_U.sgBox, sgAim: SG_U.sgAim, sgOn: SG_U.sgOn, sgT: SG_U.sgT, sgLen: SG_U.sgLen,
     // dry = a links-style course: sun-bleached, more olive and straw in the rough, a touch drier on the fairways (greens stay healthy)
     cRough: { value: pc(S.ROUGH, dr * .035, -dr * .05, -dr * .04) }, cDeep: { value: o.fescue ? v3(hslToRgb(...(o.longRough ? LONG_HSL : FESCUE_HSL))) : pc(S.DEEP, dr * .045, -dr * .06, -dr * .052) }, cFirst: { value: pc(S.FIRST, dr * .03, -dr * .035, -dr * .036) }, cFairA: { value: pc(S.FAIR, .045 + dr * .035, -dr * .03, -dr * .04) }, cFairB: { value: pc(S.FAIR, -.025 + dr * .025, -dr * .03, -dr * .04) },
     cGreenA: { value: pc(S.GREEN, .02 + dr * .008, -dr * .012, -dr * .026) }, cGreenB: { value: pc(S.GREEN, -.008 + dr * .008, -dr * .012, -dr * .026) }, cFringe: { value: pc(S.FRINGE, dr * .012, -dr * .025, -dr * .032) }, cSand: { value: RDC.whiteSand ? v3(hexToRgb(WHITE_SAND[0])) : pc(S.SAND) }, wSand: { value: RDC.whiteSand ? 1 : 0 }, cWaste: { value: pc(S.SAND, -.05, -.08, .012) },
@@ -9479,8 +9512,22 @@ function playFill() {
   out.push(box(w ? fmtToPar(w.toPar) : '—', w ? 'Record · ' + escHtml(w.name) : CO.alpha ? 'No board yet' : 'Course record'));
   let mb = 0; try { mb = +localStorage.getItem(BEST_KEY) || 0; } catch (e) { }
   out.push(box(mb ? fmtToPar(mb - PAR_TOTAL) : '—', 'Your best'));
-  const t = CO.trip; out.push(box(t && t.n ? t.n : '—', t && t.n ? 'Trip rounds' : 'Not on the trip yet'));
+  const n = PLAYED.map ? PLAYED.map[CO.key] || 0 : null; out.push(box(n == null ? '—' : n.toLocaleString('en-US'), n === 1 ? 'Recorded round' : 'Recorded rounds'));
   st.innerHTML = disc ? '' : out.join('');
+  loadPlayed();
+}
+// rounds filed on each course in this game, by everyone (played.json at the repo root, written by the leaderboard workflow, rebuilt by
+// tools/players/stats.py), for the play screen; cached for offline in localStorage ssg-played, asked again at most every 5 minutes
+const PLAYED = { map: null, at: 0 };
+try { PLAYED.map = JSON.parse(localStorage.getItem('ssg-played')) || null; } catch (e) { }
+async function loadPlayed() {
+  if (Date.now() - PLAYED.at < 3e5) return; PLAYED.at = Date.now();
+  try {
+    const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/played.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' }); if (!r.ok) return;
+    const m = await r.json(), was = JSON.stringify(PLAYED.map); if (!m || typeof m !== 'object') return;
+    PLAYED.map = m; try { localStorage.setItem('ssg-played', JSON.stringify(m)); } catch (e) { }
+    if (JSON.stringify(m) !== was && $('play').classList.contains('on')) playFill();
+  } catch (e) { }
 }
 const escHtml = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 // a scorecard table: the front nine and the back nine, each with a total column; `rows` are [label, values, kind] (kind 'pen': the player's
@@ -9500,6 +9547,7 @@ function scGrid(holes, rows, pars) {
 }
 // the title card: the player's last finished round on this device (any course), and the slip to continue a saved round
 function titleCardFill() {
+  try { hcpFill(); } catch (e) { }   // (HCP is declared further down: a call during start-up waits for pidSync)
   const el = $('scLast'), cap = $('scLastCap'); if (!el) return;
   const last = histLocal().filter(x => COURSES[x.course]).sort((a, b) => b.at - a.at)[0];
   if (last) {
@@ -10232,6 +10280,24 @@ function pidInit() {
 }
 const pidRequest = () => 'GG1-' + btoa(JSON.stringify({ v: 1, k: PID.pub, l: PID.label })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 // asks the roster whether this device's key is in it (at most every 10 minutes unless forced); offline, the last answer stands
+// the title screen's HCP: a registered player's handicap index from handicap/handicaps.json (written by tools/players/handicap.py calc; a plus
+// handicap, below 0, shows as +2.1), cached for offline in localStorage ssg-hcp; blank for a guest or a player with too few rounds for an index
+const HCP = { map: null, at: 0 };
+try { HCP.map = JSON.parse(localStorage.getItem('ssg-hcp')) || null; } catch (e) { }
+function hcpFill() {
+  const el = $('hcpVal'); if (!el) return;
+  const h = PID.reg && HCP.map && HCP.map[PID.reg.pid], v = h && typeof h.index === 'number' ? h.index : null;
+  el.textContent = v == null ? '' : v < 0 ? '+' + (-v).toFixed(1) : v.toFixed(1);
+}
+async function loadHcp() {
+  if (!PID.reg || Date.now() - HCP.at < 6e5) { hcpFill(); return; }
+  HCP.at = Date.now();
+  try {
+    const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/handicap/handicaps.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' });
+    if (r.ok) { const a = await r.json(), m = {}; for (const k in a) if (a[k] && typeof a[k].index === 'number') m[k] = { index: a[k].index }; HCP.map = m; try { localStorage.setItem('ssg-hcp', JSON.stringify(m)); } catch (e) { } }
+  } catch (e) { }
+  hcpFill();
+}
 async function pidSync(force) { // resolves to 'reg', 'guest' (the roster answered, this key is not in it), 'fail' (no answer), 'skip' (asked recently) or 'none' (no key)
   await pidInit(); if (!PID.key) { pidUi(); return 'none'; }
   let res = 'skip';
@@ -10247,6 +10313,7 @@ async function pidSync(force) { // resolves to 'reg', 'guest' (the roster answer
     } catch (e) { res = 'fail'; }
   }
   pidUi(); try { syncMenu(); showBest(); updateHUD(); } catch (e) { }
+  hcpFill(); loadHcp();
   return res;
 }
 // "Check now": the button says Checking..., then shows the answer for a moment
@@ -10842,8 +10909,6 @@ function initInput() {
     if (!cleanName(settings.name)) { nr.classList.remove('need'); void nr.offsetWidth; nr.classList.add('need'); ni.focus(); return; }
     $('btnResume').onclick();
   };
-  const crsStep = k => { const ks = Object.keys(COURSES), sel = $('selCourse'); if (ks.length < 2) return; sel.value = ks[(ks.indexOf(COURSE.key) + k + ks.length) % ks.length]; sel.onchange({ target: sel }); };
-  $('crsPrev').onclick = () => crsStep(-1); $('crsNext').onclick = () => crsStep(1);
   $('btnNew').onclick = () => { audio(); SFX.blip(); if (!courseOpen(COURSE.key)) { courseLockedNote(); return; } newRoundAsk(); };
   $('nNo').onclick = () => { SFX.blip(); $('newAsk').classList.remove('on'); };
   $('nContinue').onclick = () => { $('newAsk').classList.remove('on'); $('btnResume').onclick(); };

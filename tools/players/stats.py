@@ -168,6 +168,16 @@ def rebuild_aces():
     print('aces.json:', len(out), 'aces')
 
 
+def rebuild_played():
+    """played.json (repo root): how many rounds have been filed on each course, {course: n}, from the stats files (the game's play screen shows it)."""
+    out = defaultdict(int)
+    for fn in sorted(os.listdir(STATS)) if os.path.isdir(STATS) else []:
+        for course, co in json.load(open(os.path.join(STATS, fn))).get('courses', {}).items():
+            out[course] += co.get('rounds', 0)
+    dump(os.path.join(ROOT, 'played.json'), dict(sorted(out.items())))
+    print('played.json:', sum(out.values()), 'rounds')
+
+
 def rebuild_records():
     """records/<course>.json: the best 5 players of each record, from every player's stats file."""
     names = {}
@@ -203,6 +213,7 @@ def main(argv):
         rebuild(pid)
     rebuild_records()
     rebuild_aces()
+    rebuild_played()
 
 
 if __name__ == '__main__':

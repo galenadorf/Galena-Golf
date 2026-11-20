@@ -40,13 +40,14 @@ ALT = {}  # no alternate tee lengths
 # gaps in OSM's cart paths that are neither a road nor the creek, closed with a straight piece: ((east, north), (east, north)) of the two path ends
 PATH_JOINS = [
     ((250.5, 403.4), (240.5, 381.5)),    # hole 18, by the green: the path from the 18th green's junction on to the next path
-    ((240.5, 381.5), (227.8, 370.8)),
     ((501.6, -284.6), (500.4, -296.9)),  # between holes 13 and 16, one path through three ends
     ((500.4, -296.9), (500.1, -309.5)),
-    ((500.1, -309.5), (546.4, -324.5)),  # and the fork off it
 ]
 # cart-path bridges over the creek, where OSM's cart paths break at it (the gap between the two path ends): (east, north, deck bearing in degrees
 # counter-clockwise from east, length m, hole). build.py writes them as `cartBridges`; the game builds a 2.6 m wide deck with rails (buildCartBridges).
+ROUND_PATH_ENDS = True   # build.py: round cart-path ends, so a piece that meets another at an angle has no square corner sticking out
+PATH_CLOSE = 0.8         # build.py: a closing of the finished paths (m): fills slivers of grass under 1.6 m between paths that run side by side and rounds the inside corners of the junctions
+# (2026-11-20: two joins taken out, (240.5, 381.5)-(227.8, 370.8) and (500.1, -309.5)-(546.4, -324.5): OSM's own paths already make both links, and the straight pieces ran beside them)
 CART_BRIDGES = [
     (-685.8, 575.6, 53.5, 21, 3),     # hole 3, the creek on the way to the green
     (-553.5, 512.1, 57.4, 19, 8),     # hole 8, from the tee box towards the fairway
