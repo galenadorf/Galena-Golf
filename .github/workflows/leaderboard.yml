@@ -78,6 +78,9 @@ jobs:
               r.hs.forEach((h, i) => { const a = co.holes[i]; if (!a[9]) a[9] = new Array(10).fill(0); a[9][Math.min(h[0], 10) - 1]++; a[0]++; a[1] += h[0]; a[2] += h[1]; if (h[2] >= 0) { a[3] += h[2]; a[4]++; } if (h[3] >= 0) { a[5] += h[3]; a[6]++; } a[7] += h[4]; a[8] = Math.min(a[8], h[0]); });
               // aces: every 1 in the hole scores, with the shot's own time when the round carries it (x.a), else the round's time; stats/<id>.json `aces` = [[course, hole, at], ...]
               st.aces = st.aces || []; r.hs.forEach((h, i) => { if (h[0] === 1) { const q = ((r.x || {}).a || []).find(z => z[0] === i + 1); st.aces.push([r.course, i + 1, q ? q[1] : r.at]); } });
+              // aces.json (repo root): every filed ace of every player, [{pid, name, c, h, at}] by time, for the game's Global leaderboard screen; tools/players/stats.py rebuilds it
+              const newAces = st.aces.filter(a => a[0] === r.course && (a[2] === r.at || (r.x && r.x.a && r.x.a.some(z => z[0] === a[1] && z[1] === a[2])))).map(a => ({ pid: r.pid, name, c: a[0], h: a[1], at: a[2] }));
+              if (newAces.length) { let al = []; try { al = JSON.parse(fs.readFileSync('aces.json', 'utf8')); } catch (e) { al = []; } for (const q of newAces) if (!al.some(z => z.pid === q.pid && z.c === q.c && z.h === q.h && z.at === q.at)) al.push(q); al.sort((a, b) => a.at - b.at); fs.writeFileSync('aces.json', JSON.stringify(al) + '\n'); }
               co.rounds++; if (!co.best || r.strokes < co.best.strokes) co.best = { strokes: r.strokes, at: r.at };
               // records: only a full round of a registered player counts. The round's marks are compared with the player's own (co.rec: key -> [value, hole, at]), and a new
               // personal best goes into the top 5 players of that record on this course (records/<course>.json). tools/players/stats.py rebuilds both from the rounds.
@@ -107,7 +110,7 @@ jobs:
               rows.sort((a, b) => a.toPar - b.toPar || a.strokes - b.strokes || a.at - b.at); rows = rows.filter((x, i) => i < 500 || x.at > Date.now() - 46 * 864e5); // the best 500 rounds, plus every round of the last 46 days (the game's "Last 45 days" view)
               fs.mkdirSync('leaderboard', { recursive: true }); fs.writeFileSync(file, JSON.stringify(rows) + '\n');
               const rank = rows.findIndex(x => x.name === name && x.at === r.at) + 1;
-              await exec.exec('git', ['add', file, pfile, sfile, rfile]); await exec.exec('git', ['commit', '-m', `Leaderboard: ${name} ${r.toPar >= 0 ? '+' : ''}${r.toPar} on ${r.course}`]);
+              await exec.exec('git', ['add', file, pfile, sfile, rfile].concat(fs.existsSync('aces.json') ? ['aces.json'] : [])); await exec.exec('git', ['commit', '-m', `Leaderboard: ${name} ${r.toPar >= 0 ? '+' : ''}${r.toPar} on ${r.course}`]);
               posted.push([issue, `Posted. You are #${rank} of ${rows.length} on the ${r.course} board.`]);
             }
             // This run's issue, and every other [score] issue still open: a run waiting behind another is cancelled when a newer one queues (one pending run per

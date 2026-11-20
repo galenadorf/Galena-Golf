@@ -9742,6 +9742,17 @@ function roundMarks(e) {
 }
 // the world records of a course (records/<course>.json: key -> the best 5 players), fetched when the Stats sheet opens and when a round ends; true when it changed
 const Rec = { gh: {}, at: {}, err: {}, open: new Set() };
+// Filed holes in one: aces.json (every player's, written by the leaderboard workflow) for the Global leaderboard screen; my own are `aces` in my stats file (PID.stats).
+const ACES = { list: null, at: 0 };
+async function loadAces(force) {
+  if (!force && ACES.at && Date.now() - ACES.at < 60000) return false; ACES.at = Date.now();
+  try {
+    const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/aces.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' }), old = JSON.stringify(ACES.list);
+    if (r.ok) { const a = await r.json(); ACES.list = Array.isArray(a) ? a.filter(x => x && typeof x.c === 'string' && Number.isInteger(x.h) && Number.isInteger(x.at)) : []; } else if (r.status === 404) ACES.list = []; else return false;
+    return JSON.stringify(ACES.list) !== old;
+  } catch (e) { return false; }
+}
+const aceText = (c, h, at) => ((COURSES[c] && COURSES[c].short) || c).replace(/ \((beta|alpha)\)$/i, '') + ' · hole ' + h + ' · ' + new Date(at).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 async function loadRecords(key, force) {
   key = key || COURSE.key; if (COURSES[key] && COURSES[key].alpha) { const had = !!Rec.gh[key]; Rec.gh[key] = { rec: {} }; Rec.err[key] = false; return !had; }   // (an alpha course keeps no records: no file to fetch)
   if (!force && Rec.at[key] && Date.now() - Rec.at[key] < 60000) return false; Rec.at[key] = Date.now();
@@ -9997,6 +10008,10 @@ function openStats(again) {
       return card(d.t, d.e, m ? d.f(m[0]) : '—', [m ? at : 'Not set yet', wn].filter(Boolean).join(' · '), !!(m && w && w.pid === PID.reg.pid && w.v === m[0]));
     }).join('') + '</div>';
   };
+  const aceList = () => {   // my filed holes in one (stats/<id>.json `aces`), newest first
+    const a = isReg() && PID.stats && Array.isArray(PID.stats.aces) ? PID.stats.aces.slice().sort((x, y) => y[2] - x[2]) : [];
+    return a.length ? `<div class="sub"><span>Holes in one · ${a.length}</span></div><div class="stFun">${a.map(q => `<div>👑 ${aceText(q[0], q[1], q[2])}</div>`).join('')}</div>` : '';
+  };
   const pace = S.holes ? (S.strokes / S.holes).toFixed(2) : '–';
   const fun = [];
   if (S.dist > 0) fun.push(`Your shots have flown <b>${mi >= 1 ? mi.toFixed(2) + ' miles' : toYd(S.dist) + ' yd'}</b>, about <b>${(S.dist / 91.44).toFixed(1)}</b> football fields.`);
@@ -10009,7 +10024,7 @@ function openStats(again) {
   if (!fun.length) fun.push('Play a few holes and the fun facts will show up here.');
   el.innerHTML = `<div class="stLvl"><b>${LEVELS[li][1]}</b><span>${nx ? (nx[0] - S.holes) + (nx[0] - S.holes === 1 ? ' hole to ' : ' holes to ') + nx[1] : 'Top level reached'} · ${S.holes} hole${S.holes === 1 ? '' : 's'} · ${S.rounds} round${S.rounds === 1 ? '' : 's'}</span>${nx ? `<div class="stBar"><i style="width:${Math.min(100, 100 * (S.holes - lo) / (nx[0] - lo))}%"></i></div>` : ''}</div>
     <div class="mbtns"><button class="mbtn wide" id="stHoles">\u26f3 Hole by hole \u203a</button></div>
-    <div class="sub"><span>Records · ${COURSE.short}</span></div>${recs()}
+    ${aceList()}<div class="sub"><span>Records · ${COURSE.short}</span></div>${recs()}
     <div class="sub"><span>Streaks running now</span></div><div class="stGrid">${card('Greens in a row', '🟢', S.cur.gir)}${card('Fairways in a row', '🛣️', S.cur.fw)}${card('Birdie streak', '🐦', S.cur.bird)}${card('Holes in one', '👑', S.aces)}</div>
     <div class="sub"><span>Scoring</span></div>
     <div class="stRow"><span>Eagles or better</span><span>${S.eagles}</span></div><div class="stRow"><span>Birdies</span><span>${S.birdies}</span></div><div class="stRow"><span>Pars</span><span>${S.pars}</span></div><div class="stRow"><span>Bogeys</span><span>${S.bogeys}</span></div><div class="stRow"><span>Double or worse</span><span>${S.doubles}</span></div>
@@ -10476,6 +10491,7 @@ function fillRecords(el, key) {
 function glbOpen() {
   $('title').classList.remove('on'); $('glb').classList.add('on'); $('glbList').scrollTop = 0;
   for (const c of Object.values(COURSES)) if (!c.alpha) loadWorld(false, c.key);
+  loadAces().then(ch => { if (ch) glbFill(); });
   glbFill();
 }
 function glbFill() {
@@ -10483,6 +10499,16 @@ function glbFill() {
   const keep = el.scrollTop; el.textContent = '';
   const mk = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
   let shown = 0, wait = 0, fail = 0;
+  if (ACES.list && ACES.list.length) {   // holes in one, at the top: the newest first
+    const card = mk('div', 'glbCard'), h = card.appendChild(mk('h3', null, 'Holes in one 👑'));
+    h.appendChild(mk('small', null, ACES.list.length + (ACES.list.length === 1 ? ' ace' : ' aces')));
+    ACES.list.slice().sort((a, b) => b.at - a.at).slice(0, 10).forEach(a => {
+      const row = mk('div', 'glbRow'), nm = mk('span', 'nm', a.name || 'Player');
+      nm.appendChild(mk('small', null, aceText(a.c, a.h, a.at)));
+      row.append(mk('span', 'rk top', '★'), nm); card.appendChild(row);
+    });
+    el.appendChild(card);
+  }
   for (const c of Object.values(COURSES)) {
     if (c.alpha) continue;   // a course in alpha posts no rounds
     const w = worldRows(c.key);

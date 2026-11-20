@@ -152,6 +152,22 @@ def rebuild(pid):
     print(pid, st['rounds'], 'rounds ->', os.path.join('stats', pid + '.json'))
 
 
+def rebuild_aces():
+    """aces.json (repo root): every player's filed aces, [{pid, name, c, h, at}] by time, from the stats files (the game's Global leaderboard shows them)."""
+    names = {}
+    try:
+        names = {p['id']: p['name'] for p in json.load(open(os.path.join(ROOT, 'players.json')))}
+    except (OSError, ValueError):
+        pass
+    out = []
+    for fn in sorted(os.listdir(STATS)) if os.path.isdir(STATS) else []:
+        st = json.load(open(os.path.join(STATS, fn)))
+        out += [{'pid': st['pid'], 'name': names.get(st['pid'], st['pid']), 'c': c, 'h': h, 'at': at} for c, h, at in st.get('aces', [])]
+    out.sort(key=lambda a: a['at'])
+    dump(os.path.join(ROOT, 'aces.json'), out)
+    print('aces.json:', len(out), 'aces')
+
+
 def rebuild_records():
     """records/<course>.json: the best 5 players of each record, from every player's stats file."""
     names = {}
@@ -186,6 +202,7 @@ def main(argv):
             backfill(pid)
         rebuild(pid)
     rebuild_records()
+    rebuild_aces()
 
 
 if __name__ == '__main__':
