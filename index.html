@@ -449,10 +449,10 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 @media (orientation:landscape){#glb{flex-direction:column}}
 /* ---------- SCORECARD: the title, play and Global leaderboard screens are a paper scorecard over the course scene (cream card stock with faint green
    rules, printed green headings, the player's writing in blue pen; birdies circled, bogeys boxed). The card keeps its foot (the buttons) and scrolls inside. */
-:root{--paper:#f6f1e3;--paper2:#e3dcc7;--pen:#1f3a8a;--pencil:#6b705f;--penred:#c0392b;--brass:#9a7b2f}
+:root{--paper:#f6f1e3;--paper2:#e3dcc7;--pen:#1f3a8a;--pencil:#6b705f;--penred:#c0392b;--brass:#9a7b2f;--rule:repeating-linear-gradient(0deg,transparent 0 27px,rgba(47,107,53,.085) 27px 28px)}
 #title,#play,#glb{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:0;padding:calc(var(--st) + 12px) calc(var(--sr) + 12px) calc(var(--sb) + 10px) calc(var(--sl) + 12px);background:linear-gradient(180deg,rgba(10,40,20,0) 30%,rgba(10,40,20,.35) 100%)}
 #play,#glb{justify-content:flex-start}
-.scCard{position:relative;flex:0 1 auto;min-height:0;display:flex;flex-direction:column;width:100%;max-width:520px;background:var(--paper) repeating-linear-gradient(0deg,transparent 0 27px,rgba(47,107,53,.09) 27px 28px);border-radius:6px;box-shadow:0 18px 40px rgba(0,0,0,.45);color:var(--ink);text-shadow:none}
+.scCard{position:relative;flex:0 1 auto;min-height:0;display:flex;flex-direction:column;width:100%;max-width:520px;background:var(--paper) var(--rule);border-radius:6px;box-shadow:0 18px 40px rgba(0,0,0,.45);color:var(--ink);text-shadow:none}
 .scTitle{margin-top:46px}
 .scFill{flex:1 1 auto}
 .scTabs{position:absolute;top:-38px;left:10px;right:10px;display:flex;gap:6px}
@@ -528,7 +528,7 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 /* ---------- PAPER SHEETS: every menu sheet (practice, settings, stats, boards, help, the round's scorecard, map and bag) and the confirmation cards
    are the same scorecard paper as the start screens: cream stock, green printed titles over a rule, outlined or stamped green buttons, pen for what the player writes */
 .sheet,#menuSheet,#practiceSheet{--ink:#16211c;--ink2:rgba(22,33,28,.7);--ink3:rgba(22,33,28,.5);--hair:rgba(47,107,53,.22);--soft:#fbf8ef;
-  background:var(--paper) repeating-linear-gradient(0deg,transparent 0 27px,rgba(47,107,53,.08) 27px 28px);-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:10px 10px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.42);color:var(--ink);text-shadow:none}
+  background:var(--paper) var(--rule);background-attachment:local;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:10px 10px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.42);color:var(--ink);text-shadow:none}
 .sheet .grab,#menuSheet .grab,#practiceSheet .grab{background:rgba(47,107,53,.3)}
 .sheet .sht{color:var(--g1);font-weight:700;padding-bottom:6px;border-bottom:2px solid var(--g1);align-items:center}
 .sheet .sht small{color:var(--brass);letter-spacing:.14em}
@@ -565,7 +565,9 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 #practiceSheet .pracCourse{color:#80866f;letter-spacing:.18em;font-size:12px}
 .sheet .courseSel,.sheet .boardSel,#practiceSheet .courseSel,#boardSheet .boardSel{color:var(--ink);background-color:var(--soft);box-shadow:inset 0 0 0 1.5px rgba(47,107,53,.4);border-radius:10px;text-shadow:none}
 body:has(#menuSheet.on) #scrim,body:has(#practiceSheet.on) #scrim{background:rgba(10,30,18,.25)}
-.qcard{background:var(--paper) repeating-linear-gradient(0deg,transparent 0 27px,rgba(47,107,53,.08) 27px 28px);border:0;border-radius:8px;box-shadow:0 18px 50px rgba(0,0,0,.5);color:var(--ink);text-shadow:none}
+.qcard{background:var(--paper) var(--rule);border:0;border-radius:8px;box-shadow:0 18px 50px rgba(0,0,0,.5);color:var(--ink);text-shadow:none}
+.scBody,.qcard .cfList,.qcard .cfBody,.sheet .cfList,.sheet .cfBody{background:var(--paper) var(--rule);background-attachment:local}
+.scBody{border-radius:inherit}
 .qcard .qt{color:var(--g1);padding-bottom:8px;border-bottom:2px solid var(--g1)}
 .qcard p{color:#3d4a3f}
 .qcard .btn{height:54px;border-radius:10px;background:var(--g1);color:#fff;text-shadow:none;box-shadow:inset 0 0 0 3px var(--paper),0 0 0 2px var(--g1)}
