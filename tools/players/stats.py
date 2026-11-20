@@ -13,7 +13,8 @@ Reads rounds/<id>/<year>.json (a player's rounds, one file per UTC year, each {c
 lifetime summary the game's Stats screen reads: per course the rounds played, the best round, and for each hole
 [rounds, strokes, putts, fairways hit, fairway chances, greens hit, green chances, penalties, best score, histogram of strokes 1..9 and 10+].
 A round with hs null counts as a round (and for the best round) but adds nothing to the per-hole totals. A flat rounds/<id>.json from before the year split is moved into the year files first. The workflow adds each new round to the same files
-(one line of arithmetic per hole), so this is only for repairing or checking them."""
+(one line of arithmetic per hole), so this is only for repairing or checking them.
+The summary also has `aces`: [[course, hole, time ms], ...], one per 1-stroke hole (time from the round's `x.a` when it has it, else the round's own time), plus any entries of `aces_manual.json` (repo root: pid, course, hole, at) for aces in rounds that were never posted."""
 import json
 import os
 import sys
@@ -126,6 +127,10 @@ def rebuild(pid):
             a[7] += h[4]
             a[8] = min(a[8], h[0])
             a[9][min(h[0], 10) - 1] += 1
+        for i, h in enumerate(r.get('hs') or []):
+            if h[0] == 1:   # an ace: the shot's own time when the round carries it (x.a = [[hole, ms]]), else the round's
+                q = next((z for z in (r.get('x') or {}).get('a', []) if z[0] == i + 1), None)
+                st.setdefault('aces', []).append([r['course'], i + 1, q[1] if q else r['at']])
         co['rounds'] += 1
         rec = co.setdefault('rec', {})
         for k, (v, hole) in marks(r).items():
@@ -140,6 +145,9 @@ def rebuild(pid):
         y = datetime.fromtimestamp(r['at'] / 1000, timezone.utc).year
         if y not in st['years']:
             st['years'] = sorted(st['years'] + [y])
+    for m in json.load(open(os.path.join(ROOT, 'aces_manual.json'))) if os.path.isfile(os.path.join(ROOT, 'aces_manual.json')) else []:
+        if m['pid'] == pid:   # aces entered by hand (rounds that were never posted, e.g. on an alpha course)
+            st.setdefault('aces', []).append([m['course'], m['hole'], m['at']])
     dump(os.path.join(STATS, pid + '.json'), st)
     print(pid, st['rounds'], 'rounds ->', os.path.join('stats', pid + '.json'))
 

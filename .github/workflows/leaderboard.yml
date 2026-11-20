@@ -51,10 +51,10 @@ jobs:
               // per hole: [strokes, putts, fairway (-1/0/1), green in regulation (-1/0/1), penalties, pin (0-3)]
               const ok = Array.isArray(r.hs) && r.hs.length === 18 && r.hs.every(h => Array.isArray(h) && h.length === 6 && h.every(int) && h[0] >= 1 && h[0] <= 15 && h[1] >= 0 && h[1] <= h[0] && h[2] >= -1 && h[2] <= 1 && h[3] >= -1 && h[3] <= 1 && h[4] >= 0 && h[4] <= 10 && h[5] >= 0 && h[5] <= 3);
               if (!ok || r.hs.reduce((a, h) => a + h[0], 0) !== r.strokes) return finish(issue, false, 'The hole-by-hole scores do not add up.');
-              // shot records of the round (version 3 messages): x = { d: drive, h: holed shot, p: holed putt, l: lipped-out putts }; d, h and p are [distance in decimetres, hole 1-18], l a count
+              // shot records of the round (version 3 messages): x = { d: drive, h: holed shot, p: holed putt, l: lipped-out putts, a: aces }; d, h and p are [distance in decimetres, hole 1-18], l a count, a a list of [hole 1-18, time of the ace in ms] (each must be a 1 in hs)
               if (r.x != null) {
                 const X = r.x, CAP = { d: 5000, h: 6000, p: 800 };
-                const xok = typeof X === 'object' && !Array.isArray(X) && Object.keys(X).every(k => k in CAP || k === 'l') && Object.entries(X).every(([k, a]) => k === 'l' ? int(a) && a >= 1 && a <= 60 : Array.isArray(a) && a.length === 2 && a.every(int) && a[0] >= 1 && a[0] <= CAP[k] && a[1] >= 1 && a[1] <= 18)
+                const xok = typeof X === 'object' && !Array.isArray(X) && Object.keys(X).every(k => k in CAP || k === 'l' || k === 'a') && Object.entries(X).every(([k, a]) => k === 'a' ? Array.isArray(a) && a.length <= 18 && a.every(q => Array.isArray(q) && q.length === 2 && q.every(int) && q[0] >= 1 && q[0] <= 18 && r.hs[q[0] - 1][0] === 1 && q[1] <= r.at + 6e4 && q[1] >= r.at - 3 * 864e5) && new Set(a.map(q => q[0])).size === a.length : k === 'l' ? int(a) && a >= 1 && a <= 60 : Array.isArray(a) && a.length === 2 && a.every(int) && a[0] >= 1 && a[0] <= CAP[k] && a[1] >= 1 && a[1] <= 18)
                   && (!X.d || PARS[r.course][X.d[1] - 1] >= 4) && (!X.p || (X.h && X.h[0] >= X.p[0]));
                 if (!xok) return finish(issue, false, 'The shot records do not add up.');
               }
@@ -76,6 +76,8 @@ jobs:
               let st; try { st = JSON.parse(fs.readFileSync(sfile, 'utf8')); } catch (e) { st = { v: 1, pid: r.pid, rounds: 0, first: r.at, last: r.at, years: [], courses: {} }; }
               const co = st.courses[r.course] || (st.courses[r.course] = { rounds: 0, best: null, holes: r.hs.map(() => [0, 0, 0, 0, 0, 0, 0, 0, 99, new Array(10).fill(0)]) });
               r.hs.forEach((h, i) => { const a = co.holes[i]; if (!a[9]) a[9] = new Array(10).fill(0); a[9][Math.min(h[0], 10) - 1]++; a[0]++; a[1] += h[0]; a[2] += h[1]; if (h[2] >= 0) { a[3] += h[2]; a[4]++; } if (h[3] >= 0) { a[5] += h[3]; a[6]++; } a[7] += h[4]; a[8] = Math.min(a[8], h[0]); });
+              // aces: every 1 in the hole scores, with the shot's own time when the round carries it (x.a), else the round's time; stats/<id>.json `aces` = [[course, hole, at], ...]
+              st.aces = st.aces || []; r.hs.forEach((h, i) => { if (h[0] === 1) { const q = ((r.x || {}).a || []).find(z => z[0] === i + 1); st.aces.push([r.course, i + 1, q ? q[1] : r.at]); } });
               co.rounds++; if (!co.best || r.strokes < co.best.strokes) co.best = { strokes: r.strokes, at: r.at };
               // records: only a full round of a registered player counts. The round's marks are compared with the player's own (co.rec: key -> [value, hole, at]), and a new
               // personal best goes into the top 5 players of that record on this course (records/<course>.json). tools/players/stats.py rebuilds both from the rounds.

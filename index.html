@@ -7892,6 +7892,7 @@ function resumeRound(course) {
   G.practice = false; G.pg = null; document.body.classList.remove('pg'); G.submitted = false; if (r.planes != null) G.planes = r.planes;
   G.fartHole = Number.isInteger(r.fh) && r.fh >= 0 && r.fh < n ? r.fh : null; G.xr = {}; for (const k of ['d', 'h', 'p']) { const a = r.xr && r.xr[k]; if (Array.isArray(a) && a.length === 2 && a.every(Number.isInteger)) G.xr[k] = a; }
   if (r.xr && Number.isInteger(r.xr.l) && r.xr.l > 0) G.xr.l = Math.min(60, r.xr.l);
+  if (r.xr && Array.isArray(r.xr.a)) { const a = r.xr.a.filter(q => Array.isArray(q) && q.length === 2 && q.every(Number.isInteger) && q[0] >= 1 && q[0] <= 18).slice(0, 18); if (a.length) G.xr.a = a; }
   G.mull = Array.isArray(r.ml) && r.ml.length === 2 ? r.ml.map(v => v | 0) : [0, 0]; G.snap = null;
   G.fartDone = !!r.fd; // (a round saved before this existed has none: it falls back to the plain chance)
   G.scores = arr(r.scores, null); G.putts = arr(r.putts, 0); G.fir = arr(r.fir, null); G.gir = arr(r.gir, null); G.pens = arr(r.pens, 0); G.pins = arr(r.pins, 0);
@@ -9911,6 +9912,7 @@ function statsShot(sh, r) {
     const d = Math.hypot(C.cup.x - pv.x, C.cup.z - pv.z); ST.holedShots++; if (!putt && G.strokes > 1) ST.chipins++;
     if (!G.practice) { mark('h', d); if (putt) mark('p', d); }
     const where = `Hole ${G.hole + 1} · ${COURSE.short}${G.practice ? ' · practice' : ''}`;
+    if (G.strokes === 1 && !G.practice) { const a = G.xr.a || (G.xr.a = []); if (a.length < 18 && !a.some(q => q[0] === G.hole + 1)) a.push([G.hole + 1, Date.now()]); } // signed with the round: x.a = [[hole, ms time of the ace], ...]
     if (G.strokes === 1) setTimeout(() => recordCard('Unreal!', isDisc() ? 'Ace' : 'Hole in one', toLen(d) + ' ' + lenU(), where, ['#ffffff', '#ffd166', '#ef476f', '#2b0a1a']), 500), ST.aces++;
   }
   saveStats(); setTimeout(recLive, 1800);
