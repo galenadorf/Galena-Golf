@@ -584,6 +584,29 @@ body:has(#menuSheet.on) #scrim,body:has(#practiceSheet.on) #scrim{background:rgb
 #menuSheet.page .scBody{padding-bottom:16px}#practiceSheet.page .pracGrid{padding-bottom:6px}
 #practiceSheet.page .pracPair{margin-top:0}
 body:has(#menuSheet.page.on) :is(#title,#play,#glb),body:has(#practiceSheet.page.on) :is(#title,#play,#glb){opacity:0;pointer-events:none}   /* (the page covers the home screen, as the Play and Boards pages do) */
+/* TYPE (2026-11-20, picked from mock-ups): Playfair Display titles (B), Homemade Apple handwriting (D), Bebas Neue menu tabs (F), Courier Prime descriptions (C), engraved Cormorant Garamond buttons with a double rule (D); fonts/fonts.css */
+:root{--title:'Playfair Display',Georgia,serif;--hand:'Homemade Apple',cursive;--tab:'Bebas Neue','Oswald',sans-serif;--desc:'Courier Prime','Courier New',monospace;--btn:'Cormorant Garamond',Georgia,serif,'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji'}
+.scHead h1,.pcName,.scTop .pcName,.ic-n{font-family:var(--title);font-weight:900;text-transform:none;letter-spacing:.01em;font-variant-numeric:lining-nums}
+.scHead h1{font-size:32px}
+.scTab{font-family:var(--tab);font-weight:400;font-size:18px;letter-spacing:.12em}
+.pbJoke,#play #playBlurb .pbJoke,.ic-i{font-family:var(--desc);font-weight:400;font-size:14px;letter-spacing:-.02em;line-height:1.45}
+.scPlayer input,#hcpVal,.scPen,#play #playBlurb .pbWin,#glb .glbRow .tp,.sheet .mrow input,#menuSheet .mrow input,.sheet .lb .row .tp{font-family:var(--hand);font-style:normal;font-weight:400}
+.scPlayer input{font-size:22px}
+.scStamp{background:var(--paper);color:var(--g1);border:0;border-radius:2px;text-shadow:none;box-shadow:inset 0 0 0 1.5px var(--g1),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--g1);font-family:var(--btn);font-weight:700;text-transform:uppercase;font-size:26px;letter-spacing:.3em}
+.scBtn{background:var(--paper);color:var(--g1);border:0;border-radius:2px;text-shadow:none;box-shadow:inset 0 0 0 1.5px var(--g1),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--g1);font-family:var(--btn);font-weight:700;text-transform:uppercase;font-size:18px;letter-spacing:.14em}
+.pracPutt,#practiceSheet .pracPutt{background:var(--paper);color:var(--g1);border:0;border-radius:2px;text-shadow:none;box-shadow:inset 0 0 0 1.5px var(--g1),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--g1);font-family:var(--btn);font-weight:700;text-transform:uppercase;letter-spacing:.14em}
+.pracPutt small{color:var(--pencil);opacity:1}
+.pracPutt.cur{box-shadow:inset 0 0 0 1.5px var(--g1),inset 0 0 0 4px var(--yel),inset 0 0 0 5px var(--g1)}
+#menuSheet .mbtn:not(.danger),#menuSheet .mbtn.dark{background:var(--paper);color:var(--g1);border:0;border-radius:2px;text-shadow:none;box-shadow:inset 0 0 0 1.5px var(--g1),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--g1);font-family:var(--btn);font-weight:700;text-transform:uppercase;letter-spacing:.18em;box-shadow:inset 0 0 0 1.5px var(--g1),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--g1)!important}
+#menuSheet .mbtn.danger{background:var(--paper);color:var(--g1);border:0;border-radius:2px;text-shadow:none;box-shadow:inset 0 0 0 1.5px var(--g1),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--g1);font-family:var(--btn);font-weight:700;text-transform:uppercase;color:var(--penred);letter-spacing:.18em;box-shadow:inset 0 0 0 1.5px var(--penred),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--penred)!important}
+.qcard .btn{background:var(--paper);color:var(--g1);border:0;border-radius:2px;text-shadow:none;box-shadow:inset 0 0 0 1.5px var(--g1),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--g1);font-family:var(--btn);font-weight:700;text-transform:uppercase;letter-spacing:.18em}
+.qcard .btn.danger{color:var(--penred);box-shadow:inset 0 0 0 1.5px var(--penred),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--penred)}
+.ic-go{background:var(--g1);color:#fff;border:0;border-radius:2px;text-shadow:none;box-shadow:inset 0 0 0 1.5px #fff,inset 0 0 0 4px var(--g1),inset 0 0 0 5px #fff;font-family:var(--btn);font-weight:700;text-transform:uppercase;letter-spacing:.18em}
+.scStats b{font-family:var(--hand);font-weight:400;color:var(--pen);font-size:24px;line-height:1.4}
+.icard canvas{border-radius:0;background:none;box-shadow:none}   /* the hole picture alone, no frame */
+.ic-f{gap:10px}.ic-f b{white-space:nowrap;font-size:19px}
+.scGrid td.scPen,.scGrid td.t.scPen{font-family:var(--hand);font-style:normal;font-weight:400;font-size:17px;color:var(--pen)}
+
 </style>
 <canvas id="gl"></canvas>
 <div id="hud" class="off">
@@ -9758,7 +9781,7 @@ function showIntro() {
   const C = G.C, d = C.def;
   $('icK').textContent = `Hole ${G.hole + 1} of ${HOLE_DEFS.length} · HCP ${d.hcp}`; $('icN').textContent = d.name; $('icI').textContent = d.inspo || '';
   $('icPar').textContent = d.par; $('icLen').textContent = holeYd(d) + ' ' + holeU(d); $('icWind').textContent = toMph(Math.hypot(G.wind[0], G.wind[1])) + ' mph'; $('icWx').textContent = WX.name; $('icWx').title = WX.note;
-  drawPlan($('introMap'), { line: true });
+  introMapFit(); drawPlan($('introMap'), { line: true, bare: true });
   $('intro').classList.add('on');
 }
 function beginHole() {
@@ -9807,13 +9830,21 @@ function planFit(cv, W2, H2, pad) {
 }
 function w2m(f, x, z) { return [f.ox + (x - f.P.x0) / f.P.mpp * f.s, f.oy + (z - f.P.z0) / f.P.mpp * f.s]; }
 function m2w(f, mx, my) { return [f.P.x0 + (mx - f.ox) / f.s * f.P.mpp, f.P.z0 + (my - f.oy) / f.s * f.P.mpp]; }
+// the intro card's hole plan as tall as the card's text column on the left
+function introMapFit() {
+  const cv = $('introMap'), col = document.querySelector('#intro .ic-b'); if (!cv || !col) return;
+  cv.style.width = '110px';   // (no wider, or the Par / Length / Wind / Ground row wraps on a phone; the plan is fitted into whatever box it gets)
+  cv.style.height = Math.max(144, col.offsetHeight) + 'px';
+}
 function drawPlan(cv, opt) {
   if (!G.C || !G.C.plan) return;
   const r = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2), W2 = r.width || cv.width / 2, H2 = r.height || cv.height / 2;
   cv.width = W2 * dpr; cv.height = H2 * dpr;
   const x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
-  x.fillStyle = '#cfe3c3'; x.fillRect(0, 0, W2, H2);
-  const f = planFit(cv, W2, H2, opt.pad || 4); x.imageSmoothingEnabled = true; x.drawImage(f.P.cv, f.ox, f.oy, f.P.w * f.s, f.P.h * f.s);
+  if (opt.bare) x.clearRect(0, 0, W2, H2); else { x.fillStyle = '#cfe3c3'; x.fillRect(0, 0, W2, H2); }
+  const f = planFit(cv, W2, H2, opt.bare ? 0 : opt.pad || 4); x.imageSmoothingEnabled = true;
+  if (opt.bare && x.roundRect) { x.beginPath(); x.roundRect(f.ox, f.oy, f.P.w * f.s, f.P.h * f.s, 10); x.clip(); }   // (the bare picture gets rounded corners of its own)
+  x.drawImage(f.P.cv, f.ox, f.oy, f.P.w * f.s, f.P.h * f.s);
   const C = G.C, bp = opt.ball || G.ball, b = w2m(f, bp.x, bp.z), p = w2m(f, C.cup.x, C.cup.z);
   if (opt.line) {
     x.strokeStyle = 'rgba(255,255,255,.85)'; x.lineWidth = 1.5; x.setLineDash([3, 3]); x.beginPath();

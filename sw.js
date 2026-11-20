@@ -5,6 +5,7 @@ const BUILD = '__BUILD__';
 const CACHE = 'galena-' + BUILD;
 const FONTS = ['barlow-latin', 'barlow-latin-ext', 'barlow-vietnamese'].flatMap(f => [500, 600, 700].map(w => `${f}-${w}`))
   .concat(['oswald-latin', 'oswald-latin-ext', 'oswald-vietnamese', 'oswald-cyrillic', 'oswald-cyrillic-ext'])
+  .concat(['playfairdisplay-latin-900', 'playfairdisplay-latin-ext-900', 'homemadeapple-latin-400', 'bebasneue-latin-400', 'bebasneue-latin-ext-400', 'courierprime-latin-400', 'courierprime-latin-ext-400', 'cormorantgaramond-latin-700', 'cormorantgaramond-latin-ext-700'])
   .map(f => `fonts/${f}.woff2`);
 const CORE = ['./', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'crest.png',
   'sounds/driver.mp3', 'sounds/wood.mp3', 'sounds/iron.mp3', 'sounds/wedge.mp3', 'sounds/putter.mp3', 'sounds/cup.mp3', 'sounds/truckhorn.mp3', 'sounds/truckrumble.mp3', 'sounds/cartmusic.mp3', 'sounds/plane.mp3', 'sounds/eagle.mp3', 'img/eagle.webp', 'img/albatross.webp', 'img/masters.webp', 'sounds/cow1.mp3', 'sounds/cow2.mp3', 'sounds/cow3.mp3', ...[1, 2, 3, 4, 5].map(i => `sounds/bird${i}.mp3`), ...[1, 2, 3, 4].map(i => `sounds/augbird${i}.mp3`), 'sounds/crowdroar.mp3', 'sounds/crowdgroan.mp3', 'sounds/crowdmurmur.mp3', 'sounds/crowdpolite1.mp3', 'sounds/crowdpolite2.mp3', ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map(i => `sounds/fart${i}.mp3`), 'vendor/three.r128.min.js', 'vendor/mqtt.5.16.1.min.js', 'fonts/fonts.css', ...FONTS];
