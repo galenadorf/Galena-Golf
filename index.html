@@ -132,7 +132,6 @@ body.rev #strike{right:auto;left:calc(var(--sl) + 10px)}
 /* ---------- overlays ---------- */
 .layer{position:fixed;inset:0;z-index:6;opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
 .layer.on{opacity:1;pointer-events:auto}
-.btn.subBtn.glbBtn{width:100%;height:36px;font-size:15px;letter-spacing:.14em;text-transform:uppercase;border-radius:14px}
 #glb{display:flex;flex-direction:column;gap:10px;padding:calc(var(--st) + 26px) calc(var(--sr) + 16px) calc(var(--sb) + 8px) calc(var(--sl) + 16px);background:linear-gradient(180deg,rgba(10,40,20,.5),rgba(10,40,20,.72))}
 .glbHead .pcName{font-size:24px;line-height:1.05;letter-spacing:.04em;color:#fff;margin:0}
 #glbList{touch-action:pan-y;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px;padding-bottom:6px}
@@ -146,8 +145,6 @@ body.rev #strike{right:auto;left:calc(var(--sl) + 10px)}
 .glbRow .tp{font:700 24px var(--cond)}.glbRow .st{text-align:right;opacity:.9;font-size:18px}
 .glbMsg{padding:18px 12px;text-align:center;font:600 14px var(--cond);letter-spacing:.06em;text-transform:uppercase;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
 #title,#play{display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--st) + 26px) calc(var(--sr) + 16px) calc(var(--sb) + 8px) calc(var(--sl) + 16px);background:linear-gradient(180deg,rgba(10,40,20,0) 45%,rgba(10,40,20,.32) 100%)}
-.logoCard{align-self:stretch;flex:none;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;gap:4px;text-align:left;padding:14px 14px 14px 24px;border-radius:28px}
-.logoCard .lt{min-width:0}
 .playHead{align-self:stretch;flex:none;display:flex;align-items:center;gap:12px;padding:14px 20px 14px 14px;border-radius:28px;text-align:left}
 .playHead .lt{min-width:0}
 .playLeft{flex:1 1 auto;min-height:0;min-width:0;align-self:stretch;display:flex;flex-direction:column;gap:6px}
@@ -167,31 +164,7 @@ body.rev #strike{right:auto;left:calc(var(--sl) + 10px)}
 .playHead p{margin:7px 0 0;font:600 13px/1.45 var(--cond);text-transform:uppercase;letter-spacing:.14em;color:var(--w2);white-space:pre-line}
 .playBack{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.2);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}.playBack:active{background:rgba(255,255,255,.34)}
 .playBack svg{width:22px;height:22px}
-.logoCard img{height:126px;width:auto;flex:none;display:block;filter:drop-shadow(0 2px 5px rgba(0,0,0,.35))}
-.logoCard h1{margin:0;font:700 46px/.95 var(--cond);text-transform:uppercase;letter-spacing:.01em}
-.logoCard h1 span{color:inherit}
-.logoCard p{margin:9px 0 0;font:600 13px/1.45 var(--cond);text-transform:uppercase;letter-spacing:.14em;color:var(--w2);white-space:pre-line}
-@media (max-width:380px){.logoCard{padding-left:20px;padding-right:12px}.logoCard h1{font-size:39px}.logoCard img{height:98px}}
-@media (max-width:340px){.logoCard h1{font-size:33px}.logoCard p{letter-spacing:.08em}.logoCard img{height:78px}}
-.tb{display:flex;flex-direction:column;gap:5px}   /* 5 px between every row; what is left over goes between the logo card and the how-to cards (the title is space-between), never less than the 5 px of .logoCard's margin */
-.how{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0}
-.how .card{padding:8px 13px}
-.how b{display:block;font:600 17px/1.05 var(--cond);text-transform:uppercase;margin:7px 0 4px}
-.how p{margin:0;font:600 13px/1.35 var(--body);color:var(--w2)}
-.how svg{width:30px;height:30px;display:block}
 body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.replay #done,body.replay #recCard,body.replay #confetti,body.replay #readout{display:none!important}
-.how svg.tut{width:100%;max-width:120px;height:auto;margin:0 auto 2px}
-@media (max-height:780px) and (orientation:portrait){.how svg.tut{max-width:100px}}
-@media (max-height:670px) and (orientation:portrait){.how svg.tut{max-width:78px}}   /* iPhone Safari with its bars: ~680 px of screen */
-.tThumb{animation:tUp 4.2s infinite;transform-box:view-box}
-.tDown{stroke-dasharray:62;animation:tTrace 4.2s infinite}
-@keyframes tUp{0%{transform:translate(45px,20px);animation-timing-function:cubic-bezier(.45,0,.55,1)}56%{transform:translate(45px,80px)}60%{transform:translate(45px,80px);animation-timing-function:cubic-bezier(.5,0,.6,1)}76%{transform:translate(46px,20px)}100%{transform:translate(45px,20px)}}
-@keyframes tTrace{0%,59%{stroke-dashoffset:62;opacity:0}60%{opacity:1;stroke-dashoffset:62}76%{stroke-dashoffset:0;opacity:1}88%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
-.tBall{animation:tJit 1.6s infinite linear}
-.tFinger{animation:tFing 1.6s infinite linear}
-@keyframes tJit{0%{transform:translate(45px,50px)}12%{transform:translate(50px,45px)}25%{transform:translate(41px,47px)}38%{transform:translate(47px,56px)}50%{transform:translate(39px,53px)}63%{transform:translate(48px,50px)}75%{transform:translate(52px,54px)}88%{transform:translate(43px,44px)}100%{transform:translate(45px,50px)}}
-@keyframes tFing{0%{transform:translate(61px,66px)}12%{transform:translate(66px,61px)}25%{transform:translate(57px,63px)}38%{transform:translate(63px,72px)}50%{transform:translate(55px,69px)}63%{transform:translate(64px,66px)}75%{transform:translate(68px,70px)}88%{transform:translate(59px,60px)}100%{transform:translate(61px,66px)}}
-@media (prefers-reduced-motion:reduce){.tThumb,.tDown,.tBall,.tFinger{animation:none}}
 .nameRow{display:flex;align-items:center;gap:12px;padding:6px 8px 6px 16px;border-radius:20px}
 .nameRow span{font:600 12px var(--cond);letter-spacing:.14em;text-transform:uppercase;color:var(--w2);flex:none}
 .nameRow input,.mrow input{flex:1;min-width:0;height:44px;border:0;outline:0;border-radius:14px;padding:0 14px;font:600 20px var(--cond);text-transform:uppercase;letter-spacing:.04em;color:#fff;background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);text-shadow:var(--tsh)}
@@ -472,12 +445,86 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
   #pgBar{top:auto;bottom:calc(var(--sb) + 10px);left:calc(var(--sl) + 152px)}
   body.rev #pgBar{left:auto;right:calc(var(--sr) + 152px)}
   .icard{max-width:600px}
-  #title,#play{flex-direction:row;align-items:flex-end;gap:20px}
-  .logoCard,.playHead{align-self:flex-start}
-  .tb{width:min(440px,55%)}
 }
 @media (orientation:landscape){#glb{flex-direction:column}}
-@media (orientation:portrait){#title{justify-content:center;gap:10px}#title .logoCard{margin-bottom:0}#title .tb{gap:10px}}   /* the home tiles float together in the middle, 10 px apart */
+/* ---------- SCORECARD: the title, play and Global leaderboard screens are a paper scorecard over the course scene (cream card stock with faint green
+   rules, printed green headings, the player's writing in blue pen; birdies circled, bogeys boxed). The card keeps its foot (the buttons) and scrolls inside. */
+:root{--paper:#f6f1e3;--paper2:#e3dcc7;--pen:#1f3a8a;--pencil:#6b705f;--penred:#c0392b;--brass:#9a7b2f}
+#title,#play,#glb{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:0;padding:calc(var(--st) + 12px) calc(var(--sr) + 12px) calc(var(--sb) + 10px) calc(var(--sl) + 12px);background:linear-gradient(180deg,rgba(10,40,20,0) 30%,rgba(10,40,20,.35) 100%)}
+#play,#glb{justify-content:flex-start}
+.scCard{position:relative;flex:0 1 auto;min-height:0;display:flex;flex-direction:column;width:100%;max-width:520px;background:var(--paper) repeating-linear-gradient(0deg,transparent 0 27px,rgba(47,107,53,.09) 27px 28px);border-radius:6px;box-shadow:0 18px 40px rgba(0,0,0,.45);color:var(--ink);text-shadow:none}
+.scTitle{margin-top:46px}
+.scFill{flex:1 1 auto}
+.scTabs{position:absolute;top:-38px;left:10px;right:10px;display:flex;gap:6px}
+.scTab{flex:1;min-width:0;height:38px;border-radius:10px 10px 0 0;background:var(--paper2);color:#5b6a52;font:600 14px var(--cond);letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;justify-content:center}
+.scTab.on{background:var(--paper);color:var(--g1)}button.scTab:active{background:#efe8d4}.scTab svg{width:20px;height:20px}
+.scBody{flex:1 1 auto;min-height:0;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:14px 16px 6px}
+.scFoot{flex:none;display:flex;flex-direction:column;gap:10px;padding:8px 16px 16px}
+.scHead{display:flex;align-items:center;gap:12px;padding-bottom:10px;border-bottom:2px solid var(--g1)}
+.scHead img{width:62px;height:auto;flex:none}
+.scHead h1{margin:0;font:700 30px/.95 var(--cond);color:var(--g1);text-transform:uppercase;letter-spacing:.02em}
+.scHead h1 small{display:block;font:600 12px var(--cond);letter-spacing:.3em;color:var(--brass);margin-top:6px}
+.scLbl{flex:none;font:600 11px var(--cond);letter-spacing:.2em;color:#80866f;text-transform:uppercase}
+.scPlayer{display:flex;align-items:flex-end;gap:10px;margin-top:14px}
+.scPlayer input{flex:1;min-width:0;height:40px;border:0;outline:0;border-bottom:1.5px solid #555;border-radius:0;background:transparent;padding:0 4px;font:italic 600 26px var(--body);color:var(--pen)}
+.scPlayer input::placeholder{color:rgba(31,58,138,.35)}.scPlayer input:focus{border-bottom-color:var(--pen)}
+.scPlayer.need{animation:shake .4s}.scPlayer.need input{border-bottom-color:var(--penred);background:rgba(247,220,46,.25)}
+.scGrid{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:12px;font:600 13px var(--body);text-align:center;font-variant-numeric:tabular-nums}
+.scGrid+.scGrid{margin-top:8px}
+.scGrid td,.scGrid th{border:1px solid rgba(47,107,53,.35);height:25px;padding:0;overflow:hidden;white-space:nowrap}
+.scGrid th{font:600 11px var(--cond);letter-spacing:.04em;color:#fff;background:var(--g1)}
+.scGrid th:first-child{width:44px}
+.scGrid td.n{font:600 10.5px var(--cond);letter-spacing:.1em;color:var(--pencil);text-align:left;padding-left:5px}
+.scGrid td.y,.scGrid td.h{font-size:11px;color:var(--pencil)}
+.scGrid th.t,.scGrid td.t{width:38px}.scGrid td.t{font-weight:700;background:rgba(47,107,53,.07)}
+.scPen{font:italic 700 15px var(--body);color:var(--pen)}
+.scPen i{font-style:inherit;display:inline-block;min-width:20px;height:20px;line-height:18px;border:1.5px solid var(--pen);border-radius:50%}
+.scPen i.e{box-shadow:0 0 0 1.5px var(--paper),0 0 0 3px var(--pen)}
+.scPen u{text-decoration:none;display:inline-block;min-width:19px;height:19px;line-height:17px;border:1.5px solid var(--penred);color:var(--penred)}
+.scPen u.d{box-shadow:0 0 0 1.5px var(--paper),0 0 0 3px var(--penred)}
+.scCap{margin:6px 0 4px;font:500 12.5px/1.4 var(--body);color:var(--pencil)}
+.scSlip{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border:1.5px dashed var(--brass);border-radius:10px;background:rgba(247,220,46,.14);text-align:left;color:var(--ink)}
+.scSlip b{display:block;font:700 16px var(--cond);letter-spacing:.06em;text-transform:uppercase}
+.scSlip small{font:500 13px var(--body);color:var(--pencil)}
+.scSlip i{font:700 22px var(--cond);font-style:normal;color:var(--penred);flex:none}
+.scStamp{height:58px;margin:3px;border-radius:10px;background:var(--g1);color:#fff;box-shadow:inset 0 0 0 3px var(--paper),0 0 0 3px var(--g1);font:700 26px var(--cond);letter-spacing:.14em;text-transform:uppercase}
+.scBtns{flex-direction:row;gap:10px}.scBtns .scStamp{flex:2;min-width:0}
+.scBtn{flex:1.3;min-width:0;height:58px;margin:3px 0;border:2px solid var(--g1);border-radius:10px;color:var(--g1);font:700 18px var(--cond);letter-spacing:.08em;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
+.scBtn small{font:600 11px var(--cond);letter-spacing:.06em;color:var(--pencil);margin-top:3px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scStamp:active,.scBtn:active,.scSlip:active{transform:scale(.98)}
+.scTop{flex:none;display:flex;align-items:center;gap:10px;width:100%;max-width:520px;margin:2px 0 12px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.75),0 0 12px rgba(0,0,0,.45)}
+.scTop .lt{flex:1;min-width:0}
+.scTop .pcName{margin:0;font:700 24px/1.02 var(--cond);text-transform:uppercase;letter-spacing:.02em;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.scTop .scSub{margin:4px 0 0;font:600 13px var(--cond);letter-spacing:.14em;color:var(--yel);text-transform:uppercase}
+.scTop .playBack,.scSw button{flex:none;width:44px;height:44px;border-radius:50%;background:rgba(246,241,227,.94);color:var(--g1);display:flex;align-items:center;justify-content:center;text-shadow:none;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.scTop .playBack:active,.scSw button:active{background:#e8e0c8}.scSw{flex:none;display:flex;gap:6px}.scSw svg{width:22px;height:22px}
+.scTop .lt{position:relative}.scCourse{position:absolute;inset:0;margin:0}.scCourse[hidden]{display:none}
+.scTop .scChev{width:11px;height:8px;margin-left:7px;vertical-align:1px;display:none}.scTop .lt:has(.scCourse:not([hidden])) .scChev{display:inline}
+.scCourse .courseSel{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
+.scTee{margin:0;font:600 12px var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--g1);padding-bottom:6px;border-bottom:2px solid var(--g1)}
+.scTee:empty{display:none}
+.scStats{display:flex;gap:8px;margin-top:12px}.scStats:empty{display:none}
+.scStats div{flex:1;min-width:0;border:1.5px solid rgba(47,107,53,.4);border-radius:10px;padding:7px 10px;background:#fbf8ef}
+.scStats b{display:block;font:700 22px var(--cond);color:var(--g1);font-variant-numeric:tabular-nums}
+.scStats span{display:block;font:500 11.5px/1.3 var(--body);color:var(--pencil);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#play #playBlurb{flex:none;overflow:visible;min-height:0;display:flex;flex-direction:column;gap:8px;margin-top:12px;padding:0;color:var(--ink);text-shadow:none}
+#play #playBlurb .pbJoke{font:500 14.5px/1.45 var(--body);color:#3d4a3f}
+#play #playBlurb .pbStat{font:600 12px/1.3 var(--cond);letter-spacing:.14em;color:var(--g1)}
+#play #playBlurb .pbWin{font:italic 600 14px/1.45 var(--body);color:var(--pen)}
+#play #playBlurb .pbWin b{font:600 11px var(--cond);font-style:normal;letter-spacing:.2em;color:#80866f;margin-right:4px}
+#play #playBlurb .pbStat,#play #playBlurb .pbWin{border-top:1.5px solid rgba(85,85,85,.6);box-shadow:none;padding-top:6px}
+#play #playBlurb #pbLogo{height:96px;filter:none}
+#glbList{gap:12px;padding-bottom:12px}
+#glb .glbCard{color:var(--ink);text-shadow:none;padding:0}
+#glb .glbCard h3{color:var(--g1);border-bottom:2px solid var(--g1);font-size:22px}
+#glb .glbCard h3 small{color:var(--pencil);opacity:1}
+#glb .glbRow{font-size:19px;padding:4px 2px;border-bottom:1px solid rgba(47,107,53,.18)}
+#glb .glbRow .rk{color:var(--pencil);opacity:1}#glb .glbRow .top{color:var(--brass)}
+#glb .glbRow .nm small{color:var(--pencil);opacity:1;font-family:var(--body);font-weight:500;letter-spacing:0;text-transform:none;font-size:12px}
+#glb .glbRow .tp{color:var(--pen);font-style:italic;font-family:var(--body)}#glb .glbRow .st{color:var(--pencil)}
+#glb .glbMsg{color:var(--pencil);text-shadow:none}
+@media (max-height:700px) and (orientation:portrait){.scHead img{width:48px}.scHead h1{font-size:25px}.scPlayer{margin-top:8px}.scGrid{margin-top:8px}}
+@media (orientation:landscape){.scTitle{margin-top:42px}.scTop{margin-bottom:8px}.scTop .pcName{font-size:22px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 <canvas id="gl"></canvas>
@@ -512,28 +559,33 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 <div id="specBar" class="glass"><span id="specInfo">Following</span><button class="btn" id="specResume">Resume play</button></div>
 <div id="ballTag" class="gtag"><div class="bt1"><span id="btD">0</span><small>YD</small></div><div class="bt2" id="btC"></div></div>
 <div class="layer on" id="title">
-  <div class="card logoCard"><div class="lt"><h1>Galena<span>!!!</span><br>Pocket Edition</h1></div><img src="crest.png" width="123" height="126" alt="Galena crest" decoding="async"></div>
-  <div class="tb">
-    <div class="how">
-      <div class="card"><svg class="tut" viewBox="0 0 90 100" aria-hidden="true"><rect x="31" y="6" width="28" height="88" rx="14" fill="#2f6b35"/><rect x="38" y="14" width="14" height="72" rx="7" fill="rgba(255,255,255,.16)"/><path class="tDown" d="M45 80V20" stroke="#ffe85a" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M17 34V62m0 0l-5-6m5 6l5-6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".75"/><path d="M73 68V40m0 0l-5 6m5-6l5 6" stroke="#ffe85a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".9"/><g class="tThumb"><circle r="9" fill="#fff" stroke="#1d3d22" stroke-width="2"/></g></svg><b>Left thumb · tempo</b><p>Slide down, then slide straight up. A tempo of 3:1 gets the best smash factor.</p></div>
-      <div class="card"><svg class="tut" viewBox="0 0 90 100" aria-hidden="true"><circle cx="45" cy="50" r="40" fill="#bfe2a0"/><rect x="12" y="34" width="66" height="32" rx="14" fill="#dfe5ea" stroke="#7f93a6" stroke-width="2"/><circle cx="45" cy="50" r="9" fill="none" stroke="#2f6b35" stroke-width="1.6" stroke-dasharray="3 3"/><g class="tBall"><circle r="7.5" fill="#fff" stroke="#8d9aa4" stroke-width="1.2"/><circle cx="-2" cy="-2" r="1" fill="#cfd8de"/><circle cx="2.4" cy="1.5" r="1" fill="#cfd8de"/></g><circle class="tFinger" r="12" fill="rgba(255,255,255,.28)" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/></svg><b>Right thumb · strike</b><p>Your thumb jitters, and the ball rides up-left of it. Keep the ball on the club's sweet spot.</p></div>
+  <div class="scCard scTitle">
+    <div class="scTabs"><span class="scTab on">Play</span><button class="scTab" id="btnPractice">Practice</button><button class="scTab" id="btnGlobal">Boards</button><button class="scTab" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button></div>
+    <div class="scBody">
+      <div class="scHead"><img src="crest.png" width="123" height="126" alt="Galena crest" decoding="async"><h1>Galena!!!<br>Pocket Edition<small>Est. 2007 · Scorecard</small></h1></div>
+      <label class="scPlayer" id="nameRow"><span class="scLbl">Player</span><input id="nameIn" maxlength="14" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Your name" enterkeyhint="go"></label>
+      <div id="scLast"></div><p class="scCap" id="scLastCap"></p>
     </div>
-    <label class="card nameRow" id="nameRow"><span>Player</span><input id="nameIn" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your name" enterkeyhint="go"></label>
-    <div class="playRow"><button class="btn" id="btnPlay">Tee off</button></div>
-    <div class="playRow"><button class="btn subBtn" id="btnPractice">Practice</button><button class="btn subBtn" id="btnSettings">Settings</button></div>
-    <div class="playRow"><button class="btn subBtn glbBtn" id="btnGlobal">Global leaderboard</button></div>
+    <div class="scFoot">
+      <button class="scSlip" id="btnTitleResume" style="display:none"><span><b>Continue round</b><small id="titleResumeInfo"></small></span><i id="titleResumeTp"></i></button>
+      <button class="scStamp" id="btnPlay">Tee off ›</button>
+    </div>
   </div>
 </div>
 <div class="layer" id="glb">
-  <div class="card playHead glbHead"><button class="playBack" id="btnGlbBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><p class="pcName">Global leaderboard</p><p>Top 3 rounds on every course, all time</p></div></div>
-  <div id="glbList"></div>
+  <div class="scTop"><button class="playBack" id="btnGlbBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><p class="pcName">Global leaderboard</p><p class="scSub">Top 3 rounds on every course, all time</p></div></div>
+  <div class="scCard scFill"><div class="scBody" id="glbList"></div></div>
 </div>
 <div class="layer" id="play">
-  <div class="playLeft"><div class="card playHead"><button class="playBack" id="btnPlayBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><p id="playCourse" class="pcName"></p><p id="playPlace"></p><p id="playPar"></p></div></div>
-  <div id="playBlurb"><img id="pbLogo" alt="" hidden><p class="pbJoke" id="pbJoke"></p><p class="pbStat" id="pbStat"></p><p class="pbWin" id="pbWin"></p></div></div>
-  <div class="tb">
-    <label class="card nameRow courseRow" hidden><span>Course</span><select class="courseSel" id="selCourse" aria-label="Course"></select></label>
-    <div class="playRow"><button class="btn alt" id="btnResume" style="display:none">Continue round<small id="resumeInfo"></small></button><button class="btn" id="btnNew">New round</button></div>
+  <div class="scTop"><button class="playBack" id="btnPlayBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="lt"><p id="playCourse" class="pcName"></p><p class="scSub"><span id="playPlace"></span><svg class="scChev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></p><label class="scCourse courseRow" hidden><select class="courseSel" id="selCourse" aria-label="Course"></select></label></div><div class="scSw"><button id="crsPrev" aria-label="Previous course"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><button id="crsNext" aria-label="Next course"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></div></div>
+  <div class="scCard scFill">
+    <div class="scBody">
+      <p class="scTee" id="playPar"></p>
+      <div id="playCard"></div>
+      <div class="scStats" id="playStats"></div>
+      <div id="playBlurb"><img id="pbLogo" alt="" hidden><p class="pbJoke" id="pbJoke"></p><p class="pbStat" id="pbStat"></p><p class="pbWin" id="pbWin"></p></div>
+    </div>
+    <div class="scFoot scBtns"><button class="scBtn" id="btnResume" style="display:none">Continue<small id="resumeInfo"></small></button><button class="scStamp" id="btnNew">New round</button></div>
   </div>
 </div>
 <div class="layer" id="intro"><div class="card icard"><canvas id="introMap" width="172" height="288"></canvas><div class="ic-b"><div><div class="ic-k" id="icK">Hole 1 of 3</div><div class="ic-n" id="icN">Headland</div><div class="ic-i" id="icI"></div><div class="ic-f"><div>Par<b id="icPar">4</b></div><div>Length<b id="icLen">390 yd</b></div><div>Wind<b id="icWind">5 mph</b></div><div>Ground<b id="icWx">Fine</b></div></div></div><button class="btn ic-go" id="icGo">Play hole</button></div></div></div>
@@ -7879,6 +7931,7 @@ function titleOff() { $('title').classList.remove('on'); $('play').classList.rem
 function refreshResume() {
   recNoticeFlush();
   const b = $('btnResume'); if (!b) return; const r = savedRound();
+  try { titleCardFill(); } catch (e) { }
   if (!r) { b.style.display = 'none'; return; }
   const pars = COURSES[r.course].pars; let s = 0, p = 0; r.scores.forEach((v, i) => { if (v != null) { s += v; p += pars[i]; } });
   $('resumeInfo').textContent = `${COURSES[r.course].short} · Hole ${resumeHole(r) + 1} · ${p ? fmtToPar(s - p) : 'E'}`;
@@ -8876,7 +8929,7 @@ function VH() { return window.innerHeight; }
 // iOS can pan the visual viewport (or leave it scrolled after the keyboard or a gesture), which would shift the drawn UI against the touch areas: keep it at the origin
 function pinViewport() { try { if (window.scrollX || window.scrollY) window.scrollTo(0, 0); const vv = window.visualViewport; if (vv && (vv.offsetTop || vv.offsetLeft) && !document.activeElement.matches('input')) window.scrollTo(0, 0); } catch (e) { } }
 ['scroll', 'resize', 'orientationchange', 'pageshow', 'focus'].forEach(ev => window.addEventListener(ev, pinViewport)); if (window.visualViewport) { visualViewport.addEventListener('resize', pinViewport); visualViewport.addEventListener('scroll', pinViewport); }
-document.addEventListener('touchmove', e => { if (!e.target.closest || !e.target.closest('.sheet, input, #glbList, #playBlurb')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', e => { if (!e.target.closest || !e.target.closest('.sheet, input, .scBody')) e.preventDefault(); }, { passive: false });
 // SH() is the 3D canvas height (equal to the viewport height).
 let FILL = false; try { localStorage.removeItem('ssg-fill'); } catch (e) { } // (the optional Fill view moved the touch areas on iOS and is gone)
 let SHV = 0;
@@ -9365,7 +9418,56 @@ function playFill() {
   // the course's name on this card: courses.json `card` when it has one (\n for a new line), else the name split before 'at Eagle Ridge' / 'Golf Course'
   playBlurbFill();
   const CO = COURSE; $('playCourse').textContent = CO.card || CO.name.replace(' at Eagle Ridge', '\nat Eagle Ridge').replace(' Golf Course', '\nGolf Course'); $('playPlace').textContent = CO.place;
-  $('playPar').textContent = ['Par ' + PAR_TOTAL, CO.slope ? 'Slope ' + CO.slope : '', CO.rating ? 'Rating ' + CO.rating : '', ''].filter(Boolean).join(' · ');
+  const yds = HOLE_DEFS.reduce((a, d) => a + holeYd(d), 0), disc = HOLE_DEFS.some(d => d.disc);
+  $('playPar').textContent = [CO.tee ? CO.tee + ' tees' : '', yds.toLocaleString('en-US') + ' ' + (disc ? 'ft' : 'yd'), 'Par ' + PAR_TOTAL, CO.rating ? 'Rating ' + CO.rating : '', CO.slope ? 'Slope ' + CO.slope : ''].filter(Boolean).join(' · ');
+  let A = null; try { A = holeAgg(); } catch (e) { }
+  const best = A ? A.map(a => a[8] < 99 ? a[8] : null) : [], pars = HOLE_DEFS.map(d => d.par);
+  $('playCard').innerHTML = scGrid(HOLE_DEFS.map((d, i) => i + 1), [
+    ['Yds', HOLE_DEFS.map(holeYd), 'y'], ['Par', pars, ''], ['Hcp', HOLE_DEFS.map(d => d.hcp || ''), 'h'],
+    ...(best.some(v => v != null) ? [['Best', best, 'pen']] : [])], pars);
+  // record (the world board's best round), my best on this course (this device), and the trip's rounds
+  const st = $('playStats'), box = (v, l) => `<div><b>${v}</b><span>${l}</span></div>`, out = [];
+  let w = null; try { const rows = CO.alpha ? null : worldRows(CO.key); if (rows && rows.length) w = sortRounds(rows)[0]; } catch (e) { }
+  out.push(box(w ? fmtToPar(w.toPar) : '—', w ? 'Record · ' + escHtml(w.name) : CO.alpha ? 'No board yet' : 'Course record'));
+  let mb = 0; try { mb = +localStorage.getItem(BEST_KEY) || 0; } catch (e) { }
+  out.push(box(mb ? fmtToPar(mb - PAR_TOTAL) : '—', 'Your best'));
+  const t = CO.trip; out.push(box(t && t.n ? t.n : '—', t && t.n ? 'Trip rounds' : 'Not on the trip yet'));
+  st.innerHTML = disc ? '' : out.join('');
+}
+const escHtml = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+// a scorecard table: the front nine and the back nine, each with a total column; `rows` are [label, values, kind] (kind 'pen': the player's
+// writing, circled under par and boxed over it, `pars` the par of each hole)
+function scGrid(holes, rows, pars) {
+  const esc = v => v == null ? '' : escHtml(String(v));
+  const mark = (v, par) => { if (v == null || v === '') return ''; const d = v - par; return d <= -2 ? `<i class="e">${v}</i>` : d === -1 ? `<i>${v}</i>` : d === 1 ? `<u>${v}</u>` : d >= 2 ? `<u class="d">${v}</u>` : String(v); };
+  const nine = (a, b, tl) => {
+    let h = `<table class="scGrid"><tr><th>${tl === 'Out' || tl === 'In' ? 'Hole' : ''}</th>` + holes.slice(a, b).map(n => `<th>${n}</th>`).join('') + `<th class="t">${tl}</th></tr>`;
+    for (const [lab, vals, kind] of rows) {
+      const v = vals.slice(a, b), num = v.filter(x => typeof x === 'number'), tot = num.length === v.length && kind !== 'h' ? num.reduce((x, y) => x + y, 0) : '';
+      h += `<tr><td class="n">${esc(lab).toUpperCase()}</td>` + v.map((x, i) => kind === 'pen' ? `<td class="scPen">${mark(x, pars[a + i])}</td>` : `<td class="${kind}">${esc(x)}</td>`).join('') + `<td class="t${kind === 'pen' ? ' scPen' : ''}">${esc(tot)}</td></tr>`;
+    }
+    return h + '</table>';
+  };
+  return holes.length > 9 ? nine(0, 9, 'Out') + nine(9, holes.length, 'In') : nine(0, holes.length, 'Tot');
+}
+// the title card: the player's last finished round on this device (any course), and the slip to continue a saved round
+function titleCardFill() {
+  const el = $('scLast'), cap = $('scLastCap'); if (!el) return;
+  const last = histLocal().filter(x => COURSES[x.course]).sort((a, b) => b.at - a.at)[0];
+  if (last) {
+    const pars = COURSES[last.course].pars, d = last.strokes - pars.reduce((a, b) => a + b, 0);
+    el.innerHTML = scGrid(pars.map((p, i) => i + 1), [['Par', pars, ''], ['Last', last.hs.map(h => h[0]), 'pen']], pars);
+    cap.textContent = `Last card · ${COURSES[last.course].short.replace(/ \((beta|alpha)\)$/i, '')} · ${last.strokes} (${fmtToPar(d)}) · ${new Date(last.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`;
+  } else {
+    const pars = COURSE.pars || HOLE_DEFS.map(x => x.par);
+    el.innerHTML = scGrid(pars.map((p, i) => i + 1), [['Par', pars, ''], ['Score', pars.map(() => ''), 'pen']], pars);
+    cap.textContent = 'No card yet. Tee off and fill one in.';
+  }
+  const r = savedRound(), b = $('btnTitleResume');
+  if (!r || !COURSES[r.course]) { b.style.display = 'none'; return; }
+  const rp = COURSES[r.course].pars; let sc = 0, pp = 0; r.scores.forEach((v, i) => { if (v != null) { sc += v; pp += rp[i]; } });
+  $('titleResumeInfo').textContent = `${COURSES[r.course].short.replace(/ \((beta|alpha)\)$/i, '')} · hole ${resumeHole(r) + 1} next`;
+  $('titleResumeTp').textContent = pp ? fmtToPar(sc - pp) : 'E'; b.style.display = '';
 }
 function sheetOpen() { return !!document.querySelector('.sheet.on'); }
 // Menus open on top of each other (Settings > Stats > Hole by hole): the sheet being left goes on SHEET_BACK, and the Back button at the top left of the
@@ -10592,7 +10694,7 @@ function initInput() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) lost(null); });
   window.addEventListener('blur', () => lost(null));
   document.addEventListener('pointerout', e => { if (e.pointerType === 'mouse' && !e.relatedTarget) SW.mouseR = false; });
-  document.addEventListener('touchmove', e => { const t = e.target; if (!(t && t.closest && t.closest('.sheet, #glbList, #playBlurb'))) e.preventDefault(); }, { passive: false });
+  document.addEventListener('touchmove', e => { const t = e.target; if (!(t && t.closest && t.closest('.sheet, .scBody'))) e.preventDefault(); }, { passive: false });
   document.addEventListener('gesturestart', e => e.preventDefault());
   // keyboard: hold Space = backswing, release = top, press again = strike
   let kbHeld = false;
@@ -10688,6 +10790,12 @@ function initInput() {
     if (!cleanName(settings.name)) { nr.classList.remove('need'); void nr.offsetWidth; nr.classList.add('need'); ni.focus(); return; }
     audio(); SFX.blip(); refreshResume(); $('title').classList.remove('on'); $('play').classList.add('on');
   };
+  $('btnTitleResume').onclick = () => {
+    if (!cleanName(settings.name)) { nr.classList.remove('need'); void nr.offsetWidth; nr.classList.add('need'); ni.focus(); return; }
+    $('btnResume').onclick();
+  };
+  const crsStep = k => { const ks = Object.keys(COURSES), sel = $('selCourse'); if (ks.length < 2) return; sel.value = ks[(ks.indexOf(COURSE.key) + k + ks.length) % ks.length]; sel.onchange({ target: sel }); };
+  $('crsPrev').onclick = () => crsStep(-1); $('crsNext').onclick = () => crsStep(1);
   $('btnNew').onclick = () => { audio(); SFX.blip(); if (!courseOpen(COURSE.key)) { courseLockedNote(); return; } newRoundAsk(); };
   $('nNo').onclick = () => { SFX.blip(); $('newAsk').classList.remove('on'); };
   $('nContinue').onclick = () => { $('newAsk').classList.remove('on'); $('btnResume').onclick(); };
