@@ -10784,16 +10784,6 @@ function glbFill() {
   const keep = el.scrollTop; el.textContent = '';
   const mk = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
   let shown = 0, wait = 0, fail = 0;
-  if (ACES.list && ACES.list.length) {   // holes in one, at the top: the newest first
-    const card = mk('div', 'glbCard'), h = card.appendChild(mk('h3', null, 'Holes in one 👑'));
-    h.appendChild(mk('small', null, ACES.list.length + (ACES.list.length === 1 ? ' ace' : ' aces')));
-    ACES.list.slice().sort((a, b) => b.at - a.at).slice(0, 10).forEach(a => {
-      const row = mk('div', 'glbRow'), nm = mk('span', 'nm', a.name || 'Player');
-      nm.appendChild(mk('small', null, aceText(a.c, a.h, a.at)));
-      row.append(mk('span', 'rk top', '★'), nm); card.appendChild(row);
-    });
-    el.appendChild(card);
-  }
   for (const c of Object.values(COURSES)) {
     if (c.alpha) continue;   // a course in alpha posts no rounds
     const w = worldRows(c.key);
@@ -10814,6 +10804,16 @@ function glbFill() {
   }
   if (!shown) el.appendChild(mk('div', 'glbMsg', wait ? 'Loading…' : fail ? 'The world boards could not be reached.' : 'No rounds posted yet.'));
   else if (wait) el.appendChild(mk('div', 'glbMsg', 'Loading more…'));
+  if (ACES.list && ACES.list.length) {   // holes in one, always the last card: the newest first
+    const card = mk('div', 'glbCard'), h = card.appendChild(mk('h3', null, 'Holes in one 👑'));
+    h.appendChild(mk('small', null, ACES.list.length + (ACES.list.length === 1 ? ' ace' : ' aces')));
+    ACES.list.slice().sort((a, b) => b.at - a.at).slice(0, 10).forEach(a => {
+      const row = mk('div', 'glbRow'), nm = mk('span', 'nm', a.name || 'Player');
+      nm.appendChild(mk('small', null, aceText(a.c, a.h, a.at)));
+      row.append(mk('span', 'rk top', '★'), nm); card.appendChild(row);
+    });
+    el.appendChild(card);
+  }
   el.scrollTop = keep;
 }
 function refreshBoards() {
