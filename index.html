@@ -602,7 +602,13 @@ body:has(#menuSheet.page.on) :is(#title,#play,#glb),body:has(#practiceSheet.page
 .qcard .btn{background:var(--paper);color:var(--g1);border:0;border-radius:2px;text-shadow:none;box-shadow:inset 0 0 0 1.5px var(--g1),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--g1);font-family:var(--btn);font-weight:700;text-transform:uppercase;letter-spacing:.18em}
 .qcard .btn.danger{color:var(--penred);box-shadow:inset 0 0 0 1.5px var(--penred),inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--penred)}
 .ic-go{background:var(--g1);color:#fff;border:0;border-radius:2px;text-shadow:none;box-shadow:inset 0 0 0 1.5px #fff,inset 0 0 0 4px var(--g1),inset 0 0 0 5px #fff;font-family:var(--btn);font-weight:700;text-transform:uppercase;letter-spacing:.18em}
-.scStats b{font-family:var(--hand);font-weight:400;color:var(--pen);font-size:24px;line-height:1.4}
+.scStats b{font-family:var(--hand);font-weight:400;color:var(--pen);font-size:30px;line-height:1.35}
+/* play screen: Continue above New round, each the card's full width (side by side the engraved capitals did not fit) */
+#play .scBtns{flex-direction:column;gap:8px}
+#play .scBtns .scStamp,#play .scBtns .scBtn{flex:none;width:auto;margin:0}
+#play .scBtns .scBtn{height:58px;padding:0 14px}
+#play .scStats div{text-align:center}
+#play .scBtn small{font-family:var(--body);text-transform:none;letter-spacing:0;font-size:12px}
 .icard canvas{border-radius:0;background:none;box-shadow:none}   /* the hole picture alone, no frame */
 .ic-f{gap:10px}.ic-f b{white-space:nowrap;font-size:19px}
 .scGrid td.scPen,.scGrid td.t.scPen{font-family:var(--hand);font-style:normal;font-weight:400;font-size:17px;color:var(--pen)}
@@ -8058,7 +8064,7 @@ function refreshResume() {
   try { titleCardFill(); } catch (e) { }
   if (!r) { b.style.display = 'none'; return; }
   const pars = COURSES[r.course].pars; let s = 0, p = 0; r.scores.forEach((v, i) => { if (v != null) { s += v; p += pars[i]; } });
-  $('resumeInfo').textContent = `${COURSES[r.course].short} · Hole ${resumeHole(r) + 1} · ${p ? fmtToPar(s - p) : 'E'}`;
+  $('resumeInfo').textContent = `${COURSES[r.course].short} · Next: Hole #${resumeHole(r) + 1} · ${p ? fmtToPar(s - p) : 'E'}`;
   b.style.display = '';
 }
 function resumeRound(course) {
@@ -9605,7 +9611,7 @@ function titleCardFill() {
   const r = savedRound(), b = $('btnTitleResume');
   if (!r || !COURSES[r.course]) { b.style.display = 'none'; return; }
   const rp = COURSES[r.course].pars; let sc = 0, pp = 0; r.scores.forEach((v, i) => { if (v != null) { sc += v; pp += rp[i]; } });
-  $('titleResumeInfo').textContent = `${COURSES[r.course].short.replace(/ \((beta|alpha)\)$/i, '')} · hole ${resumeHole(r) + 1} next`;
+  $('titleResumeInfo').textContent = `${COURSES[r.course].short.replace(/ \((beta|alpha)\)$/i, '')} · Next: Hole #${resumeHole(r) + 1}`;
   $('titleResumeTp').textContent = pp ? fmtToPar(sc - pp) : 'E'; b.style.display = '';
 }
 function sheetOpen() { return !!document.querySelector('.sheet.on'); }
