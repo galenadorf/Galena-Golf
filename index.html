@@ -525,6 +525,52 @@ td:first-child,th:first-child{text-align:left;font:600 11px var(--cond);letter-s
 #glb .glbMsg{color:var(--pencil);text-shadow:none}
 @media (max-height:700px) and (orientation:portrait){.scHead img{width:48px}.scHead h1{font-size:25px}.scPlayer{margin-top:8px}.scGrid{margin-top:8px}}
 @media (orientation:landscape){.scTitle{margin-top:42px}.scTop{margin-bottom:8px}.scTop .pcName{font-size:22px}}
+/* ---------- PAPER SHEETS: every menu sheet (practice, settings, stats, boards, help, the round's scorecard, map and bag) and the confirmation cards
+   are the same scorecard paper as the start screens: cream stock, green printed titles over a rule, outlined or stamped green buttons, pen for what the player writes */
+.sheet,#menuSheet,#practiceSheet{--ink:#16211c;--ink2:rgba(22,33,28,.7);--ink3:rgba(22,33,28,.5);--hair:rgba(47,107,53,.22);--soft:#fbf8ef;
+  background:var(--paper) repeating-linear-gradient(0deg,transparent 0 27px,rgba(47,107,53,.08) 27px 28px);-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:10px 10px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.42);color:var(--ink);text-shadow:none}
+.sheet .grab,#menuSheet .grab,#practiceSheet .grab{background:rgba(47,107,53,.3)}
+.sheet .sht{color:var(--g1);font-weight:700;padding-bottom:6px;border-bottom:2px solid var(--g1);align-items:center}
+.sheet .sht small{color:var(--brass);letter-spacing:.14em}
+.sheet .shX,.sheet .shBack,#menuSheet .shX,#menuSheet .shBack,#practiceSheet .shX,#practiceSheet .shBack{background:var(--paper2);color:var(--g1)}
+.sheet .shX:active,.sheet .shBack:active,#menuSheet .shX:active,#menuSheet .shBack:active,#practiceSheet .shX:active,#practiceSheet .shBack:active{background:#d8d0b8}
+.sheet .stChip{background:transparent;color:var(--g1);box-shadow:inset 0 0 0 1.5px var(--g1);border-radius:8px}
+.sheet .sub{color:#80866f;letter-spacing:.18em}
+.sheet .mrow,.sheet .mpLr,.sheet .stFun div,.sheet .help div,.sheet .lb .row,.sheet .lb .empty,.sheet .stCard,.sheet .bag button{background:var(--soft);box-shadow:inset 0 0 0 1.5px rgba(47,107,53,.28)!important;border-radius:10px}
+.sheet .mrow input,#menuSheet .mrow input{background:transparent;color:var(--pen);font:italic 600 20px var(--body);text-transform:none;letter-spacing:0;box-shadow:none;border-bottom:1.5px solid #555;border-radius:0;text-shadow:none}
+.sheet .mrow input::placeholder,#menuSheet .mrow input::placeholder{color:rgba(31,58,138,.35)}
+.sheet .seg,#menuSheet .seg{background:var(--paper2)}
+.sheet .seg button,#menuSheet .seg button{color:#5b6a52;text-shadow:none}
+.sheet .seg button.sel,#menuSheet .seg button.sel{background:var(--g1);color:#fff;box-shadow:none}
+.sheet .mbtn,#menuSheet .mbtn:not(.dark):not(.danger){background:transparent;color:var(--g1);border:2px solid var(--g1);border-radius:10px;box-shadow:none!important;text-shadow:none}
+.sheet .mbtn.dark,#menuSheet .mbtn.dark{background:var(--g1);color:#fff;border:2px solid var(--g1);box-shadow:inset 0 0 0 2px var(--paper)!important}
+.sheet .mbtn.danger,#menuSheet .mbtn.danger{background:var(--penred);color:#fff;border:2px solid var(--penred);box-shadow:inset 0 0 0 2px var(--paper)!important}
+.sheet .mbtn:active{transform:scale(.98)}
+.sheet .mpb{background:var(--g1);color:#fff;border-radius:8px;text-shadow:none}
+.sheet .mpBtns .mpb,#menuSheet .mpBtns .mpb{background:transparent;color:var(--g1);box-shadow:inset 0 0 0 1.5px var(--g1)!important;text-shadow:none}
+.sheet .mpLr.on .mpb{background:var(--penred)}
+.sheet .stLvl{background:var(--g1);border-radius:10px;box-shadow:inset 0 0 0 3px var(--paper),0 0 0 2px var(--g1);margin:2px 2px 12px}
+.sheet .stCard.rec{background:rgba(247,220,46,.28)}
+.sheet .lb .row.me{background:rgba(247,220,46,.3);color:var(--ink)}.sheet .lb .row.me .rk,.sheet .lb .row.me .st,.sheet .lb .row.me small{color:var(--pencil)}
+.sheet .lb .row .tp{color:var(--pen);font-style:italic;font-family:var(--body)}
+.sheet .lb .row.top1 .rk{color:var(--brass)}
+.sheet .help b{color:var(--g1)}
+.sheet .bag button.sel{background:var(--g1);color:#fff;box-shadow:inset 0 0 0 2px var(--paper),0 0 0 2px var(--g1)!important}
+.pracPutt,#practiceSheet .pracPutt{background:var(--g1);border-radius:10px;box-shadow:inset 0 0 0 3px var(--paper),0 0 0 2px var(--g1);text-shadow:none;margin:2px 2px 12px;width:calc(100% - 4px)}
+.pracPutt.cur{box-shadow:inset 0 0 0 3px var(--yel),0 0 0 2px var(--g1)}
+.pracGrid button{background:var(--soft);box-shadow:inset 0 0 0 1.5px rgba(47,107,53,.3);border-radius:8px;color:var(--ink)}
+.pracGrid button:active{background:#efe8d4}
+.pracGrid button small{color:var(--pencil)}
+.pracGrid button.cur{background:rgba(247,220,46,.35);box-shadow:inset 0 0 0 2px var(--g1)}
+#practiceSheet .pracCourse{color:#80866f;letter-spacing:.18em;font-size:12px}
+.sheet .courseSel,.sheet .boardSel,#practiceSheet .courseSel,#boardSheet .boardSel{color:var(--ink);background-color:var(--soft);box-shadow:inset 0 0 0 1.5px rgba(47,107,53,.4);border-radius:10px;text-shadow:none}
+body:has(#menuSheet.on) #scrim,body:has(#practiceSheet.on) #scrim{background:rgba(10,30,18,.25)}
+.qcard{background:var(--paper) repeating-linear-gradient(0deg,transparent 0 27px,rgba(47,107,53,.08) 27px 28px);border:0;border-radius:8px;box-shadow:0 18px 50px rgba(0,0,0,.5);color:var(--ink);text-shadow:none}
+.qcard .qt{color:var(--g1);padding-bottom:8px;border-bottom:2px solid var(--g1)}
+.qcard p{color:#3d4a3f}
+.qcard .btn{height:54px;border-radius:10px;background:var(--g1);color:#fff;text-shadow:none;box-shadow:inset 0 0 0 3px var(--paper),0 0 0 2px var(--g1)}
+.qcard .btn.danger{background:var(--penred);box-shadow:inset 0 0 0 3px var(--paper),0 0 0 2px var(--penred)}
+.qcard .btn.subBtn.light{background:transparent;color:var(--g1);box-shadow:inset 0 0 0 2px var(--g1)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 <canvas id="gl"></canvas>
