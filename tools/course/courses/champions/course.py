@@ -37,6 +37,7 @@ ALT = {}
 TREES_GONE = True
 RELIEF_OFF_WATER = True
 FAIRWAYS_FROM_AERIAL = True
+FRAME_E0 = -540   # all_edit.frame(): the map's west edge, m (takes in the clubhouse and its parking lot, which are on the Legends' side, -460..-330 east)
 PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 MARKERS = {'w': ('white', 0xeeeeee), 'y': ('black', 0x26282b), 'b': ('gold', 0xd9b23a), 'r': ('green', 0x2f8f4f)}
 

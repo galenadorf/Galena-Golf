@@ -70,6 +70,8 @@ def frame():
     F = osm.load()
     b = F['course'][0]['poly'].bounds
     e0, n1 = np.floor((b[0] - PAD) / RES) * RES, np.ceil((b[3] + PAD) / RES) * RES
+    if getattr(course, 'FRAME_E0', None) is not None:   # a course.py may push the map's west edge out (Champions: to take in the Legends' clubhouse and parking lot)
+        e0 = float(course.FRAME_E0)
     w, h = int(np.ceil((b[2] + PAD - e0) / RES)), int(np.ceil((n1 - b[1] + PAD) / RES))
     return dict(e0=float(e0), n1=float(n1), res=RES, ppm=1 / RES, w=w, h=h)
 
