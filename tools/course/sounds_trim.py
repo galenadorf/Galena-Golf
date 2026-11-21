@@ -5,6 +5,7 @@ above -48 dB of its peak; end: where the 5 ms envelope has dropped 60 dB below t
   Wedges.m4a -> wedge.mp3    Putter.m4a -> putter.mp3    Ball_in_hole.m4a -> cup.mp3
 Music: sounds_raw/Hole_7_background_music.m4a -> sounds/hole7-q.mp3, mono at 80 kbps, the silence before and after cut (the last second
 holds the song's closing hit), a short fade at the end, the playing level is baked into the file (MUSIC_PEAK_DB), so it is quiet even where the browser ignores the game's volume setting (HOLE_SONGS vol is 1).
+sounds_raw/Augusta_hole_1_music.m4a -> sounds/augusta1.mp3: Augusta hole 1's song, made exactly as the hole-7 song (mono, 80 kbps, silence cut, same peak level).
 Around_the_world.mp3 -> sounds/cartmusic.mp3: the radio on the moving golf cart (`cartMusic*` in index.html). Mono at 64 kbps, 44.1 kHz, peak
 -12 dBFS (the game scales it by distance from the cart and by the Song volume setting), leading and trailing silence cut, a short fade at the end.
 Fart_01..07.m4a, Penis.m4a, then Fart_08..18.m4a -> sounds/fart1..19.mp3: trimmed like the strikes, mono at 96 kbps, the playing level baked in (FART_RMS_DB: the same loudness as the
@@ -85,6 +86,11 @@ def music():
         y, a, b = trim_music(load(p))
         write(y, os.path.join(DEST, 'hole7-q.mp3'), 80)
         print(f'Hole_7_background_music -> sounds/hole7-q.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / SR:.1f} s, {os.path.getsize(os.path.join(DEST, "hole7-q.mp3")) / 1048576:.2f} MB)')
+    p = os.path.join(SOUNDS_RAW, 'Augusta_hole_1_music.m4a')
+    if os.path.exists(p):
+        y, a, b = trim_music(load(p)); d = os.path.join(DEST, 'augusta1.mp3')
+        write(y, d, 80)
+        print(f'Augusta_hole_1_music -> sounds/augusta1.mp3  kept {a:.2f}-{b:.2f} s  ({len(y) / SR:.1f} s, {os.path.getsize(d) / 1048576:.2f} MB)')
 
 
 def cartmusic():

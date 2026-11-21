@@ -7204,17 +7204,18 @@ const holeSong = i => (RDC && RDC.scene.songs && RDC.scene.songs[i + 1]) || null
 // the player's Song volume setting: Off, Low, Med, High (a multiplier on the hole's level)
 const SONG_LEVELS = [0, .125, .35, 1], songLevel = () => (settings.song == null ? 1 : clamp(settings.song | 0, 0, 3));
 function songLevelApply() { if (SONG.on && SONG.ctx) { const g = SONG.gain.gain, t = SONG.ctx.currentTime, d = holeSong(SONG.hole); g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime((d ? d.vol : 1) * SONG_LEVELS[songLevel()], t + .3); } }
-const SONG = { hole: -1, buf: null, fetching: false, ctx: null, gain: null, src: null, t0: 0, pos: 0, armed: false, armAt: 0, on: false, chk: 0, tok: 0, probed: false };
+const SONG = { hole: -1, url: '', buf: null, fetching: false, ctx: null, gain: null, src: null, t0: 0, pos: 0, armed: false, armAt: 0, on: false, chk: 0, tok: 0, probed: false };
 function songHole(i) { // a hole is starting
   songStop(false); SONG.hole = -1;
   const d = holeSong(i); if (!d) { SONG.buf = null; SONG.probed = false; return; }
   SONG.hole = i; SONG.pos = 0;
-  if (!SONG.buf && !SONG.fetching && settings.sound) {
-    SONG.fetching = true;
-    fetch(d.src).then(r => r.ok ? r.arrayBuffer() : null).then(ab => {
-      const a = audio(); if (!ab || !a) { SONG.fetching = false; return; }
-      a.decodeAudioData(ab, b => { SONG.fetching = false; if (SONG.hole === i) SONG.buf = b; }, () => { SONG.fetching = false; });
-    }).catch(() => { SONG.fetching = false; });
+  if (SONG.url !== d.src) { SONG.buf = null; SONG.url = d.src; }   // (a different hole's song, e.g. Woodbine 7 then Augusta 1: drop the old one)
+  if (!SONG.buf && SONG.fetching !== d.src && settings.sound) {
+    const url = d.src, done = () => { if (SONG.fetching === url) SONG.fetching = false; }; SONG.fetching = url;   // (the file being fetched: a fetch of the last song's does not hold this one up)
+    fetch(url).then(r => r.ok ? r.arrayBuffer() : null).then(ab => {
+      const a = audio(); if (!ab || !a) { done(); return; }
+      a.decodeAudioData(ab, b => { done(); if (SONG.hole === i && SONG.url === url) SONG.buf = b; }, done);
+    }).catch(done);
   }
 }
 function songArm() { // the fly-over is over (called from the tap on Play Hole)
