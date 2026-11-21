@@ -177,7 +177,7 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
 .courseSel option,.boardSel option{color:#16211c;background:#fff;text-shadow:none}
 #practiceSheet .pracCourse{display:flex;align-items:center;gap:12px;margin:4px 0 10px;font:700 15px var(--cond);letter-spacing:.1em;text-transform:uppercase}
 #practiceSheet .pracCourse[hidden]{display:none}
-#practiceSheet .courseSel,#boardSheet .boardSel,#statsSheet .boardSel{height:42px;font-size:18px;padding-right:34px;background-position:right 12px center}
+#practiceSheet .courseSel,#boardSheet .boardSel,#statsSheet .boardSel,#holeSheet .boardSel,#helpSheet .boardSel{height:42px;font-size:18px;padding-right:34px;background-position:right 12px center}
 @keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 .btn{height:58px;border-radius:20px;background:linear-gradient(180deg,#4a9a4c,#2f6b35);color:#fff;font:600 22px var(--cond);text-transform:uppercase;letter-spacing:.06em;box-shadow:0 10px 24px rgba(20,70,30,.35),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .15s;text-shadow:0 1px 2px rgba(0,30,12,.3)}
 .btn:active{transform:scale(.97)}
@@ -363,7 +363,7 @@ body.spec #tempo,body.spec #strike{opacity:.55!important}body.spec #tempo *,body
 #mpPanel .mpr .t{font-variant-numeric:tabular-nums}#mpPanel .mpr .h{opacity:.75;font-size:11px;min-width:24px;text-align:right}
 #mpPanel .mpr.me .n{text-decoration:underline;text-underline-offset:2px}
 #mpTags .gtag{position:fixed;left:0;top:0;z-index:2;padding:2px 8px;border-radius:9px;font:600 12px var(--cond);pointer-events:none;white-space:nowrap;text-transform:uppercase;color:#fff;transition:opacity .2s}
-.boardCourse{display:flex;margin:0 0 10px}.boardCourse button{flex:1}#boardSheet select.boardSel{display:block;width:100%;margin:0 0 10px;flex:none}
+.help .boardSel{display:block;width:100%;margin:6px 0 8px;flex:none}#holeSheet select.boardSel,#statsSheet select.boardSel{display:block;width:100%;margin:0 0 10px;flex:none}.boardCourse{display:flex;margin:0 0 10px}.boardCourse button{flex:1}#boardSheet select.boardSel{display:block;width:100%;margin:0 0 10px;flex:none}
 .scw{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font:600 17px var(--cond);font-variant-numeric:tabular-nums}
 th,td{padding:9px 4px;text-align:center;border-bottom:1px solid var(--hair)}
@@ -743,7 +743,7 @@ body:has(.sheet.page.on) :is(#title,#play,#glb,#hud){opacity:0;pointer-events:no
   <div><b>Flagstick</b>The flag stays in for every shot but a putt. A firm ball running at the stick can't hop the hole: square on it drops in, a glancing hit ricochets away. Only a ball right on the edge of the cup can lip in or out.</div>
   <div><b>Rules</b>Water costs a penalty stroke and a drop. White stakes are out of bounds: one stroke and replay. Max score is par + 5 (double par + 1 with PALS Rules on).</div>
   <div><b>Keyboard</b>Hold Space to swing back, release, press again to strike. Rest the mouse low on the right side to hold and steer the dot. Arrows aim and change clubs.</div>
-  <div><b>The course</b><span id="aboutCourse"></span></div>
+  <div><b>The course</b><select class="boardSel" id="aboutSel" aria-label="Course"></select><span id="aboutCourse"></span></div>
 </div></div></div></div>
 <div id="recCard"></div>
 <div id="confetti"></div>
@@ -4783,7 +4783,7 @@ function setCourse(key) {
   G.hole = 0; G.submitted = false; G.practice = false; G.pg = null; document.body.classList.remove('pg');
   if (settings.course !== COURSE.key) { settings.course = COURSE.key; saveSettings(); }
   playFill();
-  $('boardName').textContent = COURSE.name; $('aboutCourse').textContent = COURSE.about; $('musRow').hidden = !COURSE.music; $('crowdRow').hidden = !(COURSE.scene && COURSE.scene.crowd);
+  $('boardName').textContent = COURSE.name; $('aboutCourse').textContent = COURSE.about; $('aboutSel').value = COURSE.key; $('musRow').hidden = !COURSE.music; $('crowdRow').hidden = !(COURSE.scene && COURSE.scene.crowd);
   document.querySelectorAll('.courseSel').forEach(el => { el.value = COURSE.key; });
   showBest(); refreshBoards(); try { loadWorld(); } catch (e) { } refreshResume();
   if (MP.inited && mpIsLobby(MP.room) && MP.room !== mpLobby()) { if (MP.spec) mpResume(true); if (MP.client) mpJoin(mpLobby()); else MP.room = mpLobby(); } // each course has its own lobby (joined now only if the server is connected: mpPower)
@@ -10267,7 +10267,8 @@ function openHoles(key) {   // any course's hole-by-hole page, without touching 
       const bar = tot ? '<div class="hbhBar">' + seg.map((c, k) => c ? `<i class="${cls[k]}" style="flex:${c} 1 0">${c / tot >= .07 ? c : ''}</i>` : '').join('') + '</div>' : '<div class="hbhNone">no rounds yet</div>';
       return `<div class="hbhRow"><div class="hn">${i + 1}</div><div><b>PAR ${d.par}</b><small>${LEN[i]} ${holeU(d).toUpperCase()}</small></div><div><b>${n ? a[8] : '–'}</b><small>Best</small></div><div><b>${n ? (a[1] / n).toFixed(1) : '–'}</b><small>Avg</small></div>${bar}</div>`;
     });
-    el.innerHTML = `<div class="hbhSum">${CO.name} · ${nr} round${nr === 1 ? '' : 's'}${pc ? ' · ' + pc + ' with hole scores' : ''}</div>` + (R.length ? holeChart(R, DEFS) : '') + rows.join('');
+    el.innerHTML = `<select class="boardSel" id="hbhCourse" aria-label="Course">${Object.values(COURSES).map(c => `<option value="${c.key}"${c.key === key ? ' selected' : ''}>${c.short}</option>`).join('')}</select><div class="hbhSum">${CO.name} · ${nr} round${nr === 1 ? '' : 's'}${pc ? ' · ' + pc + ' with hole scores' : ''}</div>` + (R.length ? holeChart(R, DEFS) : '') + rows.join('');
+    $('hbhCourse').onchange = e => { stKey = e.target.value; openHoles(stKey); };
     el.querySelectorAll('.bar').forEach(b => b.onclick = () => {
       el.querySelectorAll('.bar.sel').forEach(q => q.classList.remove('sel')); b.classList.add('sel'); const x = R[+b.dataset.i], par = DEFS.reduce((u, d) => u + d.par, 0);
       $('hbhCap').textContent = new Date(x.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) + ' \u00b7 ' + x.strokes + ' (' + fmtToPar(x.strokes - par) + ')';
@@ -11062,6 +11063,8 @@ function initInput() {
     for (const c of Object.values(COURSES)) { const o = document.createElement('option'); o.value = c.key; o.textContent = c.short; el.appendChild(o); }
     if (COURSE) el.value = COURSE.key;
   }
+  { const el = $('aboutSel'); el.innerHTML = $('selCourse').innerHTML; if (COURSE) el.value = COURSE.key;   // How to play: any course's description, without changing the course in play
+    el.onchange = () => { $('aboutCourse').textContent = (COURSES[el.value] || COURSE).about; }; }
   { const el = $('selCourseP'); el.innerHTML = $('selCourse').innerHTML; el.parentElement.hidden = Object.keys(COURSES).length < 2; if (COURSE) el.value = COURSE.key;
     el.onchange = () => { const k = el.value; SFX.blip(); el.blur(); withCourse(k, () => { pracKey = k; pracFill(); }); }; }   // only lists that course's holes: nothing changes until one is tapped
   $('selCourse').onchange = e => {
