@@ -177,7 +177,7 @@ body.replay #hud,body.replay #fx,body.replay #pinTag,body.replay #ballTag,body.r
 .courseSel option,.boardSel option{color:#16211c;background:#fff;text-shadow:none}
 #practiceSheet .pracCourse{display:flex;align-items:center;gap:12px;margin:4px 0 10px;font:700 15px var(--cond);letter-spacing:.1em;text-transform:uppercase}
 #practiceSheet .pracCourse[hidden]{display:none}
-#practiceSheet .courseSel,#boardSheet .boardSel{height:42px;font-size:18px;padding-right:34px;background-position:right 12px center}
+#practiceSheet .courseSel,#boardSheet .boardSel,#statsSheet .boardSel{height:42px;font-size:18px;padding-right:34px;background-position:right 12px center}
 @keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 .btn{height:58px;border-radius:20px;background:linear-gradient(180deg,#4a9a4c,#2f6b35);color:#fff;font:600 22px var(--cond);text-transform:uppercase;letter-spacing:.06em;box-shadow:0 10px 24px rgba(20,70,30,.35),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .15s;text-shadow:0 1px 2px rgba(0,30,12,.3)}
 .btn:active{transform:scale(.97)}
@@ -10219,29 +10219,31 @@ function statsRound() { ST.rounds++; saveStats(); }
 const LEVELS = [[0, 'Rookie'], [18, 'Club Member'], [54, 'Fairway Regular'], [108, 'Scratch Hunter'], [216, 'Course Legend'], [432, 'Hall of Famer']];
 // per hole, lifetime: the filed summary plus this device's finished rounds newer than the last filed one (not filed yet), each counted once.
 // A hole is [rounds, strokes, putts, fairways hit, fairway chances, greens hit, green chances, penalties, best, histogram]; the histogram counts strokes 1..9 and 10+.
-function holeAgg() {
-  const c = PID.stats && PID.stats.courses && PID.stats.courses[COURSE.key], last = PID.stats ? PID.stats.last : 0;
-  const A = HOLE_DEFS.map((d, i) => { const a = c && c.holes[i] ? c.holes[i].slice() : [0, 0, 0, 0, 0, 0, 0, 0, 99]; a[9] = (a[9] || new Array(10).fill(0)).slice(); return a; });
-  for (const x of histLocal()) if (x.at > last && x.course === COURSE.key) x.hs.forEach((h, i) => {
+function holeAgg(key, defs) {
+  key = key || COURSE.key; defs = defs || HOLE_DEFS;
+  const c = PID.stats && PID.stats.courses && PID.stats.courses[key], last = PID.stats ? PID.stats.last : 0;
+  const A = defs.map((d, i) => { const a = c && c.holes[i] ? c.holes[i].slice() : [0, 0, 0, 0, 0, 0, 0, 0, 99]; a[9] = (a[9] || new Array(10).fill(0)).slice(); return a; });
+  for (const x of histLocal()) if (x.at > last && x.course === key) x.hs.forEach((h, i) => {
     const a = A[i]; a[0]++; a[1] += h[0]; a[2] += h[1]; if (h[2] >= 0) { a[3] += h[2]; a[4]++; } if (h[3] >= 0) { a[5] += h[3]; a[6]++; } a[7] += h[4]; a[8] = Math.min(a[8], h[0]); a[9][Math.min(h[0], 10) - 1]++;
   });
   return A;
 }
 // the round totals for the chart: the filed year files (newest first until there are enough), plus this device's unfiled rounds
-async function pidRoundList(n) {
+async function pidRoundList(n, key) {
+  key = key || COURSE.key;
   const out = [], st = PID.stats; PID.years = PID.years || {};
   for (const y of (st && st.years ? st.years.slice().reverse() : [])) {
     if (!PID.years[y]) { try { const r = await fetch(`https://raw.githubusercontent.com/${GH_REPO}/main/rounds/${PID.reg.pid}/${y}.json?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-store' }); if (r.ok) PID.years[y] = await r.json(); } catch (e) { } }
     for (const x of PID.years[y] || []) out.push(x);
-    if (out.filter(x => x.course === COURSE.key).length >= n) break;
+    if (out.filter(x => x.course === key).length >= n) break;
   }
   const last = st ? st.last : 0; for (const x of histLocal()) if (x.at > last) out.push(x);
-  return out.filter(x => x.course === COURSE.key).sort((p, q) => p.at - q.at).slice(-n);
+  return out.filter(x => x.course === key).sort((p, q) => p.at - q.at).slice(-n);
 }
 // the Hole by hole page: the totals of the last rounds against par, then every hole with its par, length, best, average and how its rounds split into
 // eagle or better / birdie / par / bogey / double or worse (the segments are as wide as their counts)
-function holeChart(R) {
-  const par = HOLE_DEFS.reduce((a, d) => a + d.par, 0), sc = R.map(x => x.strokes), lo0 = Math.min(par, ...sc) - 2, hi0 = Math.max(par, ...sc) + 2;
+function holeChart(R, defs) {
+  const par = defs.reduce((a, d) => a + d.par, 0), sc = R.map(x => x.strokes), lo0 = Math.min(par, ...sc) - 2, hi0 = Math.max(par, ...sc) + 2;
   const step = [1, 2, 3, 5, 10, 20].find(v => (hi0 - lo0) / v <= 5), lo = Math.floor(lo0 / step) * step, hi = Math.ceil(hi0 / step) * step;
   const W = 340, H = 150, L = 28, B = 4, y = v => H - B - (v - lo) / (hi - lo) * (H - B - 6), bw = (W - L) / Math.max(R.length, 1);
   let g = '';
@@ -10250,36 +10252,41 @@ function holeChart(R) {
   g += `<line class="par" x1="${L}" x2="${W}" y1="${y(par)}" y2="${y(par)}"/>`;
   return `<svg class="hbhChart" viewBox="0 0 ${W} ${H}">${g}</svg><div class="hbhLeg"><span><i style="background:var(--ink)"></i>Par ${par}</span><span><i style="background:#4a7cc0"></i>Total score</span></div><div class="hbhCap" id="hbhCap">Tap a bar</div>`;
 }
-function openHoles() {
-  const el = $('hbhBody'), sub = $('hbhSub'); sub.textContent = playerName();
+function openHoles(key) {   // any course's hole-by-hole page, without touching the course in play (its data is loaded first)
+  key = typeof key === 'string' && COURSES[key] ? key : stKey || COURSE.key;
+  if (!COURSES[key].defs) { courseLoad(key).then(() => openHoles(key), () => readout('<div class="r1">That course could not be loaded</div>', 2.5)); return; }
+  const CO = COURSES[key], DEFS = CO.defs, LEN = DEFS.map(holeYd), el = $('hbhBody'), sub = $('hbhSub'); sub.textContent = playerName();
   if (!isReg()) { el.innerHTML = '<div class="stFun"><div>Hole-by-hole history is for registered players. Get a Player ID in Settings.</div></div>'; openSheet('holeSheet'); return; }
   const draw = R => {
-    const A = holeAgg(), pc = Math.max(0, ...A.map(a => a[0])), all = (PID.stats && PID.stats.courses && PID.stats.courses[COURSE.key]) || null;
+    const A = holeAgg(key, DEFS), pc = Math.max(0, ...A.map(a => a[0])), all = (PID.stats && PID.stats.courses && PID.stats.courses[key]) || null;
     const nr = Math.max(R.length, all ? all.rounds : 0);
-    const rows = HOLE_DEFS.map((d, i) => {
+    const rows = DEFS.map((d, i) => {
       const a = A[i], n = a[0], h = a[9], seg = [0, 0, 0, 0, 0];
       h.forEach((c, k) => { const dlt = k + 1 - d.par; seg[dlt <= -2 ? 0 : dlt === -1 ? 1 : dlt === 0 ? 2 : dlt === 1 ? 3 : 4] += c; });
       const tot = seg.reduce((u, v) => u + v, 0), cls = ['e', 'b', 'p', 'g', 'd'];
       const bar = tot ? '<div class="hbhBar">' + seg.map((c, k) => c ? `<i class="${cls[k]}" style="flex:${c} 1 0">${c / tot >= .07 ? c : ''}</i>` : '').join('') + '</div>' : '<div class="hbhNone">no rounds yet</div>';
-      return `<div class="hbhRow"><div class="hn">${i + 1}</div><div><b>PAR ${d.par}</b><small>${HOLE_LEN[i]} ${holeU(d).toUpperCase()}</small></div><div><b>${n ? a[8] : '–'}</b><small>Best</small></div><div><b>${n ? (a[1] / n).toFixed(1) : '–'}</b><small>Avg</small></div>${bar}</div>`;
+      return `<div class="hbhRow"><div class="hn">${i + 1}</div><div><b>PAR ${d.par}</b><small>${LEN[i]} ${holeU(d).toUpperCase()}</small></div><div><b>${n ? a[8] : '–'}</b><small>Best</small></div><div><b>${n ? (a[1] / n).toFixed(1) : '–'}</b><small>Avg</small></div>${bar}</div>`;
     });
-    el.innerHTML = `<div class="hbhSum">${COURSE.name} · ${nr} round${nr === 1 ? '' : 's'}${pc ? ' · ' + pc + ' with hole scores' : ''}</div>` + (R.length ? holeChart(R) : '') + rows.join('');
+    el.innerHTML = `<div class="hbhSum">${CO.name} · ${nr} round${nr === 1 ? '' : 's'}${pc ? ' · ' + pc + ' with hole scores' : ''}</div>` + (R.length ? holeChart(R, DEFS) : '') + rows.join('');
     el.querySelectorAll('.bar').forEach(b => b.onclick = () => {
-      el.querySelectorAll('.bar.sel').forEach(q => q.classList.remove('sel')); b.classList.add('sel'); const x = R[+b.dataset.i], par = HOLE_DEFS.reduce((u, d) => u + d.par, 0);
+      el.querySelectorAll('.bar.sel').forEach(q => q.classList.remove('sel')); b.classList.add('sel'); const x = R[+b.dataset.i], par = DEFS.reduce((u, d) => u + d.par, 0);
       $('hbhCap').textContent = new Date(x.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) + ' \u00b7 ' + x.strokes + ' (' + fmtToPar(x.strokes - par) + ')';
     });
   };
   draw([]); openSheet('holeSheet');
-  pidRounds().then(() => pidRoundList(45)).then(R => { if ($('holeSheet').classList.contains('on')) draw(R); }).catch(() => { });
+  pidRounds().then(() => pidRoundList(45, key)).then(R => { if ($('holeSheet').classList.contains('on')) draw(R); }).catch(() => { });
 }
+let stKey = null;   // the course the Stats page's per-course part (records, hole by hole) shows: the course in play until another is picked
 function openStats(again) {
-  if (isReg() && !again) Promise.all([pidRounds(), loadRecords()]).then(([a, b]) => { if ((a || b) && $('statsSheet').classList.contains('on')) openStats(true); }); // once, when my filed rounds or the world records have just arrived
+  if (!again) stKey = null;
+  const key = stKey && COURSES[stKey] ? stKey : COURSE.key;
+  if (isReg() && !again) Promise.all([pidRounds(), loadRecords(key)]).then(([a, b]) => { if ((a || b) && $('statsSheet').classList.contains('on')) openStats(true); }); // once, when my filed rounds or the world records have just arrived
   const S = ST, el = $('statsBody'), pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '–', mi = S.dist / 1609.34;
   let li = 0; LEVELS.forEach((l, i) => { if (S.holes >= l[0]) li = i; }); const nx = LEVELS[li + 1], lo = LEVELS[li][0];
   const card = (k, e, v, n, rec) => `<div class="stCard${rec ? ' rec' : ''}"><span class="em">${e}</span><div class="k">${k}</div><div class="v">${v}</div>${n ? `<div class="n">${n}</div>` : ''}</div>`;
   const recs = () => {   // my bests on this course (the account's, from stats/<id>.json) beside the world's
     if (!isReg()) return '<div class="stFun"><div>Records belong to your Player ID: get one in Settings. Only full 18-hole rounds count.</div></div>';
-    const mine = myRec(COURSE.key), wr = Rec.gh[COURSE.key] ? Rec.gh[COURSE.key].rec : null;
+    const mine = myRec(key), wr = Rec.gh[key] ? Rec.gh[key].rec : null;
     return '<div class="stGrid">' + REC_KEYS.map(k => {
       const d = REC[k], m = mine[k], w = wr && wr[k] && wr[k][0], at = m ? recWhere(k, m[1]) : '', wn = w ? 'World ' + d.f(w.v) + ' · ' + w.name : wr ? 'No world record yet' : '';
       return card(d.t, d.e, m ? d.f(m[0]) : '—', [m ? at : 'Not set yet', wn].filter(Boolean).join(' · '), !!(m && w && w.pid === PID.reg.pid && w.v === m[0]));
@@ -10300,15 +10307,17 @@ function openStats(again) {
   if (S.aces) fun.push(`<b>${S.aces}</b> hole${S.aces > 1 ? 's' : ''} in one. Legend. 👑`);
   if (!fun.length) fun.push('Play a few holes and the fun facts will show up here.');
   el.innerHTML = `<div class="stLvl"><b>${LEVELS[li][1]}</b><span>${nx ? (nx[0] - S.holes) + (nx[0] - S.holes === 1 ? ' hole to ' : ' holes to ') + nx[1] : 'Top level reached'} · ${S.holes} hole${S.holes === 1 ? '' : 's'} · ${S.rounds} round${S.rounds === 1 ? '' : 's'}</span>${nx ? `<div class="stBar"><i style="width:${Math.min(100, 100 * (S.holes - lo) / (nx[0] - lo))}%"></i></div>` : ''}</div>
+    <div class="sub"><span>Course</span></div><select class="boardSel" id="stCourse" aria-label="Course">${Object.values(COURSES).map(c => `<option value="${c.key}"${c.key === key ? ' selected' : ''}>${c.short}</option>`).join('')}</select>
     <div class="mbtns"><button class="mbtn wide" id="stHoles">\u26f3 Hole by hole \u203a</button></div>
-    ${aceList()}<div class="sub"><span>Records · ${COURSE.short}</span></div>${recs()}
+    ${aceList()}<div class="sub"><span>Records · ${COURSES[key].short}</span></div>${recs()}
     <div class="sub"><span>Streaks running now</span></div><div class="stGrid">${card('Greens in a row', '🟢', S.cur.gir)}${card('Fairways in a row', '🛣️', S.cur.fw)}${card('Birdie streak', '🐦', S.cur.bird)}${card('Holes in one', '👑', S.aces)}</div>
     <div class="sub"><span>Scoring</span></div>
     <div class="stRow"><span>Eagles or better</span><span>${S.eagles}</span></div><div class="stRow"><span>Birdies</span><span>${S.birdies}</span></div><div class="stRow"><span>Pars</span><span>${S.pars}</span></div><div class="stRow"><span>Bogeys</span><span>${S.bogeys}</span></div><div class="stRow"><span>Double or worse</span><span>${S.doubles}</span></div>
     <div class="stRow"><span>Fairways hit</span><span>${pct(S.fwHit, S.fwTry)}</span></div><div class="stRow"><span>Greens in regulation</span><span>${pct(S.gir, S.girTry)}</span></div><div class="stRow"><span>Putts per hole</span><span>${S.holes ? (S.putts / S.holes).toFixed(2) : '–'}</span></div><div class="stRow"><span>Strokes per hole</span><span>${pace}</span></div>
     <div class="sub"><span>Fun facts</span></div><div class="stFun">${fun.map(f => `<div>${f}</div>`).join('')}</div>
     <div class="mbtns"><button class="mbtn" id="stReset">Reset stats</button><button class="mbtn dark" id="stClose">Close</button></div>`;
-  $('stSub').textContent = playerName(); $('stClose').onclick = () => closeSheets(); $('stHoles').onclick = openHoles;
+  $('stSub').textContent = playerName(); $('stClose').onclick = () => closeSheets(); $('stHoles').onclick = () => openHoles(key);
+  $('stCourse').onchange = e => { stKey = e.target.value; openStats(true); loadRecords(stKey).then(ch => { if (ch && $('statsSheet').classList.contains('on')) openStats(true); }); };
   $('stReset').onclick = () => { if (confirm('Reset the stats on this device? (Records belong to your Player ID and are not affected.)')) { ST = defStats(); saveStats(); openStats(); } };
   openSheet('statsSheet');
 }
