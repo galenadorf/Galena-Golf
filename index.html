@@ -9833,7 +9833,7 @@ function showDone(pickedUp) {
   $('d1').textContent = pickedUp ? 'Picked up' : scoreName(s, par);
   $('d1').className = 'd1 ' + (d < 0 ? 'good' : d > 1 ? 'bad' : '');
   $('d2').textContent = `${G.practice ? 'Practice · ' : ''}Hole ${h + 1} · ${s} strokes · Par ${par}`;
-  $('dstats').innerHTML = `<div><b>${G.putts[h]}</b>Putts</div><div><b>${par >= 4 ? (G.fir[h] ? 'Hit' : 'Miss') : (G.gir[h] ? 'Yes' : 'No')}</b>${par >= 4 ? 'Fairway' : 'Green'}</div><div><b>${G.practice ? 'Practice' : fmtToPar(tp.d)}</b>${G.practice ? 'Mode' : 'Round'}</div>`;
+  $('dstats').innerHTML = `<div><b>${G.putts[h]}</b>Putts</div><div><b>${par >= 4 ? (G.fir[h] ? 'Yes' : 'No') : (G.gir[h] ? 'Yes' : 'No')}</b>${par >= 4 ? 'Fairway' : 'Green'}</div><div><b>${G.practice ? 'Practice' : fmtToPar(tp.d)}</b>${G.practice ? 'Mode' : 'Round'}</div>`;
   $('dNext').textContent = G.practice ? 'Play again' : last ? 'Final scorecard' : 'Next hole'; $('dChange').style.display = G.practice ? '' : 'none';
   $('done').classList.add('on');
   if (!pickedUp && d <= -1) burstConfetti();
