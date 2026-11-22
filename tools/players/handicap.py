@@ -13,7 +13,7 @@ course whose rating is a guess is listed in ratings.json with "est": true so the
 The game's physics are not a real course's, so these are handicaps *in this game*; the index needs enough rounds on enough courses before it is shown
 (MIN_ROUNDS, 3 in the WHS). A player with fewer gets "index": null.
 """
-import glob, json, os, re, sys
+import glob, json, os, sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 MIN_ROUNDS = 3
