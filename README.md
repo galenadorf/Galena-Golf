@@ -12,7 +12,7 @@ This pals golf game was inspired by and is dedicated Andy in honor of his first 
 
 ## Milestones
 
-**v1.4.** Build `638b566`, 2026-11-21.
+**v1.4.** Build `512b876`, 2026-11-21.
 
 - **A new look.** The game now looks like a paper scorecard. The title screen shows your name on a pen line and your last card, with birdies circled and bogeys boxed. Each course gets its own scorecard page with yards, par, handicap and your best on every hole. Settings, Practice, Leaderboard, Stats, Hole by hole and How to play are full pages with a back arrow, and the hole-done card and confirmation cards are paper too. New type throughout: bold serif titles, handwriting for your name and scores, typewriter course descriptions and engraved buttons. The fonts are stored in the game, so it still works offline.
 - **More on the cards.** Your handicap index next to your name, how many rounds have been recorded on each course, and every hole in one on the Global leaderboard and in Stats. Stats, Hole by hole and How to play each have their own course picker.
