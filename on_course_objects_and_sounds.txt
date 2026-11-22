@@ -7,8 +7,8 @@ watching a full round.
 
 HOW THIS FILE IS ORGANISED
   GLOBAL        what every course has (objects, then sounds), after a table of which course has what.
-  then one section per course, in the order of the course picker: Woodbine Bend, Eagle Ridge South, Eagle Ridge North, Legends at Memphis National, Maxwelton Braes,
-  Eagle Ridge The General, Fossil Trace, Stonehenge, Thunderhawk, Bear Slide, Galena Golf Club, Elbel Park, Pebble Brook North, Lacoma Blue, Briar Leaf, Augusta National, Chestnut Mountain Disc Golf, Adler Park Disc Golf.
+  then one section per course, in the order of the course picker: Woodbine Bend, Eagle Ridge South, Eagle Ridge North, Legends at Memphis National, Maxwelton Braes, Stonehenge,
+  Eagle Ridge The General, Fossil Trace, Thunderhawk, Bear Slide, Galena Golf Club, Elbel Park, Pebble Brook North, Lacoma Blue, Briar Leaf, Augusta National, Chestnut Mountain Disc Golf, Adler Park Disc Golf.
   Each course section has OBJECTS (what only that course has, with how often and when) then SOUNDS (the same), then SCENERY AND DATA (trees,
   water, buildings, roads, paths). A line "also everything in GLOBAL" is always true; "NOT here" lists what a reader might expect and will not find.
   Wording used for frequency: "always" = every time; "per hole" = decided each time a hole loads; "per trip" = each time a vehicle sets off;
@@ -382,6 +382,43 @@ SCENERY AND DATA
 
 
 #####################################################################################################
+STONEHENGE (stonehenge)
+#####################################################################################################
+A full course since 2026-11-22. Also everything in GLOBAL. Dark green long rough, only where it is painted (`engine.paintedDeep`, since 2026-11-22): the user painted it on the share-folder hole pictures (holes 2-9); everywhere else is plain rough. Woods painted on the same pictures (holes 2, 4, 10-13, 16) are planted with broadleaves, about 6 m apart; trees added and one taken out by hand; a bunker OSM lacks added west of hole 1, beside the pond. Every tree is an oak (`engine.broadleaf`; the lidar's conifers made broadleaf, `TREES_KIND`); the scrub stays. A second painted bunker on 16, left of the fairway, lies under the trees, which stand in it. The traced fairways of holes 10, 11, 12, 14, 15, 16 and 18 are gone (`FAIRWAY_DROP`); the user's hand-painted fairways replace them (12, a par 3, has a painted approach), and 17 has a painted approach patch before the green. The finished fairways, deep rough, ponds and out-of-bounds line get a last rounding pass (`FINAL_ROUND`) and the fairways, deep rough and bunkers a last smoothing (`FINAL_SMOOTH`), so fairways run into the greens without points. Hole 18 has out-of-bounds stakes of its own: a line of white stakes every 12 m between it and hole 1, about 200 m from the creek southward; while 18 is played, the far side of it (east) is out of bounds (`obl` in the hole data). OSM and lidar data plus those painted layers. Blue tees 6,350 yd, par 72.
+
+OBJECTS
+-------
+White-tailed deer (`scene.deer` = .25: about a quarter of the holes have them, per hole; the others none): a doe with a fawn (spotted, smaller) or a second doe, and on about a third of those holes a buck with antlers too.
+  - Each appears 6-36 s after arriving, walks across the line of play, stops to graze with its head down for 3-9 s at a time, looks round as it walks, leaves the far side, and is back 30-90 s later.
+  - They bound away (10 m/s, white tail up) if the ball lands within about 18 m or flies within about 45 m, and walk again once the ball is 70 m off.
+  - Can be hit (the body, not the legs): "Oh deer!", the ball ricochets.
+
+Squirrels (`scene.squirrels` = 3 on every hole; grey and fox squirrels, a few times real size so they show)
+  - Each appears 3-28 s after arriving, at a tree near the hole (within 30 m of the hole's play area), dashes in bursts to another tree 8-45 m away, sitting up and flicking its tail between dashes; at the tree it runs up the trunk and is gone, back 10-40 s later.
+  - Run for the nearest tree if the ball lands within about 9 m or flies within about 25 m. A hole with fewer than two trees near it has none.
+  - Can be hit: "Nailed a squirrel!".
+
+Highway and traffic (IL 22, past the south side by the clubhouse drive; the stretch inside the map, about 1.4 km): the same traffic as Woodbine's US 20 (one 18-wheeler, two Subarus, two Hyundais, same timings, per trip direction random, keep right), but the road has no slower stretch and the game drives at 55 mph all along. Out of bounds; trees kept clear.
+
+Side road (out of bounds, looks only, no traffic): Old Barrington Road past the northeast corner.
+
+NOT here: turkeys, gopher, banner plane, side-road cars, cart paths (OSM maps them, but the game takes cart paths only from a painted cart-path file), clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
+
+SOUNDS
+------
+  - NO truck horn or engine rumble: the truck on IL 22 drives silently (`scene.truckHorn` is not set; only Woodbine has it).
+  - Ball hits: rustle (a deer: the leaf-rustle sound), squeak (a squirrel). The animals themselves are silent.
+  - NO banner plane drone (no plane), cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
+
+SCENERY AND DATA
+----------------
+  - Water: the OSM ponds (beside most holes, both sides of 18) and about 740 m of OSM streams in 3 pieces, drawn as creek water.
+  - Trees: about 4,400: the 2007 Lake County lidar's trees checked against the August 2023 aerial (felled ones taken out, crowns widened, missing trees added).
+  - Buildings: the OSM buildings on and beside the course (the clubhouse among them), plain.
+  - Practice: Woodbine's green and range (the course's own range is not built).
+
+
+#####################################################################################################
 EAGLE RIDGE THE GENERAL (eagle_general)
 #####################################################################################################
 Also everything in GLOBAL. Dark green long rough. OSM and lidar data only. 3-Star tees 6,245 yd, par 72 (Andy North and Roger Packard, 1997). The card names its tees 4-Star (6,649), 3-Star (6,245), 2-Star (5,846) and 1-Star (5,150); markers shown black, gold, white and green from the back.
@@ -438,43 +475,6 @@ SCENERY AND DATA
   - Buildings: the OSM buildings on and beside the course (houses, the clubhouse), plain.
   - Fairways: OSM maps only a core stripe of each fairway (and part of some holes), so every par 4 and 5 also gets the fairway traced from the aerial (`fairways_fill.py`, `FAIRWAYS_FROM_AERIAL`). Deep rough is only native grass more than 8 m outside anything mown (OSM's golf=rough polygons, fairways, tees, greens, bunkers: `MOWN_ROUGH`); the mown rough between is regular rough.
   - Nothing painted yet: greens, tee boxes and bunkers are OSM's.
-
-
-#####################################################################################################
-STONEHENGE (stonehenge)
-#####################################################################################################
-Also everything in GLOBAL. Dark green long rough. OSM and lidar data only. Blue tees 6,350 yd, par 72.
-
-OBJECTS
--------
-White-tailed deer (`scene.deer` = .25: about a quarter of the holes have them, per hole; the others none): a doe with a fawn (spotted, smaller) or a second doe, and on about a third of those holes a buck with antlers too.
-  - Each appears 6-36 s after arriving, walks across the line of play, stops to graze with its head down for 3-9 s at a time, looks round as it walks, leaves the far side, and is back 30-90 s later.
-  - They bound away (10 m/s, white tail up) if the ball lands within about 18 m or flies within about 45 m, and walk again once the ball is 70 m off.
-  - Can be hit (the body, not the legs): "Oh deer!", the ball ricochets.
-
-Squirrels (`scene.squirrels` = 3 on every hole; grey and fox squirrels, a few times real size so they show)
-  - Each appears 3-28 s after arriving, at a tree near the hole (within 30 m of the hole's play area), dashes in bursts to another tree 8-45 m away, sitting up and flicking its tail between dashes; at the tree it runs up the trunk and is gone, back 10-40 s later.
-  - Run for the nearest tree if the ball lands within about 9 m or flies within about 25 m. A hole with fewer than two trees near it has none.
-  - Can be hit: "Nailed a squirrel!".
-
-Highway and traffic (IL 22, past the south side by the clubhouse drive; the stretch inside the map, about 1.4 km): the same traffic as Woodbine's US 20 (one 18-wheeler, two Subarus, two Hyundais, same timings, per trip direction random, keep right), but the road has no slower stretch and the game drives at 55 mph all along. Out of bounds; trees kept clear.
-
-Side road (out of bounds, looks only, no traffic): Old Barrington Road past the northeast corner.
-
-NOT here: turkeys, gopher, banner plane, side-road cars, cart paths (OSM maps them, but the game takes cart paths only from a painted cart-path file), clubhouse model, parked carts, moving cart, hot dog, fountain, signs, songs.
-
-SOUNDS
-------
-  - NO truck horn or engine rumble: the truck on IL 22 drives silently (`scene.truckHorn` is not set; only Woodbine has it).
-  - Ball hits: rustle (a deer: the leaf-rustle sound), squeak (a squirrel). The animals themselves are silent.
-  - NO banner plane drone (no plane), cart radio or hole song. Plus all of GLOBAL, including birdsong on every hole.
-
-SCENERY AND DATA
-----------------
-  - Water: the OSM ponds (beside most holes, both sides of 18) and about 740 m of OSM streams in 3 pieces, drawn as creek water.
-  - Trees: about 4,400: the 2007 Lake County lidar's trees checked against the August 2023 aerial (felled ones taken out, crowns widened, missing trees added).
-  - Buildings: the OSM buildings on and beside the course (the clubhouse among them), plain.
-  - Practice: Woodbine's green and range (the course's own range is not built).
 
 
 #####################################################################################################

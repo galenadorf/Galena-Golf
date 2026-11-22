@@ -24,8 +24,39 @@ def height(kind, d):
     return round(3 + 1.1 * d if kind == 0 else 1 + .35 * d if kind == 1 else 2.4 * d, 1)  # a shrub stays under 4 m
 
 
-def from_masks(masks, fr, old):
-    """Trees from boolean masks {kind: mask} on the grid `fr`, kept off the lidar trees `old` (also used by all_read.py)."""
+def split_discs(blob, fr):
+    """Touching painted circles as discs [(e, n, crown m)]: the widest disc that fits in the paint not yet covered, again and again;
+    None unless the discs cover 85 % of the blob (then it is not a set of circles)."""
+    res = fr['res']
+    dt = ndi.distance_transform_edt(blob)
+    yy, xx = np.nonzero(blob)
+    free = np.ones(len(yy), bool)
+    discs = []
+    for _ in range(40):
+        if free.sum() < .1 * len(yy):
+            break
+        k = np.argmax(np.where(free, dt[yy, xx], -1))
+        r = dt[yy[k], xx[k]]
+        inside = np.hypot(yy - yy[k], xx - xx[k]) <= r
+        if r * res < 1.5 or (inside & free).sum() < .4 * inside.sum():
+            free[inside | (np.hypot(yy - yy[k], xx - xx[k]) <= 2)] = False
+            continue
+        free &= ~inside
+        discs.append((xx[k], yy[k], r))
+    if not discs:
+        return None
+    cov = np.zeros(len(yy), bool)
+    for x, y, r in discs:
+        cov |= np.hypot(yy - y, xx - x) <= r + 1
+    if cov.mean() < .85:
+        return None
+    return [(fr['e0'] + (x + .5) * res, fr['n1'] - (y + .5) * res, 2 * r * res) for x, y, r in discs]
+
+
+def from_masks(masks, fr, old, one_round=False):
+    """Trees from boolean masks {kind: mask} on the grid `fr`, kept off the lidar trees `old` (also used by all_read.py).
+    one_round: a round blob (a painted circle, filling 70 %+ of the disc across its widest extent) is ONE tree as wide as the circle,
+    up to 20 m, however big (the share-folder hole pictures: a big circle is a big tree, not a grove)."""
     tr = Affine(fr['res'], 0, fr['e0'], 0, -fr['res'], fr['n1'])
     rng = np.random.default_rng(7)
     out = []
@@ -39,6 +70,19 @@ def from_masks(masks, fr, old):
             blob = lab == i + 1
             polys = [shape(g).buffer(0) for g, v in features.shapes(blob.astype(np.uint8), mask=blob, transform=tr) if v]
             p = max(polys, key=lambda q: q.area)
+            x0_, y0_, x1_, y1_ = p.bounds
+            dm = max(x1_ - x0_, y1_ - y0_)
+            if one_round and p.area <= 320 and p.area >= .7 * np.pi * dm * dm / 4:
+                d = float(np.clip(2 * np.sqrt(p.area / np.pi), 1.5 if kind == 1 else 2.5, 4.5 if kind == 1 else 20))
+                out.append(dict(e=round(p.centroid.x, 1), n=round(p.centroid.y, 1), d=round(d, 1), h=height(kind, d), kind=kind))
+                continue
+            if one_round and p.area <= 2000:
+                discs = split_discs(blob, fr)
+                if discs:
+                    for x, y, d in discs:
+                        d = float(np.clip(d, 1.5 if kind == 1 else 2.5, 4.5 if kind == 1 else 20))
+                        out.append(dict(e=round(x, 1), n=round(y, 1), d=round(d, 1), h=height(kind, d), kind=kind))
+                    continue
             if p.area <= ONE_TREE:
                 d = float(np.clip(2 * np.sqrt(p.area / np.pi), 1.5 if kind == 1 else 2.5, 4.5 if kind == 1 else 12))
                 out.append(dict(e=round(p.centroid.x, 1), n=round(p.centroid.y, 1), d=round(d, 1), h=height(kind, d), kind=kind))

@@ -44,3 +44,8 @@ PAINT = ('fairway', 'green', 'tee', 'bunker', 'tee_dot')
 MARKERS = {'w': ('blue', 0x2f6fd0), 'y': ('black', 0x26282b), 'b': ('white', 0xeeeeee), 'r': ('red', 0xc0392b)}
 
 SMOOTH_MORE = True   # build.py low-passes every mapped line and outline (creeks, roads, cart paths; bunkers, tees, fairways, greens, ponds), area kept
+
+FAIRWAY_DROP = [10, 11, 12, 14, 15, 16, 18]   # 2026-11-22: these holes' traced fairways were wrong; only what the user paints by hand (out/fairways_added.json) is kept
+TREES_KIND = {2: 0}   # 2026-11-22: the user says every tree on the course is an oak: the lidar's conifers become broadleaves (engine.broadleaf 'oak' draws them all as oaks); shrubs stay shrubs
+FINAL_ROUND = dict(fair=(3, 3), water=(2.5, 0), fescue=(3, 1.5), bound=(3, 3))   # build.py: a last rounding pass over the finished fairways, ponds, deep rough and out-of-bounds line (cusps, slits, hard corners; a fairway that reaches a green is rounded together with it)
+FINAL_SMOOTH = dict(fair=2.0, fescue=(2.5, 1.5), sand=1.0)   # build.py: then a last area-keeping smoothing of the hand-painted fairways, deep rough and bunkers (sigma m), as Woodbine and ER South

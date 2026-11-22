@@ -1893,6 +1893,7 @@ function realPrep() {
     const L = GC.trees.concat(GC.fill).filter(t => t.kind === kd), ds = L.map(t => t.d).sort((a, b) => a - b), md = ds[ds.length >> 1];
     let nb = 0; for (const t of L) { t.sp = t.d > md ? big : t.d < md ? small : (nb++ & 1 ? big : small); }
     if (kd === 2 && RDC.conifer) for (const t of L) t.sp = RDC.conifer;   // engine.conifer: every conifer one species (Augusta: 'pine', the loblollies; no blue spruces)
+    if (kd === 0 && RDC.broadleaf) for (const t of L) t.sp = RDC.broadleaf;   // engine.broadleaf: every broadleaf one species (Stonehenge: 'oak', no maples)
   }
   GC.ready = true; return GC;
 }
@@ -2337,6 +2338,24 @@ function makeRealCourse(idx, pin) {
     const midOB = (e, n) => { const dO = dLine(e, n, oth); return dO < 90 && dO + 6 < dLine(e, n, own); };
     const baseOB = C.isOB; C.isOB = (X, Z) => baseOB(X, Z) || midOB(enuE(X, Z), enuN(X, Z));
     C.midOB = midOB;
+  }
+  // out-of-bounds lines painted for this hole alone (data `obl`, Stonehenge 18 since 2026-11-22: stakes between it and hole 1): the side `s`
+  // of the line (+1 left, -1 right, walking it from its first point) is OB, out to OBL_REACH m, only beside the line (never past its ends)
+  if (H0.obl && H0.obl.length) {
+    const OBL = H0.obl, OBL_REACH = 120;
+    const oblOB = (e, n) => {
+      for (const o of OBL) {
+        const P = o.p; let best = 1e9, sg = 0, end = false;
+        for (let i = 0; i < P.length - 1; i++) {
+          const ax = P[i][0], ay = P[i][1], dx = P[i + 1][0] - ax, dy = P[i + 1][1] - ay, l2 = dx * dx + dy * dy || 1, t0 = ((e - ax) * dx + (n - ay) * dy) / l2, t = clamp(t0, 0, 1), d = Math.hypot(e - ax - dx * t, n - ay - dy * t);
+          if (d < best) { best = d; sg = dx * (n - ay) - dy * (e - ax) > 0 ? 1 : -1; end = (i === 0 && t0 < 0) || (i === P.length - 2 && t0 > 1); }
+        }
+        if (!end && best < OBL_REACH && sg === o.s) return true;
+      }
+      return false;
+    };
+    const baseOB2 = C.isOB; C.isOB = (X, Z) => baseOB2(X, Z) || oblOB(enuE(X, Z), enuN(X, Z));
+    C.obl = OBL;
   }
   C.inBounds = (X, Z) => { const e = enuE(X, Z), n = enuN(X, Z); return e > GR.e0 + 20 && e < GR.e0 + GR.W * GR.res - 20 && n > GR.n0 + 20 && n < GR.n0 + GR.H * GR.res - 20; };
   C.teeDist = (X, Z) => fieldAt(fT, X, Z);
@@ -3143,6 +3162,15 @@ function buildRealDecor(C, grp) {
     for (const sg of [-1, 1]) for (let t = 6; t < 70; t += 1.5) {
       const x = f.p[0] + f.nx * t * sg, z = f.p[1] + f.nz * t * sg, en = C.enu(x, z);
       if (C.midOB(en[0], en[1])) { if (t > 6 && x > I.minX && x < I.maxX && z > I.minZ && z < I.maxZ && C.surf(x, z) !== S.WATER) stake(x, z, 0xffffff); break; }
+    }
+  }
+  // white stakes along this hole's own out-of-bounds lines (C.obl), every 12 m
+  if (C.obl && !RDC.scene.plain) for (const o of C.obl) {
+    let carry = 0;
+    for (let i = 0; i < o.p.length - 1; i++) {
+      const a = C.loc(o.p[i][0], o.p[i][1]), b = C.loc(o.p[i + 1][0], o.p[i + 1][1]), L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      for (let s = carry; s < L; s += 12) { const u = s / L, x = a[0] + (b[0] - a[0]) * u, z = -(a[1] + (b[1] - a[1]) * u); if (C.surf(x, z) !== S.WATER) stake(x, z, 0xffffff); }
+      carry = (carry - L) % 12; if (carry < 0) carry += 12;
     }
   }
   // red stakes round the ponds (penalty areas)

@@ -554,6 +554,22 @@ class Course:
                 p = F.pts(ring)
                 ld.line(p + [p[0]], fill=(0, 0, 0, 255), width=6)
                 ld.line(p + [p[0]], fill=rgba(PAINT['bnd'], 255), width=3)
+        # this hole's own OB lines (data `obl`, painted cyan on its picture): the line, with white stake dots every 12 m and short ticks toward the OB side
+        for o in h.get('obl') or []:
+            p = F.pts([tuple(q) for q in o['p']])
+            ld.line(p, fill=(0, 0, 0, 255), width=6)
+            ld.line(p, fill=rgba(PAINT['bnd'], 255), width=3)
+            ln = LineString(o['p'])
+            for k in range(0, int(ln.length) + 1, 12):
+                q = ln.interpolate(k); q2 = ln.interpolate(min(ln.length, k + 1)) if k + 1 <= ln.length else ln.interpolate(k - 1)
+                dx, dy = q2.x - q.x, q2.y - q.y
+                if k + 1 > ln.length:
+                    dx, dy = -dx, -dy
+                L = math.hypot(dx, dy) or 1
+                ox, oy = -dy / L * o['s'], dx / L * o['s']   # left normal times s: toward the OB side
+                a_, = F.pts([(q.x, q.y)]); b_, = F.pts([(q.x + ox * 4, q.y + oy * 4)])
+                ld.line([a_, b_], fill=rgba(PAINT['bnd'], 255), width=2)
+                ld.ellipse([a_[0] - 4, a_[1] - 4, a_[0] + 4, a_[1] + 4], fill=(255, 255, 255, 255), outline=(0, 0, 0, 255))
         # hole line (dashed)
         p = F.pts(line)
         for a, b in zip(p, p[1:]):
@@ -669,6 +685,8 @@ class Course:
             lg.append(('E', '#C040C0', 'Deep rough: 22 m or more from play', 'game rule; paint fescue #FF00FF to override', ''))
         lg.append(('E', '#202020', 'Darkened = out of bounds', 'outside the cyan line', ''))
         lg.append(('E', PAINT['bnd'], 'Course boundary (OB line)', 'paint a cyan #00FFFF line', ''))
+        if h.get('obl'):
+            lg.append(('E', PAINT['bnd'], 'OB line for this hole (white stakes)', 'ticks point to the OB side', ''))
         lg.append(('E', '#FFFFFF', 'Hole line, tee to green (dashed)', 'from the hole data', ''))
         lg.append(('H', 'HOW TO CORRECT'))
         for t in ['White #FFFFFF over deep rough = make it regular rough.',

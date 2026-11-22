@@ -61,7 +61,7 @@ def guide():
     print('out/trees_guide.png', g.size, '(yellow broadleaf, cyan conifer, green shrub, grey = already removed). Paint magenta #FF00FF X marks on a copy, save it as out/trees_x.png')
 
 
-def read(path=None, add_col=None, write=True, check='trees_x_check.png', every=False):
+def read(path=None, add_col=None, write=True, check='trees_x_check.png', every=False, one_round=False):
     """The X marks and circles on a painted picture (out/trees_x.png, or extras_edit.py's out/extras_mask.png with its own add colours).
     every: an X takes out every tree whose centre one of its strokes crosses (within half the crown's radius, at least 1.5 m), so touching
     X's that merge into one mark each take their own tree and stacked trees go together; failing that, the trees whose ring its middle is
@@ -126,7 +126,7 @@ def read(path=None, add_col=None, write=True, check='trees_x_check.png', every=F
     frm = dict(res=1 / ppm, e0=fr['e0'], n1=fr['n1'])
     ap = os.path.join(OUT, 'trees_x_added.json')   # trees_all.json already holds the circles' trees from the last read: leave them out, or a reread would find the spot taken
     prev = {(round(g['e'], 2), round(g['n'], 2)) for g in json.load(open(ap))} if os.path.exists(ap) else set()
-    add = from_masks({k: np.abs(a - np.array(c)).max(axis=2) <= ADD_TOL for k, c in add_col.items()}, frm, [t for t in T if (round(t['e'], 2), round(t['n'], 2)) not in prev])
+    add = from_masks({k: np.abs(a - np.array(c)).max(axis=2) <= ADD_TOL for k, c in add_col.items()}, frm, [t for t in T if (round(t['e'], 2), round(t['n'], 2)) not in prev], one_round=one_round)
     for g in add:
         x, y = (g['e'] - fr['e0']) * ppm, (fr['n1'] - g['n']) * ppm; r = g['d'] / 2 * ppm + 4
         cd.ellipse([x - r, y - r, x + r, y + r], outline=(255, 255, 255), width=3)

@@ -283,6 +283,12 @@ if os.path.exists(_pj):
     PIN_SHEETS = json.load(open(_pj))   # courses/<key>/pins.json beside course.py: four hole-location sheets (Augusta)
 
 
+OB_LINES = {}
+if os.path.exists(os.path.join(OUT, 'ob_lines.json')):
+    for _o in json.load(open(os.path.join(OUT, 'ob_lines.json'))):
+        OB_LINES.setdefault(_o['hole'], []).append(_o['line'])
+
+
 def build_holes(F, demZ1):
     tees = [t['poly'] for t in F['tee']]
     sp = os.path.join(OUT, 'tee_starts.json')  # yellow dots painted on the tee map: where a hole's played tee should be
@@ -349,6 +355,14 @@ def build_holes(F, demZ1):
             h['nm'] = card.NAMES[i]   # the hole's name (Augusta: Tea Olive, Pink Dogwood, ...): the game shows it on the hole card
         if PIN_SHEETS and str(hh['ref']) in PIN_SHEETS['pins']:   # the club's hole locations, round 1-4: [depth from the front as a share of the green's depth, place between the left and right edges] (masters_pins.py)
             h['pins'] = PIN_SHEETS['pins'][str(hh['ref'])]
+        if OB_LINES.get(hh['ref']):   # out-of-bounds lines painted cyan on this hole's picture (hole_images_read.py): the side away from the hole line is OB while it is played
+            h['obl'] = []
+            for ln in OB_LINES[hh['ref']]:
+                P = [tuple(q) for q in ln]
+                mid = LineString(line).interpolate(.5, normalized=True)
+                a_, b_ = min(zip(P, P[1:]), key=lambda ab: LineString(ab).distance(mid))
+                side = 1 if (b_[0] - a_[0]) * (mid.y - a_[1]) - (b_[1] - a_[1]) * (mid.x - a_[0]) > 0 else -1   # +1: the hole lies left of the line
+                h['obl'].append(dict(p=[[round(x, 2), round(y, 2)] for x, y in P], s=-side))   # s: the OB side (+1 left, -1 right, walking the line)
         h['_green_poly'] = g
         out.append(h)
     return out
@@ -766,6 +780,10 @@ def main():
     bpn = os.path.join(OUT, 'bunkers_painted.json')  # hand-refined bunkers (bunkers_paint.py) replace the OSM and automatic ones
     if os.path.exists(bpn):
         F['bunker'] = [dict(poly=shape(g), tags={'painted': 'yes'}) for g in json.load(open(bpn))]
+    bad = os.path.join(OUT, 'bunkers_added.json')  # bunkers painted orange on the share-folder hole pictures (hole_images_read.py) join the others
+    if os.path.exists(bad):
+        F['bunker'] += [dict(poly=smooth_poly(shape(g), 1.6), tags={'painted': 'yes'}) for g in json.load(open(bad))]
+        print(len(json.load(open(bad))), 'bunkers added by bunkers_added.json')
     tpn = os.path.join(OUT, 'tees_painted.json')  # hand-edited tee boxes (tee_boxes_paint.py) replace the OSM ones
     if os.path.exists(tpn):
         F['tee'] = [dict(poly=shape(g), tags={'painted': 'yes'}) for g in json.load(open(tpn))]
@@ -797,6 +815,18 @@ def main():
                 fill = [g for q in fill for g in getattr(q, 'geoms', [q]) if g.geom_type == 'Polygon' and g.area > 900]
                 fill = [smooth_poly(q, 7.0) for q in fill]
             fair += fill
+    drop = getattr(course, 'FAIRWAY_DROP', [])   # course.FAIRWAY_DROP = [hole]: that hole gets no fairway at all (a wrong one taken out, to be painted by hand)
+    if drop:
+        def owner(q):   # the hole whose line runs most through this piece
+            return max(F['hole'], key=lambda hh: q.intersection(hh['line'].buffer(20)).area)['ref']
+        n0 = len(fair)
+        fair = [q for q in fair if owner(q) not in drop]
+        print(f'FAIRWAY_DROP {drop}: {n0 - len(fair)} fairway piece(s) dropped')
+    fap = os.path.join(OUT, 'fairways_added.json')   # fairway painted lime on the share-folder hole pictures (hole_images_read.py): added after the drop, softened
+    if os.path.exists(fap):
+        add = [smooth_poly(shape(g), 2.0) for g in json.load(open(fap))]
+        fair += [g for q in add for g in getattr(q, 'geoms', [q]) if g.geom_type == 'Polygon']
+        print(len(add), 'fairway area(s) added by fairways_added.json')
     fair, rep = link_fairways(fair, F)
     if not os.path.exists(fp0) and F['fairway']:   # OSM fairways: round the inside corners where the link to the green meets the fairway's edge
         fair = [q.buffer(5, quad_segs=8).buffer(-5, quad_segs=8).simplify(.04) for q in fair]
@@ -937,6 +967,19 @@ def main():
         xa = json.load(open(xap))
         trees += xa
         print(len(xa), 'trees added by trees_x_added.json')
+    fop = os.path.join(OUT, 'forest_painted.json')   # forest painted dark green on the share-folder hole pictures (hole_images_read.py --forest): planted with broadleaves as trees_paint.py fills a grove
+    if os.path.exists(fop):
+        from rasterio import features as rfeat
+        from rasterio.transform import Affine as RAff
+        import trees_paint
+        fpo = [shape(g) for g in json.load(open(fop))]
+        x0, y0, x1, y1 = unary_union(fpo).bounds
+        fr = dict(res=1.0, e0=math.floor(x0) - 2, n1=math.ceil(y1) + 2)
+        Wf, Hf = int(x1 - fr['e0']) + 4, int(fr['n1'] - y0) + 4
+        m = rfeat.rasterize([(g, 1) for g in fpo], out_shape=(Hf, Wf), transform=RAff(1, 0, fr['e0'], 0, -1, fr['n1'])).astype(bool)
+        fa = trees_paint.from_masks({0: m}, fr, trees)
+        trees += fa
+        print(len(fa), 'trees planted in forest_painted.json')
     json.dump(trees, open(os.path.join(OUT, 'trees_all.json'), 'w'))   # every tree before the hand-marked ones are taken out (trees_x.py works on this list)
     xp = os.path.join(OUT, 'trees_x_removed.json')   # trees marked with an X on the tree guide (trees_x.py read)
     if os.path.exists(xp):
@@ -1033,6 +1076,13 @@ def main():
             print('TREE_EDIT: no tree within 3 m of', ed['at']); continue
         t.update(d=ed.get('d', t['d']), h=ed.get('h', t['h']), kind=8 if t['kind'] == 0 else t['kind'])
         print('TREE_EDIT: tree at', ed['at'], 'now crown', t['d'], 'm, height', t['h'], 'm')
+    for k0, k1 in getattr(course, 'TREES_KIND', {}).items():   # course.TREES_KIND = {from kind: to kind}: every tree of one kind made another (Stonehenge {2: 0}: all its trees are oaks), height from its crown as for that kind
+        from trees_paint import height as tree_height
+        nk = 0
+        for t in trees:
+            if t['kind'] == k0:
+                t.update(kind=k1, h=tree_height(k1, t['d'])); nk += 1
+        print(nk, f'trees of kind {k0} made kind {k1} (course.TREES_KIND)')
     if getattr(course, 'TREES_OFF_FAIRWAYS', False):   # no tree stands in a fairway (its trunk, the centre, inside one); trees painted in by hand (trees_x_added.json) stay
         fw = unary_union(list(fair)); mine = {(g['e'], g['n']) for g in json.load(open(xap))} if os.path.exists(xap) else set()
         n0 = len(trees)
