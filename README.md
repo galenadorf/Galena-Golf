@@ -12,6 +12,15 @@ This pals golf game was inspired by and is dedicated Andy in honor of his first 
 
 ## Milestones
 
+**v1.4.** Build `638b566`, 2026-11-21.
+
+- **A new look.** The game now looks like a paper scorecard. The title screen shows your name on a pen line and your last card, with birdies circled and bogeys boxed. Each course gets its own scorecard page with yards, par, handicap and your best on every hole. Settings, Practice, Leaderboard, Stats, Hole by hole and How to play are full pages with a back arrow, and the hole-done card and confirmation cards are paper too. New type throughout: bold serif titles, handwriting for your name and scores, typewriter course descriptions and engraved buttons. The fonts are stored in the game, so it still works offline.
+- **More on the cards.** Your handicap index next to your name, how many rounds have been recorded on each course, and every hole in one on the Global leaderboard and in Stats. Stats, Hole by hole and How to play each have their own course picker.
+- **Courses.** Smoother fairways, deep rough and bunkers on Woodbine and ER South, with ER South's deep rough repainted by hand. The first cut now curves into the green's collar. Tee boxes face their holes. Augusta gets solid stone bridges, a gallery that parts around your ball, bright white sand, Rae's Creek filled to its banks and a recorded song on hole 1.
+- **Battery.** No sound engine while sound is off, a slower frame rate when the game sits idle, and the multiplayer connection runs only while it's needed.
+- **Fixes.** Every score post had been failing because of a bug in the leaderboard workflow; that's fixed. Players online shows the connection state again, sand shots no longer run out past their carry, and tee boxes no longer face the wrong way.
+- **Leaner code.** Repeated code is now shared helpers: saving data on the phone, signing and posting rounds, starting practice, clearing the scorecard. The whole game was checked for type errors.
+
 **v1.3.** Build `cb99828`, 2026-11-14.
 
 - **Every Galena!!! trip course.** All the courses the trip has played over the years are now in the game, built from public map and terrain data.
