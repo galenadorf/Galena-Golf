@@ -1802,6 +1802,7 @@ function realPrep() {
   let sum = 0; for (let i = 0; i < zz.length; i++) { Z[i] = dm.zb + zz[i] / 100; sum += Z[i]; }
   GC.dem = { e0: dm.e0, n0: dm.n0, de: dm.de, dn: dm.dn, nx: dm.nx, ny: dm.ny, Z, mean: sum / Z.length };
   GC.feat = {}; for (const k in D.feat) GC.feat[k] = decPolys(D.feat[k]);
+  for (const i of D.creekW || []) if (GC.feat.water && GC.feat.water[i]) GC.feat.water[i].ck = 1;   // the water outlines that are the creek (engine.creekDrop)
   GC.forest = decPolys(D.forest); GC.orchard = decPolys(D.orchard); const bp = decPolys(D.boundary)[0]; GC.boundary = bp[0]; GC.obIn = bp.slice(1);   // the boundary's holes are out of bounds too (Adler Park: the fenced pool)
   GC.buildings = decPolys(D.buildings); GC.cover = decPolys(D.cover); GC.props = (D.props || []).concat((RDC.scene.parkedCarts || []).map(([e, n, rot]) => ['cart', e, n, rot, 1.25, 2.45, '']));   // scene.parkedCarts: [east, north, heading]
   const ta = b64i16(D.trees); GC.trees = [];
@@ -2011,9 +2012,11 @@ function creekLevels(q, W2, Hw, w, res) {
     for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) { let a = 0, c = 0; for (let d = Math.max(0, i - B); d <= Math.min(ww - 1, i + B); d++) { a += m[j * ww + d]; c++; } t[j * ww + i] = a / c; }
     for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) { let a = 0, c = 0; for (let d = Math.max(0, j - B); d <= Math.min(hh - 1, j + B); d++) { a += t[d * ww + i]; c++; } m[j * ww + i] = a / c; }
   }
-  for (let k = 0; k < N; k++) o[k] = m[k] - .3 - (RDC.waterDrop || 0);
+  for (let k = 0; k < N; k++) o[k] = m[k] - .3 - waterDropOf(q);
   return o;
 }
+// how far a water outline's level sits under its banks (m): engine.waterDrop, or for the creek (data creekW, the outlines that are a stream: Stonehenge) engine.creekDrop
+function waterDropOf(q) { return q && q.ck && RDC.creekDrop != null ? RDC.creekDrop : RDC.waterDrop || 0; }
 function makeRealCourse(idx, pin) {
   realPrep();
   const def = idx === PRAC ? PRAC_DEF : idx === RANGE ? RANGE_DEF : HOLE_DEFS[idx], H0 = def.rh, seed = def.seed;
@@ -2052,7 +2055,7 @@ function makeRealCourse(idx, pin) {
       const r = p[0]; let a0 = 1e9, a1 = -1e9, c0 = 1e9, c1 = -1e9;
       for (let i = 0; i < r.length; i += 2) { a0 = Math.min(a0, r[i]); a1 = Math.max(a1, r[i]); c0 = Math.min(c0, r[i + 1]); c1 = Math.max(c1, r[i + 1]); }
       if (a1 < be0 - 20 || a0 > be1 + 20 || c1 < bn0 - 20 || c0 > bn1 + 20) continue;
-      out.push({ px: p.map(toPx), enu: p });
+      out.push({ px: p.map(toPx), enu: p, ck: !!p.ck });
     }
     return out;
   };
@@ -2171,7 +2174,7 @@ function makeRealCourse(idx, pin) {
     let mn = 1e9;
     for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) { const v = sd[j * ww + i]; if (v > .6 && v < 3) mn = Math.min(mn, Hw[(j + j0) * w + i + i0]); }
     if (mn > 1e8) return;
-    const lv = mn - .3 - (RDC.waterDrop || 0), lc = RDC.creekSlope ? creekLevels(q, W2, Hw, w, res) : null, L = lc ? k2 => lc[k2] : () => lv;
+    const lv = mn - .3 - waterDropOf(q), lc = RDC.creekSlope ? creekLevels(q, W2, Hw, w, res) : null, L = lc ? k2 => lc[k2] : () => lv;
     for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) {
       const v = sd[j * ww + i]; if (v >= 6) continue; const k = (j + j0) * w + i + i0, l = L(j * ww + i);
       if (v < 0) Hg[k] = l - .45 - 1.2 * smooth(0, lc ? 3 : 7, -v);
@@ -2187,7 +2190,7 @@ function makeRealCourse(idx, pin) {
     let mn = 1e9;
     for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) { const v = sd[j * ww + i]; if (v > .3 && v < 1.8) mn = Math.min(mn, Hw[(j + j0) * w + i + i0]); }
     if (mn > 1e8) return;
-    const lv = mn - .14 - (RDC.waterDrop || 0);   // waterDrop (courses.json engine, m): the water sits this far under the banks (Legends: deep beds, 6 ft)
+    const lv = mn - .14 - (RDC.creekDrop ?? RDC.waterDrop ?? 0);   // waterDrop (courses.json engine, m): the water sits this far under the banks (Legends: deep beds, 6 ft); creekDrop, if set, for the creek alone (Stonehenge, 5 ft)
     for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) {
       const v = sd[j * ww + i]; if (v >= 2) continue; const k = (j + j0) * w + i + i0;
       if (v < 0) Hg[k] = Math.min(Hg[k], lv - .2 - .2 * smooth(0, 1.5, -v));
@@ -2757,6 +2760,7 @@ const NAMESAKE_LOOK = {
   24: { shape: 'cone', leaf: [0x4f7a3a, 0x56813f], bloom: [0x8a6a3e, 0x7d5f37], share: .3, r: [1.6, 3.4], h: 14, trunk: .12 },                   // Chinese fir (14), the brown is old foliage
   25: { shape: 'mound', leaf: [0x3d5a30, 0x44613a], bloom: [0xf4efdc, 0xf8f4e6], share: .6, r: [1, 2], h: 2.4, trunk: 0 },                        // firethorn (15)
   26: { shape: 'mound', leaf: [0x5b6e34, 0x6e5a30, 0x64663a], bloom: null, share: 0, r: [.6, 1.2], h: 1.8, trunk: 0 },                           // nandina, heavenly bamboo (17), bronze-red new growth
+  27: { shape: 'mound', leaf: [0x3f5c2c, 0x4a6732, 0x55703a, 0x3a5228], bloom: null, share: 0, r: [.8, 1.3], h: 1.6, trunk: 0 },             // dense undergrowth along a creek (buckthorn, honeysuckle, dogwood; Stonehenge, build.py CREEK_UNDERGROWTH), any course
 };
 function buildRealTrees(C, grp) {
   const I = C.inner, all = [];
@@ -2860,7 +2864,7 @@ function buildRealTrees(C, grp) {
       if (refs) occ.push({ x: t.X, z: t.Z, y0: y, y1: y + Ht, r: R * 1.05, refs, hid: false });
       return;
     }
-    if (t.kind >= 16 && t.kind <= 26) {
+    if (t.kind >= 16 && t.kind <= 27) {
       // Augusta's namesake plants (pines.SPECIMENS, as they stand in Masters week; NAMESAKE_LOOK): a dome, cone, low mound or fountain of blades, leaf
       // coloured, with lobes of bloom (or, on the Chinese fir, the old dead foliage it keeps) on a share of them
       const L = NAMESAKE_LOOK[t.kind], R = clamp(t.d / 2, L.r[0], L.r[1]), Ht = clamp(t.H > 0 ? t.H : L.h, 1, 20), pick = (A, k) => A[(hash2(i, k, 31) * A.length) | 0];

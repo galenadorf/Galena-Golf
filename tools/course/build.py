@@ -16,7 +16,7 @@ import rasterio
 from scipy import ndimage as ndi
 from shapely import affinity
 from shapely.geometry import LineString, Point, Polygon, box, mapping, shape
-from shapely.ops import linemerge, substring, unary_union
+from shapely.ops import linemerge, nearest_points, substring, unary_union
 
 import osm
 import practice_read
@@ -1089,6 +1089,60 @@ def main():
         out_fw = [t for t in trees if (t['e'], t['n']) not in mine and fw.contains(Point(t['e'], t['n']))]
         trees = [t for t in trees if (t['e'], t['n']) in mine or not fw.contains(Point(t['e'], t['n']))]
         print(n0 - len(trees), 'trees taken out of the fairways (course.TREES_OFF_FAIRWAYS):', ', '.join(f"E{t['e']:.0f} N{t['n']:.0f} (kind {t['kind']}, {t['d']} m)" for t in out_fw))
+    undergrowth = []   # the deep rough under the creek undergrowth (course.CREEK_UNDERGROWTH), added to the fescue below
+    cw_pts = getattr(course, 'CREEK_WATER', [])   # course.CREEK_WATER = [(e, n)]: a point inside each water outline that is the creek, not a pond (Stonehenge: OSM maps its stream as long thin water areas)
+    creek_wi = lambda polys: [i for i, p in enumerate(polys) if any(p.buffer(3).contains(Point(*q)) for q in cw_pts)]
+    if getattr(course, 'CREEK_TREES_BANK', False) or getattr(course, 'CREEK_UNDERGROWTH', None):
+        cwat = unary_union([water[i] for i in creek_wi(water)] or [Point(0, 0).buffer(0)])
+        crk = unary_union(creek or [Point(0, 0).buffer(0)])
+        wet = unary_union([crk, cwat])   # the creek's water as the game draws it (ribbons and creek outlines)
+        dug = unary_union([crk.buffer(2.0), cwat.buffer(3.0)])   # and its banks as the game digs them (2 m beside a ribbon, 3 m beside an outline)
+        mown = unary_union(list(fair) + [t['poly'] for t in F['tee'] + F['green'] + F['bunker']] + list(paths))
+    if getattr(course, 'CREEK_TREES_BANK', False):   # every tree standing in the creek or on its dug bank is moved to the nearest bank top (never onto anything mown)
+        top = unary_union([crk.buffer(2.6), cwat.buffer(3.6)]).boundary.difference(mown.buffer(1.0))
+        nm = 0
+        for t in trees:
+            p = Point(t['e'], t['n'])
+            if dug.contains(p):
+                q = nearest_points(top, p)[0]
+                t['e'], t['n'] = round(q.x, 2), round(q.y, 2); nm += 1
+        print(f'creek: {nm} trees moved out of the water onto the banks (course.CREEK_TREES_BANK)')
+    ug = getattr(course, 'CREEK_UNDERGROWTH', None)   # dict(holes, width m, reach m, span m, gap m): dense undergrowth in front of the tree line along the creek on those holes
+    if ug:
+        w_, gap = ug['width'], ug.get('gap', 1.1)
+        hsh = lambda e, n: (math.sin(e * 12.9898 + n * 78.233) * 43758.5453) % 1.0
+        add = []
+        for ref in ug['holes']:
+            hl = [h for h in F['hole'] if str(h['ref']) == str(ref)][0]['line']
+            near = hl.buffer(ug.get('reach', 70)).intersection(wet.buffer(ug.get('span', 35)))   # the creek's surroundings beside this hole
+            crowns = unary_union([Point(t['e'], t['n']).buffer(max(1.0, t['d'] / 2), quad_segs=6) for t in trees if near.distance(Point(t['e'], t['n'])) < t['d'] / 2 + 1])
+            crowns = crowns.buffer(2.0).buffer(-2.0)   # gaps under 4 m between crowns closed: one tree line
+            line = [g for g in getattr(crowns, 'geoms', [crowns]) if g.distance(wet) < ug.get('near', 12)]   # the woods that line the creek (not a lone tree out on the course)
+            if not line:
+                print(f'creek undergrowth: hole {ref} has no tree line along the creek within {ug.get("reach", 70)} m'); continue
+            TL = unary_union(line)
+            tb = TL.buffer(w_ / 2, quad_segs=8)
+            ring = [LineString(g.exterior.coords) for g in getattr(tb, 'geoms', [tb])]   # the middle of the band in front of the trees (the outer edge only: no bushes in the clearings inside the woods)
+            n0 = len(add)
+            for g in ring:
+                for s0 in np.arange(0, g.length, gap):
+                    p = g.interpolate(s0)
+                    if not near.contains(p) or dug.contains(p) or mown.buffer(.6).contains(p) or not bound.contains(p):
+                        continue
+                    q = nearest_points(TL.boundary, p)[0]
+                    if hl.distance(p) >= hl.distance(q):   # only the side facing the hole
+                        continue
+                    u = hsh(p.x, p.y)
+                    add.append(dict(e=round(p.x, 2), n=round(p.y, 2), d=round(w_ + .3 + .5 * u, 1), h=round(1.3 + .5 * hsh(p.y, p.x), 1), kind=27))
+            print(f'creek undergrowth: hole {ref}, {len(add) - n0} bushes along {(len(add) - n0) * gap:.0f} m of tree line')
+        seen, keep = set(), []   # (two holes may share a stretch: one bush per spot)
+        for t in add:
+            k = (round(t['e'] / gap), round(t['n'] / gap))
+            if k not in seen:
+                seen.add(k); keep.append(t)
+        trees += keep
+        band = unary_union([Point(t['e'], t['n']).buffer(t['d'] / 2 + .3, quad_segs=6) for t in keep]).difference(mown).difference(dug)
+        undergrowth = [g for g in getattr(band, 'geoms', [band]) if g.geom_type == 'Polygon' and g.area > 1]
     json.dump(trees, open(os.path.join(OUT, 'trees_final.json'), 'w'))   # every tree the game gets (to look one up by position)
     tq = []
     for t in trees:  # e, n, crown diameter (dm), kind * 1000 + height (dm)
@@ -1113,6 +1167,9 @@ def main():
     if os.path.exists(djp):
         drains = [shape(g) for g in json.load(open(djp))]
         fescue = list(fescue) + drains
+    if undergrowth:   # deep rough under the creek undergrowth
+        fescue = list(fescue) + undergrowth
+        print(f'creek undergrowth: {sum(g.area for g in undergrowth):.0f} m2 of deep rough under it')
     if getattr(course, 'CREEK_DEEP', 0):   # deep rough along both banks of the creek: over the dug bank (the game cuts it 2 m out from the creek ribbon) and this many m past its top (course.CREEK_DEEP = 1.524, 5 ft)
         cr = unary_union(creek_pieces())
         band = cr.buffer(2.0 + course.CREEK_DEEP + .9, quad_segs=6).intersection(bound)   # (+.9: the game feathers deep rough's edge inward by 0 to .9 m (makeRealCourse deepF); the band runs under the water, which wins, so its creek-side edge is not feathered)
@@ -1255,6 +1312,9 @@ def main():
         # tee marker colours: w is the tee played, y/b/r the other sets (course.MARKERS)
         mkc={m: c for m, (_, c) in card.MARKERS.items()},
     )
+    if cw_pts:   # which water outlines are the creek (course.CREEK_WATER), by their place in feat.water: the game sets their level by engine.creekDrop, not waterDrop
+        rd['creekW'] = creek_wi([g for p in water for g in getattr(p, 'geoms', [p]) if not g.is_empty])
+        print('creek water outlines:', rd['creekW'])
     for k, v in (('straw', straw), ('flowers', flowers), ('bridges', sbridges)):   # only on a course that has them (pines.py)
         if v:
             rd[k] = v

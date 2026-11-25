@@ -124,7 +124,7 @@
       "recFrom": "2026-10-30",
       "about": "Stonehenge Golf Club (Barrington, Illinois) is played from the blue tees. Hole lines, greens, tees, bunkers, fairways, ponds, streams and the out-of-bounds line from © OpenStreetMap contributors (ODbL), with the fairways, deep rough, woods, bunkers and trees corrected by hand over the 2023 aerial; trees from the 2007 Lake County lidar (USGS), all oaks; the ground from the USGS 3DEP 1 m elevation model.",
       "blurb": "A 1972 Charles Maddox design along IL 22 in Barrington, par 72 and nearly 6,850 yards from the tips (6,350 from the blue tees we play, 70.5/130). Close enough to Chicago for a Portillo’s or Lou Malnati’s Champions Dinner, which is honestly the whole pitch. This was Kalle's northern home course, and has been played by all the pals at various times. Nate got hit in the head by a shank on #2 once, sorry, Nate.",
-      "engine": { "alt": 235, "broadleaf": "oak", "fescue": true, "longRough": true, "paintedDeep": true, "z0": 200, "gr": { "e0": -700, "n0": -700, "res": 2, "W": 700, "H": 700 } },
+      "engine": { "alt": 235, "broadleaf": "oak", "creekDrop": 1.524, "fescue": true, "longRough": true, "paintedDeep": true, "z0": 200, "gr": { "e0": -700, "n0": -700, "res": 2, "W": 700, "H": 700 } },
       "scene": {
         "deer": 0.25,
         "squirrels": 3

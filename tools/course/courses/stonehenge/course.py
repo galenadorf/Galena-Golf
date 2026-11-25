@@ -49,3 +49,8 @@ FAIRWAY_DROP = [10, 11, 12, 14, 15, 16, 18]   # 2026-11-22: these holes' traced 
 TREES_KIND = {2: 0}   # 2026-11-22: the user says every tree on the course is an oak: the lidar's conifers become broadleaves (engine.broadleaf 'oak' draws them all as oaks); shrubs stay shrubs
 FINAL_ROUND = dict(fair=(3, 3), water=(2.5, 0), fescue=(3, 1.5), bound=(3, 3))   # build.py: a last rounding pass over the finished fairways, ponds, deep rough and out-of-bounds line (cusps, slits, hard corners; a fairway that reaches a green is rounded together with it)
 FINAL_SMOOTH = dict(fair=2.0, fescue=(2.5, 1.5), sand=1.0)   # build.py: then a last area-keeping smoothing of the hand-painted fairways, deep rough and bunkers (sigma m), as Woodbine and ER South
+
+# 2026-11-24, the creek (the user): its water 5 ft lower (courses.json engine.creekDrop 1.524), the trees out of it, and undergrowth along it on 1, 2, 16, 17 and 18
+CREEK_WATER = [(-71.0, -126.1), (-133.2, 285.9), (174.6, 232.3), (207.3, 34.7), (190.9, 112.5)]   # a point in each OSM water outline that is the creek (the stream along 16 and 18, the one along 17 and 2, its branch by 8 and 9), not a pond
+CREEK_TREES_BANK = True   # build.py: every tree standing in the creek or on its dug bank is moved to the nearest bank top
+CREEK_UNDERGROWTH = dict(holes=[1, 2, 16, 17, 18], width=1.524, reach=70, span=35, near=12, gap=1.1)   # build.py: 5 ft of dense undergrowth (kind 27 bushes, deep rough under them) in front of the tree line along the creek, on the side facing each of those holes
