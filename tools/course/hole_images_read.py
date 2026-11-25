@@ -17,6 +17,11 @@ everything the picture itself draws is ignored. Colours (the palette in hole_ima
                                                                      -> ob_lines.json [{hole, line}] (build.py puts them in the hole data as `obl`)
 Deep rough, forest, bunkers, fairways and OB lines are MERGED with what is on file (the baseline pictures already draw what was read before,
 so only new paint shows as a difference); --replace makes deep rough, forest and bunkers replace the files instead (as before 2026-11-22).
+  Tree add colours: the key's swatch and its printed colour both work (until 2026-11-24 the key printed #008080 / #000080, which nothing read,
+  and showed the swatch in the ring colour, which the user painted with): conifer = light blue #BFE6FF (swatch) or #008080, shrub = #FFE49A
+  (swatch) or #000080; broadleaf only #008000 (its swatch is white, which means regular rough). They are handed to trees_x as its own add colours.
+  A solid conifer area of 1,500 m2 and up (a set of touching circles is under that) = a dense stand of conifers -> forest_conifer_painted.json
+  (build.py plants pines)
   white    #FFFFFF  deep rough removed, the ground becomes REGULAR rough (the game ignores white over anything that is not deep rough)
                                                                                                                       -> rough_painted.json
 Holes are read in the order --holes gives (default 1..18); where two pictures add the same tree, the one read LAST wins, so give
@@ -36,6 +41,9 @@ from scipy import ndimage as ndi
 from shapely.ops import unary_union
 
 Image.MAX_IMAGE_PIXELS = None
+CON_KEY = (0xBF, 0xE6, 0xFF)   # the conifer swatch in hole_images.py's key, painted as the colour for 'add a conifer'
+KEY_ADD = {(0xBF, 0xE6, 0xFF): 2, (0, 128, 128): 2, (0xFF, 0xE4, 0x9A): 1, (0, 0, 128): 1}   # key colours -> tree kind (2 conifer, 1 shrub)
+CON_STAND_M2 = 1500            # a solid area this big is a stand of conifers, not touching circles (Augusta's biggest run of circles: 1,042 m2)
 
 
 def main():
@@ -59,7 +67,7 @@ def main():
     info = json.load(open(os.path.join(share, key, '_frames_and_objects.json')))
     holes = [int(x) for x in opt['--holes'].split(',')] if '--holes' in opt else sorted(int(k) for k in info)
     removed, added, rough, fesc, notes = [], [], [], [], []
-    forest, bunk, fair, oblines = [], [], [], []
+    forest, bunk, fair, oblines, cforest = [], [], [], [], []
     tmp = os.path.join(OUT, '_hole_paint.png')
     for hn in holes:
         fr = info[str(hn)]['frame']
@@ -109,6 +117,20 @@ def main():
             notes.append(f'hole {hn}: OB line -> {len(ls_)} line(s), {sum(g.length for g in ls_):.0f} m')
         else:
             ob_px[:] = False
+        lb_px = ch & ((np.abs(a_ - np.array(CON_KEY)).max(2) <= 12) | (np.abs(a_ - np.array((0, 128, 128))).max(2) <= 12))   # conifer: circles are conifers, a big solid area a stand
+        con_px = np.zeros((H, W), bool)
+        if lb_px.sum() >= 30:
+            lab, nl = ndi.label(lb_px)
+            for i in range(1, nl + 1):
+                if (lab == i).sum() / s / s >= CON_STAND_M2:
+                    con_px |= lab == i
+        if con_px.any():
+            tr = Affine(1 / s, 0, e0, 0, -1 / s, n1)
+            polys = [shape(g) for g, v in features.shapes(con_px.astype(np.uint8), mask=con_px, transform=tr) if v]
+            u = unary_union(polys).buffer(1.0).buffer(-2.0).buffer(1.0).simplify(.4)
+            parts = [g for g in getattr(u, 'geoms', [u]) if g.geom_type == 'Polygon' and g.area >= 20]
+            cforest += parts
+            notes.append(f'hole {hn}: conifer stand painted -> {len(parts)} area(s), {sum(g.area for g in parts):.0f} m2')
         for col, amin in (((255, 0, 255), 20), ((0, 128, 0), 150)):
             k = ch & (np.abs(a_ - np.array(col)).sum(2) <= 30)
             if k.sum() < 50:
@@ -137,13 +159,15 @@ def main():
             notes.append(f'hole {hn}: deep rough painted -> {len(parts)} area(s), {sum(g.area for g in parts):.0f} m2')
         # the area paint and its ragged rim (a few px) are never tree marks; a tree circle drawn against it still is (before 2026-11-22 the
         # whole connected piece was dropped, which lost circles painted touching a bunker, deep rough or forest)
-        keep = ch & ~ndi.binary_dilation(fesc_px | for_px | bunk_px | fair_px | ob_px, iterations=3)
+        keep = ch & ~ndi.binary_dilation(fesc_px | for_px | bunk_px | fair_px | ob_px | con_px, iterations=3)
         lk, nk = ndi.label(ndi.binary_dilation(keep, iterations=2))   # a speck of under 30 px is a stray dab, not an X or a circle
         for i in range(1, nk + 1):
             if (keep & (lk == i)).sum() < 30:
                 keep &= lk != i
         paint = np.zeros((H, W, 3), np.uint8)
         paint[keep] = a_[keep]
+        for kc, kind in KEY_ADD.items():   # the key's tree colours -> the add colours trees_x reads
+            paint[keep & (np.abs(a_ - np.array(kc)).max(2) <= 12)] = trees_x.ADD_COL[kind]
         paint[wmask] = 0
         Image.fromarray(paint).save(tmp)
         trees_x.frame = lambda e0=e0, n1=n1, s=s: dict(ppm=s, e0=e0, n1=n1)
@@ -184,6 +208,7 @@ def main():
             wu = unary_union(rough)
             fparts = merged([g.difference(wu) for g in fparts])
     foparts = merged(old_polys('forest_painted.json') + forest) if forest else []
+    cfparts = merged(old_polys('forest_conifer_painted.json') + cforest) if cforest else []
     buparts = merged(old_polys('bunkers_added.json') + bunk) if bunk else []
     fwp = os.path.join(OUT, 'fairways_added.json')
     faparts = merged([shape(g) for g in json.load(open(fwp))] + fair if os.path.exists(fwp) else fair) if fair else []
@@ -196,7 +221,7 @@ def main():
     allg = unary_union(old_g + rough) if (old_g or rough) else None
     parts = [g for g in getattr(allg, 'geoms', [allg]) if g is not None and g.geom_type == 'Polygon'] if allg is not None else []
     print('\n'.join(notes))
-    print(f'{key}: {len(new_r)} new trees removed (on file {len(old_r)}), {len(new_a)} new trees added (on file {len(old_a)}), rough areas on file after merge: {len(parts)}, deep rough areas {len(fparts)} ({sum(g.area for g in fparts):.0f} m2), forest areas {len(foparts)} ({sum(g.area for g in foparts):.0f} m2), bunkers {len(buparts)}, fairways added {len(faparts)} ({sum(g.area for g in faparts):.0f} m2), OB lines {len(old_ob)}')
+    print(f'{key}: {len(new_r)} new trees removed (on file {len(old_r)}), {len(new_a)} new trees added (on file {len(old_a)}), rough areas on file after merge: {len(parts)}, deep rough areas {len(fparts)} ({sum(g.area for g in fparts):.0f} m2), forest areas {len(foparts)} ({sum(g.area for g in foparts):.0f} m2), conifer stands {len(cfparts)} ({sum(g.area for g in cfparts):.0f} m2), bunkers {len(buparts)}, fairways added {len(faparts)} ({sum(g.area for g in faparts):.0f} m2), OB lines {len(old_ob)}')
     if not write:
         print('(report only: nothing written; add --write)')
         return
@@ -207,6 +232,8 @@ def main():
         json.dump([mapping(g) for g in fparts], open(fp, 'w'))
     if foparts:
         json.dump([mapping(g) for g in foparts], open(os.path.join(OUT, 'forest_painted.json'), 'w'))
+    if cfparts:
+        json.dump([mapping(g) for g in cfparts], open(os.path.join(OUT, 'forest_conifer_painted.json'), 'w'))
     if buparts:
         json.dump([mapping(g) for g in buparts], open(os.path.join(OUT, 'bunkers_added.json'), 'w'))
     if faparts:

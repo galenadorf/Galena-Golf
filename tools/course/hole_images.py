@@ -127,9 +127,9 @@ CATS = {
     'clump': ('Grass clump', PAINT['clump'], PAINT['clump'], 'paint'),
     'drain': ('Drainage hazard', PAINT['drain'], PAINT['drain'], 'paint'),
     'flower': ('Azalea / flower bed', '#FF70C0', None, 'in the data (flowers)'),
-    't_b': ('Tree: broadleaf', '#FFFFFF', PAINT['addB'], 'to ADD paint a filled circle; to REMOVE paint a magenta #FF00FF X'),
-    't_c': ('Tree: conifer', '#BFE6FF', PAINT['addC'], 'to ADD paint a filled circle; to REMOVE paint a magenta #FF00FF X'),
-    't_s': ('Tree: shrub', '#FFE49A', PAINT['addS'], 'to ADD paint a filled circle; to REMOVE paint a magenta #FF00FF X'),
+    't_b': ('Tree: broadleaf', '#FFFFFF', PAINT['addB'], 'ADD: a filled circle in #008000 (not white); REMOVE: a magenta #FF00FF X'),
+    't_c': ('Tree: conifer', '#BFE6FF', PAINT['addC'], 'ADD: a filled circle in this swatch colour #BFE6FF (a big area = a stand); REMOVE: a magenta #FF00FF X'),
+    't_s': ('Tree: shrub', '#FFE49A', PAINT['addS'], 'ADD: a filled circle in this swatch colour #FFE49A; REMOVE: a magenta #FF00FF X'),
     't_f': ('Tree: fruit / orchard', '#FFB0B0', None, 'to REMOVE paint a magenta #FF00FF X'),
     't_p': ('Tree: spear / column', '#C0C0C0', None, 'to REMOVE paint a magenta #FF00FF X'),
     't_x': ('Tree: specimen / named', '#FF80FF', None, 'to REMOVE paint a magenta #FF00FF X'),
@@ -670,7 +670,7 @@ class Course:
                 continue
             t, col, pc, note = CATS[c]
             sub = f'paint {pc}' if pc and note == 'paint' else (note if note else '')
-            if pc and note != 'paint':
+            if pc and note != 'paint' and not note.startswith('ADD:'):
                 sub = f'{note} (colour {pc})'
             lg.append(('E', col, f'{t}  x{len(by_cat[c])}', sub, rng(by_cat[c])))
         lg.append(('T', 'Only this hole\'s own features are drawn.' if own_only else 'Faded + captioned (H14 green...) = another hole\'s feature.'))

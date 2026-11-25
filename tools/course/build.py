@@ -980,6 +980,19 @@ def main():
         fa = trees_paint.from_masks({0: m}, fr, trees)
         trees += fa
         print(len(fa), 'trees planted in forest_painted.json')
+    cfp = os.path.join(OUT, 'forest_conifer_painted.json')   # dense conifer stands painted in the conifer key colour on the hole pictures (Augusta 7): planted with conifers
+    if os.path.exists(cfp):
+        from rasterio import features as rfeat
+        from rasterio.transform import Affine as RAff
+        import trees_paint
+        fpo = [shape(g) for g in json.load(open(cfp))]
+        x0, y0, x1, y1 = unary_union(fpo).bounds
+        fr = dict(res=1.0, e0=math.floor(x0) - 2, n1=math.ceil(y1) + 2)
+        Wf, Hf = int(x1 - fr['e0']) + 4, int(fr['n1'] - y0) + 4
+        m = rfeat.rasterize([(g, 1) for g in fpo], out_shape=(Hf, Wf), transform=RAff(1, 0, fr['e0'], 0, -1, fr['n1'])).astype(bool)
+        fa = trees_paint.from_masks({2: m}, fr, trees)
+        trees += fa
+        print(len(fa), 'conifers planted in forest_conifer_painted.json')
     json.dump(trees, open(os.path.join(OUT, 'trees_all.json'), 'w'))   # every tree before the hand-marked ones are taken out (trees_x.py works on this list)
     xp = os.path.join(OUT, 'trees_x_removed.json')   # trees marked with an X on the tree guide (trees_x.py read)
     if os.path.exists(xp):
