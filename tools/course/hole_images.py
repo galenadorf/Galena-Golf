@@ -261,7 +261,7 @@ class Course:
         self.props = rd.get('props') or []
         self.straw = None
         if rd.get('straw'):
-            W, H = 1300, 760
+            gr = self.meta['engine']['gr']; W, H = gr['W'], gr['H']
             m = np.zeros(W * H, bool)
             o = 0; v = 0
             for n in i16(rd['straw']):
@@ -490,9 +490,10 @@ class Course:
             deep &= ~rast(FX, self.feat.get('rough', []), None)   # ground painted white: regular rough
             paint_mask(crop(deep), PAINT['fescue'], 40, '#C040C0', 2)
         if self.straw is not None:
-            gx = ((np.arange(F.W) / S + F.e0 + .0) - (-1300)) / 2
-            gy = ((F.n1 - np.arange(F.H) / S) - (-760)) / 2
-            xi = np.clip(gx.astype(int), 0, 1299); yi = np.clip(gy.astype(int), 0, 759)
+            gr = self.meta['engine']['gr']
+            gx = (np.arange(F.W) / S + F.e0 - gr['e0']) / gr['res']
+            gy = (F.n1 - np.arange(F.H) / S - gr['n0']) / gr['res']
+            xi = np.clip(gx.astype(int), 0, gr['W'] - 1); yi = np.clip(gy.astype(int), 0, gr['H'] - 1)
             sm = self.straw[np.ix_(yi, xi)]
             paint_mask(sm & crop(~(fair | green | tee | sand) & inb), '#B07838', 110, '#7A4A18', 2)
         # first cut: 2.8 m beside fairways, none within 8 m of a green

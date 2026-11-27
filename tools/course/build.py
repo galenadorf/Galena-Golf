@@ -1270,12 +1270,10 @@ def main():
                 rkeep = unary_union([rm['grass'].buffer(rm['spec'].get('bed', 4.5) - .5) for rm in rooms])   # no lidar tree stands in the chute or its beds
                 n0 = len(trees); trees = [t for t in trees if not rkeep.contains(Point(t['e'], t['n'])) and rgrass.distance(Point(t['e'], t['n'])) > t['d'] * .4]
                 print(f'tee rooms: {n0 - len(trees)} lidar trees taken out of the chutes and beds')
-            straw = b64i16(pines.straw_rle(sa))
             fl = pines.flowers(sa, holes, [f['poly'] for f in F['green']])
             if rooms:
                 fl = [f for f in fl if rgrass.distance(Point(f[0], f[1])) > f[2] * .55 and not any(rm['beds'].buffer(1.5).contains(Point(f[0], f[1])) for rm in rooms)] + pines.room_azaleas(rooms, np.random.default_rng(1313))
             flowers = b64i16([int(round(v * 10)) if k < 3 else int(v) for c in fl for k, v in enumerate(c)]) if fl else ''
-            json.dump([mapping(g) for g in getattr(sa, 'geoms', [sa])], open(os.path.join(OUT, 'straw.json'), 'w'))
             json.dump(fl, open(os.path.join(OUT, 'flowers.json'), 'w'))
             if getattr(course, 'SPECIMENS', None):   # hand-placed plants of their own kinds (Magnolia Lane, the Big Oak, dogwoods, redbuds, hollies): they replace the lidar trees where they stand
                 course._WET = list(water) + list(creek)   # (pines.specimens keeps plants out of the water)
@@ -1301,6 +1299,12 @@ def main():
                     tq += [int(round(t['e'] * 10)), int(round(t['n'] * 10)), int(round(t['d'] * 10)), t['kind'] * 1000 + min(999, int(round(t['h'] * 10)))]
                 json.dump(sp, open(os.path.join(OUT, 'specimens.json'), 'w'))
                 print(f'specimens: {len(sp)} placed, {len(gone)} lidar trees under them taken out')
+        # the straw itself, from the pines as they finally stand (sa above is only the planting ground)
+        keep = [(list(fair), 3.0), ([f['poly'] for f in F['green']], 2.5), ([f['poly'] for f in F['tee'] + F['bunker']], 1.5),
+                (list(water) + list(creek), 1.5), (list(paths), 1.0), ([rm['grass'] for rm in rooms], .5)]
+        beds = pines.straw_beds(trees, keep, bound)
+        straw = b64i16(pines.straw_rle(beds))
+        json.dump([mapping(g) for g in getattr(beds, 'geoms', [beds])], open(os.path.join(OUT, 'straw.json'), 'w'))
     rough_p = os.path.join(OUT, 'rough_painted.json')   # ground painted white on the hole pictures (hole_images_read.py): regular rough, never deep rough (GeoJSON polygons, local metres)
     rough_polys = [shape(g) for g in json.load(open(rough_p))] if os.path.exists(rough_p) else []
     rd = dict(

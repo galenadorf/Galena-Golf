@@ -654,12 +654,13 @@ Rae's Creek and its tributary down the left of 13: water that falls with its ban
   about half a metre under the banks; the ponds keep one flat level. Shores are drawn as smooth curves (`waterSnap`).
 Bunkers: bright white sand (the club's white feldspar), on the ground, the yardage map and the splash out of a bunker; kept bright and neutral under
   the low orange sun, with its hollows still shaded (`engine.whiteSand`, `WHITE_SAND`, `wSand` in the terrain shader).
-Pine straw: rust-brown straw on the floor under every stand of trees (`straw` in the data, `pines.py`); never on anything mown. The beds' edges are
-  rounded (notches and slivers under 3 m taken out when the course is built, `STRAW_SMOOTH`, and the 2 m grid softened when it loads), so no bed comes to a
+Pine straw: rust-brown straw only under the pines (`straw` in the data, `pines.straw_beds`): a round bed about as wide as each pine's crown, touching beds
+  run together into one; none under broadleaf trees or away from pines, and none on anything mown, sand or water. The beds' edges are
+  rounded when the course is built (`BED_JOIN`, `BED_ROUND`, `BED_HOLE`) and the 2 m grid softened when it loads, so no bed comes to a
   point or a stair step. It is a lie of its own,
   "Pine straw" (`S.STRAW`): a dead landing (the ball stops within a couple of yards) and a loose lie (about 90 % of the carry, little spin, a wider spread).
 Azaleas in bloom (mounded clumps in the four Southern Indica cultivars reported as the club's common ones: 'Formosa' magenta-violet, two in five;
-  'Judge Solomon' rose-salmon pink, 'George L. Tabor' pale orchid pink, 'Mrs. G. G. Gerbing' white) along the edge of the straw, always: most on 13 (down the left along the creek and round the
+  'Judge Solomon' rose-salmon pink, 'George L. Tabor' pale orchid pink, 'Mrs. G. G. Gerbing' white) along the edge of the planting ground (`pines.straw_area`, not drawn), always: most on 13 (down the left along the creek and round the
   green, about 610 clumps), then 10 (left of the green), 12 (the hill behind the green), 2, 11, 16, 9 and 15 (`course.PLANTINGS`, `buildAzaleas`). None on 18 yet.
 Stone bridges (after the user's photograph of the Hogan and Nelson bridges: a low, gently crowned span on round arches springing from the water, three on a
   long bridge and two or one on a short one, walls of dark fieldstone in pale mortar, a low stone lip along each edge and a strip of green turf on top; the

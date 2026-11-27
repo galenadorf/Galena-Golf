@@ -2,10 +2,11 @@
 
 Called by build.py when the course sets them (course.STRAW, course.STONE_BRIDGES, course.PLANTINGS); everything is in local metres.
 
-  straw     pine straw under the trees: every pine crown (its radius plus STRAW_REACH m) and big broadleaf crown (plus STRAW_REACH_B) inside the course, gaps under STRAW_CLOSE m closed,
+  straw     straw_beds: a crown-wide round bed under each pine and nowhere else. Run-length coded on the game's 2 m class grid.
+  planting  straw_area (not drawn; the guide for flowers and specimens): every pine crown (its radius plus STRAW_REACH m) and big broadleaf crown (plus STRAW_REACH_B) inside the course, gaps under STRAW_CLOSE m closed,
             less everything mown (fairway, the second cut OSM maps as golf=rough, green, tee, bunker) and the paths, ponds and creeks (each buffered
             STRAW_CLEAR m), plus any area OSM tags golf=pine straw. Run-length coded on the game's 2 m class grid (engine gr in courses.json, the
-            course's ROAD_AREA): alternating off/on runs as int16, the game's GC.straw.
+            course's ROAD_AREA).
   bridges   OSM man_made=bridge areas (and bridge=yes paths not inside one) near water: [east, north, length, width, deck bearing (degrees from east,
             anticlockwise), name], the deck along the rectangle's long side; the game's buildStoneBridges draws each as an arched ashlar span, with a
             bronze plaque when it has a name.
@@ -29,6 +30,10 @@ STRAW_REACH_B = 1.0
 STRAW_CLOSE = 3.0
 STRAW_CLEAR = 1.5
 STRAW_SMOOTH = 1.5   # bed edges rounded: notches and slivers under 3 m taken out (straw_area)
+STRAW_MIN_R = 3.0    # straw_beds
+BED_JOIN = 4.5
+BED_HOLE = 120.0     # a gap in a grove's bed smaller than this (m2) is filled
+BED_ROUND = 1.5
 
 
 def grid():
@@ -36,7 +41,20 @@ def grid():
     return e0, n0, 2.0, int(round((e1 - e0) / 2)), int(round((n1 - n0) / 2))
 
 
+def straw_beds(trees, keep, bound):
+    """The pine straw the game has: a round bed under each pine (kind 2), as wide as its crown (never under STRAW_MIN_R in radius, or the game's 2 m mask
+    loses it), where beds touch run together into one with the notches between them filled (BED_JOIN) and no points or slivers (BED_ROUND). Nothing else
+    makes straw. keep: [(polygons, clearance m)], the ground no bed may reach (the clearances cover what the game mows round it: first cut, fringe, collar)."""
+    beds = unary_union([Point(t['e'], t['n']).buffer(max(STRAW_MIN_R, t['d'] / 2), quad_segs=8) for t in trees if t['kind'] == 2])
+    beds = beds.buffer(BED_JOIN, quad_segs=8).buffer(-BED_JOIN, quad_segs=8)
+    beds = unary_union([Polygon(g.exterior, [r for r in g.interiors if Polygon(r).area >= BED_HOLE]) for g in getattr(beds, 'geoms', [beds])]).intersection(bound.buffer(25))
+    off = unary_union([unary_union(g).buffer(c, quad_segs=6) for g, c in keep if g])
+    return beds.difference(off).buffer(-BED_ROUND, quad_segs=8).buffer(BED_ROUND, quad_segs=8).difference(off)
+
+
 def straw_area(trees, mown, wet, bound):
+    # NOT the straw drawn (straw_beds): the planting ground the azaleas and the hand-placed plants are set along (flowers, specimens). Left as it was
+    # when the straw changed, so that no plant moved.
     # beds, not a sheet: a bed runs STRAW_REACH (pines) or STRAW_REACH_B (big broadleaf) m past the crown, shrubs and small trees make none, and only
     # gaps under STRAW_CLOSE m between stands are closed (public photographs show beds round the stands with turf between them)
     crowns = unary_union([Point(t['e'], t['n']).buffer(t['d'] / 2 + (STRAW_REACH if t['kind'] == 2 else STRAW_REACH_B), quad_segs=4)
