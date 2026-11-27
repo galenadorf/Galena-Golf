@@ -2693,7 +2693,7 @@ function buildRealWater(C, grp) {
     geos.push(g);
   }
   // every pond and creek piece in one mesh (each sheet is already at its own water level): one draw call however many pieces a creek has
-  if (geos.length) { const m = new THREE.Mesh(mergeGeos(geos), wm); m.userData.keep = true; grp.add(m); W.waterMeshes.push(m); }
+  if (geos.length) { const m = new THREE.Mesh(mergeGeos(geos), wm); m.renderOrder = -.5; m.userData.keep = true; grp.add(m); W.waterMeshes.push(m); }   // (drawn before the other see-through things: the tracers write no depth and, sharing the water's anchor point, were painted over by it)
 }
 const REAL_TREE_COLS = [0x2f6d3c, 0x3a7d43, 0x467f3f, 0x2e6a45, 0x4c8a4a, 0x3d7449, 0x55934d, 0x316b52, 0x5a8f46, 0x426f3b];
 // three levels of detail: near the line of play (round crowns with extra lobes, shadows), mid (simple crowns),
