@@ -127,14 +127,25 @@ CATS = {
     'clump': ('Grass clump', PAINT['clump'], PAINT['clump'], 'paint'),
     'drain': ('Drainage hazard', PAINT['drain'], PAINT['drain'], 'paint'),
     'flower': ('Azalea / flower bed', '#FF70C0', None, 'in the data (flowers)'),
-    't_b': ('Tree: broadleaf', '#FFFFFF', PAINT['addB'], 'ADD: a filled circle in #008000 (not white); REMOVE: a magenta #FF00FF X'),
-    't_c': ('Tree: conifer', '#BFE6FF', PAINT['addC'], 'ADD: a filled circle in this swatch colour #BFE6FF (a big area = a stand); REMOVE: a magenta #FF00FF X'),
-    't_s': ('Tree: shrub', '#FFE49A', PAINT['addS'], 'ADD: a filled circle in this swatch colour #FFE49A; REMOVE: a magenta #FF00FF X'),
+    't_b': ('Tree: broadleaf', '#FFFFFF', PAINT['addB'], 'ADD: a filled circle in #008000; REMOVE: a magenta #FF00FF X'),
+    't_c': ('Tree: conifer', '#BFE6FF', PAINT['addC'], 'ADD: a filled circle in #008080 (a big area = a stand); REMOVE: a magenta #FF00FF X'),
+    't_s': ('Tree: shrub', '#FFE49A', PAINT['addS'], 'ADD: a filled circle in #000080; REMOVE: a magenta #FF00FF X'),
     't_f': ('Tree: fruit / orchard', '#FFB0B0', None, 'to REMOVE paint a magenta #FF00FF X'),
     't_p': ('Tree: spear / column', '#C0C0C0', None, 'to REMOVE paint a magenta #FF00FF X'),
     't_x': ('Tree: specimen / named', '#FF80FF', None, 'to REMOVE paint a magenta #FF00FF X'),
 }
 ORDER = list(CATS)
+READ_COLS = [   # (colour, what it does, how), as hole_images_read.py takes it
+    ('#FF00FF', 'X = remove a tree', 'a thin X over the tree'),
+    ('#FF00FF', 'area = deep rough', 'a filled area'),
+    ('#FFFFFF', 'cut deep rough', 'over deep rough: it becomes regular rough'),
+    ('#008000', 'add broadleaf', 'a filled circle as wide as the crown (a big green area is read as deep rough)'),
+    ('#008080', 'add conifer', 'a filled circle; a big area (1,500 m2+) = a pine stand'),
+    ('#000080', 'add shrub', 'a filled circle'),
+    ('#00FF00', 'add fairway', 'a filled area'),
+    ('#FF8000', 'add bunker', 'a filled area'),
+    ('#00FFFF', 'OB line, this hole only', 'a line; out of bounds is the side away from the hole'),
+]
 FILL_K = float(os.environ.get('FILL_K', '0.5'))   # share of the old fill opacity (1 = as the first Woodbine set)
 TREE_CAT = {0: 't_b', 8: 't_b', 1: 't_s', 2: 't_c', 4: 't_c', 3: 't_f', 6: 't_p', 7: 't_p'}
 TREE_FILL = {'t_b': (40, 170, 40, 80), 't_c': (0, 100, 130, 100), 't_s': (180, 150, 50, 100), 't_f': (230, 120, 120, 90),
@@ -401,8 +412,8 @@ class Course:
                     g = Point(o['e'], o['n'])
                 if g is None or g.is_empty:
                     continue
-                if o['cat'] in ('mk', 'cup'):
-                    keep.append(o); continue
+                if o['cat'] in ('mk', 'cup') or o['cat'].startswith('t_'):   # every tree in the frame is drawn, whichever hole it is
+                    keep.append(o); continue                                  # nearest: a tree with no ring is a tree the game does not have
                 if o['cat'] in ('path', 'road', 'stream', 'fence', 'bridge'):
                     if g.distance(hline) <= 30:
                         keep.append(o)
@@ -664,7 +675,13 @@ class Course:
             out.append((a, b))
             return ', '.join(str(a) if a == b else f'{a}-{b}' for a, b in out)
         lg = []
-        lg.append(('H', 'NUMBERED OBJECTS  (number -> what it is -> paint colour)'))
+        # the colours hole_images_read.py reads: each swatch IS the colour to paint
+        lg.append(('H', 'PAINT WITH EXACTLY THESE  (swatch = the colour)'))
+        for col, title, sub in READ_COLS:
+            lg.append(('E', col, f'{col}  {title}', sub, ''))
+        lg.append(('T', 'Other colours listed below are not read yet:'))
+        lg.append(('T', 'if you paint one, tell me which holes.'))
+        lg.append(('H', 'NUMBERED OBJECTS  (number -> what it is; swatch = how it is drawn)'))
         for c in ORDER:
             if c not in by_cat:
                 continue
@@ -673,7 +690,7 @@ class Course:
             if pc and note != 'paint' and not note.startswith('ADD:'):
                 sub = f'{note} (colour {pc})'
             lg.append(('E', col, f'{t}  x{len(by_cat[c])}', sub, rng(by_cat[c])))
-        lg.append(('T', 'Only this hole\'s own features are drawn.' if own_only else 'Faded + captioned (H14 green...) = another hole\'s feature.'))
+        lg.append(('T', 'Only this hole\'s own features are drawn, but EVERY tree.' if own_only else 'Faded + captioned (H14 green...) = another hole\'s feature.'))
         lg.append(('H', 'SHADED BY THE GAME (computed from the above, not painted)'))
         lg.append(('E', '#D8FF60', 'First cut (2.8 m beside fairways)', 'repaint the fairway to change it', ''))
         lg.append(('E', '#C8FFC8', 'Fringe 0.9 m + collar 1 m round greens', 'follows the green outline', ''))
@@ -684,7 +701,7 @@ class Course:
         elif not self.has_fescue and not self.painted_deep:
             lg.append(('E', '#C040C0', 'Deep rough: 22 m or more from play', 'game rule; paint fescue #FF00FF to override', ''))
         lg.append(('E', '#202020', 'Darkened = out of bounds', 'outside the cyan line', ''))
-        lg.append(('E', PAINT['bnd'], 'Course boundary (OB line)', 'paint a cyan #00FFFF line', ''))
+        lg.append(('E', PAINT['bnd'], 'Course boundary (out of bounds)', 'tell me if it is wrong', ''))
         if h.get('obl'):
             lg.append(('E', PAINT['bnd'], 'OB line for this hole (white stakes)', 'ticks point to the OB side', ''))
         lg.append(('E', '#FFFFFF', 'Hole line, tee to green (dashed)', 'from the hole data', ''))
